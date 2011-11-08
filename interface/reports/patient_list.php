@@ -6,8 +6,8 @@
  // as published by the Free Software Foundation; either version 2
  // of the License, or (at your option) any later version.
 
- // This report lists patients that were seen within a given date
- // range, or all patients if no date range is entered.
+ // This report lists patients that were seen or not seen within a given
+ // date range.
 
  require_once("../globals.php");
  require_once("$srcdir/patient.inc");
@@ -28,6 +28,7 @@ function qescape($str) {
  if (empty($from_date) && !empty($to_date)) $from_date = date('Y-01-01');
 
 $form_provider = empty($_POST['form_provider']) ? 0 : intval($_POST['form_provider']);
+$form_having = isset($_POST['form_having']) ? ($_POST['form_having'] ? 1 : 0) : 1;
 
 // In the case of CSV export only, a download will be forced.
 if ($_POST['form_csvexport']) {
@@ -42,7 +43,7 @@ else {
 ?>
 <html>
 <head>
-<?php html_header_show();?>
+<?php html_header_show(); ?>
 <title><?php xl('Patient List','e'); ?></title>
 <script type="text/javascript" src="../../library/overlib_mini.js"></script>
 <script type="text/javascript" src="../../library/textformat.js"></script>
@@ -121,6 +122,10 @@ else {
 	      ?>
       </td>
 			<td class='label'>
+        <select name='form_having'>
+         <option value='1'<?php if ( $form_having) echo ' selected'; ?>><?php xl('Having','e'); ?></option>
+         <option value='0'<?php if (!$form_having) echo ' selected'; ?>><?php xl('Not Having','e'); ?></option>
+        </select>
 			   <?php xl('Visits From','e'); ?>:
 			</td>
 			<td>
@@ -219,27 +224,17 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
    "p.fname, p.mname, p.lname, p.street, p.city, p.state, " .
    "p.postal_code, p.phone_home, p.phone_biz, p.pid, p.pubpid, " .
    "count(e.date) AS ecount, max(e.date) AS edate, " .
+   "sum(e.date >= '$from_date 00:00:00' AND e.date <= '$to_date 23:59:59') AS inrange, " .
    "i1.date AS idate1, i2.date AS idate2, " .
    "c1.name AS cname1, c2.name AS cname2 " .
    "FROM patient_data AS p ";
-  if (!empty($from_date)) {
+  if ($form_provider) {
    $query .= "JOIN form_encounter AS e ON " .
-   "e.pid = p.pid AND " .
-   "e.date >= '$from_date 00:00:00' AND " .
-   "e.date <= '$to_date 23:59:59' ";
-   if ($form_provider) {
-    $query .= "AND e.provider_id = '$form_provider' ";
-   }
+   "e.pid = p.pid AND e.provider_id = '$form_provider' ";
   }
   else {
-   if ($form_provider) {
-    $query .= "JOIN form_encounter AS e ON " .
-    "e.pid = p.pid AND e.provider_id = '$form_provider' ";
-   }
-   else {
-    $query .= "LEFT OUTER JOIN form_encounter AS e ON " .
-    "e.pid = p.pid ";
-   }
+   $query .= "LEFT OUTER JOIN form_encounter AS e ON " .
+   "e.pid = p.pid ";
   }
   $query .=
    "LEFT OUTER JOIN insurance_data AS i1 ON " .
@@ -256,6 +251,8 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
 
   $prevpid = 0;
   while ($row = sqlFetchArray($res)) {
+   if ($form_having && !$row['inrange']) continue;
+   if (!$form_having && $row['inrange']) continue;
    if ($row['pid'] == $prevpid) continue;
    $prevpid = $row['pid'];
    $age = '';
@@ -285,8 +282,8 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
    else {
 ?>
  <tr>
-  <td>
-   <?php echo oeFormatShortDate(substr($row['edate'], 0, 10)) ?>
+  <td nowrap>
+   <?php echo oeFormatShortDate(substr($row['edate'], 0, 10)) ?>&nbsp;
   </td>
   <td>
     <?php echo text($row['lname'] . ', ' . $row['fname'] . ' ' . $row['mname']); ?>
