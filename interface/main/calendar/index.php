@@ -52,9 +52,6 @@ if (isset($_GET['framewidth'])) $_SESSION['pc_framewidth'] = $_GET['framewidth']
 // FACILITY FILTERING (lemonsoftware) (CHEMED)
 $_SESSION['pc_facility'] = 0;
 
-/*********************************************************************
-if ($_POST['pc_facility'])  $_SESSION['pc_facility'] = $_POST['pc_facility'];
-*********************************************************************/
 if (isset($_COOKIE['pc_facility']) && $GLOBALS['set_facility_cookie']) {
   // There is a cookie facility and we're supposed to use it, so default to that.
   $_SESSION['pc_facility'] = $_COOKIE['pc_facility'];
@@ -83,9 +80,6 @@ if ($GLOBALS['set_facility_cookie'] && ($_SESSION['pc_facility'] > 0)) setcookie
 
 // Simplifying by just using request variable instead of checking for both post and get - KHY
 if (isset($_REQUEST['viewtype'])) $_SESSION['viewtype'] = $_REQUEST['viewtype'];
-
-
-
 
 //if (empty($_GET['no_nav'])) {
 //        $_SESSION['last_calendar_page'] = $_SERVER['PHP_SELF'] . "?" . $_SERVER['QUERY_STRING'];

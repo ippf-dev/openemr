@@ -151,11 +151,7 @@ div.tiny { width:1px; height:1px; font-size:1px; }
  // echo "<!-- There are " . count($A_EVENTS) . " A_EVENTS days -->\n";
 
  $MULTIDAY = count($A_EVENTS) > 1;
-
  $facilities = getUserFacilities($_SESSION['authId'],'name'); // from users_facility
- if (count($facilities) == 1 || !$_SESSION['pc_facility']) {
-  $_SESSION['pc_facility'] = $facilities[0]['id'];
- }
  if ( $_SESSION['pc_facility'] ) {
   $provinfo = getProviderInfo('%', true, $_SESSION['pc_facility']);
  } else {
@@ -183,19 +179,6 @@ div.tiny { width:1px; height:1px; font-size:1px; }
  }
  echo "   </select>\n";
 
-/*********************************************************************
- // ==============================
- // FACILITY FILTERING (lemonsoftware)
- $facilities = getFacilities('','name');
- echo "   <select name='pc_facility'>\n";
- if ( !$_SESSION['pc_facility'] ) $selected = "selected='selected'";
- echo "    <option value='0' $selected>"  .xl('All Facilities'). "</option>\n";
- foreach ($facilities as $fa) {
-    $selected = ( $_SESSION['pc_facility'] == $fa['id']) ? "selected='selected'" : "" ;
-     echo "    <option value='" .$fa['id']. "' $selected>"  .$fa['name']. "</option>\n";
- }
- echo "   </select>\n";
-*********************************************************************/
 // ==============================
 // FACILITY FILTERING (lemonsoftware)
 if ($_SESSION['authorizeduser'] == 1) {
@@ -206,7 +189,7 @@ if ($_SESSION['authorizeduser'] == 1) {
     $_SESSION['pc_facility'] = ($facilities[0]['id']);
 }
 if (count($facilities) > 1) {
-  echo "   <select name='pc_facility' id='pc_facility' onChange='document.getElementById(\"theform\").submit();'>\n";
+  echo "   <select name='pc_facility' id='pc_facility' onChange='this.form[\"pc_username[]\"].selectedIndex=0;document.getElementById(\"theform\").submit();'>\n";
   if ( !$_SESSION['pc_facility'] ) $selected = "selected='selected'";
   if ( !$GLOBALS['restrict_user_facility']) echo "    <option value='0' $selected>" . xl('All Facilities') . "</option>\n";
   foreach ($facilities as $fa) {
@@ -215,7 +198,6 @@ if (count($facilities) > 1) {
   }
   echo "   </select>\n";
 }
-/********************************************************************/
 
  // EOS FF
  // ==============================
