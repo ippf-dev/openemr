@@ -20,25 +20,44 @@ function REF_javascript() {
 var poptions = new Array();
 function external_changed() {
  var f = document.forms[0];
- var eix = f.form_refer_external.selectedIndex;
- var psel = f.form_refer_to;
- var i = psel.selectedIndex < 0 ? 0 : psel.selectedIndex;
- var pvalue = psel.options[i].value;
+ // var eix = f.form_refer_external.selectedIndex;
+ var rtval = f.form_refer_external.value;
+ //
+ var pselt = f.form_refer_to;
+ var i = pselt.selectedIndex < 0 ? 0 : pselt.selectedIndex;
+ var pvaluet = pselt.options[i].value;
+ //
+ var pself = f.form_refer_from;
+ i = pself.selectedIndex < 0 ? 0 : pself.selectedIndex;
+ var pvaluef = pself.options[i].value;
+ //
  if (poptions.length == 0) {
-  for (i = 0; i < psel.options.length; ++i) {
-   poptions[i] = psel.options[i];
+  for (i = 0; i < pselt.options.length; ++i) {
+   poptions[i] = pselt.options[i];
   }
  }
- psel.options.length = 1;
- var selindex = 0;
+ pselt.options.length = 1;
+ pself.options.length = 1;
+ var indext = 0;
+ var indexf = 0;
  for (i = 1; i < poptions.length; ++i) {
+  // title is set by options.inc.php for data type 14 and will be 'Local' or 'External'.
   var local = poptions[i].title == 'Local';
-  if (eix == 1 && !local) continue;
-  if (eix == 2 &&  local) continue;
-  if (poptions[i].value == pvalue) selindex = psel.options.length;
-  psel.options[psel.options.length] = poptions[i];
+  // refer_to is nonlocal iff type is outgoing external
+  if (rtval == '2' && !local || rtval != '2' && local) {
+   if (poptions[i].value == pvaluet) indext = pselt.options.length;
+   pselt.options[pselt.options.length] = poptions[i];
+  }
+  // refer_from is nonlocal iff type is incoming external.
+  if (rtval == '4' && !local || rtval != '4' && local) {
+   if (poptions[i].value == pvaluef) indexf = pself.options.length;
+   // We create another copy of the Option object here because using the
+   // same one in both lists causes strange browser behavior.
+   pself.options[pself.options.length] = new Option(poptions[i].text, poptions[i].value, false, false);
+  }
  }
- psel.selectedIndex = selindex;
+ pselt.selectedIndex = indext;
+ pself.selectedIndex = indexf;
 }
 ";
 }
