@@ -233,7 +233,11 @@ f.onsubmit = function () { return mysubmit(); };
 // Generate default for client status.
 //
 function LBFgcac_default_client_status() {
-  return _LBFgcac_recent_default('client_status');
+  global $formid;
+  if ($formid) return '';
+  $cs = _LBFgcac_recent_default('client_status');
+  if (empty($cs)) return 'maaa';
+  return $cs;
 }
 
 // Generate default for visit type.  If there are no recent prior visits,
