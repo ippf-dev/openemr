@@ -1834,4 +1834,5 @@ $GLOBALS_METADATA = array(
     ),
   ),    
 );
+require_once($webserver_root."/ippf/globals_metadata/ippf_global_metadata.php");
 ?>
