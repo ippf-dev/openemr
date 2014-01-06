@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009-2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2010, 2013 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -23,8 +23,24 @@ function display_desc($desc) {
   return $desc;
 }
 
-function thisLineItem($patient_id, $encounter_id, $description, $transdate, $qty, $cypfactor, $irnumber='') {
+function thisLineItem($patient_id, $encounter_id, $description, $transdate, $qty, $related_code, $irnumber='') {
   global $product, $productcyp, $producttotal, $productqty, $grandtotal, $grandqty;
+
+  // Look up the CYP factor for the related IPPF code.
+  $cypfactor = 0;
+  $relcodes = explode(';', $related_code);
+  foreach ($relcodes as $relstring) {
+    if ($relstring === '') continue;
+    list($reltype, $relcode) = explode(':', $relstring);
+    if ($reltype !== 'IPPF') continue;
+    $tmprow = sqlQuery("SELECT cyp_factor FROM codes WHERE " .
+      "code_type = '11' AND code = '$relcode' LIMIT 1");
+    $cypfactor = empty($tmprow['cyp_factor']) ? 0 : (0 + $tmprow['cyp_factor']);
+    if ($cypfactor) break;
+  }
+
+  // If not for contraception, skip this item.
+  if (!$cypfactor) return;
 
   $invnumber = empty($irnumber) ? "$patient_id.$encounter_id" : $irnumber;
   $rowcyp    = sprintf('%01.2f', $cypfactor);
@@ -103,8 +119,7 @@ function thisLineItem($patient_id, $encounter_id, $description, $transdate, $qty
    <?php echo formatcyp($rowresult); ?>
   </td>
  </tr>
-<?php
-
+<?
     } // End not csv export
   } // end details
   $producttotal += $rowresult;
@@ -167,7 +182,7 @@ else { // not export
   $query = "SELECT id, name FROM facility ORDER BY name";
   $fres = sqlStatement($query);
   echo "   <select name='form_facility'>\n";
-  echo "    <option value=''>-- All Facilities --\n";
+  echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
   while ($frow = sqlFetchArray($fres)) {
     $facid = $frow['id'];
     echo "    <option value='$facid'";
@@ -210,24 +225,24 @@ else { // not export
 
  <tr bgcolor="#dddddd">
   <td class="dehead">
-   <?php xl('Item','e') ?>
+   <?xl('Item','e')?>
   </td>
 <?php if ($_POST['form_details']) { ?>
   <td class="dehead">
-   <?php xl('Date','e') ?>
+   <?xl('Date','e')?>
   </td>
   <td class="dehead">
-   <?php xl('Invoice','e') ?>
+   <?xl('Invoice','e')?>
   </td>
 <?php } ?>
   <td class="dehead" align="right">
-   <?php xl('Qty','e') ?>
+   <?xl('Qty','e')?>
   </td>
   <td class="dehead" align="right">
-   <?php xl('CYP','e') ?>
+   <?xl('CYP','e')?>
   </td>
   <td class="dehead" align="right">
-   <?php xl('Result','e') ?>
+   <?xl('Result','e')?>
   </td>
  </tr>
 <?php
@@ -248,9 +263,9 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   $grandqty = 0;
 
   $query = "SELECT b.pid, b.encounter, b.code_type, b.code, b.units, " .
-    "b.code_text, c.cyp_factor, fe.date, fe.facility_id, fe.invoice_refno " .
+    "b.code_text, c.related_code, fe.date, fe.facility_id, fe.invoice_refno " .
     "FROM billing AS b " .
-    "JOIN codes AS c ON c.code_type = '12' AND c.code = b.code AND c.modifier = b.modifier AND c.cyp_factor > 0 " .
+    "JOIN codes AS c ON c.code_type = '12' AND c.code = b.code AND c.modifier = b.modifier AND c.related_code != '' " .
     "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter " .
     "WHERE b.code_type = 'MA' AND b.activity = 1 AND " .
     "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
@@ -264,14 +279,14 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   while ($row = sqlFetchArray($res)) {
     thisLineItem($row['pid'], $row['encounter'],
       $row['code'] . ' ' . $row['code_text'],
-      substr($row['date'], 0, 10), $row['units'], $row['cyp_factor'],
+      substr($row['date'], 0, 10), $row['units'], $row['related_code'],
       $row['invoice_refno']);
   }
   //
   $query = "SELECT s.sale_date, s.quantity, s.pid, s.encounter, " .
-    "d.name, d.cyp_factor, fe.date, fe.facility_id, fe.invoice_refno " .
+    "d.name, d.related_code, fe.date, fe.facility_id, fe.invoice_refno " .
     "FROM drug_sales AS s " .
-    "JOIN drugs AS d ON d.drug_id = s.drug_id AND d.cyp_factor > 0 " .
+    "JOIN drugs AS d ON d.drug_id = s.drug_id AND d.related_code != '' " .
     "JOIN form_encounter AS fe ON " .
     "fe.pid = s.pid AND fe.encounter = s.encounter AND " .
     "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59' " .
@@ -285,7 +300,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   $res = sqlStatement($query);
   while ($row = sqlFetchArray($res)) {
     thisLineItem($row['pid'], $row['encounter'], $row['name'],
-      substr($row['date'], 0, 10), $row['quantity'], $row['cyp_factor'],
+      substr($row['date'], 0, 10), $row['quantity'], $row['related_code'],
       $row['invoice_refno']);
   }
 
@@ -330,8 +345,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   </td>
  </tr>
 
-<?php
-
+<?
   } // End not csv export
 } // end report generation
 
@@ -346,7 +360,7 @@ if (! $_POST['form_csvexport']) {
 <!-- stuff for the popup calendar -->
 <style type="text/css">@import url(../../library/dynarch_calendar.css);</style>
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
-<?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
+<script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
 <script language="Javascript">
  Calendar.setup({inputField:"form_from_date", ifFormat:"%Y-%m-%d", button:"img_from_date"});
