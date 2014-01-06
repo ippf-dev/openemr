@@ -100,7 +100,7 @@ else { // not export
 </style>
 <script type="text/javascript" src="../../library/textformat.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
-<?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
+<script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
 <script language="JavaScript">
  var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
@@ -128,7 +128,7 @@ else { // not export
  $query = "SELECT id, name FROM facility ORDER BY name";
  $fres = sqlStatement($query);
  echo "   <select name='form_facility'>\n";
- echo "    <option value=''>-- All Facilities --\n";
+ echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
  while ($frow = sqlFetchArray($fres)) {
   $facid = $frow['id'];
   echo "    <option value='$facid'";
@@ -151,7 +151,7 @@ else { // not export
   </td>
   <td colspan='3' valign='top' class='detail' nowrap>
 <?php
-foreach (array(1 => 'Screen', 2 => 'Printer', 3 => 'Export File') as $key => $value) {
+foreach (array(1 => xl('Screen'), 2 => xl('Printer'), 3 => xl('Export File')) as $key => $value) {
   echo "   <input type='radio' name='form_output' value='$key'";
   if ($key == $form_output) echo ' checked';
   echo " />$value &nbsp;";
