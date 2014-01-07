@@ -938,8 +938,10 @@ function removeOptionSelected(EncounterId)
   }
   selobj.selectedIndex = 0;
  }
+ <?php require_once($webserver_root."/ippf/menu/ippf_menu_additions.php"); ?>
 // Treeview activation stuff:
 $(document).ready(function(){
+  setup_ippf_custom();
   if(3 == <?php echo $GLOBALS['concurrent_layout'] ?>){
     $("#navigation-slide > li > a.collapsed + ul").slideToggle("medium");
     $("#navigation-slide > li > ul > li > a.collapsed_lv2 + ul").slideToggle("medium");
