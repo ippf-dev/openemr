@@ -1350,3 +1350,4 @@ expand_collapse_widget($widgetTitle, $widgetLabel, $widgetButtonLabel,
 
 </body>
 </html>
+<?php require_once($webserver_root."/ippf/demographics/layout_updates.php"); ?>
