@@ -421,8 +421,13 @@ while ($frow = sqlFetchArray($fres)) {
   $field_id   = $frow['field_id'];
   $list_id    = $frow['list_id'];
   $currvalue  = '';
-
-  if (strpos($field_id, 'em_') === 0) {
+  
+// New client home facility defaults to user's facility.
+  if ($field_id == 'home_facility') {
+    $tmp = sqlQuery("SELECT facility_id FROM users WHERE id = '" . $_SESSION['authUserID'] . "'");
+    if (!empty($tmp['facility_id'])) $currvalue = $tmp['facility_id'];
+  }
+  else if (strpos($field_id, 'em_') === 0) {
     $tmp = substr($field_id, 3);
     if (isset($result2[$tmp])) $currvalue = $result2[$tmp];
   }
