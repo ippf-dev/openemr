@@ -11,6 +11,15 @@ class POSRef {
 	}
 	
 	function init_pos() {
+
+                // Use POS codes from the database if they exist there.
+                $res = sqlStatement("SELECT option_id, title, notes FROM list_options " .
+                  "WHERE list_id = 'posref' ORDER BY seq, option_id");
+                while ($row = sqlFetchArray($res)) {
+                  $pos[] = array('code' => $row['option_id'], 'title' => xl_list_label($row['title']), 'description' => $row['notes']);
+                }
+                if (!empty($pos)) return $pos;
+
 		$pos = array();
 		$pos[] = array ("code" => "01","title" => "Unassigned", "description" => "N/A");
 		$pos[] = array ("code" => "02","title" => "Unassigned", "description" => "N/A");
