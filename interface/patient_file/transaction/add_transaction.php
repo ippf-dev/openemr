@@ -202,9 +202,18 @@ function set_related(codetype, code, selector, codedesc) {
 
 // This invokes the find-code popup.
 function sel_related(e) {
- current_sel_name = e.name;
- dlgopen('../encounter/find_code_popup.php<?php if ($GLOBALS['ippf_specific']) echo '?codetype=REF' ?>', '_blank', 500, 400);
-}
+    current_sel_name = e.name;
+    var parms = '';
+    <?php if ($GLOBALS['ippf_specific']) { ?>
+        // This case wants to force specific referral code types.
+        var f = document.forms[0];
+        var rtval = f.form_refer_external.value;
+        if (rtval == '2') // outbound external
+        parms = '?codetype=REF';
+        else
+        parms = '?codetype=MA';
+    <?php } ?>
+dlgopen('../encounter/find_code_popup.php' + parms, '_blank', 500, 400);}
 
 // Process click on Delete link.
 function deleteme() {
@@ -292,6 +301,11 @@ div.tab {
                     <span><?php echo htmlspecialchars( xl('Cancel'), ENT_NOQUOTES); ?></span>
                 </a>
             </td>
+             <td>
+                <a href=""  class="css_button" onclick="newEvt()">
+                    <span><?php echo htmlspecialchars( xl('New Appointment'), ENT_NOQUOTES); ?></span>
+                </a>
+            </td>
         </tr>
 	</table>
 
@@ -342,8 +356,8 @@ while ($frow = sqlFetchArray($fres)) {
   $currvalue  = '';
   if (isset($trow[$field_id])) $currvalue = $trow[$field_id];
 
-  // Handle special-case default values.
-  if (!$currvalue && !$transid) {
+  // Handle special-case default values... except IPPF does not want these.
+  if (!$currvalue && !$transid && !$GLOBALS['ippf_specific']) {
     if ($field_id == 'refer_date') {
       $currvalue = date('Y-m-d');
     }
@@ -486,6 +500,31 @@ if (function_exists('REF_javascript_onload')) {
   call_user_func('REF_javascript_onload');
 }
 ?>
+
+// Open the add-event dialog.
+function newEvt() {
+    top.restoreSession()
+    var f = document.forms[0];
+    var rtval = f.form_refer_external.value;
+    var url = '../../main/calendar/add_edit_event.php?patientid=<?php echo $pid ?>';
+    if (f.form_refer_reply_date && f.form_refer_reply_date.value) {
+    var dt = f.form_refer_reply_date.value.replace(/\D/g, '');
+    url += '&date=' + dt;
+    }
+    if (rtval == '4' || rtval == '5') { // inbound referral
+    if (f.form_refer_to && f.form_refer_to.value) {
+    url += '&userid=' + parseInt(f.form_refer_to.value);
+    }
+    }
+    else {
+    if (f.form_refer_from && f.form_refer_from.value) {
+    url += '&userid=' + parseInt(f.form_refer_from.value);
+    }
+    }
+    dlgopen(url, '_blank', 600, 300);
+    return false;
+}
+
 
 </script>
 
