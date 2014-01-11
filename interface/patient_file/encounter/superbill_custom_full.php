@@ -248,10 +248,30 @@ function validEntry(f) {
   return false;
  }
 <?php if ($GLOBALS['ippf_specific']) { ?>
- if (f.code_type.value == 12 && !f.related_code.value) {
-  alert('<?php echo addslashes( xl('A related IPPF code is required!') ); ?>');
-  return false;
- }
+/* 
+ * Code_type 12 for IPPF is an MA(Member association code
+ * These codes are required to have one and only one related IPPF codes
+ */
+ if (f.code_type.value == 12) {
+    // Count related IPPF codes. Must be 1.
+    var icount = 0;
+    var i = 0;
+    while (i >= 0) {
+        i = f.related_code.value.indexOf('IPPF',i);
+        if (i >= 0) {
+        ++icount;
+        ++i;
+        }
+    }
+    if (icount < 1) {
+        alert('<?php echo xla('A related IPPF code is required!'); ?>');
+        return false;
+    }
+    if (icount > 1) {
+        alert('<?php echo xla('Only one related IPPF code is allowed!'); ?>');
+        return false;
+    }
+}
 <?php } ?>
  return true;
 }
@@ -307,11 +327,12 @@ function submitModify(code_type_name,code,id) {
 
 
 
-function submitDelete(id) {
- var f = document.forms[0];
- f.mode.value = 'delete';
- f.code_id.value = id;
- f.submit();
+function submitDelete(id, code, text) {
+    if (!confirm('<?php echo addslashes(xl('Do you really want to delete service')); ?> ' + code + ' "' + text + '"?')) return;
+    var f = document.forms[0];
+    f.mode.value = 'delete';
+    f.code_id.value = id;
+    f.submit();
 }
 
 function getCTMask() {
@@ -647,7 +668,11 @@ if (!empty($all)) {
       echo "  <td align='right'><a class='link' href='javascript:submitModify(\"" . attr($iter['code_type_name']) . "\",\"" . attr($iter['code']) . "\",\"" . attr($iter['id']) . "\")'>[" . xlt('Modify') . "]</a></td>\n";
     }
     else {
-      echo "  <td align='right'><a class='link' href='javascript:submitDelete(" . attr($iter['id']) . ")'>[" . xlt('Delete') . "]</a></td>\n";
+      echo " <td align='right'><a class='link' href='javascript:submitDelete(" .
+             $iter['id'] .
+             ", \"" . attr($iter['code' ]) . "\"" .
+             ", \"" . attr($iter['code_text']) . "\"" .
+             ")'>[" . xlt('Delete') . "]</a></td>\n";
       echo "  <td align='right'><a class='link' href='javascript:submitEdit("   . attr($iter['id']) . ")'>[" . xlt('Edit') . "]</a></td>\n";
     }
 
