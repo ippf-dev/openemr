@@ -416,7 +416,7 @@ if ($_POST['form_save'] || $_REQUEST['receipt']) {
 <br><?php echo text($frow['street']) ?>
 <br><?php echo text($frow['city'] . ', ' . $frow['state']) . ' ' .
     text($frow['postal_code']) ?>
-<br><?php echo htmlentities($frow['phone']) ?>
+<br><?php echo text($frow['phone']) ?>
 
 <p>
 <table border='0' cellspacing='8'>
