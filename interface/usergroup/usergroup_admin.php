@@ -12,6 +12,18 @@ $bg_msg = '';
 $set_active_msg=0;
 $show_message=0;
 
+// This is called by usort().
+// Sorts according to the value in $_POST['form_orderby'].
+function userCmp($a, $b) {
+  global $form_orderby;
+  if ($a[$form_orderby] < $b[$form_orderby]) return -1;
+  if ($a[$form_orderby] > $b[$form_orderby]) return  1;
+  if ($a['username'] < $b['username']) return -1;
+  if ($a['username'] > $b['username']) return  1;
+  return 0;
+}
+
+$form_orderby = empty($_POST['form_orderby']) ? 'username' : $_POST['form_orderby'];
 
 /* Sending a mail to the admin when the breakglass user is activated only if $GLOBALS['Emergency_Login_email'] is set to 1 */
 $bg_count=count($access_group);
@@ -372,7 +384,7 @@ $(document).ready(function(){
 	$(".iframe_medium").fancybox( {
 		'overlayOpacity' : 0.0,
 		'showCloseButton' : true,
-		'frameHeight' : 450,
+		'frameHeight' : 480,
 		'frameWidth' : 660
 	});
 	
@@ -384,13 +396,19 @@ $(document).ready(function(){
 
 </script>
 <script language="JavaScript">
-
 function authorized_clicked() {
  var f = document.forms[0];
  f.calendar.disabled = !f.authorized.checked;
  f.calendar.checked  =  f.authorized.checked;
 }
 
+function dosort(orderby) {
+ var f = document.userlist;
+ f.form_orderby.value = orderby;
+ top.restoreSession();
+ f.submit();
+ return false;
+}
 </script>
 
 </head>
@@ -414,6 +432,7 @@ function authorized_clicked() {
 <form name='userlist' method='post' action='usergroup_admin.php' onsubmit='return top.restoreSession()'>
     <input type='checkbox' name='form_inactive' value='1' onclick='submit()' <?php if ($form_inactive) echo 'checked '; ?>/>
     <span class='text' style = "margin-left:-3px"> <?php xl('Include inactive users','e'); ?> </span>
+    <input type="hidden" name="form_orderby" value="<?php echo $form_orderby ?>" />
 </form>
 <?php
 if($set_active_msg == 1){
@@ -423,36 +442,82 @@ if ($show_message == 1){
  echo "<font class='alert'>".xl('The following Emergency Login User is activated:')." "."<b>".$_GET['fname']."</b>"."</font><br>";
  echo "<font class='alert'>".xl('Emergency Login activation email will be circulated only if following settings in the interface/globals.php file are configured:')." \$GLOBALS['Emergency_Login_email'], \$GLOBALS['Emergency_Login_email_id']</font>";
 }
-
+function create_sortable_header($text,$field,$width)
+{?>
+    <th class="bold" width="<?php echo $width;?>" valign="top">
+        <a href="#" onclick="return dosort('<?php echo $field;?>')"
+        <?php if ($form_orderby == '<?php echo $field;?>') echo " style='color:#00cc00'"; ?>>
+        <?php echo $text; ?></a>
+    </th>  
+<?php
+}
 ?>
 <table cellpadding="1" cellspacing="0" class="showborder">
 	<tbody><tr height="22" class="showborder_head">
-		<th width="180px"><b><?php xl('Username','e'); ?></b></th>
-		<th width="270px"><b><?php xl('Real Name','e'); ?></b></th>
-		<th width="320px"><b><span class="bold"><?php xl('Additional Info','e'); ?></span></b></th>
-		<th><b><?php xl('Authorized','e'); ?>?</b></th>
+                <?php 
+                    create_sortable_header(xlt("Username"),"username","12%"); 
+                    create_sortable_header(xlt("Real Name"),"realname","12%"); 
+                    create_sortable_header(xlt("Job Description"),"specialty","16%"); 
+                ?>
+                    <th class="bold" valign="top" width="12%"><?php echo xl('Provider'); ?>?</th>
+                <?php
+                    create_sortable_header(xlt("Facility"),"facname","12%"); 
+                    create_sortable_header(xlt("Warehouse"),"whname","12%"); 
+                    create_sortable_header(xlt("Invoice Pool"),"irnpname","12%"); 
+                    create_sortable_header(xlt("Access Groups"),"acl_groups","12%"); 
+                ?>
 
-		<?php
-$query = "SELECT * FROM users WHERE username != '' ";
-if (!$form_inactive) $query .= "AND active = '1' ";
-$query .= "ORDER BY username";
+<?php
+$query = "SELECT u.*, f.name AS facname, l1.title AS whname, l2.title AS irnpname " .
+  "FROM users AS u " .
+  "LEFT JOIN facility AS f ON f.id = u.facility_id " .
+  "LEFT JOIN list_options AS l1 ON l1.list_id = 'warehouse' AND l1.option_id = u.default_warehouse " .
+  "LEFT JOIN list_options AS l2 ON l2.list_id = 'irnpool'   AND l2.option_id = u.irnpool " .
+  "WHERE username != '' ";
+if (!$form_inactive) $query .= "AND u.active = '1' ";
+$query .= "ORDER BY u.username";
 $res = sqlStatement($query);
-for ($iter = 0;$row = sqlFetchArray($res);$iter++)
+
+$result4 = array();
+for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
+  $acl_groups = '';
+  if (isset($phpgacl_location)) {
+    $username_acl_groups = acl_get_group_titles($row['username']);
+    foreach ($username_acl_groups AS $uagname) {
+      if ($acl_groups !== '') $acl_groups .= '<br />';
+      $acl_groups .= htmlspecialchars(xl_gacl_group($uagname));
+    }
+  }
+  $row['acl_groups'] = $acl_groups;
+  $row['realname'] = $row['fname'] . ' ' . $row['lname'];
   $result4[$iter] = $row;
+}
+
+usort($result4, 'userCmp');
+
+function attr_nbsp($val)
+{
+    return empty($val) ? "&nbsp;" : text($val);
+}
 foreach ($result4 as $iter) {
   if ($iter{"authorized"}) {
     $iter{"authorized"} = xl('yes');
   } else {
       $iter{"authorized"} = "";
   }
-  print "<tr height=20  class='text' style='border-bottom: 1px dashed;'>
-		<td class='text'><b><a href='user_admin.php?id=" . $iter{"id"} .
-    "' class='iframe_medium' onclick='top.restoreSession()'><span>" . $iter{"username"} . "</span></a></b>" ."&nbsp;</td>
-	<td><span class='text'>" .$iter{"fname"} . ' ' . $iter{"lname"}."</span>&nbsp;</td>
-	<td><span class='text'>" .$iter{"info"} . "</span>&nbsp;</td>
-	<td align='left'><span class='text'>" .$iter{"authorized"} . "</span>&nbsp;</td>";
-  print "<td><!--<a href='usergroup_admin.php?mode=delete&id=" . $iter{"id"} .
-    "' class='link_submit'>[Delete]</a>--></td>";
+  echo "<tr style='border-bottom: 1px dashed;'>" .
+    "<td class='text' valign='top'>" . htmlspecialchars($iter["username"]) .
+    "<a href='user_admin.php?id=" . $iter["id"] .
+    "' class='iframe_medium' onclick='top.restoreSession()'>(" . xl('Edit') . ")</a></td>" .
+    "<td class='text' valign='top'>" . attr_nbsp($iter['realname']) . "</td>" .
+    "<td class='text' valign='top'>" . attr_nbsp($iter["specialty"]) . "</td>" .
+    "<td class='text' valign='top'>" . ($iter["authorized"] ? xl('Yes') : '&nbsp;') . "</td>" .
+    "<td class='text' valign='top'>" . attr_nbsp($iter['facname']) . "</td>" .
+    "<td class='text' valign='top'>" . attr_nbsp($iter['whname']) . "</td>" .
+    "<td class='text' valign='top'>" . attr_nbsp($iter['irnpname']) . "</td>" .
+    "<td class='text' valign='top'>" . $iter['acl_groups'] . "</td>";
+  // print "<td><!--<a href='usergroup_admin.php?mode=delete&id=" . $iter{"id"} .
+  //   "' class='link_submit'>[Delete]</a>--></td>";
   print "</tr>\n";
 }
 ?>
