@@ -35,7 +35,7 @@ require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/date_functions.php");
 require_once("$srcdir/formdata.inc.php");
 require_once("../../custom/code_types.inc.php");
-require_once("$srcdir/calendar_events.inc.php");
+require_once("$srcdir/appointment_status.inc.php");
 require_once("$srcdir/options.inc.php");
 require_once("$srcdir/sl_eob.inc.php");
 
@@ -194,7 +194,7 @@ function receiptDetailLine($code_type, $code, $description, $quantity, $charge, 
 
   if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) {
     echo "  <td align='right'>" . oeFormatMoney($adjust,false,true) . "</td>\n";
-    echo "  <td align='right'>" . htmlspecialchars($memo) . "</td>\n";
+    echo "  <td align='right'>" . text($memo) . "</td>\n";
   }
 
   echo "  <td align='right'>" . oeFormatMoney($total) . "</td>\n";
@@ -228,10 +228,10 @@ function receiptPaymentLine($paydate, $amount, $description='', $method='') {
   echo "  <td>" . oeFormatShortDate($paydate) . "</td>\n";
   echo "  <td colspan='" .
        ($GLOBALS['gbl_checkout_line_adjustments'] ? 3 : 1) .
-       "' align='left'>" . htmlspecialchars($method) . "</td>\n";
+       "' align='left'>" . text($method) . "</td>\n";
   echo "  <td colspan='" .
        (1 + count($aTaxNames)) .
-       "' align='left'>" . htmlspecialchars($description) . "</td>\n";
+       "' align='left'>" . text($description) . "</td>\n";
   echo "  <td colspan='" .
        ($GLOBALS['gbl_checkout_line_adjustments'] ? 2 : 1) .
        "' align='right'>" . oeFormatMoney($amount) . "</td>\n";
@@ -485,7 +485,7 @@ body, td {
 <?php } ?>
 <?php
   foreach ($aTaxNames as $taxname) {
-    echo "  <td align='right'><b>" . htmlspecialchars($taxname) . "</b></td>\n";
+    echo "  <td align='right'><b>" . text($taxname) . "</b></td>\n";
   }
 ?>
 <?php if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) { ?>
@@ -696,7 +696,7 @@ body, td {
   if (!empty($GLOBALS['gbl_checkout_receipt_note'])) {
     echo "<p>";
     echo str_repeat('*', 80) . '<br />';
-    echo '&nbsp;&nbsp;' . htmlspecialchars($GLOBALS['gbl_checkout_receipt_note']) . '<br />';
+    echo '&nbsp;&nbsp;' . text($GLOBALS['gbl_checkout_receipt_note']) . '<br />';
     echo str_repeat('*', 80) . '<br />';
     echo "</p>";
   }
@@ -817,7 +817,7 @@ function write_form_headers() {
   <td align='right'><b><?php xl('Charge','e'); ?></b></td>
 <?php
   foreach ($taxes as $taxarr) {
-    echo "  <td align='right'><b>" . htmlspecialchars($taxarr[0]) . "</b></td>";
+    echo "  <td align='right'><b>" . text($taxarr[0]) . "</b></td>";
   }
 ?>
 <?php } else { ?>
@@ -825,7 +825,7 @@ function write_form_headers() {
   <td align='right'><b><?php xl('Charge','e'); ?></b></td>
 <?php
   foreach ($taxes as $taxarr) {
-    echo "  <td align='right'><b>" . htmlspecialchars($taxarr[0]) . "</b></td>";
+    echo "  <td align='right'><b>" . text($taxarr[0]) . "</b></td>";
   }
 ?>
   <td align='right'><b><?php xl('Adjustment','e'); ?></b></td>
@@ -976,11 +976,11 @@ function write_old_payment_line($pay_type, $date, $method, $reference, $amount) 
   }
   echo "  <td" .
        ($GLOBALS['gbl_checkout_line_adjustments'] ? " colspan='2'" : "") .
-       ">" . htmlspecialchars($pay_type ) . "</td>\n";
+       ">" . text($pay_type ) . "</td>\n";
   echo "  <td" .
        ($GLOBALS['gbl_checkout_line_adjustments'] ? " colspan='2'" : "") .
-       ">" . htmlspecialchars($method) . "</td>\n";
-  echo "  <td>" . htmlspecialchars($reference) . "</td>\n";
+       ">" . text($method) . "</td>\n";
+  echo "  <td>" . text($reference) . "</td>\n";
   echo "  <td align='right' colspan='" .
        (($GLOBALS['gbl_checkout_line_adjustments'] ? 2 : 1) + (count($taxes))) .
        "'><input type='text' name='oldpay[$lino][amount]' " .
@@ -1017,7 +1017,7 @@ $aCellHTML = array();
 if ($GLOBALS['gbl_checkout_line_adjustments']) {
   $aCellHTML[] = "&nbsp;";
 }
-$aCellHTML[] = "<span id='paytitle_%d'>" . htmlspecialchars(xl('New Payment')) . "</span>";
+$aCellHTML[] = "<span id='paytitle_%d'>" . text(xl('New Payment')) . "</span>";
 $aCellHTML[] = strtr(generate_select_list('payment[%d][method]', 'paymethod', '', '', ''), array("\n" => ""));
 $aCellHTML[] = "<input type='text' name='payment[%d][refno]' size='10' />";
 $aCellHTML[] = "<input type='text' name='payment[%d][amount]' size='6' style='text-align:right' onkeyup='setComputedValues()' />";
