@@ -6,7 +6,10 @@
 // as published by the Free Software Foundation; either version 2
 // of the License, or (at your option) any later version.
 
-function oeFormatMoney($amount, $symbol=false) {
+function oeFormatMoney($amount, $symbol=false, $blankifzero=false) {
+  // Workaround for results of -0.00.
+  if (round($amount, $GLOBALS['currency_decimals']) == 0) $amount = 0;
+  if ($amount == 0 && $blankifzero) return '';  
   $s = number_format($amount,
     $GLOBALS['currency_decimals'],
     $GLOBALS['currency_dec_point'],
