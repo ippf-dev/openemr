@@ -145,7 +145,7 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
 				//
 
 				$query = "SELECT id, lname, fname FROM users WHERE ".
-				  "authorized = 1 $provider_facility_filter ORDER BY lname, fname"; //(CHEMED) facility filter
+				  " active=1 AND authorized = 1 $provider_facility_filter ORDER BY lname, fname"; //(CHEMED) facility filter
 
 				$ures = sqlStatement($query);
 
