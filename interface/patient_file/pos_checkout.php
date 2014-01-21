@@ -721,9 +721,9 @@ body, td {
 <?php } ?>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <?php if ($details) { ?>
-<a href='pos_checkout.php?details=0&ptid=<?php echo $patient_id; ?>&enc=<?php echo $encounter; ?>'><?php xl('Hide Details','e'); ?></a>
+<a href='pos_checkout.php?details=0&ptid=<?php echo $patient_id; ?>&enc=<?php echo attr($encounter); ?>' onclick='top.restoreSession()'><?php xl('Hide Details','e'); ?></a>
 <?php } else { ?>
-<a href='pos_checkout.php?details=1&ptid=<?php echo $patient_id; ?>&enc=<?php echo $encounter; ?>'><?php xl('Show Details','e'); ?></a>
+<a href='pos_checkout.php?details=1&ptid=<?php echo $patient_id; ?>&enc=<?php echo attr($encounter); ?>' onclick='top.restoreSession()'><?php xl('Show Details','e'); ?></a>
 <?php } ?>
 </p>
 </div>
