@@ -1222,7 +1222,7 @@ if ($_POST['form_save']) {
         $refno  = $line['refno'];
         if ($method !== '' && $refno !== '') $method .= " $refno";
         $session_id = 0; // Is this OK?
-        arPostPayment($form_pid, $form_encounter, $session_id, $amount, '', 0, $method, 0, $time, $postdate);
+        arPostPayment($form_pid, $form_encounter, $session_id, $amount, '', 0, $method, 0, $time,'', $postdate);
       }
     }
   }
