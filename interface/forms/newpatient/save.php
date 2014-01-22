@@ -38,6 +38,8 @@ $billing_facility = (isset($_POST['billing_facility']))     ? $_POST['billing_fa
 $reason           = (isset($_POST['reason']))               ? $_POST['reason'] : '';
 $mode             = (isset($_POST['mode']))                 ? $_POST['mode'] : '';
 $referral_source  = (isset($_POST['form_referral_source'])) ? $_POST['form_referral_source'] : '';
+$shift            = (isset($_POST['form_shift']))           ? $_POST['form_shift'] : '';
+$voucher_number   = (isset($_POST['form_voucher_number']))  ? $_POST['form_voucher_number'] : '';
 
 $facilityresult = sqlQuery("select name FROM facility WHERE id = ?", array($facility_id));
 $facility = $facilityresult['name'];
@@ -64,6 +66,8 @@ if ($mode == 'new')
       "billing_facility = '" . add_escape_custom($billing_facility) . "', " .
       "sensitivity = '" . add_escape_custom($sensitivity) . "', " .
       "referral_source = '" . add_escape_custom($referral_source) . "', " .
+      "shift = '" . add_escape_custom($shift) . "', " .            
+      "voucher_number = '" . add_escape_custom($voucher_number) . "', " .            
       "pid = '" . add_escape_custom($pid) . "', " .
       "encounter = '" . add_escape_custom($encounter) . "', " .
       "provider_id = '" . add_escape_custom($provider_id) . "'"),
@@ -88,6 +92,8 @@ else if ($mode == 'update')
     "facility_id = '" . add_escape_custom($facility_id) . "', " .
     "billing_facility = '" . add_escape_custom($billing_facility) . "', " .
     "sensitivity = '" . add_escape_custom($sensitivity) . "', " .
+    "shift = '" . add_escape_custom($shift) . "', " .            
+    "voucher_number = '" . add_escape_custom($voucher_number) . "', " .     
     "referral_source = '" . add_escape_custom($referral_source) . "' " .
     "WHERE id = '" . add_escape_custom($id) . "'");
 }
