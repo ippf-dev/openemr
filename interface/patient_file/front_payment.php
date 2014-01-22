@@ -177,7 +177,7 @@ function postPayment($form_pid, $enc, $form_method, $form_source, $amount, $post
     if ($form_source) $thissrc .= " $form_source";
   }
   $session_id = 0; // Is this OK?
-  arPostPayment($form_pid, $enc, $session_id, $amount, '', 0, $thissrc, 0, $post_time, $post_date);
+  arPostPayment($form_pid, $enc, $session_id, $amount, '', 0, $thissrc, 0, $post_time, '', $post_date);
 }
 
 function getListTitle($list, $option) {
