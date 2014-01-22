@@ -135,7 +135,7 @@ function cancelClicked() {
 <?php } ?>
 
 <!-- Required for the popup date selectors -->
-<div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>
+<div id="overDiv" style="position:absolute; display:none; z-index:1000;"></div>
 
 <form method='post' action="<?php echo $rootdir ?>/forms/newpatient/save.php" name='new_encounter'
  <?php if (!$GLOBALS['concurrent_layout']) echo "target='Main'"; ?>>
@@ -182,7 +182,7 @@ function cancelClicked() {
   <td width='34%' rowspan='2' align='center' valign='center' class='text'>
    <table>
 
-    <tr<?php if ($GLOBALS['athletic_team']) echo " style='visibility:hidden;'"; ?>>
+    <tr<?php if ($GLOBALS['athletic_team']) echo " style='display:none;'"; ?>>
      <td class='bold' nowrap><?php echo xlt('Visit Category:'); ?></td>
      <td class='text'>
       <select name='pc_catid' id='pc_catid'>
@@ -273,7 +273,7 @@ if ($fres) {
 ?>
     </tr>
 
-    <tr<?php if (!$GLOBALS['gbl_visit_referral_source']) echo " style='visibility:hidden;'"; ?>>
+    <tr<?php if (!$GLOBALS['gbl_visit_referral_source']) echo " style='display:none;'"; ?>>
      <td class='bold' nowrap><?php echo xlt('Referral Source'); ?>:</td>
      <td class='text'>
 <?php
@@ -294,8 +294,30 @@ if ($fres) {
         title='<?php echo xla('Click here to choose a date'); ?>'>
      </td>
     </tr>
+    
+    <tr>
+     <td class='bold' nowrap><?php echo xl('Voucher Number') . ':'; ?></td>
+     <td class='text' nowrap>
+      <input type='text' size='20' maxlength='255' name='form_voucher_number'
+       value='<?php echo $viewmode ? attr($result['voucher_number']) : ''; ?>'
+       title='<?php echo xl('Voucher or referral number'); ?>' />
+     </td>
+    </tr>
 
-    <tr<?php if ($GLOBALS['ippf_specific'] || $GLOBALS['athletic_team']) echo " style='visibility:hidden;'"; ?>>
+<?php
+  // We will show the shift selector only if the shift list is not empty.
+  $tmp = sqlQuery("SELECT COUNT(*) AS count FROM list_options WHERE list_id = 'shift'");
+?>
+    <tr<?php if (empty($tmp['count'])) echo " style='display:none;'"; ?>>
+     <td class='bold' nowrap><?php echo xlt('Shift'); ?>:</td>
+     <td class='text'>
+<?php
+  echo generate_select_list('form_shift', 'shift', $viewmode ? $result['shift'] : '', '');
+?>
+     </td>
+    </tr>
+
+    <tr<?php if ($GLOBALS['ippf_specific'] || $GLOBALS['athletic_team']) echo " style='display:none;'"; ?>>
      <td class='bold' nowrap><?php echo xlt('Onset/hosp. date:'); ?></td>
      <td class='text' nowrap><!-- default is blank so that while generating claim the date is blank. -->
       <input type='text' size='10' name='form_onset_date' id='form_onset_date'
