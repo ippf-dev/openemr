@@ -289,38 +289,38 @@ function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping=''
     "onclick='defClicked($opt_line_no)' class='optin'$checked />";
   echo "</td>\n";
 
-  // Tax rates, contraceptive methods and LBF names have an additional attribute.
+  // Tax rates, form names, contraceptive methods, adjustment reasons and facilities
+  // have an additional attribute.
   //
-  if ($list_id == 'taxrate' || $list_id == 'contrameth' || $list_id == 'lbfnames') {
-    echo "  <td align='center' class='optcell'>";
+  if ($list_id == 'taxrate' || $list_id == 'lbfnames') {
+    echo " <td align='center' class='optcell'>";
     echo "<input type='text' name='opt[$opt_line_no][value]' value='" .
         htmlspecialchars($value, ENT_QUOTES) . "' size='8' maxlength='15' class='optin' />";
     echo "</td>\n";
   }
-
-  // Adjustment reasons use option_value as a reason category.  This is
-  // needed to distinguish between adjustments that change the invoice
-  // balance and those that just shift responsibility of payment or
-  // are used as comments.
-  //
-  else if ($list_id == 'adjreason') {
-    echo "  <td align='center' class='optcell'>";
-    echo "<select name='opt[$opt_line_no][value]' class='optin'>";
-    foreach (array(
-      1 => xl('Charge adjustment'),
-      2 => xl('Coinsurance'),
-      3 => xl('Deductible'),
-      4 => xl('Other pt resp'),
-      5 => xl('Comment'),
-    ) as $key => $desc) {
-      echo "<option value='$key'";
-      if ($key == $value) echo " selected";
-      echo ">" . htmlspecialchars($desc) . "</option>";
-    }
-    echo "</select>";
+  else if ($list_id == 'contrameth' || $list_id == 'adjreason') {
+    $tmp = $value ? " checked" : "";
+    echo " <td align='center' class='optcell'>";
+    echo "<input type='checkbox' name='opt[$opt_line_no][value]' value='1' class='optin'$tmp />";
     echo "</td>\n";
   }
-
+  else if ($list_id == 'warehouse') {
+    echo " <td align='center' class='optcell'>\n";
+    // Build a drop-down list of facilities.
+    $query = "SELECT id, name FROM facility ORDER BY name";
+    $fres = sqlStatement($query);
+    echo " <select name='opt[$opt_line_no][value]'>\n";
+    echo " <option value='0'>-- " . xl('Unassigned') . " --\n";
+    while ($frow = sqlFetchArray($fres)) {
+    $facid = $frow['id'];
+    echo " <option value='$facid'";
+    if ($facid == $value) echo " selected";
+      echo ">" . $frow['name'] . "\n";
+    }
+    echo " </select>\n";
+    echo " </td>\n";
+  }
+  
   // Address book categories use option_value to flag category as a
   // person-centric vs company-centric vs indifferent.
   //
@@ -354,10 +354,11 @@ function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping=''
   // IPPF includes the ability to map each list item to a "master" identifier.
   // Sports teams use this for some extra info for fitness levels.
   //
-  if ($GLOBALS['ippf_specific'] || $list_id == 'fitness') {
+  if ($GLOBALS['ippf_specific'] || $list_id == 'fitness' || $list_id == 'lbfnames') {
     echo "  <td align='center' class='optcell'>";
     echo "<input type='text' name='opt[$opt_line_no][mapping]' value='" .
-        htmlspecialchars($mapping, ENT_QUOTES) . "' size='12' maxlength='15' class='optin' />";
+        htmlspecialchars($mapping, ENT_QUOTES) . 
+            "' size='12' maxlength='31' class='optin' />";
     echo "</td>\n";
   }
 
@@ -738,6 +739,20 @@ function mysubmit() {
    }
   }
  }
+ <?php if ($GLOBALS['ippf_specific']) { ?>
+    // This case requires the mapping for education to be numeric.
+    if (f.list_id.value == 'userlist2') {
+        for (var i = 1; f['opt[' + i + '][mapping]']; ++i) {
+            if (f['opt[' + i + '][id]'].value) {
+                var m = f['opt[' + i + '][mapping]'].value;
+                if (m.length != 1 || m < '0' || m > '9') {
+                    alert('<?php echo xl('Error: Global ID must be a digit on line') ?>' + ' ' + i);
+                    return;
+                }
+            }
+        }
+    }
+ <?php } ?> 
  f.submit();
 }
 
@@ -852,21 +867,28 @@ while ($row = sqlFetchArray($res)) {
 <?php if ($list_id == 'taxrate') { ?>
   <td><b><?php xl('Rate'   ,'e'); ?></b></td>
 <?php } else if ($list_id == 'contrameth') { ?>
-  <td><b><?php xl('Effectiveness','e'); ?></b></td>
+  <td><b><?php xl('Modern','e'); ?></b></td>
+<?php } else if ($list_id == 'adjreason') { ?>
+  <td><b><?php xl('After Taxes','e'); ?></b></td>
+<?php } else if ($list_id == 'warehouse') { ?>
+  <td><b><?php xl('Facility','e'); ?></b></td>
 <?php } else if ($list_id == 'lbfnames') { ?>
   <td title='<?php xl('Number of past history columns','e'); ?>'><b><?php xl('Repeats','e'); ?></b></td>
+<?php } ?>
+<?php if ($list_id == 'lbfnames') { ?>
+  <td><b><?php xl('Category','e'); ?></b></td>  
 <?php } else if ($list_id == 'fitness') { ?>
   <td><b><?php xl('Color:Abbr','e'); ?></b></td>
-<?php } else if ($list_id == 'adjreason' || $list_id == 'abook_type') { ?>
+
+<?php } else if ($list_id == 'abook_type') { ?>
   <td><b><?php xl('Type','e'); ?></b></td>
 <?php } else if ($list_id == 'immunizations') { ?>
   <td><b>&nbsp;&nbsp;&nbsp;&nbsp;<?php xl('CVX Code Mapping','e'); ?></b></td>
-<?php } if ($GLOBALS['ippf_specific']) { ?>
-  <td><b><?php xl('Global ID','e'); ?></b></td>
+<?php } else if ($GLOBALS['ippf_specific']) { ?>
+<td><b><?php xl('Global ID','e'); ?></b></td>
 <?php } ?>
-  <td><b><?php xl('Notes','e'); ?></b></td>
-  <td><b><?php xl('Code(s)','e'); ?></b></td>
-<?php } // end not fee sheet ?>
+<td><b><?php xl('Notes','e'); ?></b></td>        
+<?php } // end not feesheet nor code_types ?>
  </tr>
 
 <?php 
