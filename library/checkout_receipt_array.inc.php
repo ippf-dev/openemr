@@ -145,7 +145,7 @@ function generateReceiptArray($patient_id, $encounter=0) {
   }
 
   // Compute numbers for summary on right side of page.
-  $head_begbal = get_patient_balance($patient_id, $encounter);
+  $head_begbal = get_patient_balance_excluding($patient_id, $encounter);
   $row = sqlQuery("SELECT SUM(fee) AS amount FROM billing WHERE " .
     "pid = '$patient_id' AND encounter = '$encounter' AND activity = 1 AND " .
     "code_type != 'COPAY'");

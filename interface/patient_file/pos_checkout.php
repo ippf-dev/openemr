@@ -401,7 +401,7 @@ body, td {
 
 <?php
   // Compute numbers for summary on right side of page.
-  $head_begbal = get_patient_balance($patient_id, $encounter);
+  $head_begbal = get_patient_balance_excluding($patient_id, $encounter);
   $row = sqlQuery("SELECT SUM(fee) AS amount FROM billing WHERE " .
     "pid = '$patient_id' AND encounter = '$encounter' AND activity = 1 AND " .
     "code_type != 'COPAY'");
@@ -774,7 +774,7 @@ function write_form_headers() {
    <br />&nbsp;
    <p>
 <?php
-  $prvbal = get_patient_balance($patient_id, $inv_encounter);
+  $prvbal = get_patient_balance_excluding($patient_id, $inv_encounter);
   echo xl('Previous Balance') . '&nbsp;&nbsp;&nbsp;&nbsp;';
   echo "<input type='text' value='" . oeFormatMoney($prvbal) . "' size='6' ";
   echo "style='text-align:right;background-color:transparent' readonly />\n";
