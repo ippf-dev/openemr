@@ -13,14 +13,34 @@ require_once("../../globals.php");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/api.inc");
 require_once("codes.php");
+require_once("$srcdir/forms.inc");
 require_once("../../../custom/code_types.inc.php");
 require_once("../../drugs/drugs.inc.php");
 require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/options.inc.php");
 require_once("$srcdir/formdata.inc.php");
+require_once("$srcdir/appointment_status.inc.php");
+require_once("$srcdir/classes/Prescription.class.php");
+
+// IPPF doesn't want any payments to be made or displayed in the Fee Sheet,
+// but we'll use this switch and keep the code in case someone wants it.
+$ALLOW_COPAYS = false;
 
 // Some table cells will not be displayed unless insurance billing is used.
 $usbillstyle = $GLOBALS['ippf_specific'] ? " style='display:none'" : "";
+$justifystyle = justify_is_used() ? "" : " style='display:none'";
+
+// This flag comes from the LBFmsivd form and perhaps later others.
+$rapid_data_entry = empty($_GET['rde']) ? 0 : 1;
+
+$alertmsg = '';
+
+// Get the user's default warehouse and an indicator if there's a choice of warehouses.
+$wrow = sqlQuery("SELECT count(*) AS count FROM list_options WHERE list_id = 'warehouse'");
+$got_warehouses = $wrow['count'] > 1;
+$wrow = sqlQuery("SELECT default_warehouse FROM users WHERE username = '" .
+  $_SESSION['authUser'] . "'");
+$default_warehouse = empty($wrow['default_warehouse']) ? '' : $wrow['default_warehouse'];
 
 // This may be an error message or warning that pops up when the form is loaded.
 $alertmsg = '';
@@ -53,31 +73,82 @@ function genDiagJS($code_type, $code) {
   }
 }
 
-// For IPPF only.  Returns 0 = none, 1 = nonsurgical, 2 = surgical.
+// Compute age in years given a DOB and "as of" date.
 //
-function contraceptionClass($code_type, $code) {
-  global $code_types;
-  if (!$GLOBALS['ippf_specific']) return 0;
-  $contra = 0;
-  // Get the related service codes.
-  $codesrow = sqlQuery("SELECT related_code FROM codes WHERE " .
-    "code_type = ? " .
-    " AND code = ? LIMIT 1", array($code_types[$code_type]['id'],$code) );
-  if (!empty($codesrow['related_code']) && $code_type == 'MA') {
-    $relcodes = explode(';', $codesrow['related_code']);
+function getAge($dob, $asof='') {
+  if (empty($asof)) $asof = date('Y-m-d');
+  $a1 = explode('-', substr($dob , 0, 10));
+  $a2 = explode('-', substr($asof, 0, 10));
+  $age = $a2[0] - $a1[0];
+  if ($a2[1] < $a1[1] || ($a2[1] == $a1[1] && $a2[2] < $a1[2])) --$age;
+  return $age;
+}
+
+// Compute a current checksum of Fee Sheet data from the database.
+//
+function visitChecksum($pid, $encounter) {
+  $rowb = sqlQuery("SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
+    "id, code, modifier, units, fee, authorized, provider_id, ndc_info, justify, billed" .
+    "))) AS checksum FROM billing WHERE " .
+    "pid = '$pid' AND encounter = '$encounter' AND activity = 1");
+  $rowp = sqlQuery("SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
+    "sale_id, inventory_id, prescription_id, quantity, fee, sale_date, billed" .
+    "))) AS checksum FROM drug_sales WHERE " .
+    "pid = '$pid' AND encounter = '$encounter'");
+  return (0 + $rowb['checksum']) ^ (0 + $rowp['checksum']);
+}
+
+function checkRelatedForContraception($related_code) {
+  global $line_contra_code, $line_contra_cyp, $line_contra_methtype;
+
+  $line_contra_code     = '';
+  $line_contra_cyp      = 0;
+  $line_contra_methtype = 0; // 0 = None, 1 = Not initial, 2 = Initial consult
+
+  if (!empty($related_code)) {
+    $relcodes = explode(';', $related_code);
     foreach ($relcodes as $relstring) {
       if ($relstring === '') continue;
       list($reltype, $relcode) = explode(':', $relstring);
       if ($reltype !== 'IPPF') continue;
-      if      (preg_match('/^11....110/'    , $relcode)) $contra |= 1;
-      else if (preg_match('/^11....999/'    , $relcode)) $contra |= 1;
-      else if (preg_match('/^112152010/'    , $relcode)) $contra |= 1;
-      else if (preg_match('/^11317[1-2]111/', $relcode)) $contra |= 1;
-      else if (preg_match('/^12118[1-2].13/', $relcode)) $contra |= 2;
-      else if (preg_match('/^12118[1-2]999/', $relcode)) $contra |= 2;
+      $methtype = 1;
+      if (
+        preg_match('/^11....110/'    , $relcode) ||
+        preg_match('/^11...[1-5]999/', $relcode) ||
+        preg_match('/^112152010/'    , $relcode) ||
+        preg_match('/^12118[1-2].13/', $relcode) ||
+        preg_match('/^121181999/'    , $relcode) ||
+        preg_match('/^122182.13/'    , $relcode) ||
+        preg_match('/^122182999/'    , $relcode) ||
+        preg_match('/^145212.10/'    , $relcode) ||
+        preg_match('/^14521.999/'    , $relcode)
+      ) {
+        $methtype = 2;
+      }
+      $tmprow = sqlQuery("SELECT cyp_factor FROM codes WHERE " .
+        "code_type = '11' AND code = '$relcode' LIMIT 1");
+      $cyp = 0 + $tmprow['cyp_factor'];
+      if ($cyp > $line_contra_cyp) {
+        // If surgical
+        if (preg_match('/^12/', $relcode)) {
+          // Identify the method with the IPPF code for the corresponding surgical procedure.
+          if ($relcode == '121181999') $relcode = '121181213';
+          if ($relcode == '122182999') $relcode = '122182213';
+          $relcode = substr($relcode, 0, 7) . '13';
+        }
+        else {
+          // Xavier confirms that the codes for Cervical Cap (112152010 and 112152011) are
+          // an unintended change in pattern, but at this point we have to live with it.
+          // -- Rod 2011-09-26
+          $relcode = substr($relcode, 0, 6) . '110';
+          if ($relcode == '112152110') $relcode = '112152010';
+        }
+        $line_contra_cyp      = $cyp;
+        $line_contra_code     = $relcode;
+        $line_contra_methtype = $methtype;
+      }
     }
   }
-  return $contra;
 }
 
 // This writes a billing line item to the output page.
@@ -87,7 +158,9 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
   $billed = FALSE, $code_text = NULL, $justify = NULL, $provider_id = 0, $notecodes='')
 {
   global $code_types, $ndc_applies, $ndc_uom_choices, $justinit, $pid;
-  global $contraception, $usbillstyle, $hasCharges;
+  global $usbillstyle, $justifystyle, $hasCharges, $required_code_count;
+  global $line_contra_code, $line_contra_cyp, $line_contra_methtype;
+  global $contraception_code, $contraception_cyp;
 
   if ($codetype == 'COPAY') {
     if (!$code_text) $code_text = 'Cash';
@@ -139,11 +212,32 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
     $ndc_info = '';
   }
   if ($id) {
-    echo "<input type='hidden' name='bill[".attr($lino)."][id]' value='$id'>";
+    echo "<input type='hidden' name='bill[".attr($lino)."][id]' value='$id' />";
   }
-  echo "<input type='hidden' name='bill[".attr($lino)."][code_type]' value='".attr($codetype)."'>";
-  echo "<input type='hidden' name='bill[".attr($lino)."][code]' value='".attr($code)."'>";
-  echo "<input type='hidden' name='bill[".attr($lino)."][billed]' value='".attr($billed)."'>";
+  echo "<input type='hidden' name='bill[".attr($lino)."][code_type]' value='".attr($codetype)."' />";
+  echo "<input type='hidden' name='bill[".attr($lino)."][code]' value='".attr($code)."' />";
+  echo "<input type='hidden' name='bill[".attr($lino)."][billed]' value='".attr($billed)."' />";
+
+  // This logic is only used for family planning clinics, and then only when
+  // the option is chosen to use or auto-generate Contraception forms.
+  // It adds contraceptive method and effectiveness to relevant lines.
+  if ($GLOBALS['ippf_specific'] && $GLOBALS['gbl_new_acceptor_policy'] && $codetype == 'MA') {
+    $codesrow = sqlQuery("SELECT related_code FROM codes WHERE " .
+      "code_type = '" . $code_types[$codetype]['id'] .
+      "' AND code = '$code' LIMIT 1");
+    checkRelatedForContraception($codesrow['related_code']);
+    if ($line_contra_code) {
+      echo "<input type='hidden' name='bill[$lino][method]' value='$line_contra_code' />";
+      echo "<input type='hidden' name='bill[$lino][cyp]' value='$line_contra_cyp' />";
+      echo "<input type='hidden' name='bill[$lino][methtype]' value='$line_contra_methtype' />";
+      // $contraception_code is only concerned with initial consults.
+      if ($line_contra_cyp > $contraception_cyp && $line_contra_methtype == 2) {
+        $contraception_cyp = $line_contra_cyp;
+        $contraception_code = $line_contra_code;
+      }
+    }
+  }
+  
   echo "</td>\n";
   if ($codetype != 'COPAY') {
     echo "  <td class='billcell'>$strike1" . text($code) . "$strike2</td>\n";
@@ -162,9 +256,7 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
       } else {
         echo "  <td class='billcell'>&nbsp;</td>\n";
       }
-    }
-    if (justifiers_are_used()) {
-      echo "  <td class='billcell' align='center'$usbillstyle>" . text($justify) . "</td>\n";
+      echo "  <td class='billcell' align='center'$justifystyle>$justify</td>\n";      
     }
 
     // Show provider for this line.
@@ -180,6 +272,9 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
     }
     echo "  <td class='billcell' align='center'$usbillstyle><input type='checkbox'" .
       ($auth ? " checked" : "") . " disabled /></td>\n";
+    if ($GLOBALS['gbl_auto_create_rx']) {
+      echo "  <td class='billcell' align='center'>&nbsp;</td>\n";
+    }    
     echo "  <td class='billcell' align='center'><input type='checkbox'" .
       " disabled /></td>\n";
   }
@@ -197,8 +292,8 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
     if (fees_are_used()) {
       if ($codetype == 'COPAY' || $code_types[$codetype]['fee'] || $fee != 0) {
         echo "  <td class='billcell' align='right'>" .
-          "<input type='text' name='bill[".attr($lino)."][price]' " .
-          "value='" . attr($price) . "' size='6'";
+          "<input type='text' name='bill[$lino][price]' " .
+          "value='" . attr($price) . "' size='6' onchange='setSaveAndClose()'";
         if (acl_check('acct','disc'))
           echo " style='text-align:right'";
         else
@@ -207,26 +302,24 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
         echo "  <td class='billcell' align='center'>";
         if ($codetype != 'COPAY') {
           echo "<input type='text' name='bill[".attr($lino)."][units]' " .
-          "value='" . attr($units) . "' size='2' style='text-align:right'>";
+          "value='" . attr($units). "' size='2' style='text-align:right'>";
         } else {
           echo "<input type='hidden' name='bill[".attr($lino)."][units]' value='" . attr($units) . "'>";
         }
         echo "</td>\n";
+        if ($code_types[$codetype]['just'] || $justify) {
+          echo "  <td class='billcell' align='center'$justifystyle>";
+          echo "<select name='bill[".attr($lino)."][justify]' onchange='setJustify(this)'>";
+          echo "<option value='" . attr($justify) . "'>" . text($justify) . "</option></select>";
+          echo "</td>\n";
+          $justinit .= "setJustify(f['bill[".attr($lino)."][justify]']);\n";
+        } else {
+          echo "  <td class='billcell'$justifystyle>&nbsp;</td>\n";
+        }
       } else {
         echo "  <td class='billcell'>&nbsp;</td>\n";
         echo "  <td class='billcell'>&nbsp;</td>\n";
-      }
-    }
-    if (justifiers_are_used()) {
-      if ($code_types[$codetype]['just'] || $justify) {
-        echo "  <td class='billcell' align='center'$usbillstyle ";
-        echo "title='" . xla("Select one or more diagnosis codes to justify the service") . "' >";
-        echo "<select name='bill[".attr($lino)."][justify]' onchange='setJustify(this)'>";
-        echo "<option value='" . attr($justify) . "'>" . text($justify) . "</option></select>";
-        echo "</td>\n";
-        $justinit .= "setJustify(f['bill[".attr($lino)."][justify]']);\n";
-      } else {
-        echo "  <td class='billcell'$usbillstyle>&nbsp;</td>\n";
+        echo "  <td class='billcell'$justifystyle>&nbsp;</td>\n"; // justify
       }
     }
 
@@ -243,6 +336,9 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
     }
     echo "  <td class='billcell' align='center'$usbillstyle><input type='checkbox' name='bill[".attr($lino)."][auth]' " .
       "value='1'" . ($auth ? " checked" : "") . " /></td>\n";
+    if ($GLOBALS['gbl_auto_create_rx']) {
+      echo "  <td class='billcell' align='center'>&nbsp;</td>\n";   // KHY: May need to confirm proper location of this cell
+    }    
     echo "  <td class='billcell' align='center'><input type='checkbox' name='bill[".attr($lino)."][del]' " .
       "value='1'" . ($del ? " checked" : "") . " /></td>\n";
   }
@@ -282,22 +378,27 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
     echo " </tr>\n";
   }
 
-  // For IPPF.  Track contraceptive services.
-  if (!$del) $contraception |= contraceptionClass($codetype, $code);
+  // For Family Planning.
+  if ($codetype == 'MA') ++$required_code_count;
 
   if ($fee != 0) $hasCharges = true;
 }
 
 // This writes a product (drug_sales) line item to the output page.
 //
-function echoProdLine($lino, $drug_id, $del = FALSE, $units = NULL,
-  $fee = NULL, $sale_id = 0, $billed = FALSE)
+function echoProdLine($lino, $drug_id, $rx = FALSE, $del = FALSE, $units = NULL,
+  $fee = NULL, $sale_id = 0, $billed = FALSE, $warehouse_id = '')
 {
-  global $code_types, $ndc_applies, $pid, $usbillstyle, $hasCharges;
+  global $code_types, $ndc_applies, $pid, $usbillstyle, $justifystyle, $hasCharges;
+  global $required_code_count, $line_contra_code, $line_contra_cyp, $line_contra_methtype;
+  global $got_warehouses, $default_warehouse;
 
-  $drow = sqlQuery("SELECT name FROM drugs WHERE drug_id = ?", array($drug_id) );
+  $drow = sqlQuery("SELECT name, related_code FROM drugs WHERE drug_id = ?", array($drug_id) );
   $code_text = $drow['name'];
-
+  
+  // If no warehouse ID passed, use the logged-in user's default.
+  if ($got_warehouses && $warehouse_id === '') $warehouse_id = $default_warehouse;
+  
   $fee = sprintf('%01.2f', $fee);
   if (empty($units)) $units = 1;
   $units = max(1, intval($units));
@@ -310,6 +411,18 @@ function echoProdLine($lino, $drug_id, $del = FALSE, $units = NULL,
   echo "<input type='hidden' name='prod[".attr($lino)."][sale_id]' value='" . attr($sale_id) . "'>";
   echo "<input type='hidden' name='prod[".attr($lino)."][drug_id]' value='" . attr($drug_id) . "'>";
   echo "<input type='hidden' name='prod[".attr($lino)."][billed]' value='" . attr($billed) . "'>";
+
+  // This logic is only used for family planning clinics, and then only when
+  // the option is chosen to use or auto-generate Contraception forms.
+  // It adds contraceptive method to relevant lines.
+  if ($GLOBALS['ippf_specific'] && $GLOBALS['gbl_new_acceptor_policy']) {
+    checkRelatedForContraception($drow['related_code']);
+    if ($line_contra_code) {
+      echo "<input type='hidden' name='prod[$lino][method]' value='$line_contra_code' />";
+      echo "<input type='hidden' name='prod[$lino][methtype]' value='$line_contra_methtype' />";
+    }
+  }
+  
   echo "</td>\n";
   echo "  <td class='billcell'>$strike1" . text($drug_id) . "$strike2</td>\n";
   if (modifiers_are_used(true)) {
@@ -320,18 +433,22 @@ function echoProdLine($lino, $drug_id, $del = FALSE, $units = NULL,
       echo "  <td class='billcell' align='right'>" . text(oeFormatMoney($price)) . "</td>\n";
       echo "  <td class='billcell' align='center'>" . text($units) . "</td>\n";
     }
-    if (justifiers_are_used()) {
-      echo "  <td class='billcell' align='center'$usbillstyle>&nbsp;</td>\n"; // justify
+    if (justifiers_are_used()) { // KHY Evaluate proper position/usage of if justifiers
+      echo "  <td class='billcell' align='center'$justifystyle>&nbsp;</td>\n"; // justify
     }
     echo "  <td class='billcell' align='center'>&nbsp;</td>\n";             // provider
     echo "  <td class='billcell' align='center'$usbillstyle>&nbsp;</td>\n"; // auth
+    if ($GLOBALS['gbl_auto_create_rx']) {
+      echo "  <td class='billcell' align='center'><input type='checkbox'" . // rx
+        " disabled /></td>\n";
+    }    
     echo "  <td class='billcell' align='center'><input type='checkbox'" .   // del
       " disabled /></td>\n";
   } else {
     if (fees_are_used()) {
       echo "  <td class='billcell' align='right'>" .
         "<input type='text' name='prod[".attr($lino)."][price]' " .
-        "value='" . attr($price) . "' size='6'";
+        "value='" . attr($price) . "' size='6' onchange='setSaveAndClose()'";
       if (acl_check('acct','disc'))
         echo " style='text-align:right'";
       else
@@ -343,10 +460,48 @@ function echoProdLine($lino, $drug_id, $del = FALSE, $units = NULL,
       echo "</td>\n";
     }
     if (justifiers_are_used()) {
-      echo "  <td class='billcell'$usbillstyle>&nbsp;</td>\n"; // justify
+      echo "  <td class='billcell'$justifystyle>&nbsp;</td>\n"; // justify
     }
+    // Generate warehouse selector if there is a choice of warehouses.
+    echo "  <td class='billcell' align='center'>";
+    if ($got_warehouses) {
+      // Normally would use generate_select_list() but it's not flexible enough here.
+      echo "<select name='prod[$lino][warehouse]'";
+      echo " onchange='warehouse_changed(this);'";
+      if ($sale_id) echo " disabled";
+      echo ">";
+      echo "<option value=''> </option>";
+      $lres = sqlStatement("SELECT * FROM list_options " .
+        "WHERE list_id = 'warehouse' ORDER BY seq, title");
+      while ($lrow = sqlFetchArray($lres)) {
+        $has_inventory = sellDrug($drug_id, 1, 0, 0, 0, 0, '', '', $lrow['option_id'], true);
+        echo "<option value='" . $lrow['option_id'] . "'";
+        if (((strlen($warehouse_id) == 0 && $lrow['is_default']) ||
+             (strlen($warehouse_id)  > 0 && $lrow['option_id'] == $warehouse_id)) &&
+            ($sale_id || $has_inventory))
+        {
+          echo " selected";
+        }
+        else {
+          // Disable this warehouse option if not selected and has no inventory.
+          if (!$has_inventory) echo " disabled";
+        }
+        echo ">" . xl_list_label($lrow['title']) . "</option>\n";
+      }
+      echo "</select>";
+    }
+    else {
+      echo "&nbsp;";
+    }
+    echo "</td>\n"; // KHY check for cell alignment provider vs. warehouse
+    
     echo "  <td class='billcell' align='center'>&nbsp;</td>\n"; // provider
     echo "  <td class='billcell' align='center'$usbillstyle>&nbsp;</td>\n"; // auth
+    if ($GLOBALS['gbl_auto_create_rx']) {
+      echo "  <td class='billcell' align='center'>" .
+        "<input type='checkbox' name='prod[$lino][rx]' value='1'" .
+        ($rx ? " checked" : "") . " /></td>\n";
+    }    
     echo "  <td class='billcell' align='center'><input type='checkbox' name='prod[".attr($lino)."][del]' " .
       "value='1'" . ($del ? " checked" : "") . " /></td>\n";
   }
@@ -355,6 +510,7 @@ function echoProdLine($lino, $drug_id, $del = FALSE, $units = NULL,
   echo " </tr>\n";
 
   if ($fee != 0) $hasCharges = true;
+  ++$required_code_count;
 }
 
 // Build a drop-down list of providers.  This includes users who
@@ -363,10 +519,22 @@ function echoProdLine($lino, $drug_id, $del = FALSE, $units = NULL,
 // who do not appear in the calendar.
 //
 function genProviderSelect($selname, $toptext, $default=0, $disabled=false) {
-  $query = "SELECT id, lname, fname FROM users WHERE " .
+  // Get user's default facility, or 0 if none.
+  $drow = sqlQuery("SELECT facility_id FROM users where username = '" . $_SESSION['authUser'] . "'");
+  $def_facility = 0 + $drow['facility_id'];
+  //
+  $query = "SELECT id, lname, fname, facility_id FROM users WHERE " .
     "( authorized = 1 OR info LIKE '%provider%' ) AND username != '' " .
-    "AND active = 1 AND ( info IS NULL OR info NOT LIKE '%Inactive%' ) " .
-    "ORDER BY lname, fname";
+    "AND active = 1 AND ( info IS NULL OR info NOT LIKE '%Inactive%' )";
+  // If restricting to providers matching user facility...
+  if ($GLOBALS['gbl_restrict_provider_facility']) {
+    $query .= " AND ( facility_id = 0 OR facility_id = $def_facility )";
+    $query .= " ORDER BY lname, fname";
+  }
+  // If not restricting then sort the matching providers first.
+  else {
+    $query .= " ORDER BY (facility_id = $def_facility) DESC, lname, fname";
+  }
   $res = sqlStatement($query);
   echo "   <select name='" . attr($selname) . "'";
   if ($disabled) echo " disabled";
@@ -376,11 +544,17 @@ function genProviderSelect($selname, $toptext, $default=0, $disabled=false) {
     $provid = $row['id'];
     echo "    <option value='" . attr($provid) . "'";
     if ($provid == $default) echo " selected";
-    echo ">" . text($row['lname'] . ", " . $row['fname']) . "\n";
+    echo ">";
+    if (!$GLOBALS['gbl_restrict_provider_facility'] && $def_facility && $row['facility_id'] == $def_facility) {
+      // Mark providers in the matching facility with an asterisk.
+      echo "* ";
+    }
+    echo text($row['lname'] . ", " . $row['fname']) . "\n";
   }
   echo "   </select>\n";
 }
 
+<<<<<<< HEAD
 // Compute a current checksum of Fee Sheet data from the database.
 //
 function visitChecksum($pid, $encounter) {
@@ -399,6 +573,24 @@ function visitChecksum($pid, $encounter) {
 
 // This is just for IPPF, to indicate if the visit includes contraceptive services.
 $contraception = 0;
+=======
+function insert_lbf_item($form_id, $field_id, $field_value) {
+  if ($form_id) {
+    sqlInsert("INSERT INTO lbf_data (form_id, field_id, field_value) " .
+      "VALUES ($form_id, '$field_id', '$field_value')");
+  }
+  else {
+    $form_id = sqlInsert("INSERT INTO lbf_data (field_id, field_value) " .
+      "VALUES ('$field_id', '$field_value')");
+  }
+  return $form_id;
+}
+
+// These variables are used to compute the initial consult service with highest CYP.
+//
+$contraception_code = '';
+$contraception_cyp  = 0;
+>>>>>>> Tally Sheet WIP
 
 // Possible units of measure for NDC drug quantities.
 //
@@ -421,11 +613,63 @@ if (!empty($_POST['pricelevel'])) {
 }
 
 // Get some info about this visit.
-$visit_row = sqlQuery("SELECT fe.date, opc.pc_catname " .
+$visit_row = sqlQuery("SELECT fe.date, opc.pc_catname, fac.extra_validation " .
   "FROM form_encounter AS fe " .
   "LEFT JOIN openemr_postcalendar_categories AS opc ON opc.pc_catid = fe.pc_catid " .
+  "LEFT JOIN facility AS fac ON fac.id = fe.facility_id " .
   "WHERE fe.pid = ? AND fe.encounter = ? LIMIT 1", array($pid,$encounter) );
 $visit_date = substr($visit_row['date'], 0, 10);
+// This flag is specific to IPPF validation at form submit time.  It indicates
+// that most contraceptive services and products should match up on the fee sheet.
+$match_services_to_products = $GLOBALS['ippf_specific'] &&
+  !empty($visit_row['extra_validation']);
+$current_checksum = visitChecksum($pid, $encounter);
+if (isset($_POST['form_checksum'])) {
+  if ($_POST['form_checksum'] != $current_checksum) {
+    $alertmsg = xl('Save rejected because someone else has changed this visit. Please cancel this page and try again.');
+  }
+}
+
+if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
+  // Check for insufficient product inventory levels.
+  $prod = $_POST['prod'];
+  $insufficient = 0;
+  $expiredlots = false;
+  for ($lino = 1; $prod["$lino"]['drug_id']; ++$lino) {
+    $iter = $prod["$lino"];
+    if (!empty($iter['billed'])) continue;
+    $drug_id   = $iter['drug_id'];
+    $sale_id   = $iter['sale_id']; // present only if already saved
+    $units     = max(1, intval(trim($iter['units'])));
+    $del       = $iter['del'];
+    $warehouse_id = empty($iter['warehouse']) ? '' : $iter['warehouse'];
+    // Deleting always works.
+    if ($del) continue;
+    // If the item is already in the database...
+    if ($sale_id) {
+      $query = "SELECT (di.on_hand + ds.quantity - $units) AS new_on_hand " .
+        "FROM drug_sales AS ds, drug_inventory AS di WHERE " .
+        "ds.sale_id = '$sale_id' AND di.inventory_id = ds.inventory_id";
+      $dirow = sqlQuery($query);
+      if ($dirow['new_on_hand'] < 0) {
+        $insufficient = $drug_id;
+      }
+    }
+    // Otherwise it's a new item...
+    else {
+      // This only checks for sufficient inventory, nothing is updated.
+      if (!sellDrug($drug_id, $units, 0, $pid, $encounter, 0,
+        $visit_date, '', $warehouse_id, true, $expiredlots)) {
+        $insufficient = $drug_id;
+      }
+    }
+  } // end for
+  if ($insufficient) {
+    $drow = sqlQuery("SELECT name FROM drugs WHERE drug_id = '$insufficient'");
+    $alertmsg = xl('Insufficient inventory for product') . ' "' . $drow['name'] . '".';
+    if ($expiredlots) $alertmsg .= " " . xl('Check expiration dates.');
+  }
+}
 
 $current_checksum = visitChecksum($pid, $encounter);
 // It's important to look for a checksum mismatch even if we're just refreshing
@@ -561,9 +805,14 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
     $units     = max(1, intval(trim($iter['units'])));
     $fee       = sprintf('%01.2f',(0 + trim($iter['price'])) * $units);
     $del       = $iter['del'];
-
+    $rxid      = 0;
+    $warehouse_id = empty($iter['warehouse']) ? '' : $iter['warehouse'];
+    
     // If the item is already in the database...
     if ($sale_id) {
+      $tmprow = sqlQuery("SELECT prescription_id FROM drug_sales WHERE " .
+        "sale_id = '$sale_id'");
+      $rxid = 0 + $tmprow['prescription_id'];        
       if ($del) {
         // Zero out this sale and reverse its inventory update.  We bring in
         // drug_sales twice so that the original quantity can be referenced
@@ -576,6 +825,9 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
           "di.inventory_id = ds.inventory_id", array($sale_id) );
         // And delete the sale for good measure.
         sqlStatement("DELETE FROM drug_sales WHERE sale_id = ?", array($sale_id) );
+        if ($rxid) {
+          sqlStatement("DELETE FROM prescriptions WHERE id = ?",array($rxid));
+        }        
       }
       else {
         // Modify the sale and adjust inventory accordingly.
@@ -587,13 +839,17 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
           "dsr.sale_id = ? AND ds.sale_id = dsr.sale_id AND " .
           "di.inventory_id = ds.inventory_id";
         sqlStatement($query, array($units,$fee,$visit_date,$sale_id) );
+        // Delete Rx if $rxid and flag not set.
+        if ($GLOBALS['gbl_auto_create_rx'] && $rxid && empty($iter['rx'])) {
+          sqlStatement("DELETE FROM prescriptions WHERE id = ?",array($rxid));
+        }        
       }
     }
 
     // Otherwise it's a new item...
     else if (! $del) {
       $sale_id = sellDrug($drug_id, $units, $fee, $pid, $encounter, 0,
-        $visit_date, '', $default_warehouse);
+        $visit_date, '', $warehouse_id);
       if (!$sale_id) die(xlt("Insufficient inventory for product ID") . " \"" . text($drug_id) . "\".");
     }
   } // end for
