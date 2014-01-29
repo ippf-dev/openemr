@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006-2011 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2012 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -136,6 +136,28 @@ function sel_related() {
  dlgopen('../patient_file/encounter/find_code_popup.php', '_blank', 500, 400);
 }
 
+// onclick handle for "allow inventory" checkbox.
+function dispensable_changed() {
+ var f = document.forms[0];
+ var dis = !f.form_dispensable.checked;
+ f.form_allow_multiple.disabled = dis;
+ f.form_allow_combining.disabled = dis;
+ return true;
+}
+
+function validate(f) {
+ var saving = f.form_save.clicked ? true : false;
+ f.form_save.clicked = false;
+ if (saving) {
+  if (f.form_name.value.search(/[^\s]/) < 0) {
+   alert('<?php echo xl('Product name is required'); ?>');
+   return false;
+  }
+ }
+ top.restoreSession();
+ return true;
+}
+
 </script>
 
 </head>
@@ -174,9 +196,11 @@ if (($_POST['form_save'] || $_POST['form_delete']) && !$alertmsg) {
      "route = '"          . escapedff('form_route')         . "', " .
      "cyp_factor = '"     . numericff('form_cyp_factor')    . "', " .
      "related_code = '"   . escapedff('form_related_code')  . "', " .
+     "dispensable = "     . (empty($_POST['form_dispensable'    ]) ? 0 : 1) . ", " .
      "allow_multiple = "  . (empty($_POST['form_allow_multiple' ]) ? 0 : 1) . ", " .
      "allow_combining = " . (empty($_POST['form_allow_combining']) ? 0 : 1) . ", " .
-     "active = "          . (empty($_POST['form_active']) ? 0 : 1) . " " .
+     "active = "          . (empty($_POST['form_active'         ]) ? 0 : 1) . ", " .
+     "consumable = "      . (empty($_POST['form_consumable'     ]) ? 0 : 1) . " " .
      "WHERE drug_id = ?", array($drug_id));
     sqlStatement("DELETE FROM drug_templates WHERE drug_id = ?", array($drug_id));
    }
@@ -194,7 +218,7 @@ if (($_POST['form_save'] || $_POST['form_delete']) && !$alertmsg) {
    $drug_id = sqlInsert("INSERT INTO drugs ( " .
     "name, ndc_number, on_order, reorder_point, max_level, form, " .
     "size, unit, route, cyp_factor, related_code, " .
-    "allow_multiple, allow_combining, active " .
+    "dispensable, allow_multiple, allow_combining, active, consumable " .
     ") VALUES ( " .
     "'" . escapedff('form_name')          . "', " .
     "'" . escapedff('form_ndc_number')    . "', " .
@@ -207,9 +231,11 @@ if (($_POST['form_save'] || $_POST['form_delete']) && !$alertmsg) {
     "'" . escapedff('form_route')         . "', " .
     "'" . numericff('form_cyp_factor')    . "', " .
     "'" . escapedff('form_related_code')  . "', " .
+    (empty($_POST['form_dispensable'    ]) ? 0 : 1) . ", " .
     (empty($_POST['form_allow_multiple' ]) ? 0 : 1) . ", " .
     (empty($_POST['form_allow_combining']) ? 0 : 1) . ", " .
-    (empty($_POST['form_active']) ? 0 : 1)        .
+    (empty($_POST['form_active'         ]) ? 0 : 1) . ", " .
+    (empty($_POST['form_consumable'     ]) ? 0 : 1)        .
     ")");
   }
 
@@ -285,8 +311,10 @@ else {
   $row = array(
     'name' => '',
     'active' => '1',
+    'dispensable' => '1',
     'allow_multiple' => '1',
     'allow_combining' => '',
+    'consumable' => '0',
     'ndc_number' => '',
     'on_order' => '0',
     'reorder_point' => '0',
@@ -301,7 +329,8 @@ else {
 }
 ?>
 
-<form method='post' name='theform' action='add_edit_drug.php?drug=<?php echo $drug_id; ?>'>
+<form method='post' name='theform' action='add_edit_drug.php?drug=<?php echo $drug_id; ?>'
+ onsubmit='return validate(this);'>
 <center>
 
 <table border='0' width='100%'>
@@ -314,15 +343,20 @@ else {
  </tr>
 
  <tr>
-  <td valign='top' nowrap><b><?php echo xlt('Active'); ?>:</b></td>
+  <td valign='top' nowrap><b><?php echo xlt('Attributes'); ?>:</b></td>
   <td>
    <input type='checkbox' name='form_active' value='1'<?php if ($row['active']) echo ' checked'; ?> />
+   <?php echo xlt('Active'); ?> &nbsp;
+   <input type='checkbox' name='form_consumable' value='1'<?php if ($row['consumable']) echo ' checked'; ?> />
+   <?php echo xlt('Consumable'); ?>
   </td>
  </tr>
 
  <tr>
   <td valign='top' nowrap><b><?php echo xlt('Allow'); ?>:</b></td>
   <td>
+   <input type='checkbox' name='form_dispensable' value='1' onclick='dispensable_changed();'<?php if ($row['dispensable']) echo ' checked'; ?> />
+   <?php echo xlt('Inventory'); ?> &nbsp;      
    <input type='checkbox' name='form_allow_multiple' value='1'<?php if ($row['allow_multiple']) echo ' checked'; ?> />
    <?php echo xlt('Multiple Lots'); ?> &nbsp;
    <input type='checkbox' name='form_allow_combining' value='1'<?php if ($row['allow_combining']) echo ' checked'; ?> />
@@ -353,7 +387,7 @@ else {
   <td>
    <table>
     <tr>
-     <td valign='top' nowrap>&nbsp;</td>
+     <td valign='top' nowrap><b><?php echo $GLOBALS['gbl_min_max_months'] ? xl('Months') : xl('Units'); ?></b></td>
      <td valign='top' nowrap><?php echo xlt('Global'); ?></td>
 <?php
   // One column header per warehouse title.
@@ -533,7 +567,8 @@ else {
 </table>
 
 <p>
-<input type='submit' name='form_save' value='<?php echo xla('Save'); ?>' />
+<input type='submit' name='form_save' value='<?php echo xla('Save'); ?>'
+ onclick='return this.clicked = true;' />
 
 <?php if (acl_check('admin', 'super')) { ?>
 &nbsp;
@@ -549,6 +584,7 @@ else {
 </form>
 
 <script language="JavaScript">
+dispensable_changed();    
 <?php
  if ($alertmsg) {
   echo "alert('" . htmlentities($alertmsg) . "');\n";
