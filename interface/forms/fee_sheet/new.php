@@ -261,7 +261,7 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
 
     // Show provider for this line.
     echo "  <td class='billcell' align='center'>";
-    genProviderSelect('', '-- '.xl("Default").' --', $provider_id, true);
+    genProviderSelect('', '-- ' .xl("Default"). ' --', $provider_id, true);
     echo "</td>\n";
     if ($code_types[$codetype]['claim'] && !$code_types[$codetype]['diag']) {
       echo "  <td class='billcell' align='center'$usbillstyle>" .
@@ -282,7 +282,6 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
     if (modifiers_are_used(true)) {
       if ($codetype != 'COPAY' && ($code_types[$codetype]['mod'] || $modifier)) {
         echo "  <td class='billcell'><input type='text' name='bill[".attr($lino)."][mod]' " .
-             "value='" . attr($modifier) . "' " .
              "title='" . xla("Multiple modifiers can be separated by colons or spaces, maximum of 4 (M1:M2:M3:M4)") . "' " .
              "value='" . attr($modifier) . "' size='" . attr($code_types[$codetype]['mod']) . "'></td>\n";
       } else {
@@ -493,9 +492,8 @@ function echoProdLine($lino, $drug_id, $rx = FALSE, $del = FALSE, $units = NULL,
     else {
       echo "&nbsp;";
     }
-    echo "</td>\n"; // KHY check for cell alignment provider vs. warehouse
+    echo "</td>\n";
     
-    echo "  <td class='billcell' align='center'>&nbsp;</td>\n"; // provider
     echo "  <td class='billcell' align='center'$usbillstyle>&nbsp;</td>\n"; // auth
     if ($GLOBALS['gbl_auto_create_rx']) {
       echo "  <td class='billcell' align='center'>" .
@@ -831,6 +829,48 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
         $visit_date, '', $warehouse_id);
       if (!$sale_id) die(xlt("Insufficient inventory for product ID") . " \"" . text($drug_id) . "\".");
     }
+
+    // If a prescription applies, create or update it.
+    if (!empty($iter['rx']) && !$del) {
+      // If an active rx already exists for this drug and date we will
+      // replace it, otherwise we'll make a new one.
+      if (empty($rxid)) $rxid = '';
+      // Get default drug attributes.
+      $drow = sqlQuery("SELECT dt.*, " .
+        "d.name, d.form, d.size, d.unit, d.route, d.substitute " .
+        "FROM drugs AS d, drug_templates AS dt WHERE " .
+        "d.drug_id = '$drug_id' AND dt.drug_id = d.drug_id " .
+        "ORDER BY dt.quantity, dt.dosage, dt.selector LIMIT 1");
+      if (!empty($drow)) {
+        $rxobj = new Prescription($rxid);
+        $rxobj->set_patient_id($pid);
+        $rxobj->set_provider_id($main_provid);
+        $rxobj->set_drug_id($drug_id);
+        $rxobj->set_quantity($units);
+        $rxobj->set_per_refill($units);
+        $rxobj->set_start_date_y(substr($visit_date,0,4));
+        $rxobj->set_start_date_m(substr($visit_date,5,2));
+        $rxobj->set_start_date_d(substr($visit_date,8,2));
+        $rxobj->set_date_added($visit_date);
+        // Remaining attributes are the drug and template defaults.
+        $rxobj->set_drug($drow['name']);
+        $rxobj->set_unit($drow['unit']);
+        $rxobj->set_dosage($drow['dosage']);
+        $rxobj->set_form($drow['form']);
+        $rxobj->set_refills($drow['refills']);
+        $rxobj->set_size($drow['size']);
+        $rxobj->set_route($drow['route']);
+        $rxobj->set_interval($drow['period']);
+        $rxobj->set_substitute($drow['substitute']);
+        //
+        $rxobj->persist();
+        // Set drug_sales.prescription_id to $rxobj->get_id().
+        $rxid = 0 + $rxobj->get_id();
+        sqlStatement("UPDATE drug_sales SET prescription_id = '$rxid' WHERE " .
+          "sale_id = '$sale_id'");
+      }
+    }
+    
   } // end for
 
   // Set the main/default service provider in the new-encounter form.
@@ -864,13 +904,6 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
       // Save and Close but the close could not be done.  However the
       // framework does not provide an easy way to do that.
     }
-  }
-
-  // More IPPF stuff.
-  if (!empty($_POST['contrastart'])) {
-    $contrastart = $_POST['contrastart'];
-    sqlStatement("UPDATE patient_data SET contrastart = ?" .
-      " WHERE pid = ?", array($contrastart,$pid) );
   }
 
   // Note: Taxes are computed at checkout time (in pos_checkout.php which
@@ -1744,10 +1777,8 @@ if (true) {
 <?php if ($rapid_data_entry) echo " style='background-color:#cc0000';color:#ffffff'"; ?>
 />
 &nbsp;
-<?php if (!$hasCharges) { ?>
 <input type='submit' name='bn_save_close' value='<?php echo xla('Mark as Billed');?>' />
 &nbsp;
-<?php } ?>
 <input type='submit' name='bn_refresh' onclick='return this.clicked = true;' 
 value='<?php echo xla('Refresh');?>'>
 &nbsp;
@@ -1771,6 +1802,7 @@ value='<?php echo xla('Refresh');?>'>
 </center>
 
 </form>
+<<<<<<< HEAD
 <script language='JavaScript'>
 <?php
 echo $justinit;
@@ -1778,8 +1810,6 @@ if ($alertmsg) {
   echo "alert('" . addslashes($alertmsg) . "');\n";
 }
 ?>
-<<<<<<< HEAD
-=======
 
 <script language='JavaScript'>
 var required_code_count = <?php echo $required_code_count; ?>;
@@ -1792,7 +1822,6 @@ if ($alertmsg) {
 }
 ?>
 
->>>>>>> tally sheet WIP
 </script>
 </body>
 </html>
