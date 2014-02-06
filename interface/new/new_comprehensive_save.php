@@ -8,6 +8,7 @@
 
 require_once("../globals.php");
 require_once("$srcdir/sql.inc");
+require_once("$webserver_root/ippf/patient/patient.php");
 
 // Validation for non-unique external patient identifier.
 $alertmsg = '';
@@ -63,9 +64,17 @@ while ($frow = sqlFetchArray($fres)) {
 
   $value = get_layout_form_value($frow);
 
-  if ($field_id == 'pubpid' && empty($value)) $value = $pid;
   $newdata[$tblname][$colname] = $value;
 }
+
+// If no pubpid, assign one.
+if (empty($newdata['patient_data']['pubpid'])) {
+  $newdata['patient_data']['pubpid'] = assignNewPubpid($pid,
+    $newdata['patient_data']['regdate'],
+    $newdata['patient_data']['lname'],
+    $newdata['patient_data']['home_facility']);
+}
+
 updatePatientData($pid, $newdata['patient_data'], true);
 updateEmployerData($pid, $newdata['employer_data'], true);
 
