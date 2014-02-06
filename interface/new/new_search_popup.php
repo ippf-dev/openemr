@@ -18,6 +18,7 @@ $fake_register_globals=false;
 require_once("../globals.php");
 require_once("$srcdir/patient.inc");
 require_once("$srcdir/formdata.inc.php");
+require_once("$srcdir/options.inc.php");
 
 $fstart = $_REQUEST['fstart'] + 0;
 
@@ -207,7 +208,7 @@ if ($fend > $count) $fend = $count;
 <?php
 // This gets address plus other fields that are mandatory, up to a limit of 5.
 $extracols = array();
-$tres = sqlStatement("SELECT field_id, title FROM layout_options " .
+$tres = sqlStatement("SELECT * FROM layout_options " .
   "WHERE form_id = 'DEM' AND field_id != '' AND " .
   "( uor > 1 OR uor > 0 AND edit_options LIKE '%D%' ) AND " .
   "field_id NOT LIKE 'title' AND " .
@@ -215,7 +216,7 @@ $tres = sqlStatement("SELECT field_id, title FROM layout_options " .
   "ORDER BY group_name, seq, title LIMIT 9");
 
 while ($trow = sqlFetchArray($tres)) {
-  $extracols[$trow['field_id']] = $trow['title'];
+  $extracols[$trow['field_id']] = $trow;
   echo "<th class='srMisc'>" . htmlspecialchars( xl_layout_label($trow['title']), ENT_NOQUOTES) . "</th>\n";
 }
 ?>
@@ -244,7 +245,9 @@ if ($result) {
     echo  "<td class='srID'>".htmlspecialchars( $relevance, ENT_NOQUOTES)."</td>\n";
     echo  "<td class='srName'>" . htmlspecialchars( $iter['lname'] . ", " . $iter['fname'], ENT_NOQUOTES) . "</td>\n";
     foreach ($extracols as $field_id => $title) {
-      echo "<td class='srMisc'>" . htmlspecialchars( $iter[$field_id], ENT_NOQUOTES) . "</td>\n";
+      echo "<td class='srMisc'>";
+      echo generate_display_field($trow, $iter[$field_id]);
+      echo "</td>\n";
     }
   }
 }
