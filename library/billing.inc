@@ -220,19 +220,34 @@ function updateClaim($newversion, $patient_id, $encounter_id, $payer_id=-1, $pay
   return 1;
 }
 
-// Determine if anything in a visit has been billed.
+// Determine if the encounter is billed.  It is considered billed if it
+// has at least one chargeable item, and all of them are billed.
 //
 function isEncounterBilled($pid, $encounter) {
-  $row = sqlQuery("SELECT count(*) AS count FROM billing WHERE " .
-    "pid = '$pid' AND encounter = '$encounter' AND activity = 1 AND " .
-    "billed = 1");
-  $count = $row['count'];
-  if (!$count) {
-    $row = sqlQuery("SELECT count(*) AS count FROM drug_sales WHERE " .
-      "pid = '$pid' AND encounter = '$encounter' AND billed = 1");
-    $count = $row['count'];
+  $billed = -1; // no chargeable services yet
+
+  $bres = sqlStatement("SELECT " .
+    "billing.billed FROM billing, code_types WHERE " .
+    "billing.pid = '$pid' AND " .
+    "billing.encounter = '$encounter' AND " .
+    "billing.activity = 1 AND " .
+    "code_types.ct_key = billing.code_type AND " .
+    "code_types.ct_fee = 1 " .
+    "UNION " .
+    "SELECT billed FROM drug_sales WHERE " .
+    "pid = '$pid' AND " .
+    "encounter = '$encounter'");
+
+  while ($brow = sqlFetchArray($bres)) {
+    if ($brow['billed'] == 0) {
+      $billed = 0;
+    }
+    else {
+      if ($billed < 0) $billed = 1;
+    }
   }
-  return $count ? true : false;
+
+  return $billed > 0;
 }
 
 // Get the co-pay amount that is effective on the given date.
