@@ -1,0 +1,323 @@
+<html>
+<head>
+{php}html_header_show();{/php}
+
+<link rel="stylesheet" href="{php}echo $GLOBALS['css_header']; {/php}" type="text/css">
+<link rel="stylesheet" href="{$WEBROOT}/interface/themes/jquery.autocomplete.css" type="text/css">
+
+<script type="text/javascript" src="{$WEBROOT}/library/dialog.js"></script>
+<script type="text/javascript" src="{$WEBROOT}/library/js/jquery-1.2.2.min.js"></script>
+<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.bgiframe.min.js"></script>
+<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.dimensions.pack.js"></script>
+<script type="text/javascript" src="{$WEBROOT}/library/js/jquery.autocomplete.pack.js"></script>
+{literal}
+<style type="text/css" title="mystyles" media="all">
+<!--
+td {
+	font-size:8pt;
+	font-family:helvetica;
+}
+input {
+	font-size:8pt;
+	font-family:helvetica;
+}
+select {
+	font-size:8pt;
+	font-family:helvetica;
+}
+textarea {
+	font-size:8pt;
+	font-family:helvetica;
+}
+-->
+</style>
+<script language='JavaScript'>
+
+ // This holds all the default drug attributes.
+{/literal}
+ var drugopts = [{$DRUG_ATTRIBUTES}];
+{literal}
+
+ // Helper to choose an option from its value.
+ function selchoose(sel, value) {
+  var o = sel.options;
+  for (i = 0; i < o.length; ++i) {
+   o[i].selected = (o[i].value == value);
+  }
+ }
+
+ function find_vacant_line() {
+  var f = document.forms[0];
+  for (var dix = 0; true; ++dix) {
+   var dname = 'drugname[' + dix + ']'
+   if (!f[dname]) break;
+   if (f[dname].value) continue;
+   return dix;
+  }
+  return -1;
+ }
+
+ // Fill in default values when a drop-down drug is selected.
+ function drugselected(sel) {
+  var f = document.forms[0];
+  var i = f.drug_id.selectedIndex - 1;
+  if (i < 0) return;
+  var dix = find_vacant_line();
+  if (dix < 0) {
+   // No vacant lines, add another.
+   addRxLine();
+   dix = find_vacant_line();
+  }
+  if (dix < 0) return; // should not happen
+  // Fill in parms for first line with no drug name.
+  var d = drugopts[i];
+  f['drugid['     + dix + ']'].value = f.drug_id.value;
+  f['drugname['   + dix + ']'].value = d[0];
+  f['dosage['     + dix + ']'].value = d[2];
+  f['size['       + dix + ']'].value = d[3];
+  f['quantity['   + dix + ']'].value = d[8];
+  f['refills['    + dix + ']'].value = d[9];
+  f['per_refill[' + dix + ']'].value = d[10];
+  f['substitute[' + dix + ']'].checked = d[7] ? true : false;
+  selchoose(f['form['     + dix + ']'], d[1]);
+  selchoose(f['unit['     + dix + ']'], d[4]);
+  selchoose(f['route['    + dix + ']'], d[5]);
+  selchoose(f['interval[' + dix + ']'], d[6]);
+  f.drug_id.selectedIndex = 0;
+ }
+
+ function quantityChanged() {
+  var f = document.forms[0];
+  f.per_refill.value = f.quantity.value;
+ }
+
+ function receive_lookup(drugname) {
+  var f = document.forms[0];
+  var dix = find_vacant_line();
+  if (dix < 0) {
+   // No vacant lines, add another.
+   addRxLine();
+   dix = find_vacant_line();
+  }
+  f['drugid['   + dix + ']'].value = "";
+  f['drugname[' + dix + ']'].value = drugname;
+ }
+
+ // Add a line for entering a prescription.
+ var rxlino = 0;
+ function addRxLine() {
+  var table = document.getElementById('rxtable');
+  for (var i = 0; i < table.rows.length; ++i) {
+   if (table.rows[i].id == 'rxtabend') {
+    var row = table.insertRow(i);
+    var cell;
+{/literal}
+{* Capture is used because html_options inserts line feeds which are not javascript-friendly. *}
+{capture name=tmp}
+    cell = row.insertCell(0);
+    cell.innerHTML = '<input type="text" size="15" name="drugname[' + rxlino + ']" ' +
+      'value="" title="{xl t="Name of drug"}">' +
+      '<input type="hidden" name="drugid[' + rxlino + ']" value="">';
+    cell = row.insertCell(1);
+    cell.innerHTML = '<input type="text" size="3" name="quantity[' + rxlino + ']" ' +
+      'value="" title="{xl t="Quantity prescribed"}">';
+    cell = row.insertCell(2);
+    cell.innerHTML = '<input type="text" size="3" name="size[' + rxlino + ']" ' +
+      'value="" title="{xl t="Number of units"}">';
+    cell = row.insertCell(3);
+    cell.innerHTML = '<select name="unit[' + rxlino + ']" title="{xl t="Type of units"}">' +
+      '{html_options options=$prescription->unit_array|strip}</select>';
+{if $SIMPLIFIED_PRESCRIPTIONS}
+    cell = row.insertCell(4);
+    cell.innerHTML = '<input type="text" size="20" name="dosage[' + rxlino + ']" ' +
+      'value="" title="{xl t="Dosage and instructions"}">';
+    cell = row.insertCell(5);
+    cell.style.display = 'none';
+    cell.innerHTML = '<input type="hidden" name="form[' + rxlino + ']" value="">';
+    cell = row.insertCell(6);
+    cell.style.display = 'none';
+    cell.innerHTML = '<input type="hidden" name="route[' + rxlino + ']" value="">';
+    cell = row.insertCell(7);
+    cell.style.display = 'none';
+    cell.innerHTML = '<input type="hidden" name="interval[' + rxlino + ']" value="">';
+{else}
+    cell = row.insertCell(4);
+    cell.innerHTML = '<input type="text" size="3" name="dosage[' + rxlino + ']" ' +
+      'value="" title="{xl t="Dosage"}">';
+    cell = row.insertCell(5);
+    cell.innerHTML = '<select name="form[' + rxlino + ']">' +
+      '{html_options options=$prescription->form_array}</select>';
+    cell = row.insertCell(6);
+    cell.innerHTML = '<select name="route[' + rxlino + ']">' +
+      '{html_options options=$prescription->route_array}</select>';
+    cell = row.insertCell(7);
+    cell.innerHTML = '<select name="interval[' + rxlino + ']">' +
+      '{html_options options=$prescription->interval_array}</select>';
+{/if}
+    cell = row.insertCell(8);
+    cell.innerHTML = '<input type="text" size="3" name="refills[' + rxlino + ']" ' +
+      'value="" title="{xl t="Number of refills allowed"}" />';
+    cell = row.insertCell(9);
+    {if $SIMPLIFIED_PRESCRIPTIONS}cell.style.display = 'none';{/if}
+    cell.innerHTML = '<input type="text" size="3" name="per_refill[' + rxlino + ']" ' +
+      'value="" title="{xl t="Quantity per refill"}" />';
+    cell = row.insertCell(10);
+    cell.innerHTML = '<input type="checkbox" name="substitute[' + rxlino + ']" ' +
+      'title="{xl t="Is substitution allowed?"}" checked />';
+{/capture}
+{* Here we dump the above-captured text with its line feeds stripped out. *}
+{$smarty.capture.tmp|strip}
+{literal}
+    ++rxlino;
+    break;
+   }
+  }
+  return false;
+ }
+
+</script>
+{/literal}
+</head>
+<body {$STYLE.BOTTOM_BG_LINE}>
+<form name="prescribe" id="prescribe" method="post" action="{$FORM_ACTION}">
+<table CELLSPACING="0" CELLPADDING="3">
+ <!--
+ <tr>
+  <td COLSPAN="1" ALIGN="LEFT" VALIGN="MIDDLE" >{xl t='Currently Active'}</td>
+  <td COLSPAN="2" ALIGN="LEFT" VALIGN="MIDDLE" >
+   <input type="checkbox" name="active" value="1"{if $prescription->get_active() > 0} checked{/if} />
+  </td>
+ </tr>
+ -->
+ <tr>
+  <td COLSPAN="1" ALIGN="LEFT" VALIGN="MIDDLE" width="1%" nowrap>{xl t='Starting Date'}</td>
+  <td COLSPAN="2" ALIGN="LEFT" VALIGN="MIDDLE" >
+   {html_select_date start_year="-10" end_year="+5" time=$prescription->start_date prefix="start_date_"}
+  </td>
+ </tr>
+ <tr>
+  <td COLSPAN="1" ALIGN="LEFT" VALIGN="MIDDLE" nowrap>{xl t='Provider'}</td>
+  <td COLSPAN="2" ALIGN="LEFT" VALIGN="MIDDLE" >
+   {html_options name="provider_id" options=$prescription->provider->utility_provider_array() selected=$prescription->provider->get_id()}
+   <input type="hidden" name="patient_id" value="{$prescription->patient->id}" />
+  </td>
+ </tr>
+ <tr>
+  <td COLSPAN="1" ALIGN="LEFT" VALIGN="MIDDLE" nowrap>{xl t='Drug Finder'}</td>
+  <td COLSPAN="2" ALIGN="LEFT" VALIGN="MIDDLE" >
+   <!-- <input type="input" size="20" name="drug" id="drug" /> -->
+   <input id="druglookup" class="button" type="BUTTON" value="{xl t='Drug Lookup'}" />
+{if $DRUG_ARRAY_VALUES}
+   &nbsp;
+   <select name="drug_id" onchange="drugselected(this)">
+    {html_options values=$DRUG_ARRAY_VALUES output=$DRUG_ARRAY_OUTPUT}
+   </select>
+{/if}
+  </td>
+ </tr>
+ <tr>
+  <td colspan='3'>
+   <table cellspacing='3' id='rxtable'>
+    <tr>
+     <td><b>{xl t='Drug' }</b></td>
+     <td><b>{xl t='Qty'  }</b></td>
+     <td><b>{xl t='Size' }</b></td>
+     <td><b>{xl t='Units'}</b></td>
+     <td><b>{xl t='Take' }</b></td>
+     <td{if $SIMPLIFIED_PRESCRIPTIONS} style='display:none;'{/if}><b>{xl t='Form' }</b></td>
+     <td{if $SIMPLIFIED_PRESCRIPTIONS} style='display:none;'{/if}><b>{xl t='Route'}</b></td>
+     <td{if $SIMPLIFIED_PRESCRIPTIONS} style='display:none;'{/if}><b>{xl t='Intvl'}</b></td>
+     <td><b>{xl t='Refs' }</b></td>
+     <td{if $SIMPLIFIED_PRESCRIPTIONS} style='display:none;'{/if}><b>{xl t='Per'  }</b></td>
+     <td><b>{xl t='Sub'  }</b></td>
+    </tr>
+    <tr id='rxtabend'>
+     <td colspan='11'>
+      <a href='#' onclick='return addRxLine()'>[{xl t='Add Row'}]</a>
+     </td>
+    </tr>
+   </table>
+  </td>
+ </tr>
+ <tr>
+  <td COLSPAN="1" ALIGN="LEFT" VALIGN="MIDDLE" nowrap>{xl t='Notes'}</td>
+  <td COLSPAN="2" ALIGN="LEFT" VALIGN="MIDDLE" >
+   <textarea name="note" cols="30" rows="2" wrap="virtual">{$prescription->note}</textarea>
+  </td>
+ </tr>
+ <tr{if $WEIGHT_LOSS_CLINIC} style='display:none;'{/if}>
+  <td COLSPAN="1" ALIGN="LEFT" VALIGN="MIDDLE" nowrap>{xl t='Add to Medication List'}</td>
+  <td COLSPAN="2" ALIGN="LEFT" VALIGN="MIDDLE" >
+   {html_radios name="medication" options=$prescription->medication_array selected=$prescription->medication}
+  </td>
+ </tr>
+ <tr>
+	<td colspan="3">
+		<input type="submit" value="{xl t='Save'}" />
+	</td>
+ </tr>
+</table>
+
+<input type="hidden" name="id" value="{$prescription->id}" />
+<input type="hidden" name="process" value="{$PROCESS}" />
+<script language='JavaScript'>
+{$ENDING_JAVASCRIPT}
+</script>
+</form>
+</body>
+
+{literal}
+<!-- for the fancy jQuery stuff -->
+<script type="text/javascript">
+$().ready(function() {
+  // $("#drug").autocomplete('library/ajax/prescription_drugname_lookup.php', 
+  //  {width: 200, scrollHeight: 100, selectFirst: true});
+  // $("#drug").focus();
+  $("#prescribe").submit(function() { return CheckForErrors(this) });
+  $("#druglookup").click(function() { DoDrugLookup(this) });
+  addRxLine();
+  addRxLine();
+  addRxLine();
+});
+
+// pop up a drug lookup window with the value of the drug name, if we have one
+function DoDrugLookup(eObj) {
+  drugname = "";
+  // if ($('#drug').val() != "") { drugname = $('#drug').val(); }
+  drugPopup = window.open('controller.php?prescription&lookup&drug=' + drugname,
+    'drugPopup', 'width=400,height=50,menubar=no,titlebar=no,left = 825,top = 400'); 
+  drugPopup.opener = self;
+  return true;
+}
+
+// check the form for required fields before submitting
+var CheckForErrors = function(eObj) {
+  // if (CheckRequired('drug') == false) { return false; }
+  return top.restoreSession();
+};
+
+function CheckRequired(objID) {
+  // for text boxes
+  if ($('#'+objID).is('text')) {
+    if ($('#'+objID).val() == "") {
+      alert("Missing a required field");
+      $('#'+objID).css("backgroundColor", "pink");
+      return false;
+    }
+  }
+  // for select boxes
+  if ($('#'+objID).is('select')) {
+    if ($('#'+objID).val() == "0") {
+      alert("Missing a required field");
+      $('#'+objID).css("backgroundColor", "pink");
+      return false;
+    }
+  }
+  return true;
+}
+
+{/literal}
+
+</script>
+
+</html>

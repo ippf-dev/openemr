@@ -10,6 +10,8 @@ require_once($GLOBALS['fileroot'] . "/library/classes/Provider.class.php");
 require_once($GLOBALS['fileroot'] . "/library/classes/RXList.class.php");
 require_once($GLOBALS['fileroot'] . "/library/registry.inc");
 require_once($GLOBALS['fileroot'] . "/library/amc.php");
+require_once($GLOBALS['fileroot'] . "/library/formatting.inc.php");
+require_once($GLOBALS['fileroot'] . "/library/formdata.inc.php");
 
 class C_Prescription extends Controller {
 
@@ -18,7 +20,8 @@ class C_Prescription extends Controller {
 	var $providerid = 0;
 	var $is_faxing = false;
 	var $is_print_to_fax = false;
-
+        var $checkarray = array();
+        
 	function C_Prescription($template_mod = "general") {
 		parent::Controller();
 
@@ -29,8 +32,8 @@ class C_Prescription extends Controller {
 		$this->assign("WEIGHT_LOSS_CLINIC", $GLOBALS['weight_loss_clinic']);
 		$this->assign("SIMPLIFIED_PRESCRIPTIONS", $GLOBALS['simplified_prescriptions']);
 		$this->pconfig = $GLOBALS['oer_config']['prescriptions'];
-	    $this->assign("CSS_HEADER",  $GLOBALS['css_header'] );
-	    $this->assign("WEB_ROOT", $GLOBALS['webroot'] );
+                $this->assign("CSS_HEADER",  $GLOBALS['css_header'] );
+                $this->assign("WEB_ROOT", $GLOBALS['webroot'] );
 
 		if ($GLOBALS['inhouse_pharmacy']) {
 			// Make an array of drug IDs and selectors for the template.
@@ -99,6 +102,27 @@ class C_Prescription extends Controller {
 
 		$this->default_action();
 	}
+        
+        // Added by Rod for entry of multiple prescriptions on the same form.
+        //
+        function edit_multiple_action($id = "",$patient_id="",$p_obj = null) {
+          if ($p_obj != null && get_class($p_obj) == "prescription") {
+            $this->prescriptions[0] = $p_obj;
+          }
+          elseif (get_class($this->prescriptions[0]) != "prescription" ) {
+            $this->prescriptions[0] = new Prescription($id);
+          }
+          if (!empty($patient_id)) {
+            $this->prescriptions[0]->set_patient_id($patient_id);
+          }
+          // If quantity to dispense is not already set from a POST, set its
+          // default value.
+          if (! $this->get_template_vars('DISP_QUANTITY')) {
+            $this->assign('DISP_QUANTITY', $this->prescriptions[0]->quantity);
+          }
+          $this->assign("prescription",$this->prescriptions[0]);
+          $this->display($GLOBALS['template_dir'] . "prescription/" . $this->template_mod . "_edit_multiple.html");
+        }
 
 	function list_action($id,$sort = "") {
 		if (empty($id)) {
@@ -111,7 +135,9 @@ class C_Prescription extends Controller {
 		else {
 			$this->assign("prescriptions", Prescription::prescriptions_factory($id));
 		}
-
+                // TBD: pass rx IDs to pre-check in the list
+                $this->assign("checkarray", $this->checkarray);
+                
                 // flag to indicate the CAMOS form is regsitered and active
                 $this->assign("CAMOS_FORM", isRegistered("CAMOS"));
 
@@ -199,6 +225,61 @@ class C_Prescription extends Controller {
     exit;
 	}
 
+        function _set_rx_value($varname, $funcname, $default='') {
+          $value = $default;
+          if (isset($_POST[$varname])) {
+            $value = strip_escape_custom($_POST[$varname]);
+          }
+          call_user_func(array($this->prescriptions[0], $funcname), $value);
+        }
+
+        function _set_rx_lineitem($lino, $varname, $funcname, $default='') {
+          $value = $default;
+          if (isset($_POST[$varname][$lino])) {
+            $value = strip_escape_custom($_POST[$varname][$lino]);
+          }
+          call_user_func(array($this->prescriptions[0], $funcname), $value);
+        }
+
+        function edit_multiple_action_process() {
+          // print_r($_POST); // debugging
+
+          if ($_POST['process'] != "true") return;
+          $patient_id = formData('patient_id');
+
+          for ($lino = 0; !empty($_POST['drugname'][$lino]); ++$lino) {
+            $this->prescriptions[0] = new Prescription();
+
+            $this->prescriptions[0]->set_patient_id($patient_id);
+            $this->_set_rx_value('start_date_m', 'set_start_date_m');
+            $this->_set_rx_value('start_date_d', 'set_start_date_d');
+            $this->_set_rx_value('start_date_y', 'set_start_date_y');
+            $this->_set_rx_value('provider_id' , 'set_provider_id' );
+            $this->_set_rx_value('note'        , 'set_note'        );
+            $this->prescriptions[0]->set_medication(empty($_POST['medication']) ? 0 : 1);
+
+            $this->_set_rx_lineitem($lino, 'drugname'  , 'set_drug'      );
+            $this->_set_rx_lineitem($lino, 'drugid'    , 'set_drug_id'   );
+            $this->_set_rx_lineitem($lino, 'quantity'  , 'set_quantity'  );
+            $this->_set_rx_lineitem($lino, 'size'      , 'set_size'      );
+            $this->_set_rx_lineitem($lino, 'dosage'    , 'set_dosage'    );
+            $this->_set_rx_lineitem($lino, 'unit'      , 'set_unit'      );
+            $this->_set_rx_lineitem($lino, 'form'      , 'set_form'      );
+            $this->_set_rx_lineitem($lino, 'route'     , 'set_route'     );
+            $this->_set_rx_lineitem($lino, 'interval'  , 'set_interval'  );
+            $this->_set_rx_lineitem($lino, 'refills'   , 'set_refills'   );
+            $this->_set_rx_lineitem($lino, 'per_refill', 'set_per_refill');
+            $this->prescriptions[0]->set_substitute(empty($_POST['substitute'][$lino]) ? 0 : 1);
+
+            $this->prescriptions[0]->persist();
+            $this->checkarray[$this->prescriptions[0]->get_id()] = 1;
+          }
+
+          $_POST['process'] = '';
+          $this->list_action($patient_id);
+          exit;
+        }
+        
 	function send_action($id) {
 		$_POST['process'] = "true";
 		if(empty($id)) {
@@ -225,6 +306,66 @@ class C_Prescription extends Controller {
 	function multiprintfax_header(& $pdf, $p) {
 		return $this->multiprint_header( $pdf, $p );
 	}
+
+        // Internal function to get parameters, most notably the fee, to print for
+        // prescriptions printed in tabular format.
+        //
+        function _get_rx_printables(&$p, &$parms) {
+          $parms['code' ] = '';
+          $parms['name' ] = $p->get_drug();
+          $parms['qty'  ] = $p->get_quantity();
+          $parms['price'] = 0;
+          $parms['fee'  ] = 0;
+
+          $drug_id = $p->get_drug_id();
+
+          // If this is not a drug we know about, nothing else we can do.
+          if (!$drug_id) return;
+
+          $id         = $p->get_id();
+          $patient_id = $p->get_patient_id();
+          $dosage     = $p->get_dosage();
+          $interval   = $p->get_interval();
+          $quantity   = $p->get_quantity();
+          $fee        = 0;
+
+          // Get drug selector by matching on dosage and period.
+          $trow = sqlQuery("SELECT t.selector " .
+            "FROM drug_templates AS t " .
+            "WHERE t.drug_id = '$drug_id' " .
+            "ORDER BY ((t.dosage = '$dosage') + (t.period = '$interval')) DESC LIMIT 1");
+          $selector = $trow['selector'];
+          $parms['code'] = $selector;
+
+          // Get fee from sales transaction if any, otherwise from the item's default price
+          // for this patient's price level.
+          $srow = sqlQuery("SELECT s.quantity, s.fee " .
+            "FROM drug_sales AS s " .
+            "WHERE " .
+            "s.pid = '$patient_id' AND s.drug_id = '$drug_id' AND s.prescription_id = '$id' " .
+            "ORDER BY s.sale_id DESC");
+          if (!empty($srow)) {
+            $quantity = $srow['quantity'];
+            $fee = $srow['fee'];
+          }
+          else {
+            $prow = sqlQuery("SELECT p.pr_price " .
+              "FROM patient_data AS pd, prices AS p " .
+              "WHERE pd.pid = '$patient_id' AND " .
+              "p.pr_id = '$drug_id' AND " .
+              "p.pr_selector = '$selector' AND " .
+              "p.pr_level = pd.pricelevel");
+            if (empty($quantity)) $quantity = 1;
+            $fee = $prow['pr_price'] * $quantity;
+          }
+
+          if (empty($quantity)) $quantity = 1;
+          $parms['qty'  ] = $quantity;
+          $parms['price'] = $fee / $quantity;
+          $parms['fee'  ] = $fee;
+          return;
+        }
+
 
 	function multiprint_header(& $pdf, $p) {
 		$this->providerid = $p->provider->id;
@@ -420,6 +561,17 @@ class C_Prescription extends Controller {
 	        echo (" margin-top: 40pt;\n");
                 echo (" font-size: 12pt;\n");
 	        echo ("}\n");
+                
+                echo "div.scriptdiv table {\n";
+                echo " border-collapse: collapse;\n";
+                echo " border: 1px solid black;\n";
+                echo "}\n";
+                echo "div.scriptdiv th, div.scriptdiv td {\n";
+                echo " border: 1px solid black;\n";
+                echo " vertical-align: middle;\n";
+                echo " padding: 3 3 3 3;\n";
+                echo "}\n";
+          
                 echo ("</style>\n");
 
                 echo ("<title>" . xl('Prescription') . "</title>\n");
@@ -506,7 +658,7 @@ class C_Prescription extends Controller {
 	function multiprint_body(& $pdf, $p){
 		$pdf->ez['leftMargin'] += $pdf->ez['leftMargin'];
 		$pdf->ez['rightMargin'] += $pdf->ez['rightMargin'];
-		$d = $this->get_prescription_body_text($p);
+                $d = $this->get_prescription_body_text($p);
 		if ( $pdf->ezText($d,10,array(),1) ) {
 			$pdf->ez['leftMargin'] -= $pdf->ez['leftMargin'];
 			$pdf->ez['rightMargin'] -= $pdf->ez['rightMargin'];
@@ -516,20 +668,20 @@ class C_Prescription extends Controller {
 			$pdf->ez['leftMargin'] += $pdf->ez['leftMargin'];
 			$pdf->ez['rightMargin'] += $pdf->ez['rightMargin'];
 		}
-		$my_y = $pdf->y;
-		$pdf->ezText($d,10);
-		if($this->pconfig['shading']) {
-			$pdf->setColor(.9,.9,.9);
-			$pdf->filledRectangle($pdf->ez['leftMargin'],$pdf->y,$pdf->ez['pageWidth']-$pdf->ez['rightMargin']-$pdf->ez['leftMargin'],$my_y - $pdf->y);
-			$pdf->setColor(0,0,0);
-		}
-		$pdf->ezSetY($my_y);
-		$pdf->ezText($d,10);
-		$pdf->ez['leftMargin'] = $GLOBALS['rx_left_margin'];
-		$pdf->ez['rightMargin'] = $GLOBALS['rx_right_margin'];
-		$pdf->ezText('');
-		$pdf->line($pdf->ez['leftMargin'],$pdf->y,$pdf->ez['pageWidth']-$pdf->ez['rightMargin'],$pdf->y);
-		$pdf->ezText('');
+                $my_y = $pdf->y;
+                $pdf->ezText($d,10);
+                if($this->pconfig['shading']) {
+                  $pdf->setColor(.9,.9,.9);
+                  $pdf->filledRectangle($pdf->ez['leftMargin'],$pdf->y,$pdf->ez['pageWidth']-$pdf->ez['rightMargin']-$pdf->ez['leftMargin'],$my_y - $pdf->y);
+                  $pdf->setColor(0,0,0);
+                }
+                $pdf->ezSetY($my_y);
+                $pdf->ezText($d,10);
+                $pdf->ez['leftMargin'] = $GLOBALS['oer_config']['prescriptions']['left'];
+                $pdf->ez['rightMargin'] = $GLOBALS['oer_config']['prescriptions']['right'];
+                $pdf->ezText('');
+                $pdf->line($pdf->ez['leftMargin'],$pdf->y,$pdf->ez['pageWidth']-$pdf->ez['rightMargin'],$pdf->y);
+                $pdf->ezText('');
 	}
 
         function multiprintcss_body($p){
@@ -558,13 +710,62 @@ class C_Prescription extends Controller {
 			,$GLOBALS['rx_right_margin']
 		);
 		$pdf->selectFont($GLOBALS['fileroot'] . "/library/fonts/Helvetica.afm");
+            $this->_state = false; // Added by Rod - see Controller.class.php
+            $ids = preg_split('/::/', substr($id,1,strlen($id) - 2), -1, PREG_SPLIT_NO_EMPTY);
+
+            // Here is an alternative print style intended for facilities that dispense
+            // in-house and have no need for a formal prescription layout.  The products
+            // are just listed in table format.
+            if ($GLOBALS['gbl_rx_print_style'] == '0') {
+              $table = array();
+              $grandtotal = 0.00;
+              foreach ($ids as $id) {
+                $p = new Prescription($id);
+                $parms = array();
+                $this->_get_rx_printables($p, $parms);
+                $table[] = array(
+                  xl('Code')        => $parms['code'],
+                  xl('Description') => $parms['name'],
+                  xl('Quantity')    => $parms['qty'],
+                  xl('Unit Price')  => oeFormatMoney($parms['price']),
+                  xl('Total')       => oeFormatMoney($parms['fee']),
+                );
+                $grandtotal += $parms['fee'];
+              }
+              $table[] = array(
+                xl('Code')        => '',
+                xl('Description') => xl('Grand Total'),
+                xl('Quantity')    => '',
+                xl('Unit Price')  => '',
+                xl('Total')       => oeFormatMoney($grandtotal),
+              );
+              $this->multiprint_header($pdf, $p);
+              $pdf->ez['leftMargin'] += $pdf->ez['leftMargin'];
+              $pdf->ez['rightMargin'] += $pdf->ez['rightMargin'];
+              $pdf->ezTable($table, '', '', array(
+                // 'showHeadings' => 0,       // no column headings
+                'fontSize'     => 9,       // font size in points
+                'xPos'         => 'left',  // location of positioning bar
+                'xOrientation' => 'right', // position to right of xPos
+                'maxWidth'     => 504,     // max width of table 7 inches
+                'width'        => 288,     // width of table 4 inches
+                'cols'         => array(
+                                    xl('Quantity')   => array('justification' => 'right'),
+                                    xl('Unit Price') => array('justification' => 'right'),
+                                    xl('Total')      => array('justification' => 'right'),
+                                  )
+              ));
+              $pdf->ez['leftMargin'] = $GLOBALS['oer_config']['prescriptions']['left'];
+              $pdf->ez['rightMargin'] = $GLOBALS['oer_config']['prescriptions']['right'];
+              $this->multiprint_footer($pdf);
+              $pdf->ezStream();
+              return;
+    }
 
 		// $print_header = true;
 		$on_this_page = 0;
 
 		//print prescriptions body
-		$this->_state = false; // Added by Rod - see Controller.class.php
-		$ids = preg_split('/::/', substr($id,1,strlen($id) - 2), -1, PREG_SPLIT_NO_EMPTY);
 		foreach ($ids as $id) {
 			$p = new Prescription($id);
 			// if ($print_header == true) {
@@ -586,34 +787,76 @@ class C_Prescription extends Controller {
 		$pdf->ezStream();
 		return;
 	}
-
+        
         function multiprintcss_action($id = "") {
-                $_POST['process'] = "true";
-                if(empty($id)) {
-                        $this->function_argument_error();
-                }
+          $_POST['process'] = "true";
+          if(empty($id)) {
+            $this->function_argument_error();
+          }
+          $this->multiprintcss_preheader();
+          $this->_state = false; // Added by Rod - see Controller.class.php
+          $ids = preg_split('/::/', substr($id,1,strlen($id) - 2), -1, PREG_SPLIT_NO_EMPTY);
 
-	        $this->multiprintcss_preheader();
+          // Here is an alternative print style intended for facilities that dispense
+          // in-house and have no need for a formal prescription layout.  The products
+          // are just listed in table format.
+          if ($GLOBALS['gbl_rx_print_style'] == '0') {
+            $this->multiprintcss_header(new Prescription($ids[0]));
+            echo "<div class='scriptdiv'>\n";
+            echo " <table border='1' cellspacing='0'>\n";
+            echo "  <tr>\n";
+            echo "   <th align='left' >" . xl('Code') . "</th>\n";
+            echo "   <th align='left' >" . xl('Description') . "</th>\n";
+            echo "   <th align='right'>" . xl('Quantity') . "</th>\n";
+            echo "   <th align='right'>" . xl('Unit Price') . "</th>\n";
+            echo "   <th align='right'>" . xl('Total') . "</th>\n";
+            echo "  </tr>\n";
+            $grandtotal = 0.00;
+            foreach ($ids as $id) {
+              $p = new Prescription($id);
+              $parms = array();
+              $this->_get_rx_printables($p, $parms);
+              echo "  <tr>\n";
+              echo "   <td>" . $parms['code'] . "</td>\n";
+              echo "   <td>" . $parms['name'] . "</td>\n";
+              echo "   <td align='right'>" . $parms['qty'] . "</td>\n";
+              echo "   <td align='right'>" . oeFormatMoney($parms['price']) . "</td>\n";
+              echo "   <td align='right'>" . oeFormatMoney($parms['fee']) . "</td>\n";
+              echo "  </tr>\n";
+              $grandtotal += $parms['fee'];
+            }
 
-                $this->_state = false; // Added by Rod - see Controller.class.php
-                $ids = preg_split('/::/', substr($id,1,strlen($id) - 2), -1, PREG_SPLIT_NO_EMPTY);
+            echo "  <tr>\n";
+            echo "   <td></td>\n";
+            echo "   <td>" . xl('Grand Total') . "</td>\n";
+            echo "   <td align='right'></td>\n";
+            echo "   <td align='right'></td>\n";
+            echo "   <td align='right'>" . oeFormatMoney($grandtotal) . "</td>\n";
+            echo "  </tr>\n";
 
-                $on_this_page = 0;
-                foreach ($ids as $id) {
-                        $p = new Prescription($id);
-                        if ($on_this_page == 0) {
-                                $this->multiprintcss_header($p);
-                        }
-                        if (++$on_this_page > 3 || $p->provider->id != $this->providerid) {
-                                $this->multiprintcss_footer();
-                                $this->multiprintcss_header($p);
-                                $on_this_page = 1;
-                        }
-                        $this->multiprintcss_body($p);
-                }
-                $this->multiprintcss_footer();
-                $this->multiprintcss_postfooter();
-                return;
+            echo " </table>\n";
+            echo "</div>\n";
+            $this->multiprintcss_footer();
+            $this->multiprintcss_postfooter();	        
+            return;
+          }
+
+          $on_this_page = 0;
+          foreach ($ids as $id) {
+            $p = new Prescription($id);
+            if ($on_this_page == 0) {
+              $this->multiprintcss_header($p);
+            }
+            if (++$on_this_page > 3 || $p->provider->id != $this->providerid) {
+              $this->multiprintcss_footer();
+              $this->multiprintcss_header($p);
+              $on_this_page = 1;
+            }
+            $this->multiprintcss_body($p);
+          }
+          $this->multiprintcss_footer();
+          $this->multiprintcss_postfooter();	        
+          return;
         }
 
 	function send_action_process($id) {

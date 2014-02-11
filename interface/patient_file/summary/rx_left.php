@@ -16,6 +16,8 @@ include_once("../../globals.php");
 <span><?php xl('List', 'e');?></span></a>
 <a href="<?php echo $GLOBALS['webroot']?>/controller.php?prescription&edit&id=&pid=<?php echo $pid?>"  target='RxRight' class="css_button" onclick="top.restoreSession()">
 <span><?php xl('Add','e');?></span></a>
+<a class="css_button" href="<?php echo $GLOBALS['webroot']?>/controller.php?prescription&edit_multiple&id=&pid=<?php echo $pid?>"
+   target="RxRight" onclick="top.restoreSession()"><span><?php xl('Add Multiple','e'); ?></span></a>    
 </td>
 </tr>
 </table>
