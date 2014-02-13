@@ -174,7 +174,7 @@ if ($res = sqlStatement("select * from forms where authorized = 0 and " .
   if ($result4) {
     foreach ($result4 as $iter) {
       $authorize{$iter{"pid"}}{"forms"} .= "<span class=text>" .
-        htmlspecialchars($iter{"form_name"} . " " . date("n/j/Y",strtotime($iter{"date"})),ENT_NOQUOTES) .
+        htmlspecialchars(xl($iter{"form_name"}) . " " . date("n/j/Y",strtotime($iter{"date"})),ENT_NOQUOTES) .
         "</span><br>\n";
     }
   }
