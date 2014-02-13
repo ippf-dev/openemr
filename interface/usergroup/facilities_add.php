@@ -201,7 +201,12 @@ function displayAlert()
         <td><span class="text"><?php ($GLOBALS['simplified_demographics'] ? xl('Facility Code','e') : xl('Facility NPI','e')); ?>:
         </span></td><td><input type=entry size=20 name=facility_npi value=""></td>
         </tr>
-		<tr>
+        <tr>
+            	<td><span class="text"><?php xl('Latitude','e'); ?>:</span></td><td><input type="entry" size="20" name="latitude" value=""></td>
+                <td>&nbsp;</td>
+                <td><span class="text"><?php xl('Longitude','e'); ?>: </span></td><td><input type="entry" size="20" name="longitude" value=""></td>
+        </tr>        
+        <tr>
         <td><span class="text"><?php xl('Website','e'); ?>: </span></td><td><input type=entry size=20 name=website value=""></td>
         <td>&nbsp;</td>
         <td><span class="text"><?php xl('Email','e'); ?>: </span></td><td><input type=entry size=20 name=email value=""></td>
@@ -217,6 +222,11 @@ function displayAlert()
           <td>&nbsp;</td>
           <td><span class='text'><?php echo htmlspecialchars(xl('Color'),ENT_QUOTES); ?>: </span><span class="mandatory">&nbsp;*</span></td> <td><input type=entry name=ncolor id=ncolor size=20 value="">[<a href="javascript:void(0);" onClick="pick('pick','newcolor');return false;" NAME="pick" ID="pick"><?php echo htmlspecialchars(xl('Pick'),ENT_QUOTES); ?></a>]</td>
         </tr>
+        <tr<?php if (!$GLOBALS['ippf_specific']) echo " style='display:none'"; ?>>
+          <td><span class='text'><?php echo xl('Validation'); ?>: </span></td>
+          <td colspan='4'><input type='checkbox' name='extra_validation' value='1'<?php if ($facility['extra_validation']) echo ' checked'; ?>>
+          <span class='text'><?php echo xl('Display warnings for service and product mismatch'); ?></span></td>
+        </tr>        
 	<?php
 	 $disabled='';
 	 $resPBE=sqlStatement("select * from facility where primary_business_entity='1' and id!='".$my_fid."'");
