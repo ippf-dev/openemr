@@ -152,7 +152,7 @@ div.tiny { width:1px; height:1px; font-size:1px; }
 
  $MULTIDAY = count($A_EVENTS) > 1;
 
- $facilities = getUserFacilities($_SESSION['authId']); // from users_facility
+ $facilities = getUserFacilities($_SESSION['authId'],'name'); // from users_facility
  if (count($facilities) == 1 || !$_SESSION['pc_facility']) {
   $_SESSION['pc_facility'] = $facilities[0]['id'];
  }
@@ -186,7 +186,7 @@ div.tiny { width:1px; height:1px; font-size:1px; }
 /*********************************************************************
  // ==============================
  // FACILITY FILTERING (lemonsoftware)
- $facilities = getFacilities();
+ $facilities = getFacilities('','name');
  echo "   <select name='pc_facility'>\n";
  if ( !$_SESSION['pc_facility'] ) $selected = "selected='selected'";
  echo "    <option value='0' $selected>"  .xl('All Facilities'). "</option>\n";
@@ -199,9 +199,9 @@ div.tiny { width:1px; height:1px; font-size:1px; }
 // ==============================
 // FACILITY FILTERING (lemonsoftware)
 if ($_SESSION['authorizeduser'] == 1) {
-  $facilities = getFacilities();
+  $facilities = getFacilities('','name');
 } else {
-  $facilities = getUserFacilities($_SESSION['authId']); // from users_facility
+  $facilities = getUserFacilities($_SESSION['authId'],'name'); // from users_facility
   if (count($facilities) == 1)
     $_SESSION['pc_facility'] = ($facilities[0]['id']);
 }
@@ -502,6 +502,7 @@ if ($MULTIDAY) {
      $catname = $event['catname'];
      if ($comment && $GLOBALS['calendar_appt_style'] < 4)
       $title .= " " . $comment;
+     add_event_status_title($event,$title); 
      if ($catid == 2 || $catid == 3 || $catid == 4 || $catid == 8 || $catid == 11) {
       if      ($catid ==  2) $catname = xl('IN');
       else if ($catid ==  3) $catname = xl('OUT');

@@ -77,12 +77,13 @@ function getUsername($uID) {
 }
 
 //	returns an array of facility id and names
-function getUserFacilities($uID) {
+function getUserFacilities($uID, $orderby='id') {
   if (!$GLOBALS['restrict_user_facility']) {
   	$rez = sqlStatement("
 		select id, name, color
 		from facility
 		where service_location != 0
+                ORDER BY $orderby
 	");
   } else {
 	  $rez = sqlStatement("
@@ -91,6 +92,7 @@ function getUserFacilities($uID) {
 		  left join facility f on (uf.facility_id = f.id)
 		  where uf.tablename='users' 
 		  and uf.table_id = ? 
+                  ORDER BY f.$orderby
 	    ", array($uID) );
   }
   $returnVal = array();
