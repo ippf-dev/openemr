@@ -93,7 +93,14 @@ function getEvents($params)
     if ($levent != "") $sql .= " AND event LIKE '$levent%'";
     if ($tevent != "") $sql .= " AND event LIKE '%$tevent'";
     if ($sortby != "") $sql .= " ORDER BY ".$sortby." DESC "; // descending order
-    $sql .= " LIMIT 5000";
+    if (!empty($params['limit'])) {
+            $sql .= ' ' . $params['limit'];
+        }
+        else
+        {
+            $sql .= " LIMIT 5000";
+        }
+    
     }
     $res = sqlStatement($sql);
     for($iter=0; $row=sqlFetchArray($res); $iter++) {
@@ -767,4 +774,34 @@ function deleteDisclosure($deletelid)
         $sql="delete from extended_log where id='$deletelid'";
         $ret = sqlInsertClean_audit($sql);
 }
+
+/******************
+ * Get count of records from the LOG table
+ * using the optional parameters:
+ *   sdate : start date  (defaults to today)
+ *   edate : end date  (defaults to today)
+ *   user  : a specific user  (defaults to none)
+ *   levent: event name
+ * RETURNS:
+ *   the numeric count
+ ******************/
+function getEventsCount($params) {
+  $date1  = empty($params['sdate']) ? date("Y-m-d", time()) : $params['sdate'];
+  $date2  = empty($params['edate']) ? date("Y-m-d", time()) : $params['edate'];
+  $user   = empty($params['user']) ? '' : $params['user'];
+  $levent = empty($params['levent']) ? '' : $params['levent'];
+  $cols   = empty($params['cols']) ? "DISTINCT date, event, user, groupname, comments" : $params['cols'];
+
+  // do the query
+  $sql = "SELECT COUNT($cols) AS count FROM log WHERE date >= '$date1 00:00:00' AND date <= '$date2 23:59:59'";
+  if ($user != "") $sql .= " AND user LIKE '$user'";
+  if ($levent != "") $sql .= " AND event LIKE '$levent%'";
+
+  // echo "<!-- $sql -->\n"; // debugging
+
+  $row = sqlQuery($sql);
+
+  return 0 + $row['count'];
+}
+
 ?>

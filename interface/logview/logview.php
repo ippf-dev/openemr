@@ -3,7 +3,16 @@ include_once("../globals.php");
 include_once("$srcdir/log.inc");
 include_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/formatting.inc.php");
-?>
+if ($_REQUEST['form_csvexport']) {
+  header("Pragma: public");
+  header("Expires: 0");
+  header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+  header("Content-Type: application/force-download");
+  header("Content-Disposition: attachment; filename=logview.csv");
+  header("Content-Description: File Transfer");
+} // end export
+else {?>
+
 <html>
 <head>
 <?php html_header_show();?>
@@ -67,12 +76,22 @@ function eventTypeChange(eventname)
   f.form_pid.value = pid;
  }
 
+function submitList(offset) {
+ var f = document.forms[0];
+ var i = parseInt(f.fstart.value) + offset;
+ if (i < 0) i = 0;
+ f.fstart.value = i;
+ f.submit();
+}
+
 </script>
 </head>
 <body class="body_top">
 <font class="title"><?php  xl('Logs Viewer','e'); ?></font>
 <br>
 <?php 
+
+} // end not export
 $err_message=0;
 if ($_GET["start_date"])
 $start_date = formData('start_date','G');
@@ -89,8 +108,10 @@ $form_patient = formData('form_patient','G');
 if ($start_date && $end_date)
 {
 	if($start_date > $end_date){
-		echo "<table><tr class='alert'><td colspan=7>"; xl('Start Date should not be greater than End Date',e);
-		echo "</td></tr></table>"; 
+                if (!$_REQUEST['form_csvexport']) {
+                    echo "<table><tr class='alert'><td colspan=7>"; xl('Start Date should not be greater than End Date',e);
+                    echo "</td></tr></table>"; 
+                }
 		$err_message=1;	
 	}
 }
@@ -101,29 +122,30 @@ $form_user = formData('form_user','R');
 $form_pid = formData('form_pid','R');
 if ($form_patient == '' ) $form_pid = '';
 
-$res = sqlStatement("select distinct LEFT(date,10) as date from log order by date desc limit 30");
-for($iter=0;$row=sqlFetchArray($res);$iter++) {
-  $ret[$iter] = $row;
-}
+$eventname = formData('eventname','G');
 
 // Get the users list.
 $sqlQuery = "SELECT username, fname, lname FROM users " .
   "WHERE active = 1 AND ( info IS NULL OR info NOT LIKE '%Inactive%' ) ";
 
-$ures = sqlStatement($sqlQuery);
-?>
-
-<?php 
+$ures = sqlStatement($sqlQuery); 
 $get_sdate=$start_date ? $start_date : date("Y-m-d");
 $get_edate=$end_date ? $end_date : date("Y-m-d");
 
+$sortby = formData('sortby','G') ;
+if (!$_REQUEST['form_csvexport']) {
 ?>
-
 <br>
 <FORM METHOD="GET" name="theform" id="theform">
 <?php
-
-$sortby = formData('sortby','G') ;
+  $count = getEventsCount(array('sdate' => $get_sdate, 'edate' => $get_edate,
+    'user' => $form_user, 'levent' => $eventname));
+  $fstart = formdata('fstart','R') + 0;
+  $pagesize = 500;
+  while ($fstart >= $count) $fstart -= $pagesize;
+  if ($fstart < 0) $fstart = 0;
+  $fend = $fstart + $pagesize;
+  if ($fend > $count) $fend = $count;
 ?>
 <input type="hidden" name="sortby" id="sortby" value="<?php echo $sortby; ?>">
 <input type=hidden name=csum value="">
@@ -253,12 +275,46 @@ $check_sum = formData('check_sum','G');
 <input type=hidden name="event" value=<?php echo $event ; ?>>
 <a href="javascript:document.theform.submit();" class='link_submit'>[<?php  xl('Refresh','e'); ?>]</a>
 </td>
+<td>
+    <input type='submit' name='form_csvexport' value="<?php xl('Export to CSV','e') ?>" />
+</td>
+</tr>
+<tr>
+    <td colspan='2'>
+
+<?php if ($start_date && $end_date) { ?>
+<?php if ($fstart) { ?>
+ <a href="javascript:submitList(-<?php echo $pagesize ?>)">
+  &lt;&lt;
+ </a>
+ &nbsp;&nbsp;
+<?php } ?>
+ <?php echo ($fstart + 1) . " - $fend " . xl('of') . " $count"; ?>
+ &nbsp;&nbsp;
+ <a href="javascript:submitList(<?php echo $pagesize; ?>)">
+  &gt;&gt;
+ </a>
+<?php } ?>
+ <input type='hidden' name='fstart' value='<?php echo $fstart ?>'>
+
+</td>
 </tr>
 </table>
 </FORM>
-
-
-<?php if ($start_date && $end_date && $err_message!=1) { ?>
+<?php }  // Not doing a CSV export ?>
+<?php if ($start_date && $end_date && $err_message!=1) { 
+      if ($_REQUEST['form_csvexport']) {
+    // CSV headers:
+    echo '"' . xl('Date'    ) . '",';
+    echo '"' . xl('Event'   ) . '",';
+    echo '"' . xl('User'    ) . '",';
+    if (empty($GLOBALS['disable_non_default_groups'])) {
+      echo '"' . xl('Group'   ) . '",';
+    }
+    echo '"' . xl('Comments') . '"' . "\n";
+  }
+  else { // not export
+?>
 <div id="logview">
 <table>
  <tr>
@@ -275,13 +331,11 @@ $check_sum = formData('check_sum','G');
   <th id="sortby_checksum" class="text" title="<?php xl('Sort by Checksum','e'); ?>"><?php  xl('Checksum','e'); ?></th>
   <?php } ?>
  </tr>
-<?php
-
-$eventname = formData('eventname','G');
-$type_event = formData('type_event','G');
-?>
 <input type=hidden name=event value=<?php echo $eventname."-".$type_event ?>>
 <?php
+  } // End NOT CSV Export
+$eventname = formData('eventname','G');
+$type_event = formData('type_event','G');
 
 $tevent=""; $gev="";
 if($eventname != "" && $type_event != "")
@@ -299,14 +353,28 @@ if($eventname != "" && $type_event != "")
  else 
     {$gev = $getevent;}
     
-if ($ret = getEvents(array('sdate' => $get_sdate,'edate' => $get_edate, 'user' => $form_user, 'patient' => $form_pid, 'sortby' => $_GET['sortby'], 'levent' =>$gev, 'tevent' =>$tevent))) {
+if ($ret = getEvents(array('sdate' => $get_sdate,'edate' => $get_edate, 'user' => $form_user, 'patient' => $form_pid, 'sortby' => $_GET['sortby'], 'levent' =>$gev, 'tevent' =>$tevent,
+                        'limit' => ($_REQUEST['form_csvexport'] ? "" : ("LIMIT $fstart, " . ($fend - $fstart)))
+                          )
+                    )
+    ) {
 
 
   foreach ($ret as $iter) {
     //translate comments
     $patterns = array ('/^success/','/^failure/','/ encounter/');
-	$replace = array ( xl('success'), xl('failure'), xl('encounter','',' '));
-	$trans_comments = preg_replace($patterns, $replace, $iter["comments"]);
+    $replace = array ( xl('success'), xl('failure'), xl('encounter','',' '));
+    $trans_comments = preg_replace($patterns, $replace, $iter["comments"]);
+    if ($_REQUEST['form_csvexport']) {
+      echo '"' . oeFormatShortDate(substr($iter["date"], 0, 10)) . substr($iter["date"], 10) . '",';
+      echo '"' . xl($iter["event"]    ) . '",';
+      echo '"' . xl($iter["user"]     ) . '",';
+      if (empty($GLOBALS['disable_non_default_groups'])) {
+        echo '"' . xl($iter["groupname"]) . '",';
+      }
+      echo '"' . $trans_comments        . '"' . "\n";
+    }
+    else { // not export
 	
 ?>
  <TR class="oneresult">
@@ -324,13 +392,17 @@ if ($ret = getEvents(array('sdate' => $get_sdate,'edate' => $get_edate, 'user' =
  </TR>
 
 <?php
-      
+        }// end NOT CSV Export
     }
   }
 if (($eventname=="disclosure") || ($gev == ""))
 {
 $eventname="disclosure";
-if ($ret = getEvents(array('sdate' => $get_sdate,'edate' => $get_edate, 'user' => $form_user, 'patient' => $form_pid, 'sortby' => $_GET['sortby'], 'event' =>$eventname))) {
+if ($ret = getEvents(array('sdate' => $get_sdate,'edate' => $get_edate, 'user' => $form_user, 'patient' => $form_pid, 'sortby' => $_GET['sortby'], 'event' =>$eventname,
+                           'limit' => ($_REQUEST['form_csvexport'] ? "" : ("LIMIT $fstart, " . ($fend - $fstart)))
+                          )
+                    )
+        ) {
 foreach ($ret as $iter) {
         $comments=xl('Recipient Name').":".$iter["recipient"].";".xl('Disclosure Info').":".$iter["description"];
 ?>
@@ -351,12 +423,17 @@ foreach ($ret as $iter) {
     }
   }
 }
+if (!$_REQUEST['form_csvexport']) {
 ?>
-</table>
-</div>
+    </table>
+    </div>
 
-<?php } ?>
+<?php 
+    } // end not export
+} // end query results display
 
+if (!$_REQUEST['form_csvexport']) {
+?>
 </body>
 
 <script language="javascript">
@@ -393,4 +470,7 @@ Calendar.setup({inputField:"end_date", ifFormat:"%Y-%m-%d", button:"img_end_date
 </script>
 
 </html>
+<?php
+} // end not export
+?>
 
