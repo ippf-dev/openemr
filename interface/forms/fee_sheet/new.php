@@ -1841,3 +1841,4 @@ if ($alertmsg) {
 </body>
 </html>
 <?php require_once("review/initialize_review.php"); ?>
+<?php require_once("code_choice/initialize_code_choice.php"); ?>
