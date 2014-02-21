@@ -21,6 +21,10 @@ div.category-display
     cursor: pointer;
 }
 
+div.category-display:hover
+{
+    background-color: lightgray;
+}
 .active-category
 {
     position: fixed;
