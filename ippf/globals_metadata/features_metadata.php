@@ -75,6 +75,11 @@ array(
       '0',                              // default = false
       xl('Present an additional PDF custom receipt after checkout.')
     ),
-    
+    'gbl_ma_ippf_code_restriction' => array(
+      xl('Allow More than one MA/IPPF code mapping'),
+      'bool',                           // data type
+      '0',                              // default = false
+      xl('Disable the restriction of only one IPPF code per MA code in superbill')
+    ),    
     );
 ?>
