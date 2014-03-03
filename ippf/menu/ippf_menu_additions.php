@@ -34,10 +34,20 @@
         <?php } ?>               
     }
     
+    function remove_records_menu()
+    {
+        var records=$("li span:contains('Records')");
+        var root=records.parent().parent();
+        if(root.find(":contains('<?php echo xla('Patient Record Request');?>')").length);
+        {
+            root.remove();
+        }
+    }
     function setup_ippf_custom()
     {
         add_statistics_reports();
         add_finanical_reports();
+        remove_records_menu();
     } 
 </script>
 <script>
