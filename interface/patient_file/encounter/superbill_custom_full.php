@@ -257,7 +257,7 @@ function validEntry(f) {
     var icount = 0;
     var i = 0;
     while (i >= 0) {
-        i = f.related_code.value.indexOf('IPPF',i);
+        i = f.related_code.value.indexOf('IPPF:',i);
         if (i >= 0) {
         ++icount;
         ++i;
@@ -267,10 +267,14 @@ function validEntry(f) {
         alert('<?php echo xla('A related IPPF code is required!'); ?>');
         return false;
     }
-    if (icount > 1) {
-        alert('<?php echo xla('Only one related IPPF code is allowed!'); ?>');
-        return false;
-    }
+    
+    <?php if(!$GLOBALS['gbl_ma_ippf_code_restriction'])
+    { ?>        
+        if (icount > 1) {
+            alert('<?php echo xla('Only one related IPPF code is allowed!'); ?>');
+            return false;
+        }
+    <?php } ?>
 }
 <?php } ?>
  return true;
