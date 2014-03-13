@@ -6,7 +6,7 @@
  * and open the template in the editor.
  */
   
-  $GLOBALS['GLOBALS_METADATA']['Menu']= array(
+  $GLOBALS['GLOBALS_METADATA']['IPPF Menu']= array(
 
     'gbl_menu_stats_ippf' => array(
       xl('IPPF Statistics Reporting'),

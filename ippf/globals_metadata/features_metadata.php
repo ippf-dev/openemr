@@ -55,13 +55,6 @@ array(
       xl('Prescriptions may be created from the Fee Sheet.')
     ),
     
-    'patient_id_category_name' => array(
-      xl('Patient ID Category Name'),
-      'text',                           // data type
-      'Patient ID card',                // default
-      xl('Optional category name of a document to link to from the patient summary page. Lets you click on a patient name to see their ID card.')
-    ),
-    
     'gbl_checkout_receipt_note' => array(
       xl('Checkout Receipt Note'),
       'text',                           // data type
