@@ -14,6 +14,7 @@
         if(type=='report')
         {
             a.attr("onclick","return repPopup('"+url+"')");
+            a.attr("href","");
         }
         ret.append(a);
         return ret;
@@ -41,9 +42,9 @@
         var first = blank_forms.find("li:first");
         var demo = create_link("report","../patient_file/summary/demographics_print.php?isform=0","<?php echo xlt("Demographics");?>");
         first.after(demo);
-        first.remove();
+        first.hide();
         var demo_all=create_link("report","../patient_file/summary/demographics_print.php?isform=1","<?php echo xlt("Demographics (All Values)");?>");
-        var patient=create_link("report","'../patient_file/summary/demographics_print.php?patientid=-1&isform=0'","<?php echo xlt('Patient'); ?>");
+        var patient=create_link("report","../patient_file/summary/demographics_print.php?patientid=-1&isform=0","<?php echo xlt('Patient'); ?>");
         demo.after(demo_all);
         demo_all.after(patient);
     }
