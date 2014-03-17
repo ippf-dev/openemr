@@ -34,6 +34,32 @@ require_once("$srcdir/options.inc.php");
 $fstart = isset($_REQUEST['fstart']) ? $_REQUEST['fstart'] : 0;
 $popup  = empty($_REQUEST['popup']) ? 0 : 1;
 $message = isset($_GET['message']) ? $_GET['message'] : "";
+
+
+// This matters only if home_facility is a mandatory demographics field:
+$form_all_facilities = empty($_POST['form_all_facilities']) ? 0 : 1;
+
+// These items apply to the alternate patient search results style.
+$use_facility_checkbox = false;
+if (!empty($GLOBALS['patient_search_results_style'])) {
+  // Alternate patient search results style; this gets address plus other
+  // fields that are mandatory, up to a limit of 5.
+  $extracols = array();
+  $tres = sqlStatement("SELECT * FROM layout_options " .
+    "WHERE form_id = 'DEM' AND ( uor > 1 AND field_id != '' " .
+    "OR uor > 0 AND field_id = 'street' ) AND " .
+    "field_id NOT LIKE '_name' AND " .
+    "field_id NOT LIKE 'phone%' AND " .
+    "field_id NOT LIKE 'title' AND " .
+    "field_id NOT LIKE 'ss' AND " .
+    "field_id NOT LIKE 'DOB' AND " .
+    "field_id NOT LIKE 'pubpid' " .
+    "ORDER BY group_name, seq LIMIT 5");
+  while ($trow = sqlFetchArray($tres)) {
+    $extracols[$trow['field_id']] = $trow;
+    if ($trow['field_id'] == 'home_facility') $use_facility_checkbox = true;
+  }
+}
 ?>
 
 <html>
@@ -82,6 +108,7 @@ form {
 .srDateLast { width: 11%; }
 .srDateNext { width: 11%; }
 .srMisc { width: 10%; }
+.srIsOpen { font-weight: bold; }
 
 #searchResults table {
     width: 100%;
@@ -135,9 +162,37 @@ $sqllimit = $MAXSHOW;
 $given = "*, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS";
 $orderby = "lname ASC, fname ASC";
 
-$search_service_code = trim($_POST['search_service_code']);
+$today = date('Y-m-d');
+if ($GLOBALS['patient_search_results_sort']) {
+  $given .=
+    ", (SELECT COUNT(*) " .
+    "FROM form_encounter AS fe WHERE " .
+    "fe.pid = patient_data.pid AND substring(fe.date, 1, 10) = '$today') " .
+    "AS hasvisit" .
+    ", (SELECT COUNT(*) " .
+    "FROM form_encounter AS fe, billing AS b WHERE " .
+    "fe.pid = patient_data.pid AND substring(fe.date, 1, 10) = '$today' AND " .
+    "b.pid = fe.pid AND b.encounter = fe.encounter AND " .
+    "b.activity = 1 AND b.billed = 1) " .
+    "AS hasclosed";
+
+  $orderby = "hasclosed OR NOT hasvisit, $orderby";
+}
+
+$search_service_code = strip_escape_custom(trim($_POST['search_service_code']));
 echo "<input type='hidden' name='search_service_code' value='" .
   htmlspecialchars($search_service_code, ENT_QUOTES) . "' />\n";
+
+$condition = '';
+if ($use_facility_checkbox && !$form_all_facilities) {
+  $tmp = sqlQuery("SELECT facility_id FROM users WHERE id = '" . $_SESSION['authUserID'] . "'");
+  if (!empty($tmp['facility_id'])) {
+    $condition = "home_facility = '" . $tmp['facility_id'] . "'";
+  }
+  else {
+    $use_facility_checkbox = false;
+  }
+}
 
 if ($popup) {
   echo "<input type='hidden' name='popup' value='1' />\n";
@@ -185,6 +240,8 @@ if ($popup) {
     array_push($sqlBindArray, $search_service_code);
   }
 
+  if ($condition) $where .= " AND $condition";
+  
   $sql = "SELECT $given FROM patient_data " .
     "WHERE $where ORDER BY $orderby LIMIT $fstart, $sqllimit";
   $rez = sqlStatement($sql,$sqlBindArray);
@@ -195,31 +252,32 @@ if ($popup) {
 else {
   $patient = $_REQUEST['patient'];
   $findBy  = $_REQUEST['findBy'];
-  $searchFields = $_REQUEST['searchFields'];
+  $searchFields = strip_escape_custom($_REQUEST['searchFields']);
+  $exact = !empty($_REQUEST['find_exact']);
 
   echo "<input type='hidden' name='patient' value='" . htmlspecialchars( $patient, ENT_QUOTES) . "' />\n";
   echo "<input type='hidden' name='findBy'  value='" . htmlspecialchars( $findBy, ENT_QUOTES) . "' />\n";
+  echo "<input type='hidden' name='searchFields' value='" .attr($searchFields) . "' />\n";  
 
   if ($findBy == "Last")
-      $result = getPatientLnames("$patient", $given, $orderby, $sqllimit, $fstart);
+      $result = getPatientLnames("$patient", $given, $orderby, $sqllimit, $fstart, $exact, $condition);
   else if ($findBy == "ID")
-      $result = getPatientId("$patient", $given, "id ASC, ".$orderby, $sqllimit, $fstart);
+      $result = getPatientId("$patient", $given, "id ASC, ".$orderby, $sqllimit, $fstart, $exact, $condition);
   else if ($findBy == "DOB")
-      $result = getPatientDOB("$patient", $given, "DOB ASC, ".$orderby, $sqllimit, $fstart);
+      $result = getPatientDOB("$patient", $given, "DOB ASC, ".$orderby, $sqllimit, $fstart, $exact, $condition);
   else if ($findBy == "SSN")
-      $result = getPatientSSN("$patient", $given, "ss ASC, ".$orderby, $sqllimit, $fstart);
+      $result = getPatientSSN("$patient", $given, "ss ASC, ".$orderby, $sqllimit, $fstart, $exact, $condition);
   elseif ($findBy == "Phone")                  //(CHEMED) Search by phone number
-      $result = getPatientPhone("$patient", $given, $orderby, $sqllimit, $fstart);
+      $result = getPatientPhone("$patient", $given, $orderby, $sqllimit, $fstart, $exact, $condition);
   else if ($findBy == "Any")
-      $result = getByPatientDemographics("$patient", $given, $orderby, $sqllimit, $fstart);
+      $result = getByPatientDemographics("$patient", $given, $orderby, $sqllimit, $fstart, $exact, $condition);
   else if ($findBy == "Filter") {
     $result = getByPatientDemographicsFilter($searchFields, "$patient",
-      $given, $orderby, $sqllimit, $fstart, $search_service_code);
+      $given, $orderby, $sqllimit, $fstart, $search_service_code, $exact, $condition);
   }
 }
 ?>
 
-</form>
 
 <table border='0' cellpadding='5' cellspacing='0' width='100%'>
  <tr>
@@ -227,7 +285,18 @@ else {
    <a href="./patient_select_help.php" target=_new onclick='top.restoreSession()'>[<?php echo htmlspecialchars( xl('Help'), ENT_NOQUOTES); ?>]&nbsp</a>
   </td>
   <td class='text' align='center'>
-<?php if ($message) echo "<font color='red'><b>".htmlspecialchars( $message, ENT_NOQUOTES)."</b></font>\n"; ?>
+<?php
+
+if ($use_facility_checkbox) {
+  // Checkbox to include all facilities. Resubmit when clicked.
+  echo "<input type='checkbox' name='form_all_facilities' value='1' onclick='submitList(0);'";
+  if ($form_all_facilities) echo " checked";
+  echo " />" . xlt('All Facilities') . '&nbsp;';
+}
+
+if ($message) echo "<font color='red'><b>".text($message)."</b></font>\n";
+?>
+
   </td>
   <td class='text' align='right'>
 <?php
@@ -254,6 +323,8 @@ if ($fend > $count) $fend = $count;
   </td>
  </tr>
 </table>
+
+</form>
 
 <div id="searchResultsHeader">
 <table>
@@ -283,22 +354,9 @@ if (!$popup && preg_match('/^(\d+)\s*(.*)/',$patient,$matches) > 0) {
 <?php
 }
 else {
-  // Alternate patient search results style; this gets address plus other
-  // fields that are mandatory, up to a limit of 5.
-  $extracols = array();
-  $tres = sqlStatement("SELECT * FROM layout_options " .
-    "WHERE form_id = 'DEM' AND ( uor > 1 AND field_id != '' " .
-    "OR uor > 0 AND field_id = 'street' ) AND " .
-    "field_id NOT LIKE '_name' AND " .
-    "field_id NOT LIKE 'phone%' AND " .
-    "field_id NOT LIKE 'title' AND " .
-    "field_id NOT LIKE 'ss' AND " .
-    "field_id NOT LIKE 'DOB' AND " .
-    "field_id NOT LIKE 'pubpid' " .
-    "ORDER BY group_name, seq LIMIT 5");
-  while ($trow = sqlFetchArray($tres)) {
-    $extracols[$trow['field_id']] = $trow;
-    echo "<th class='srMisc'>" . htmlspecialchars(xl($trow['title']), ENT_NOQUOTES) . "</th>\n";
+  // Alternate patient search results style.
+  foreach ($extracols as $trow) {
+    echo "<th class='srMisc'>" . xl($trow['title']) . "</th>\n";
   }
 }
 ?>
@@ -314,6 +372,7 @@ else {
 <?php
 if ($result) {
     foreach ($result as $iter) {
+        $extcls = (!empty($iter['hasvisit']) && empty($iter['hasclosed'])) ? ' srIsOpen' : '';        
         echo "<tr class='oneresult' id='".htmlspecialchars( $iter['pid'], ENT_QUOTES)."'>";
         echo  "<td class='srName'>" . htmlspecialchars($iter['lname'] . ", " . $iter['fname']) . "</td>\n";
         //other phone number display setup for tooltip
@@ -332,21 +391,22 @@ if ($result) {
         $all_other_phones = $phone_biz.$phone_contact.$phone_cell;
         if ($all_other_phones == '') {$all_other_phones = xl('No other phone numbers listed');}
         //end of phone number display setup, now display the phone number(s)
-        echo "<td class='srPhone' title='".htmlspecialchars( $all_other_phones, ENT_QUOTES)."'>" .
+        echo "<td class='srPhone$extcls' title='".htmlspecialchars( $all_other_phones, ENT_QUOTES)."'>" .
 	    htmlspecialchars( $iter['phone_home'], ENT_NOQUOTES) . "</td>\n";
         
-        echo "<td class='srSS'>" . htmlspecialchars( $iter['ss'], ENT_NOQUOTES) . "</td>";
+        echo "<td class='srSS$extcls'>" . htmlspecialchars( $iter['ss'], ENT_NOQUOTES) . "</td>";
+        echo "<td class='srDOB$extcls'>";
         if ($iter{"DOB"} != "0000-00-00 00:00:00") {
-            echo "<td class='srDOB'>" . htmlspecialchars( $iter['DOB_TS'], ENT_NOQUOTES) . "</td>";
+            htmlspecialchars( $iter['DOB_TS'], ENT_NOQUOTES);
         } else {
-            echo "<td class='srDOB'>&nbsp;</td>";
+            echo "&nbsp;";
         }
-        
-        echo "<td class='srID'>" . htmlspecialchars( $iter['pubpid'], ENT_NOQUOTES) . "</td>";
+        echo "</td>";
+        echo "<td class='srID$extcls'>" . htmlspecialchars( $iter['pubpid'], ENT_NOQUOTES) . "</td>";
 
         if (empty($GLOBALS['patient_search_results_style'])) {
 
-          echo "<td class='srPID'>" . htmlspecialchars( $iter['pid'], ENT_NOQUOTES) . "</td>";
+          echo "<td class='srPID$extcls'>" . htmlspecialchars( $iter['pid'], ENT_NOQUOTES) . "</td>";
           
           //setup for display of encounter date info
           $encounter_count = 0;
@@ -407,15 +467,15 @@ if ($result) {
           if ($results = sqlFetchArray($statement)) {
               $encounter_count = $results['encounter_count'];
           }
-          echo "<td class='srNumEnc'>" . htmlspecialchars( $encounter_count, ENT_NOQUOTES) . "</td>\n";
-          echo "<td class='srNumDay'>" . htmlspecialchars( $day_diff, ENT_NOQUOTES) . "</td>\n";
-          echo "<td class='srDateLast'>" . htmlspecialchars( $last_date_seen, ENT_NOQUOTES) . "</td>\n";
-          echo "<td class='srDateNext'>" . htmlspecialchars( $next_appt_date, ENT_NOQUOTES) . "</td>\n";
+          echo "<td class='srNumEnc$extcls'>" . htmlspecialchars( $encounter_count, ENT_NOQUOTES) . "</td>\n";
+          echo "<td class='srNumDay$extcls'>" . htmlspecialchars( $day_diff, ENT_NOQUOTES) . "</td>\n";
+          echo "<td class='srDateLast$extcls'>" . htmlspecialchars( $last_date_seen, ENT_NOQUOTES) . "</td>\n";
+          echo "<td class='srDateNext$extcls'>" . htmlspecialchars( $next_appt_date, ENT_NOQUOTES) . "</td>\n";
         }
 
         else { // alternate search results style
           foreach ($extracols as $field_id => $frow) {
-            echo "<td class='srMisc'>";
+            echo "<td class='srMisc$extcls'>";
             echo generate_display_field($frow, $iter[$field_id]);
 
             echo"</td>\n";

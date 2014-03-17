@@ -391,8 +391,9 @@ function _set_patient_inc_count($limit, $count, $where, $whereBindArray=array())
   }
 }
 
-function getPatientLnames($lname = "%", $given = "pid, id, lname, fname, mname, providerID, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS", $orderby = "lname ASC, fname ASC", $limit="all", $start="0")
+function getPatientLnames($lname = "%", $given = "pid, id, lname, fname, mname, providerID, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS", $orderby = "lname ASC, fname ASC", $limit="all", $start="0", $exact=false, $condition='')
 {
+    $wild = $exact ? '' : '%';
     // Allow the last name to be followed by a comma and some part of a first name.
     // New behavior for searches:
     // Allows comma alone followed by some part of a first name
@@ -409,12 +410,12 @@ function getPatientLnames($lname = "%", $given = "pid, id, lname, fname, mname, 
     }
     $search_for_pieces1 = '';
     $search_for_pieces2 = '';
-    if ((strlen($lname) < 1)|| ($lname{0} != strtoupper($lname{0}))) {$search_for_pieces1 = '%';}
-    if ((strlen($fname) < 1)|| ($fname{0} != strtoupper($fname{0}))) {$search_for_pieces2 = '%';}
+    if ((strlen($lname) < 1)|| ($lname{0} != strtoupper($lname{0}))) {$search_for_pieces1 = $wild;}
+    if ((strlen($fname) < 1)|| ($fname{0} != strtoupper($fname{0}))) {$search_for_pieces2 = $wild;}
 
     $sqlBindArray = array();
     $where = "lname LIKE ? AND fname LIKE ? ";
-    array_push($sqlBindArray, $search_for_pieces1.$lname."%", $search_for_pieces2.$fname."%");
+    array_push($sqlBindArray, $search_for_pieces1.$lname.$wild, $search_for_pieces2.$fname.$wild);
         if (!empty($GLOBALS['pt_restrict_field'])) {
                 if ( $_SESSION{"authUser"} != 'admin' || $GLOBALS['pt_restrict_admin'] ) {
                         $where .= "AND ( patient_data." . add_escape_custom($GLOBALS['pt_restrict_field']) .
@@ -423,7 +424,9 @@ function getPatientLnames($lname = "%", $given = "pid, id, lname, fname, mname, 
 			array_push($sqlBindArray, $_SESSION{"authUser"});
                 }
         }
-
+    
+    if ($condition) $where .= "AND ( $condition ) ";
+    
     $sql="SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
     if ($limit != "all") $sql .= " LIMIT $start, $limit";
 
@@ -437,12 +440,13 @@ function getPatientLnames($lname = "%", $given = "pid, id, lname, fname, mname, 
     return $returnval;
 }
 
-function getPatientId($pid = "%", $given = "pid, id, lname, fname, mname, providerID, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS", $orderby = "lname ASC, fname ASC", $limit="all", $start="0")
+function getPatientId($pid = "%", $given = "pid, id, lname, fname, mname, providerID, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS", $orderby = "lname ASC, fname ASC", $limit="all", $start="0", $exact=false, $condition='')
 {
-
+    $wild = $exact ? '' : '%';
+    
     $sqlBindArray = array();
     $where = "pubpid LIKE ? ";
-    array_push($sqlBindArray, $pid."%");
+    array_push($sqlBindArray, $pid.$wild);
         if (!empty($GLOBALS['pt_restrict_field']) && $GLOBALS['pt_restrict_by_id'] ) {
                 if ( $_SESSION{"authUser"} != 'admin' || $GLOBALS['pt_restrict_admin'] ) {
                         $where .= "AND ( patient_data." . add_escape_custom($GLOBALS['pt_restrict_field']) .
@@ -452,6 +456,8 @@ function getPatientId($pid = "%", $given = "pid, id, lname, fname, mname, provid
                 }
         }
 
+    if ($condition) $where .= "AND ( $condition ) ";
+    
     $sql = "SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
     if ($limit != "all") $sql .= " limit $start, $limit";
     $rez = sqlStatement($sql, $sqlBindArray);
@@ -462,8 +468,9 @@ function getPatientId($pid = "%", $given = "pid, id, lname, fname, mname, provid
     return $returnval;
 }
 
-function getByPatientDemographics($searchTerm = "%", $given = "pid, id, lname, fname, mname, providerID, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS", $orderby = "lname ASC, fname ASC", $limit="all", $start="0")
+function getByPatientDemographics($searchTerm = "%", $given = "pid, id, lname, fname, mname, providerID, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS", $orderby = "lname ASC, fname ASC", $limit="all", $start="0", $exact=false, $condition='')
 {
+  $wild = $exact ? '' : '%';
   $layoutCols = sqlStatement( "SELECT field_id FROM layout_options WHERE form_id='DEM' AND group_name not like (? ) AND uor !=0", array("%".Employer."%") );
 
   $sqlBindArray = array();
@@ -473,9 +480,11 @@ function getByPatientDemographics($searchTerm = "%", $given = "pid, id, lname, f
       $where .= " or ";
     }
     $where .= " ".add_escape_custom($row["field_id"])." like ? ";
-    array_push($sqlBindArray, "%".$searchTerm."%");
+    array_push($sqlBindArray, $wild.$searchTerm.$wild);
   }
 
+  if ($condition) $where .= "AND ( $condition ) ";
+ 
   $sql = "SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
   if ($limit != "all") $sql .= " limit $start, $limit";
   $rez = sqlStatement($sql, $sqlBindArray);
@@ -487,7 +496,8 @@ function getByPatientDemographics($searchTerm = "%", $given = "pid, id, lname, f
 
 function getByPatientDemographicsFilter($searchFields, $searchTerm = "%",
   $given = "pid, id, lname, fname, mname, providerID, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS",
-  $orderby = "lname ASC, fname ASC", $limit="all", $start="0", $search_service_code='')
+  $orderby = "lname ASC, fname ASC", $limit="all", $start="0", $search_service_code=''
+  , $exact=false, $condition='')
 {
 	$layoutCols = split( '~', $searchFields );
   $sqlBindArray = array();
@@ -515,6 +525,7 @@ function getByPatientDemographicsFilter($searchFields, $searchTerm = "%",
   // If a non-empty service code was given, then restrict to patients who
   // have been provided that service.  Since the code is used in a LIKE
   // clause, % and _ wildcards are supported.
+  // The $exact parameter does not apply here.
   if ($search_service_code) {
     $where = "( $where ) AND " .
       "( SELECT COUNT(*) FROM billing AS b WHERE " .
@@ -525,7 +536,9 @@ function getByPatientDemographicsFilter($searchFields, $searchTerm = "%",
       ") > 0";
     array_push($sqlBindArray, $search_service_code);
   }
-
+  
+  if ($condition) $where .= "AND ( $condition ) ";
+  
   $sql = "SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
   if ($limit != "all") $sql .= " limit $start, $limit";
   $rez = sqlStatement($sql, $sqlBindArray);
@@ -579,7 +592,9 @@ function getPatientName($pid) {
 }
 
 /* find patient data by DOB */
-function getPatientDOB($DOB = "%", $given = "pid, id, lname, fname, mname", $orderby = "lname ASC, fname ASC", $limit="all", $start="0")
+function getPatientDOB($DOB = "%", 
+        $given = "pid, id, lname, fname, mname", $orderby = "lname ASC, fname ASC", 
+        $limit="all", $start="0", $exact=false, $condition='')
 {
     $DOB = fixDate($DOB, $DOB);
     $sqlBindArray = array();
@@ -593,7 +608,8 @@ function getPatientDOB($DOB = "%", $given = "pid, id, lname, fname, mname", $ord
                         array_push($sqlBindArray, $_SESSION{"authUser"});
                 }
         }
-
+    if ($condition) $where .= "AND ( $condition ) ";
+    
     $sql="SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
 
     if ($limit != "all") $sql .= " LIMIT $start, $limit";
@@ -607,11 +623,17 @@ function getPatientDOB($DOB = "%", $given = "pid, id, lname, fname, mname", $ord
 }
 
 /* find patient data by SSN */
-function getPatientSSN($ss = "%", $given = "pid, id, lname, fname, mname, providerID", $orderby = "lname ASC, fname ASC", $limit="all", $start="0")
+function getPatientSSN($ss = "%", 
+        $given = "pid, id, lname, fname, mname, providerID", 
+        $orderby = "lname ASC, fname ASC", $limit="all", $start="0", $exact=false, $condition='')
 {
+    $wild = $exact ? '' : '%';
     $sqlBindArray = array();
     $where = "ss LIKE ?";
-    array_push($sqlBindArray, $ss."%");
+    array_push($sqlBindArray, $ss.$wild);
+    
+    if ($condition) $where .= "AND ( $condition ) ";    
+    
     $sql="SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
     if ($limit != "all") $sql .= " LIMIT $start, $limit";
 
@@ -624,12 +646,20 @@ function getPatientSSN($ss = "%", $given = "pid, id, lname, fname, mname, provid
 }
 
 //(CHEMED) Search by phone number
-function getPatientPhone($phone = "%", $given = "pid, id, lname, fname, mname, providerID", $orderby = "lname ASC, fname ASC", $limit="all", $start="0")
+function getPatientPhone($phone = "%", 
+        $given = "pid, id, lname, fname, mname, providerID", 
+        $orderby = "lname ASC, fname ASC", 
+        $limit="all", $start="0", $exact=false, $condition='')
 {
+    $wild = $exact ? '' : '%';    
+    
     $phone = ereg_replace( "[[:punct:]]","", $phone );
     $sqlBindArray = array();
-    $where = "REPLACE(REPLACE(phone_home, '-', ''), ' ', '') REGEXP ?";
-    array_push($sqlBindArray, $phone);
+    $where = "REPLACE(REPLACE(phone_home, '-', ''), ' ', '') LIKE ?";
+    array_push($sqlBindArray, $phone.$wild);
+    
+    if ($condition) $where .= "AND ( $condition ) ";
+      
     $sql="SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
     if ($limit != "all") $sql .= " LIMIT $start, $limit";
 
