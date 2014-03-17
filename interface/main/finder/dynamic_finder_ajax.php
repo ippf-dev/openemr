@@ -16,6 +16,7 @@ require_once("../../globals.php");
 require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/jsonwrapper/jsonwrapper.php");
+require_once("$srcdir/options.inc.php");
 
 $popup = empty($_REQUEST['popup']) ? 0 : 1;
 
@@ -88,6 +89,13 @@ for ($i = 0; $i < count($aColumns); ++$i) {
         "fname LIKE '$sSearch%' OR " .
         "mname LIKE '$sSearch%' )";
     }
+    elseif ($colname=='home_facility') {
+        if(!empty($sSearch))
+        {
+            $where .= "(home_facility in (SELECT id FROM facility where name LIKE '$sSearch%')";
+            $where .=")";
+        }
+    }
     else {
       $where .= " `" . escape_sql_column_name($colname,array('patient_data')) . "` LIKE '$sSearch%'";
     }
@@ -142,6 +150,10 @@ while ($row = sqlFetchArray($res)) {
     }
     else if ($colname == 'DOB' || $colname == 'regdate' || $colname == 'ad_reviewed' || $colname == 'userdate1') {
       $arow[] = oeFormatShortDate($row[$colname]);
+    }
+    else if ($colname=='home_facility' )
+    {
+        $arow[] = generate_display_field(array('data_type'=>35),$row[$colname]);
     }
     else {
       $arow[] = $row[$colname];
