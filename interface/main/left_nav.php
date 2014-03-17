@@ -1266,7 +1266,6 @@ if (!empty($reg)) {
   <li><a class="collapsed" id="invimg" ><span><?php xl('Inventory','e') ?></span></a>
     <ul>
       <?php genMiscLink('RTop','adm','0',xl('Management'),'drugs/drug_inventory.php'); ?>
-      <?php genPopLink(xl('Destroyed'),'destroyed_drugs_report.php'); ?>
     </ul>
   </li>
 <?php } ?>
@@ -1394,6 +1393,8 @@ if (!empty($reg)) {
           <?php genMiscLink('RTop','rep','0',xl('List'),'reports/inventory_list.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Activity'),'reports/inventory_activity.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Transactions'),'reports/inventory_transactions.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Price List'),'reports/inventory_templates.php'); ?>            
+          <?php genMiscLink('RTop','rep','0',xl('Destroyed'),'reports/destroyed_drugs_report.php'); ?>            
         </ul>
       </li>
 <?php } ?>
