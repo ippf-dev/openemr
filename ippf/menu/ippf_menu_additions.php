@@ -57,12 +57,19 @@
             root.remove();
         }
     }
+    function remove_fee_menus()
+    {
+        var fees=$("li span:contains('Fees')").parent().parent();
+        fees.find("#npa0").parent().remove();
+        fees.find("#edi0").parent().remove();
+    }
     function setup_ippf_custom()
     {
         add_statistics_reports();
         add_finanical_reports();
         add_blank_forms();
         remove_records_menu();
+        remove_fee_menus();
     } 
 </script>
 <script>
