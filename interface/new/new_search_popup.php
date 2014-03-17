@@ -244,7 +244,7 @@ if ($result) {
     echo "'>";
     echo  "<td class='srID'>".htmlspecialchars( $relevance, ENT_NOQUOTES)."</td>\n";
     echo  "<td class='srName'>" . htmlspecialchars( $iter['lname'] . ", " . $iter['fname'], ENT_NOQUOTES) . "</td>\n";
-    foreach ($extracols as $field_id => $title) {
+    foreach ($extracols as $field_id => $trow) {
       echo "<td class='srMisc'>";
       echo generate_display_field($trow, $iter[$field_id]);
       echo "</td>\n";

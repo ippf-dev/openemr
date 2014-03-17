@@ -17,26 +17,42 @@ require_once("$srcdir/formdata.inc.php");
 
 $popup = empty($_REQUEST['popup']) ? 0 : 1;
 
+  $facility_info = sqlQuery("SELECT facility.name FROM users,facility WHERE users.id = '" . $_SESSION['authUserID'] . "' and users.facility_id=facility.id");
+  if (!empty($facility_info['name'])) {
+    $user_facility_name=$facility_info['name'];
+  }
+    else {
+      $user_facility_name="";
+}
 // Generate some code based on the list of columns.
 //
 $colcount = 0;
 $header0 = "";
 $header  = "";
 $coljson = "";
+$fac_idx=-1;
 $res = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
   "list_id = 'ptlistcols' ORDER BY seq, title");
 while ($row = sqlFetchArray($res)) {
+  $val="";
   $colname = $row['option_id'];
+  if($colname=='home_facility')
+  {
+      $val=$user_facility_name;
+      $fac_idx=$colcount;
+  }
   $title = xl_list_label($row['title']);
   $header .= "   <th>";
   $header .= text($title);
   $header .= "</th>\n";
-  $header0 .= "   <td align='center'><input type='text' size='10' ";
-  $header0 .= "value='' class='search_init' /></td>\n";
+  $header0 .= "   <td align='center'><input type='text' size='15' ";
+  $header0 .= "value='$val' class='search_init' /></td>\n";
   if ($coljson) $coljson .= ", ";
   $coljson .= "{\"sName\": \"" . addcslashes($colname, "\t\r\n\"\\") . "\"}";
   ++$colcount;
 }
+
+
 ?>
 <html>
 <head>
@@ -91,6 +107,10 @@ $(document).ready(function() {
   }
  } );
 
+<?php if($fac_idx!=-1) { ?>
+
+    oTable.fnFilter('<?php echo $user_facility_name;?>',<?php echo $fac_idx?> );
+<?php } ?>
  // This puts our custom HTML into the table header.
  $("div.mytopdiv").html("<form name='myform'><input type='checkbox' name='form_new_window' value='1'<?php
   if (!empty($GLOBALS['gbl_pt_list_new_window'])) echo ' checked'; ?> /><?php
