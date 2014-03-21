@@ -21,13 +21,22 @@ div.category-display
     cursor: pointer;
 }
 
-div.category-display:hover
+
+
+div.category-display > button
 {
-    background-color: lightgray;
+    width: 25em;
+    font-weight: bold;
+    text-align: left;
+}
+
+div.category-display > button:hover
+{
+    color: blue;
 }
 .active-category
 {
-    position: fixed;
+    position: absolute;
     z-index: 10;
     background-color: white;
     width: 100%;
