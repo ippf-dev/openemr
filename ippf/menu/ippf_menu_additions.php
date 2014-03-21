@@ -63,6 +63,11 @@
         fees.find("#npa0").parent().remove();
         fees.find("#edi0").parent().remove();
     }
+    function remove_eligibility_reports()
+    {
+        var edi_270=find_link("edi_270.php").parent().remove();
+        var edi_271=find_link("edi_271.php").parent().remove();
+    }
     function setup_ippf_custom()
     {
         add_statistics_reports();
@@ -70,7 +75,20 @@
         add_blank_forms();
         remove_records_menu();
         remove_fee_menus();
-    } 
+        remove_eligibility_reports();
+    }
+    
+    function newEncounterForNewPatient()
+    {
+        var f = document.forms[0];
+        if ( f.cb_top.checked && f.cb_bot.checked ) {
+            var encounter_frame = getEncounterTargetFrame('enc');
+            if ( encounter_frame != undefined )  {
+                loadFrame('nen0',encounter_frame, '<?php echo $primary_docs['nen'][2]; ?>');
+                setRadio(encounter_frame, 'ens');
+            }
+        }        
+    }
 </script>
 <script>
 <?php } ?>
