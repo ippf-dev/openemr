@@ -315,6 +315,7 @@ $(document).ready(function(){
                 refreshme();
         	}
         });
+        positionWidgetButtons("#stats_div div.section-header-dynamic");
     });
     $("#pnotes_ps_expand").load("pnotes_fragment.php");
     $("#disclosures_ps_expand").load("disc_fragment.php");
@@ -425,6 +426,13 @@ function setMyPatient() {
  var CalendarCategoryArray = new Array;
  var EncounterIdArray = new Array;
  var Count = 0;
+<?php if (isset($_REQUEST['is_new']))
+        {
+            ?>
+                    parent.left_nav.newEncounterForNewPatient();
+            <?php
+        }
+?>
 <?php
   //Encounter details are stored to javacript as array.
   $result4 = sqlStatement("SELECT fe.encounter,fe.date,openemr_postcalendar_categories.pc_catname FROM form_encounter AS fe ".
@@ -612,21 +620,22 @@ expand_collapse_widget($widgetTitle, $widgetLabel, $widgetButtonLabel,
 	   $totalbalance=$patientbalance + $insurancebalance;
  if ($GLOBALS['oer_config']['ws_accounting']['enabled']) {
  // Show current balance and billing note, if any.
+  $billing_color= $patientbalance > 0 ? "red" : "black";
   echo "<table border='0'><tr><td>" .
-  "<table ><tr><td><span class='bold'><font color='red'>" .
+  "<table ><tr><td><span class='bold'><font color='$billing_color'>" .
    xlt('Patient Balance Due') .
    " : " . text(oeFormatMoney($patientbalance)) .
    "</font></span></td></tr>".
-     "<tr><td><span class='bold'><font color='red'>" .
+     "<tr><td><span class='bold'><font color='$billing_color'>" .
    xlt('Insurance Balance Due') .
    " : " . text(oeFormatMoney($insurancebalance)) .
    "</font></span></td></tr>".
-   "<tr><td><span class='bold'><font color='red'>" .
+   "<tr><td><span class='bold'><font color='$billing_color'>" .
    xlt('Total Balance Due').
    " : " . text(oeFormatMoney($totalbalance)) .
    "</font></span></td></td></tr>";
   if ($result['genericname2'] == 'Billing') {
-   echo "<tr><td><span class='bold'><font color='red'>" .
+   echo "<tr><td><span class='bold'><font color='$billing_color'>" .
     xlt('Billing Note') . ":" .
     text($result['genericval2']) .
     "</font></span></td></tr>";

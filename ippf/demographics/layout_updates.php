@@ -11,7 +11,7 @@
     
     function setup_link(title,click)
     {
-        var link=$("<a><span>"+title+"</span></a>");
+        var link=$("<a class='css_button_small'><span>"+title+"</span></a>");
         link.addClass("small")
         link.attr("onclick",click);
         var td=$("<td></td>");
@@ -27,5 +27,25 @@
         dem_header_row.append(setup_link("<?php echo xlt("Print Record");?>","print_demographics(false)"));
         dem_header_row.append(setup_link("<?php echo xlt("Print Record (All Values)");?>","print_demographics(true)"));
     }
+    function moveWidgetButton(idx,elem)
+    {
+        var button=$(elem);
+        var td=button.parent();
+        var tr=td.parent();
+        td.css("text-align","right");
+        button.css("float","right");
+        tr.parent().parent().width("100%");
+        tr.parent().parent().parent().width("100%");
+        td.remove();
+        tr.append(td);
+    }
+    function positionWidgetButtons(sections)
+    {
+        var buttons_selector=" tr > td > a.css_button_small:first";
+        var sections=$(sections);
+        sections.find(buttons_selector).each(moveWidgetButton)
+    }    
     setup_links();
+    positionWidgetButtons("div.section-header");
+    positionWidgetButtons("div.section-header-dynamic");
 </script>
