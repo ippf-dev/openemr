@@ -59,10 +59,15 @@ function show_date_fun(){
 <div id="ccr_report">
 
 <form name='ccr_form' id='ccr_form' method='post' action='../../../ccr/createCCR.php'>
+
 <span class='title'><?php xl('Continuity of Care Record (CCR)','e'); ?></span>&nbsp;&nbsp;
-<br/>
+
+<br/>    
 <span class='text'>(<?php xl('Pop ups need to be enabled to see these reports','e'); ?>)</span>
 <br/>
+<span><a href="../summary/demographics.php" <?php if (!$GLOBALS['concurrent_layout']) echo "target='Main'"; ?> class="css_button_small" onclick="top.restoreSession()">
+        <span><?php echo htmlspecialchars(xl('Back To Patient'),ENT_NOQUOTES);?></span>
+    </a></span><br>
 <br/>
 <input type='hidden' name='ccrAction'>
 <input type='hidden' name='raw'>
