@@ -186,7 +186,11 @@ function cancelClicked() {
      <td class='bold' nowrap><?php echo xlt('Visit Category:'); ?></td>
      <td class='text'>
       <select name='pc_catid' id='pc_catid'>
+      <?php
+        // TODO: Hard coded removal of this entry specifically for IPPF.  Will discuss and address community friendly approach.
+        if(false) { ?>
 	<option value='_blank'>-- <?php echo xlt('Select One'); ?> --</option>
+      <?php } ?>
 <?php
  $cres = sqlStatement("SELECT pc_catid, pc_catname " .
   "FROM openemr_postcalendar_categories ORDER BY pc_catname");
