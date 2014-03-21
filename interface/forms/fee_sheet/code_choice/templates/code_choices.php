@@ -2,7 +2,7 @@
     &nbsp;
     <div data-bind="foreach:categories">
         <div class="category-display">
-            <span data-bind="text:title,click: set_active_category"></span>
+            <button data-bind="text:title,click: set_active_category"></button>
         </div>
     </div>
     <!-- ko if: active_category -->
