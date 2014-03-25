@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013-2014 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -357,7 +357,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     while ($srow = sqlFetchArray($sres)) {
       if ($srow['sale_id'] == $last_sale_id) continue;
 
-      if ($last_sale_id) {
+      if ($last_sale_id || $last_billing_id) {
         // Write empty last cell for previous row and terminate it.
         tblCell('');
         tblEndRow();

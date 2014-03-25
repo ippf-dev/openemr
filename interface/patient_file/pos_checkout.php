@@ -1771,12 +1771,17 @@ while ($brow = sqlFetchArray($bres)) {
     foreach ($relcodes as $codestring) {
       if ($codestring === '') continue;
       list($codetype, $code) = explode(':', $codestring);
-      if ($codetype !== 'IPPF') continue;
-      if (preg_match('/^25222/', $code)) {
+      if ($codetype !== 'IPPF2') continue;
+      if (preg_match('/^211/', $code)) {
         $gcac_related_visit = true;
-        if (preg_match('/^25222[34]/', $code))
+        if (preg_match('/^211313030110/', $code) // Medical
+         || preg_match('/^211323030230/', $code) // Surgical
+         || preg_match('/^211403030110/', $code) // Incomplete Medical
+         || preg_match('/^211403030230/', $code) // Incomplete Surgical
+        ) {
           $gcac_service_provided = true;
-      }
+        }
+      }      
     }
   }
 }
@@ -2120,7 +2125,7 @@ if ($GLOBALS['ippf_specific']) {
     "ORDER BY f.form_id DESC LIMIT 1");
   $csmethod = empty($csrow['field_value']) ? '' : $csrow['field_value'];
 
-  if (($csmethod || $contraception_billing_code) && $csmethod != $contraception_billing_code) {
+  if (($csmethod || $contraception_billing_code) && $csmethod != "IPPFCM:$contraception_billing_code") {
     echo " alert('" . xl('Warning') . ': ';
     if (!$csmethod) {
       echo xl('there is a contraception service but no contraception form new method');

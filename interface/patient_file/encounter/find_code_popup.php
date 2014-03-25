@@ -42,9 +42,10 @@ td { font-size:10pt; }
 
  // Standard function
  function selcode(codetype, code, selector, codedesc) {
-  if (opener.closed || ! opener.set_related)
+  if (opener.closed || ! opener.set_related) {
    alert('<?php echo addslashes( xl('The destination form was closed; I cannot act on your selection.') ); ?>');
-  else
+   }
+  else {
    opener.set_related(codetype, code, selector, codedesc);
   window.close();
   return false;
@@ -55,8 +56,10 @@ td { font-size:10pt; }
  function selcode_target(codetype, code, selector, codedesc, target_element) {
   if (opener.closed || ! opener.set_related_target)
    alert('<?php echo addslashes( xl('The destination form was closed; I cannot act on your selection.') ); ?>');
-  else
-   opener.set_related_target(codetype, code, selector, codedesc, target_element);
+  else {
+   var msg = opener.set_related(codetype, code, selector, codedesc);
+   if (msg) alert(msg);
+  }
   window.close();
   return false;
  }
@@ -177,7 +180,7 @@ else {
   else {
     while ($row = sqlFetchArray($res)) { // Display normal search
       $itercode = $row['code'];
-      $itertext = trim($row['code_text']);
+      $itertext = ucfirst(strtolower(trim($row['code_text'])));
       if (!empty($target_element)) {
         // add a 5th parameter to function to select the target element on the form for placing the code.
         $anchor = "<a href='' " .

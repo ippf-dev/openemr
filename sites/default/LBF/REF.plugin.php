@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009, 2014 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -18,9 +18,8 @@ function REF_javascript() {
   // the "External Referral" selection changes.
   echo "// onChange handler for form_refer_external.
 var poptions = new Array();
-function external_changed() {
+function external_changed(ischange) {
  var f = document.forms[0];
- // var eix = f.form_refer_external.selectedIndex;
  var rtval = f.form_refer_external.value;
  //
  var pselt = f.form_refer_to;
@@ -58,6 +57,11 @@ function external_changed() {
  }
  pselt.selectedIndex = indext;
  pself.selectedIndex = indexf;
+ // Requested service allowed code type depends on the referral type.
+ if (ischange && trimlen(f.form_refer_related_code.value) > 0) {
+  f.form_refer_related_code.value = '';
+  alert('" . xl('Please re-enter the requested service.') . "');
+ }
 }
 ";
 }
@@ -67,9 +71,9 @@ function external_changed() {
 //
 function REF_javascript_onload() {
   echo "
-external_changed();
+external_changed(false);
 var f = document.forms[0];
-f.form_refer_external.onchange = function () { external_changed(); };
+f.form_refer_external.onchange = function () { external_changed(true); };
 ";
 }
 
