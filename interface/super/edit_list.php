@@ -2,7 +2,7 @@
 /**
  * Administration Lists Module.
  *
- * Copyright (C) 2007-2011 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2007-2014 Rod Roark <rod@sunsetsystems.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,6 +24,7 @@
 
 require_once("../globals.php");
 require_once("$srcdir/acl.inc");
+require_once("$srcdir/log.inc");
 require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/lists.inc");
 require_once("../../custom/code_types.inc.php");
@@ -34,9 +35,42 @@ $list_id = empty($_REQUEST['list_id']) ? 'language' : $_REQUEST['list_id'];
 $thisauth = acl_check('admin', 'super');
 if (!$thisauth) die(xl('Not authorized'));
 
+// Compute a current checksum of the data from the database for the given list.
+//
+function listChecksum($list_id) {
+  if ($list_id == 'feesheet') {
+    $row = sqlQuery("SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
+      "fs_category, fs_option, fs_codes" .
+      "))) AS checksum FROM fee_sheet_options");
+  }
+  else if ($list_id == 'code_types') {
+    $row = sqlQuery("SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
+      "ct_key, ct_id, ct_seq, ct_mod, ct_just, ct_mask, ct_fee, ct_rel, ct_nofs, ct_diag" .
+      "))) AS checksum FROM code_types");
+  }
+  else {
+    $row = sqlQuery("SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
+      "list_id, option_id, title, seq, is_default, option_value, mapping, notes" .
+      "))) AS checksum FROM list_options WHERE " .
+      "list_id = '$list_id'");
+  }
+  return (0 + $row['checksum']);
+}
+
+$alertmsg = '';
+
+$current_checksum = listChecksum($list_id);
+
+if (isset($_POST['form_checksum']) && $_POST['formaction'] == 'save') {
+  if ($_POST['form_checksum'] != $current_checksum) {
+    $alertmsg = xl('Save rejected because someone else has changed this list. Please try again.');
+  }
+}
+
+
 // If we are saving, then save.
 //
-if ($_POST['formaction']=='save' && $list_id) {
+if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
     $opt = $_POST['opt'];
     if ($list_id == 'feesheet') {
         // special case for the feesheet list
@@ -138,7 +172,6 @@ if ($_POST['formaction']=='save' && $list_id) {
     }    
     else {
         // all other lists
-        //
         // collect the option toggle if using the 'immunizations' list
         if ($list_id == 'immunizations') {
           $ok_map_cvx_codes = isset($_POST['ok_map_cvx_codes']) ? $_POST['ok_map_cvx_codes'] : 0;
@@ -194,6 +227,7 @@ if ($_POST['formaction']=='save' && $list_id) {
             }
         }
     }
+    newEvent("edit_list", $_SESSION['authUser'], $_SESSION['authProvider'], "List = $list_id");    
 }
 else if ($_POST['formaction']=='addlist') {
     // make a new list ID from the new list name
@@ -213,12 +247,14 @@ else if ($_POST['formaction']=='addlist') {
                 "'".($row['maxseq']+1)."',".
                 "'1', '0')"
                 );
+    newEvent("add_list", $_SESSION['authUser'], $_SESSION['authProvider'], "List = $newlistID");    
 }
 else if ($_POST['formaction']=='deletelist') {
     // delete the lists options
     sqlStatement("DELETE FROM list_options WHERE list_id = '".$_POST['list_id']."'");
     // delete the list from the master list-of-lists
     sqlStatement("DELETE FROM list_options WHERE list_id = 'lists' and option_id='".$_POST['list_id']."'");
+    newEvent("delete_list", $_SESSION['authUser'], $_SESSION['authProvider'], "List = " . $_POST['list_id']);    
 }
 
 $opt_line_no = 0;
@@ -756,6 +792,16 @@ function mysubmit() {
  f.submit();
 }
 
+// This is invoked when a new list is chosen.
+// Disables all buttons and actions so certain bad things cannot happen.
+function listSelected() {
+ var f = document.forms[0];
+ // For jQuery 1.6 and later, change ".attr" to ".prop".
+ $(":button").attr("disabled", true);
+ f.formaction.value = '';
+ f.submit();
+}
+
 </script>
 
 </head>
@@ -764,6 +810,7 @@ function mysubmit() {
 
 <form method='post' name='theform' id='theform' action='edit_list.php'>
 <input type="hidden" name="formaction" id="formaction">
+<input type='hidden' name='form_checksum' value='<?php echo $current_checksum; ?>' />
 
 <p><b><?php xl('Edit list','e'); ?>:</b>&nbsp;
 <select name='list_id' id="list_id">
@@ -967,7 +1014,7 @@ if ($list_id) {
 
 $(document).ready(function(){
     $("#form_save").click(function() { SaveChanges(); });
-    $("#list_id").change(function() { $('#theform').submit(); });
+    $("#list_id").change(function() { listSelected(); });
 
     $(".newlist").click(function() { NewList(this); });
     $(".savenewlist").click(function() { SaveNewList(this); });
@@ -1028,6 +1075,12 @@ $(document).ready(function(){
         // reset the new group values to a default
         $('#newlistdetail > #newlistname').val("");
     };
+
+<?php
+if ($alertmsg) {
+  echo "    alert('" . addslashes($alertmsg) . "');\n";
+}
+?>    
 });
 
 </script>

@@ -1316,7 +1316,8 @@ if (!empty($reg)) {
       <?php if (acl_check('admin', 'super'    ) && $GLOBALS['enable_cdr']) genMiscLink('RTop','adm','0',xl('Patient Reminders'),'patient_file/reminder/patient_reminders.php?mode=admin&patient_id='); ?>
       <?php if ( ($GLOBALS['include_de_identification']) && (acl_check('admin', 'super'    )) ) genMiscLink('RTop','adm','0',xl('De Identification'),'de_identification_forms/de_identification_screen1.php'); ?>
           <?php if ( ($GLOBALS['include_de_identification']) && (acl_check('admin', 'super'    )) ) genMiscLink('RTop','adm','0',xl('Re Identification'),'de_identification_forms/re_identification_input_screen.php'); ?>
-      <?php if (acl_check('admin', 'super') && !empty($GLOBALS['code_types']['IPPF'])) genMiscLink('RTop','adm','0',xl('Export'),'main/ippf_export.php'); ?>
+      <?php if (acl_check('admin', 'super') && (!empty($GLOBALS['code_types']['IPPF']) || !empty($GLOBALS['code_types']['IPPF2']))) 
+              genMiscLink('RTop','adm','0',xl('Export'),'main/ippf_export.php'); ?>
       <li><a class="collapsed_lv2"><span><?php xl('Other','e') ?></span></a>
         <ul>
           <?php if (acl_check('admin', 'language')) genMiscLink('RTop','adm','0',xl('Language'),'language/language.php'); ?>
@@ -1362,7 +1363,7 @@ if (!empty($reg)) {
           <?php if (!$GLOBALS['disable_calendar']) genMiscLink('RTop','rep','0',xl('Appointments'),'reports/appointments_report.php'); ?>
           <?php  genMiscLink('RTop','rep','0',xl('Encounters'),'reports/encounters_report.php'); ?>
           <?php if (!$GLOBALS['disable_calendar']) genMiscLink('RTop','rep','0',xl('Appt-Enc'),'reports/appt_encounter_report.php'); ?>
-<?php if (empty($GLOBALS['code_types']['IPPF'])) { ?>
+<?php if (empty($GLOBALS['code_types']['IPPF']) && empty($GLOBALS['code_types']['IPPF2'])) { ?>
           <?php genMiscLink('RTop','rep','0',xl('Superbill'),'reports/custom_report_range.php'); ?>
 <?php } ?>
 	  <?php  genMiscLink('RTop','rep','0',xl('Eligibility'),'reports/edi_270.php'); ?>
@@ -1414,14 +1415,27 @@ if (!empty($reg)) {
         </ul>
       </li>
 <?php } ?>
-<?php if (!empty($GLOBALS['code_types']['IPPF'])) { ?>
-      <li><a class="collapsed_lv2"><span><?php xl('Statistics','e') ?></span></a>
+<?php if (!empty($GLOBALS['code_types']['IPPF']) || !empty($GLOBALS['code_types']['IPPF2'])) { ?>
+      <li><span><?php xl('Statistics','e') ?></span>
         <ul>
-          <?php genPopLink(xl('IPPF Stats'),'ippf_statistics.php?t=i'); ?>
-          <?php genPopLink(xl('GCAC Stats'),'ippf_statistics.php?t=g'); ?>
-          <?php genPopLink(xl('MA Stats'),'ippf_statistics.php?t=m'); ?>
-          <?php genPopLink(xl('CYP'),'ippf_cyp_report.php'); ?>
-          <?php genPopLink(xl('Daily Record'),'ippf_daily.php'); ?>
+<?php if (!empty($GLOBALS['code_types']['IPPF2'])) { ?>
+          <?php if ($GLOBALS['gbl_menu_stats_ippf' ]) genPopLink(xl('IPPF Stats'),'ippf_statistics_2.php?t=i'); ?>
+          <?php if ($GLOBALS['gbl_menu_stats_gcac' ]) genPopLink(xl('GCAC Stats'),'ippf_statistics_2.php?t=g'); ?>
+          <?php if ($GLOBALS['gbl_menu_stats_ma'   ]) genPopLink(xl('MA Stats'  ),'ippf_statistics_2.php?t=m'); ?>
+<?php } ?>
+          <?php if ($GLOBALS['gbl_menu_stats_cyp'  ]) genPopLink(xl('CYP'),'ippf_cyp_report.php'); ?>
+          <?php if ($GLOBALS['gbl_menu_stats_daily']) genPopLink(xl('Daily Record'),'ippf_daily.php'); ?>
+          <?php if ($GLOBALS['gbl_menu_stats_c3'   ]) genPopLink(xl('C3'),'ippf_c3.php'); ?>
+          <?php if (!empty($GLOBALS['code_types']['REPORT'])) genPopLink(xl('Visits by Item'),'famp_services_products_visits.php'); ?>
+<?php if (!empty($GLOBALS['code_types']['IPPF'])) { ?>
+          <li><span><?php xl('Legacy Statistics','e') ?></span>
+            <ul>
+              <?php if ($GLOBALS['gbl_menu_stats_ippf' ]) genPopLink(xl('IPPF Stats'),'ippf_statistics.php?t=i'); ?>
+              <?php if ($GLOBALS['gbl_menu_stats_gcac' ]) genPopLink(xl('GCAC Stats'),'ippf_statistics.php?t=g'); ?>
+              <?php if ($GLOBALS['gbl_menu_stats_ma'   ]) genPopLink(xl('MA Stats'  ),'ippf_statistics.php?t=m'); ?>
+            </ul>
+          </li>
+<?php } ?>
         </ul>
       </li>
 <?php } // end ippf-specific ?>

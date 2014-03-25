@@ -235,8 +235,8 @@ function exportEncounter($pid, $encounter, $date) {
       foreach ($relcodes as $codestring) {
         if ($codestring === '') continue;
         list($codetype, $code) = explode(':', $codestring);
-        if ($codetype !== 'IPPF') continue;
-        // Starting a new service (IPPF code).
+        if ($codetype !== 'IPPF2') continue;
+        // Starting a new service (IPPF2 code).
         OpenTag('IMS_eMRUpload_Service');
         Add('IppfServiceProductId', $code);
         Add('LocalServiceProductId'         , $brow['code']);
@@ -290,7 +290,7 @@ function exportEncounter($pid, $encounter, $date) {
   } // end while billing row found
 
   // Export referrals.  Match by date.  Export code type 3 and
-  // the Requested Service which should be an IPPF code.
+  // the Requested Service which should be an IPPF2 code.
   // Ignore inbound referrals (refer_external = 3 and 4) because the
   // services for those will appear in the tally sheet.
   $query = "SELECT refer_related_code FROM transactions WHERE " .
@@ -312,7 +312,7 @@ function exportEncounter($pid, $encounter, $date) {
           list($codetype, $code) = explode(':', $rrow['related_code']);
         }
       }
-      if ($codetype !== 'IPPF') continue;
+      if ($codetype !== 'IPPF2') continue;
       OpenTag('IMS_eMRUpload_Service');
       Add('IppfServiceProductId', $code);
       Add('Type'                , '3'); // 0=service, 1=product, 2=diagnosis, 3=referral
@@ -595,9 +595,15 @@ if (!empty($form_submit)) {
         "FROM forms AS f " .
         "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
         "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' " .
+        /*************************************************************
         "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'newmauser' " .
         "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = '$last_pid' AND " .
         "(d1.field_value LIKE '12%' OR (d2.field_value IS NOT NULL AND d2.field_value = '1')) " .
+        *************************************************************/
+        "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'pastmodern' " .
+        "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = '$last_pid' AND " .
+        "(d1.field_value LIKE 'IPPFCM:%' AND (d2.field_value IS NULL OR d2.field_value = '0')) " .
+        /************************************************************/
         "ORDER BY contrastart DESC LIMIT 1";
       $contradate_row = sqlQuery($query);
 
@@ -617,7 +623,8 @@ if (!empty($form_submit)) {
       $methodid = '';
       if (!empty($contrameth_row['contrameth'])) {
         // $methodid = mappedOption('ippfconmeth', $contrameth_row['contrameth']);
-        $methodid = $contrameth_row['contrameth'];
+        // $methodid = $contrameth_row['contrameth'];
+        $methodid = substr($contrameth_row['contrameth'], 7);
       }
       Add('CurrentMethod', $methodid);
     }
