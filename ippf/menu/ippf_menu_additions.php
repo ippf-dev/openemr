@@ -70,7 +70,6 @@
     }
     function setup_ippf_custom()
     {
-        add_statistics_reports();
         add_finanical_reports();
         add_blank_forms();
         remove_records_menu();

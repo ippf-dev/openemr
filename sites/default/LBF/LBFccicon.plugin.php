@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2012-2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2012-2014 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -28,22 +28,21 @@ if (!$formid) {
 function LBFccicon_javascript() {
   global $formid;
 
-  // Create an associative array of contrameth mapping values.  These are regex
-  // patterns used to match ippfconmeth list items with contrameth list items.
+  // Create a hash to map contrameth list IDs to an indicator of whether it is a modern method.
   echo "var contraMapping = new Object();\n";
-  $res = sqlStatement("SELECT option_id, option_value, mapping FROM list_options WHERE " .
+  $res = sqlStatement("SELECT option_id, option_value FROM list_options WHERE " .
     "list_id = 'contrameth' ORDER BY seq, title");
   while ($row = sqlFetchArray($res)) {
-    $mapping = '';
-    $i = strpos($row['mapping'], ':');
-    if ($i !== FALSE) $mapping = substr($row['mapping'], $i + 1);
-    if ($row['option_value']) { // if modern method
-      $mapping = '1:' . $mapping;
-    }
-    else {                      // not a modern method
-      $mapping = '0:' . $mapping;
-    }
+    $mapping = $row['option_value'] ? '1' : '0';
     echo "contraMapping['" . $row['option_id'] . "'] = '$mapping';\n";
+  }
+
+  // Create a hash to map IPPFCM codes to contrameth list IDs.
+  echo "var ippfcmMapping = new Object();\n";
+  $res = sqlStatement("SELECT code, code_text_short FROM codes WHERE " .
+    "code_type = '32' ORDER BY code");
+  while ($row = sqlFetchArray($res)) {
+    echo "ippfcmMapping['" . $row['code'] . "'] = '" . $row['code_text_short'] . "';\n";
   }
 
   echo "
@@ -60,22 +59,20 @@ function current_method_changed() {
 
  if (f.form_newmauser.selectedIndex != 1 &&
      (f.form_curmethod.selectedIndex <= 0 ||
-      contraMapping[f.form_curmethod.value].substring(0, 1) == '0') &&
+      contraMapping[f.form_curmethod.value] == '0') &&
      !pastmodern_autoset)
  {
-  // Also do not enable the past-modern question if the global option is set to
-  // record all acceptors new to modern contraception.
-  f.form_pastmodern.disabled = " . ($GLOBALS['gbl_new_acceptor_policy'] == '3' ? 'false' : 'true') . ";
+  f.form_pastmodern.disabled = false;
  }
  else {
   f.form_pastmodern.selectedIndex = 2;
  }
  if (f.form_curmethod.selectedIndex > 0) {
-  // Here there is a selected current method.  Use its regex pattern to decide if
-  // the new method is different.  If so, enable the reason for change selector.
-  // A missing pattern indicates No Method and method change reason is disabled.
-  var pattern = contraMapping[f.form_curmethod.value].substring(2);
-  if (pattern && !f.form_newmethod.value.match('^' + pattern)) {
+  // Here there is a selected current method.  Check if it is the same contrameth list type
+  // that the new method relates to.  If not, enable the reason for change selector.
+  // A missing related contrameth ID indicates No Method and method change reason is disabled.
+  var ippfcm = f.form_newmethod.value.substring(7);
+  if (ippfcmMapping[ippfcm] && f.form_curmethod.value != ippfcmMapping[ippfcm]) {
    f.form_mcreason.disabled = false;
   }
  }
@@ -118,41 +115,6 @@ function LBFccicon_javascript_onload() {
   //
   $newdisabled = contraception_billing_scan($pid, $encounter, $encrow['provider_id']) ? 'true' : 'false';
 
-  /*******************************************************************
-  // Get details of the last previous instance of this form, if any.
-  // * "First contraception at this clinic" should be auto-set to NO
-  //   and disabled if that question was answered previously.
-  // * "Previous modern contraceptive use" should auto-set to YES
-  //   and disabled it was YES previously.
-  //
-  $js_extra = "";
-  $prvrow = sqlQuery("SELECT " .
-    "d1.field_value AS newmauser, " .
-    "d2.field_value AS pastmodern " .
-    "FROM forms AS f " .
-    "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
-    "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmauser' " .
-    "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'pastmodern' " .
-    "WHERE f.pid = '$pid' AND " .
-    "f.formdir = 'LBFccicon' AND " .
-    "f.deleted = 0 AND " .
-    "f.form_id != '$formid' AND " .
-    "fe.date < '$encdate' " .
-    "ORDER BY fe.date DESC, f.form_id DESC LIMIT 1");
-  if (!empty($prvrow)) {
-    $js_extra .=
-      "// There was a previous instance of this form so we know they are not a new MA user.\n" .
-      "f.form_newmauser.selectedIndex = 1;\n" .
-      "f.form_newmauser.disabled = true;\n";
-    if (!empty($prvrow['pastmodern'])) {
-      $js_extra .=
-        "\n// Past Modern was previously true so must also be true now.\n" .
-        "f.form_pastmodern.selectedIndex = 2;\n" .
-        "f.form_pastmodern.disabled = true;\n" .
-        "pastmodern_autoset = true;\n";
-    }
-  }
-  *******************************************************************/
   // Get details of previous instances of this form.
   // * "First contraception at this clinic" should be auto-set to NO
   //   and disabled if that question was answered previously.
@@ -206,13 +168,20 @@ $js_extra
 
 current_method_changed();
 
+/*********************************************************************
 sel = f.form_newmethod;
 sel.disabled = $newdisabled;
 for (var i = 0; i < sel.options.length; ++i) {
- if (sel.options[i].value == '$contraception_billing_code') {
+ var ippfcm = sel.options[i].value.substring(7);
+ if (ippfcm == '$contraception_billing_code') {
   sel.selectedIndex = i;
   break;
  }
+}
+*********************************************************************/
+f.form_newmethod.disabled = $newdisabled;
+if ('$contraception_billing_code') {
+ f.form_newmethod.value = 'IPPFCM:$contraception_billing_code';
 }
 
 sel = f.form_provider;
@@ -239,7 +208,7 @@ alert('" . xl('A Contraception form already exists for this visit and has been o
 // Generate alert if method from services is different from a non-empty method in this form.
   $csrow = sqlQuery("SELECT field_value FROM lbf_data WHERE " .
     "form_id = '$formid' AND field_id = 'newmethod'");
-  if (!empty($csrow['field_value']) && $csrow['field_value'] != $contraception_billing_code) {
+  if (!empty($csrow['field_value']) && substr($csrow['field_value'], 7) != $contraception_billing_code) {
     echo "
 alert('" . xl('Contraceptive method selected on Tally Sheet does not match Adopted Method on Contraceptive form. Please resave Contraceptive form with correct information.') . "');
 ";
