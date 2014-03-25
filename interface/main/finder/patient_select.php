@@ -374,7 +374,7 @@ if ($result) {
     foreach ($result as $iter) {
         $extcls = (!empty($iter['hasvisit']) && empty($iter['hasclosed'])) ? ' srIsOpen' : '';        
         echo "<tr class='oneresult' id='".htmlspecialchars( $iter['pid'], ENT_QUOTES)."'>";
-        echo  "<td class='srName'>" . htmlspecialchars($iter['lname'] . ", " . $iter['fname']) . "</td>\n";
+        echo  "<td class='srName$extcls'>" . htmlspecialchars($iter['lname'] . ", " . $iter['fname']) . "</td>\n";
         //other phone number display setup for tooltip
         $phone_biz = '';
         if ($iter{"phone_biz"} != "") {
@@ -397,7 +397,7 @@ if ($result) {
         echo "<td class='srSS$extcls'>" . htmlspecialchars( $iter['ss'], ENT_NOQUOTES) . "</td>";
         echo "<td class='srDOB$extcls'>";
         if ($iter{"DOB"} != "0000-00-00 00:00:00") {
-            htmlspecialchars( $iter['DOB_TS'], ENT_NOQUOTES);
+            echo htmlspecialchars( $iter['DOB_TS'], ENT_NOQUOTES);
         } else {
             echo "&nbsp;";
         }
