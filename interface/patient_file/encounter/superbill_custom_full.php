@@ -73,6 +73,9 @@ if (isset($mode)) {
       $alertmsg = xl('Cannot add/update this entry because a duplicate already exists!');
     }
     else {
+      if (!empty($_POST['initial_consult_used'])) {
+        $cyp_factor = empty($_POST['initial_consult']) ? 0 : 1;
+      }        
       $sql =
         "code = '"         . ffescape($code)         . "', " .
         "code_type = '"    . ffescape($code_type)    . "', " .
@@ -85,6 +88,9 @@ if (isset($mode)) {
         "active = "        . add_escape_custom($active) . ", " .
         "financial_reporting = " . add_escape_custom($financial_reporting) . ", " .
         "reportable = "    . add_escape_custom($reportable);
+      if (isset($_POST['code_text_short'])) {
+        $sql .= ", code_text_short = '" . ffescape($_POST['code_text_short']) . "'";
+      }      
       if ($code_id) {
         $query = "UPDATE codes SET $sql WHERE id = ?";
         sqlStatement($query, array($code_id) );
@@ -103,7 +109,7 @@ if (isset($mode)) {
               "?, '', ?, ?)", array($code_id,$key,$value) );
           }
         }
-        $code = $code_type = $code_text = $modifier = $superbill = "";
+        $code = $code_type = $code_text = $code_text_short = $modifier = $superbill = "";
         $code_id = 0;
         $related_code = '';
         $cyp_factor = 0;
@@ -119,6 +125,7 @@ if (isset($mode)) {
     while ($row = sqlFetchArray($results)) {
       $code         = $row['code'];
       $code_text    = $row['code_text'];
+      $code_text_short = $row['code_text_short'];      
       $code_type    = $row['code_type'];
       $modifier     = $row['modifier'];
       // $units        = $row['units'];
@@ -184,6 +191,16 @@ if (!empty($search_financial_reporting)) {
  $filter_elements['financial_reporting'] = $search_financial_reporting;
 }
 
+// Determine if we are listing only active entries. Default is yes.
+$activeonly = 1;
+if (isset($_REQUEST['fstart'])) {
+  $activeonly = empty($_REQUEST['activeonly']) ? 0 : 1;
+}
+if($activeonly)
+{
+    // Then add a filter element 
+    $filter_elements['active']=1;
+}
 if (isset($_REQUEST['filter'])) {
  $count = main_code_set_search($filter_key,$search,NULL,NULL,false,NULL,true,NULL,NULL,$filter_elements);
 }
@@ -209,6 +226,11 @@ function set_related(codetype, code, selector, codedesc) {
  var f = document.forms[0];
  var s = f.related_code.value;
  if (code) {
+  if (codetype != 'PROD') {
+   if (s.indexOf(codetype + ':') == 0 || s.indexOf(';' + codetype + ':') > 0) {
+    return '<?php echo xl('A code of this type is already selected. Erase the field first if you need to replace it.') ?>';
+   }
+  }     
   if (s.length > 0) s += ';';
   s += codetype + ':' + code;
  } else {
@@ -216,6 +238,7 @@ function set_related(codetype, code, selector, codedesc) {
  }
  f.related_code.value = s;
  f.related_desc.value = s;
+ return '';
 }
 
 // This invokes the find-code popup.
@@ -253,18 +276,18 @@ function validEntry(f) {
  * These codes are required to have one and only one related IPPF codes
  */
  if (f.code_type.value == 12) {
-    // Count related IPPF codes. Must be 1.
+    // Count related IPPF2 codes. Must be 1.
     var icount = 0;
     var i = 0;
     while (i >= 0) {
-        i = f.related_code.value.indexOf('IPPF:',i);
+        i = f.related_code.value.indexOf('IPPF2:',i);
         if (i >= 0) {
         ++icount;
         ++i;
         }
     }
     if (icount < 1) {
-        alert('<?php echo xla('A related IPPF code is required!'); ?>');
+        alert('<?php echo xla('A related IPPF2 code is required!'); ?>');
         return false;
     }
     
@@ -351,6 +374,32 @@ foreach ($code_types as $key => $value) {
  return '';
 }
 
+function code_type_changed() {
+ var f = document.forms[0];
+ var sel = f.code_type;
+ var type = sel.value;
+ var showConsult = false;
+ var showMethod  = false;
+ var showCYP     = false;
+<?php if ($GLOBALS['ippf_specific']) { ?>
+ if (type == '12')      { // MA
+  showConsult = true;
+ }
+ else if (type == '32') { // IPPFCM
+  showMethod  = true;
+  showCYP     = true;
+ }
+ else if (type == '11') { // IPPF (obsolete)
+  showCYP     = true;
+ }
+<?php } ?>
+ document.getElementById('id_cyp_factor').style.display      = showCYP     ? '' : 'none';
+ document.getElementById('id_initial_consult').style.display = showConsult ? '' : 'none';
+ document.getElementById('id_code_text_short').style.display = showMethod  ? '' : 'none';
+ f.code_text_short.disabled = !showMethod;
+ f.initial_consult_used.value = showConsult ? '1' : '0';
+}
+
 </script>
 
 </head>
@@ -373,7 +422,7 @@ foreach ($code_types as $key => $value) {
 <table border='0' cellpadding='0' cellspacing='0'>
 
  <tr>
-  <td colspan="3"> <?php echo xlt('Not all fields are required for all codes or code types.'); ?><br><br></td>
+  <td colspan="4"> <?php xl('Not all fields are required for all codes or code types.','e'); ?><br><br></td>
  </tr>
 
  <tr>
@@ -383,7 +432,7 @@ foreach ($code_types as $key => $value) {
   <td>
 
    <?php if ($mode != "modify") { ?>
-     <select name="code_type">
+    <select name='code_type' onchange='code_type_changed()'>
    <?php } ?>
 
    <?php $external_sets = array(); ?>
@@ -411,9 +460,9 @@ foreach ($code_types as $key => $value) {
    <?php echo xlt('Code'); ?>:
 
    <?php if ($mode == "modify") { ?>
-     <input type='text' size='6' name='code' readonly='readonly' value='<?php echo attr($code) ?>' />
+     <input type='text' size='10' maxlength='31' name='code' readonly='readonly' value='<?php echo attr($code) ?>' />
    <?php } else { ?>
-     <input type='text' size='6' name='code' value='<?php echo attr($code) ?>'
+     <input type='text' size='10' maxlength='31' name='code' value='<?php echo attr($code) ?>'
       onkeyup='maskkeyup(this,getCTMask())'
       onblur='maskblur(this,getCTMask())'
      />
@@ -422,15 +471,16 @@ foreach ($code_types as $key => $value) {
 <?php if (modifiers_are_used()) { ?>
    &nbsp;&nbsp;<?php echo xlt('Modifier'); ?>:
    <?php if ($mode == "modify") { ?>
-     <input type='text' size='3' name='modifier' readonly='readonly' value='<?php echo attr($modifier) ?>'>
+     <input type='text' size='3' maxlength='5' name='modifier' readonly='readonly' value='<?php echo attr($modifier) ?>'>
    <?php } else { ?>
-     <input type='text' size='3' name='modifier' value='<?php echo attr($modifier) ?>'>
+     <input type='text' size='3' maxlength='5' name='modifier' value='<?php echo attr($modifier) ?>'>
    <?php } ?>
 <?php } else { ?>
    <input type='hidden' name='modifier' value=''>
 <?php } ?>
-
-   &nbsp;&nbsp;
+   &nbsp;
+  </td>
+  <td>
    <input type='checkbox' name='active' value='1'<?php if (!empty($active) || ($mode == 'modify' && $active == NULL) ) echo ' checked'; ?> />
    <?php echo xlt('Active'); ?>
   </td>
@@ -442,11 +492,16 @@ foreach ($code_types as $key => $value) {
   <td>
 
    <?php if ($mode == "modify") { ?>
-     <input type='text' size='50' name="code_text" readonly="readonly" value='<?php echo attr($code_text) ?>'>
+     <input type='text' size='60'  maxlength='255' name="code_text" readonly="readonly" value='<?php echo attr($code_text) ?>'>
    <?php } else { ?>
-     <input type='text' size='50' name="code_text" value='<?php echo attr($code_text) ?>'>
+     <input type='text' size='60'  maxlength='255' name="code_text" value='<?php echo attr($code_text) ?>'>
    <?php } ?>
 
+  </td>
+  <td id='id_initial_consult'>
+   <input type='checkbox' name="initial_consult" value='1' <?php echo $cyp_factor ? 'checked' : ''; ?> />
+   <input type='hidden' name='initial_consult_used' value='1' />
+   <?php xl('Initial Consult','e'); ?>
   </td>
  </tr>
 
@@ -460,25 +515,37 @@ generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'sup
    &nbsp;&nbsp;
    <input type='checkbox' title='<?php echo xlt("Syndromic Surveillance Report") ?>' name='reportable' value='1'<?php if (!empty($reportable)) echo ' checked'; ?> />
    <?php echo xlt('Diagnosis Reporting'); ?>
-   &nbsp;&nbsp;&nbsp;&nbsp;
+  </td>
+  <td>
    <input type='checkbox' title='<?php echo xlt("Service Code Finance Reporting") ?>' name='financial_reporting' value='1'<?php if (!empty($financial_reporting)) echo ' checked'; ?> />
    <?php echo xlt('Service Reporting'); ?>
   </td>
  </tr>
-
- <tr<?php if (empty($GLOBALS['ippf_specific'])) echo " style='display:none'"; ?>>
-  <td><?php echo xlt('CYP Factor'); ?>:</td>
+ <tr id='id_code_text_short'>
+  <td><?php xl('Contraceptive Method','e'); ?>:</td>
   <td></td>
-  <td>
-   <input type='text' size='10' maxlength='20' name="cyp_factor" value='<?php echo attr($cyp_factor) ?>'>
+  <td colspan='2'>
+   <?php echo generate_select_list('code_text_short', 'contrameth', $code_text_short); ?>
+   <!--
+   <input type='text' size='24' maxlength='24' name='code_text_short' value='<?php echo $code_text_short ?>'>&nbsp;
+   <?php if (!empty($GLOBALS['ippf_specific'])) echo xl('IPPFCM codes: Put contraceptive method ID here.'); ?>
+   -->
+  </td>
+ </tr>
+ 
+ <tr id='id_cyp_factor'>
+  <td><?php echo xl('CYP Factor'); ?>:</td>
+  <td></td>
+  <td colspan='2'>
+   <input type='text' size='10' maxlength='20' name="cyp_factor" value='<?php echo $cyp_factor ?>'>
   </td>
  </tr>
 
  <tr<?php if (!related_codes_are_used()) echo " style='display:none'"; ?>>
   <td><?php echo xlt('Relate To'); ?>:</td>
   <td></td>
-  <td>
-   <input type='text' size='50' name='related_desc'
+  <td colspan='2'>
+   <input type='text' size='80' name='related_desc'
     value='<?php echo attr($related_desc) ?>' onclick="sel_related()"
     title='<?php echo xla('Click to select related code'); ?>' readonly />
    <input type='hidden' name='related_code' value='<?php echo attr($related_code) ?>' />
@@ -560,6 +627,9 @@ foreach ($code_types as $key => $value) {
 
    <input type="text" name="search" size="5" value="<?php echo attr($search) ?>">&nbsp;
    <input type="submit" name="go" value='<?php echo xla('Search'); ?>'>&nbsp;&nbsp;
+   <input type="checkbox" name="activeonly" value="1"
+    onclick="submitList(0)" <?php echo $activeonly ? 'checked' : ''; ?> />
+   <?php echo xl('Active Only'); ?>   
    <input type='checkbox' title='<?php echo xlt("Only Show Diagnosis Reporting Codes") ?>' name='search_reportable' value='1'<?php if (!empty($search_reportable)) echo ' checked'; ?> />
    <?php echo xlt('Diagnosis Reporting Only'); ?>
    &nbsp;&nbsp;&nbsp;&nbsp;
@@ -591,7 +661,10 @@ foreach ($code_types as $key => $value) {
  <tr>
   <td><span class='bold'><?php echo xlt('Code'); ?></span></td>
   <td><span class='bold'><?php echo xlt('Mod'); ?></span></td>
-  <td><span class='bold'><?php echo xlt('Act'); ?></span></td>
+  <td><span class='bold' title='<?php echo xl('Active'); ?>'><?php echo xlt('Act'); ?></span></td>
+  <?php if ($GLOBALS['ippf_specific']) { ?>
+      <td class='bold' title='<?php echo xl('Initial Consult'); ?>'><?php echo xl('IC'); ?></td>
+  <?php } ?>  
   <td><span class='bold'><?php echo xlt('Dx Rep'); ?></span></td>
   <td><span class='bold'><?php echo xlt('Serv Rep'); ?></span></td>
   <td><span class='bold'><?php echo xlt('Type'); ?></span></td>
@@ -642,6 +715,17 @@ if (!empty($all)) {
     else {
       echo "  <td class='text'>" . ( ($iter["active"]) ? xlt('Yes') : xlt('No')) . "</td>\n";
     }
+    if ($GLOBALS['ippf_specific']) {
+      // IC (Initial Consult) column. Yes, No, or blank if not applicable.
+      echo "  <td class='text'>";
+      if ('12' == $iter['code_type']) {
+        echo $iter['cyp_factor'] == 0.00 ? xl('No') : xl('Yes');
+      }
+      else {
+        echo '&nbsp;';
+      }
+      echo "</td>\n";
+    }    
     echo "  <td class='text'>" . ($iter["reportable"] ? xlt('Yes') : xlt('No')) . "</td>\n";
     echo "  <td class='text'>" . ($iter["financial_reporting"] ? xlt('Yes') : xlt('No')) . "</td>\n";
     echo "  <td class='text'>" . text($iter['code_type_name']) . "</td>\n";
@@ -692,6 +776,7 @@ if (!empty($all)) {
 </center>
 
 <script language="JavaScript">
+code_type_changed();
 <?php
  if ($alertmsg) {
   echo "alert('" . addslashes($alertmsg) . "');\n";
