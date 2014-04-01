@@ -1836,7 +1836,6 @@ value='<?php echo xla('Refresh');?>'>
 </center>
 
 </form>
-<<<<<<< HEAD
 <script language='JavaScript'>
 <?php
 echo $justinit;
