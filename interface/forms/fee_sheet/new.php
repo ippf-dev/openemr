@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2005-2011 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2005-2014 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -21,6 +21,10 @@ require_once("$srcdir/options.inc.php");
 require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/appointment_status.inc.php");
 require_once("$srcdir/classes/Prescription.class.php");
+
+// For now we want this script to handle both old and new IPPF frameworks, so
+// this flag will serve to indicate if the new one is in effect.
+$USING_IPPF2 = isset($code_types['IPPF2']);
 
 // IPPF doesn't want any payments to be made or displayed in the Fee Sheet,
 // but we'll use this switch and keep the code in case someone wants it.
@@ -98,13 +102,37 @@ function visitChecksum($pid, $encounter) {
   return (0 + $rowb['checksum']) ^ (0 + $rowp['checksum']);
 }
 
-function checkRelatedForContraception($related_code) {
+function checkRelatedForContraception($related_code, $is_initial_consult=false) {
   global $line_contra_code, $line_contra_cyp, $line_contra_methtype;
 
   $line_contra_code     = '';
   $line_contra_cyp      = 0;
   $line_contra_methtype = 0; // 0 = None, 1 = Not initial, 2 = Initial consult
 
+  // This is for the new IPPF framework.
+  if ($GLOBALS['USING_IPPF2']) {
+    if (!empty($related_code)) {
+      $relcodes = explode(';', $related_code);
+      foreach ($relcodes as $relstring) {
+        if ($relstring === '') continue;
+        list($reltype, $relcode) = explode(':', $relstring);
+        if ($reltype !== 'IPPFCM') continue;
+        $methtype = $is_initial_consult ? 2 : 1;
+        $tmprow = sqlQuery("SELECT cyp_factor FROM codes WHERE " .
+          "code_type = '32' AND code = '$relcode' LIMIT 1");
+        $cyp = 0 + $tmprow['cyp_factor'];
+        if ($cyp > $line_contra_cyp) {
+          $line_contra_cyp      = $cyp;
+          // Note this is an IPPFCM code, not an IPPF2 code.
+          $line_contra_code     = $relcode;
+          $line_contra_methtype = $methtype;
+        }
+      }
+    }
+    return;
+  }
+
+  // The rest is to support the legacy IPPF framework.
   if (!empty($related_code)) {
     $relcodes = explode(';', $related_code);
     foreach ($relcodes as $relstring) {
@@ -222,10 +250,10 @@ function echoLine($lino, $codetype, $code, $modifier, $ndc_info='',
   // the option is chosen to use or auto-generate Contraception forms.
   // It adds contraceptive method and effectiveness to relevant lines.
   if ($GLOBALS['ippf_specific'] && $GLOBALS['gbl_new_acceptor_policy'] && $codetype == 'MA') {
-    $codesrow = sqlQuery("SELECT related_code FROM codes WHERE " .
+    $codesrow = sqlQuery("SELECT related_code, cyp_factor FROM codes WHERE " .
       "code_type = '" . $code_types[$codetype]['id'] .
       "' AND code = '$code' LIMIT 1");
-    checkRelatedForContraception($codesrow['related_code']);
+    checkRelatedForContraception($codesrow['related_code'], $codesrow['cyp_factor']);
     if ($line_contra_code) {
       echo "<input type='hidden' name='bill[$lino][method]' value='$line_contra_code' />";
       echo "<input type='hidden' name='bill[$lino][cyp]' value='$line_contra_cyp' />";
@@ -924,18 +952,22 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
       "ORDER BY f.form_id DESC LIMIT 1");
     if (isset($_POST['newmauser'])) {
       $newmauser   = $_POST['newmauser'];
+      // pastmodern is 0 iff new to modern contraception
+      $pastmodern = $newmauser == '2' ? 0 : 1;
+      if ($newmauser == '2') $newmauser = '1';      
       $ippfconmeth = $_POST['ippfconmeth'];
       // Add contraception form but only if it does not already exist
       // (if it does, must be 2 users working on the visit concurrently).
       if (empty($csrow)) {
         $newid = insert_lbf_item(0, 'newmauser', $newmauser);
-        insert_lbf_item($newid, 'newmethod', $ippfconmeth);
+        insert_lbf_item($newid, 'newmethod', "IPPFCM:$ippfconmeth");
+        insert_lbf_item($newid, 'pastmodern', $pastmodern);
         // Do we care about a service-specific provider here?
         insert_lbf_item($newid, 'provider', $main_provid);
         addForm($encounter, 'Contraception', $newid, 'LBFccicon', $pid, $userauthorized);
       }
     }
-    else if (empty($csrow) || $csrow['field_value'] != $ippfconmeth) {
+    else if (empty($csrow) || $csrow['field_value'] != "IPPFCM:$ippfconmeth") {
       // Contraceptive method does not match what is in an existing Contraception
       // form for this visit, or there is no such form.  Open the form.
       formJump("{$GLOBALS['rootdir']}/patient_file/encounter/view_form.php" .
@@ -1086,11 +1118,19 @@ function validate(f) {
     max_contra_code = tmp_meth;
    }
 <?php if ($patient_male) { ?>
+<?php if ($GLOBALS['USING_IPPF2']) { ?>
+   var male_compatible_method = (
+    // TBD: Fix hard coded dependency on IPPFCM codes here.
+    tmp_meth == '4450' || // male condoms
+    tmp_meth == '4570');  // male vasectomy
+<?php } else { ?>
    var tmp = tmp_meth.substring(0, 6);
-   if (tmp != '112141' // male condoms
-    && tmp != '122182' // male vasectomy
-    && tmp != '141200' // fp general counseling
-   ) {
+   var male_compatible_method = (
+    tmp == '112141' ||   // male condoms
+    tmp == '122182' ||   // male vasectomy
+    tmp == '141200');    // fp general counseling
+<?php } // end legacy framework ?>
+   if (!male_compatible_method) {
     if (!confirm('<?php echo xl('Warning: Contraceptive method is not compatible with a male patient.'); ?>'))
      return false;
    }
@@ -1694,37 +1734,31 @@ if ($contraception_code && !$isBilled) {
     if ($csrow['count'] == 0) {
       $date1 = substr($visit_row['date'], 0, 10);
       $ask_new_user = false;
-      // If surgical
-      if (preg_match('/^12/', $contraception_code)) {
-        // Identify the method with the IPPF code for the corresponding surgical procedure.
+      // Determine if this client ever started contraception with the MA.
+      // Even if only a method change, we assume they have.
+      // *************************************************************
+      //// But this version would be used if method changes don't count:
+      // $query = "SELECT f.form_id FROM forms AS f " .
+      //   "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
+      //   "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' " .
+      //   "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'newmauser' " .
+      //   "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = '$pid' AND " .
+      //   "(d1.field_value LIKE '12%' OR (d2.field_value IS NOT NULL AND d2.field_value = '1')) " .
+      //   "ORDER BY fe.date DESC LIMIT 1";
+      // *************************************************************
+      $query = "SELECT f.form_id FROM forms AS f " .
+        "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
+        "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = '$pid' " .
+        "ORDER BY fe.date DESC LIMIT 1";
+      $csrow = sqlQuery($query);
+      if (empty($csrow)) {
         $ask_new_user = true;
-      }
-      else {
-        // Determine if this client ever started contraception with the MA.
-        // Even if only a method change, we assume they have.
-        /***************************************************************
-        // But this version would be used if method changes don't count.
-        $query = "SELECT f.form_id FROM forms AS f " .
-          "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
-          "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' " .
-          "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'newmauser' " .
-          "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = '$pid' AND " .
-          "(d1.field_value LIKE '12%' OR (d2.field_value IS NOT NULL AND d2.field_value = '1')) " .
-          "ORDER BY fe.date DESC LIMIT 1";
-        ***************************************************************/
-        $query = "SELECT f.form_id FROM forms AS f " .
-          "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
-          "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = '$pid' " .
-          "ORDER BY fe.date DESC LIMIT 1";
-        $csrow = sqlQuery($query);
-        if (empty($csrow)) {
-          $ask_new_user = true;
-        }
       }
       if ($ask_new_user) {
         echo "<select name='newmauser'>\n";
-        echo " <option value='1'>" . xl('First contraception at this clinic') . "</option>\n";
-        echo " <option value='0'>" . xl('Method change') . "</option>\n";
+        echo " <option value='2'>" . xl('First Modern Contraceptive Use (Lifetime)') . "</option>\n";
+        echo " <option value='1'>" . xl('First Modern Contraception at this Clinic (with Prior Contraceptive Use)') . "</option>\n";
+        echo " <option value='0'>" . xl('Method Change at this Clinic') . "</option>\n";
         echo "</select>\n";
         echo "<p>&nbsp;\n";
       }
