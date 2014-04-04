@@ -1823,9 +1823,14 @@ if (true) {
 <input type='submit' name='bn_save' value='<?php echo xla('Save');?>' 
 <?php if ($rapid_data_entry) echo " style='background-color:#cc0000';color:#ffffff'"; ?>
 />
+<?php if ($GLOBALS['ippf_specific']) { ?>
+<?php if ($hasCharges) { ?>
+<input type='submit' name='bn_save_close' value='<?php xl('Save and Checkout','e');?>' />
+<?php } else { ?>
+<input type='submit' name='bn_save_close' value='<?php xl('Save and Close','e');?>' />
+<?php } // end no charges ?>
 &nbsp;
-<input type='submit' name='bn_save_close' value='<?php echo xla('Mark as Billed');?>' />
-&nbsp;
+<?php } ?>
 <input type='submit' name='bn_refresh' onclick='return this.clicked = true;' 
 value='<?php echo xla('Refresh');?>'>
 &nbsp;
@@ -1873,3 +1878,4 @@ if ($alertmsg) {
 </html>
 <?php require_once("review/initialize_review.php"); ?>
 <?php require_once("code_choice/initialize_code_choice.php"); ?>
+<script type="text/javascript" src="<?php echo $web_root;?>/interface/forms/fee_sheet/js/layout_changes.js"></script>
