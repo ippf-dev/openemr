@@ -42,13 +42,14 @@ td { font-size:10pt; }
 
  // Standard function
  function selcode(codetype, code, selector, codedesc) {
-  if (opener.closed || ! opener.set_related) {
+if (opener.closed || ! opener.set_related) {
    alert('<?php echo addslashes( xl('The destination form was closed; I cannot act on your selection.') ); ?>');
    }
   else {
-   opener.set_related(codetype, code, selector, codedesc);
-  window.close();
-  return false;
+    opener.set_related(codetype, code, selector, codedesc);
+    window.close();
+    return false;
+    }
  }
 
  // Standard function with additional parameter to select which
