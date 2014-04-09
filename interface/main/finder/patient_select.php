@@ -164,19 +164,22 @@ $orderby = "lname ASC, fname ASC";
 
 $today = date('Y-m-d');
 if ($GLOBALS['patient_search_results_sort']) {
+  // Here "open visits" are visits that do not have any billed service or product.
+  // So this includes visits with an empty fee sheet, but does not include visits
+  // that have some billed and some unbilled line items (should not happen but in
+  // the past copays have ended up as unbilled).
   $given .=
-    ", (SELECT COUNT(*) " .
-    "FROM form_encounter AS fe WHERE " .
-    "fe.pid = patient_data.pid AND substring(fe.date, 1, 10) = '$today') " .
-    "AS hasvisit" .
-    ", (SELECT COUNT(*) " .
-    "FROM form_encounter AS fe, billing AS b WHERE " .
-    "fe.pid = patient_data.pid AND substring(fe.date, 1, 10) = '$today' AND " .
-    "b.pid = fe.pid AND b.encounter = fe.encounter AND " .
-    "b.activity = 1 AND b.billed = 1) " .
-    "AS hasclosed";
-
-  $orderby = "hasclosed OR NOT hasvisit, $orderby";
+    ", (SELECT COUNT(fe.id) " .
+    "FROM form_encounter AS fe " .
+    "LEFT JOIN billing AS b ON " .
+    "b.pid = fe.pid AND b.encounter = fe.encounter AND b.activity = 1 AND b.billed = 1 " .
+    "LEFT JOIN drug_sales AS s ON " .
+    "s.pid = fe.pid AND s.encounter = fe.encounter AND s.billed = 1 " .
+    "WHERE fe.pid = patient_data.pid AND b.id IS NULL AND s.sale_id IS NULL) " .
+    "AS openvisits";
+  // Open visits will sort first because "openvisits = 0" will evaluate to false,
+  // and in SQL false is 0 and true is 1.
+  $orderby = "openvisits = 0, $orderby";
 }
 
 $search_service_code = strip_escape_custom(trim($_POST['search_service_code']));
@@ -372,7 +375,7 @@ else {
 <?php
 if ($result) {
     foreach ($result as $iter) {
-        $extcls = (!empty($iter['hasvisit']) && empty($iter['hasclosed'])) ? ' srIsOpen' : '';        
+        $extcls = !empty($iter['openvisits']) ? ' srIsOpen' : '';
         echo "<tr class='oneresult' id='".htmlspecialchars( $iter['pid'], ENT_QUOTES)."'>";
         echo  "<td class='srName$extcls'>" . htmlspecialchars($iter['lname'] . ", " . $iter['fname']) . "</td>\n";
         //other phone number display setup for tooltip
