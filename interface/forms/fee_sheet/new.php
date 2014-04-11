@@ -1854,13 +1854,6 @@ value='<?php echo xla('Refresh');?>'>
 </center>
 
 </form>
-<script language='JavaScript'>
-<?php
-echo $justinit;
-if ($alertmsg) {
-  echo "alert('" . addslashes($alertmsg) . "');\n";
-}
-?>
 
 <script language='JavaScript'>
 var required_code_count = <?php echo $required_code_count; ?>;
