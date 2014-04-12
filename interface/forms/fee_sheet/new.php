@@ -966,12 +966,12 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
       "f.pid = '$pid' AND f.encounter = '$encounter' AND " .
       "f.formdir = 'LBFccicon' AND f.deleted = 0 " .
       "ORDER BY f.form_id DESC LIMIT 1");
-    if (isset($_POST['newmauser'])) {
+      $ippfconmeth = $_POST['ippfconmeth'];
+      if (isset($_POST['newmauser'])) {
       $newmauser   = $_POST['newmauser'];
       // pastmodern is 0 iff new to modern contraception
       $pastmodern = $newmauser == '2' ? 0 : 1;
       if ($newmauser == '2') $newmauser = '1';      
-      $ippfconmeth = $_POST['ippfconmeth'];
       // Add contraception form but only if it does not already exist
       // (if it does, must be 2 users working on the visit concurrently).
       if (empty($csrow)) {
