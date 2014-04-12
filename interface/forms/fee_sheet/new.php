@@ -960,14 +960,14 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
 
   // More Family Planning stuff.
   if (isset($_POST['ippfconmeth'])) {
+    $ippfconmeth = $_POST['ippfconmeth'];      
     $csrow = sqlQuery("SELECT f.form_id, ld.field_value FROM forms AS f " .
       "LEFT JOIN lbf_data AS ld ON ld.form_id = f.form_id AND ld.field_id = 'newmethod' " .
       "WHERE " .
       "f.pid = '$pid' AND f.encounter = '$encounter' AND " .
       "f.formdir = 'LBFccicon' AND f.deleted = 0 " .
       "ORDER BY f.form_id DESC LIMIT 1");
-      $ippfconmeth = $_POST['ippfconmeth'];
-      if (isset($_POST['newmauser'])) {
+    if (isset($_POST['newmauser'])) {
       $newmauser   = $_POST['newmauser'];
       // pastmodern is 0 iff new to modern contraception
       $pastmodern = $newmauser == '2' ? 0 : 1;
