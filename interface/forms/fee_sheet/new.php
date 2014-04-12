@@ -1154,7 +1154,10 @@ function validate(f) {
 <?php } // end if improper age ?>
 <?php if ($match_services_to_products) { ?>
    // Nonsurgical methods should normally include a corresponding product.
-   if (tmp_meth.substring(0, 2) != '12') {
+   // This takes advantage of the fact that only nonsurgical methods have CYP
+   // less than 10, in both the old and new frameworks.
+   if (tmp_cyp < 10.0) {
+   // Was: if (tmp_meth.substring(0, 2) != '12') {
     var got_prod = false;
     for (var plino = 1; f['prod['+plino+'][drug_id]']; ++plino) {
      var ppfx = 'prod[' + plino + ']';
@@ -1865,7 +1868,6 @@ if ($alertmsg) {
   echo "alert('" . addslashes($alertmsg) . "');\n";
 }
 ?>
-
 </script>
 </body>
 </html>
