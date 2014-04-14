@@ -15,7 +15,7 @@ function find_contraceptive_methods($contraceptive_code)
     $results  =sqlStatement($sqlSearch,array("%".$code."%"));
     while($row=sqlFetchArray($results))
     {
-        $rel_codes=explode(";",$row[related_code]);
+        $rel_codes=explode(";",$row['related_code']);
         $match=false;
         foreach($rel_codes as $cur_code)
         {
@@ -51,16 +51,25 @@ if(!acl_check('acct', 'bill'))
     return false;
 }
 
-if(isset($_REQUEST['ippfconmeth']))
+$retval=array();
+$methods_lookup=array();
+if(isset($_REQUEST['methods']))
 {
-    $ippfconmeth=$_REQUEST['ippfconmeth'];
-    $retval['products']=find_contraceptive_methods($ippfconmeth);
-    $retval['method']=get_method_description($ippfconmeth);    
+    $methods=$_REQUEST['methods'];
+    foreach($methods as $method_code)
+    {
+        if(!isset($methods_lookup[$method_code]))
+        {
+            $list=array();
+            $list['products']=find_contraceptive_methods($method_code);
+            $list['method']=get_method_description($method_code);
+            $methods_lookup[$method_code]=$list;
+            array_push($retval,$list);
+            
+        }
+    }
 }
-else
-{
-    $retval['products']=array();
-}
+
 
 
 echo json_encode($retval);

@@ -4,7 +4,7 @@
  * and open the template in the editor.
  */
 
-function populate_contraception_products(data,status,jqXHR)
+function populate_contraception_products(data)
 {
     var category=new code_category("Products:"+data.method);
     var products = data['products'];
@@ -32,16 +32,29 @@ function lookup_contraception_products()
 {
     var conmeth=$("input[name='ippfconmeth']");
     var conmethcode=conmeth.val();
-    if(conmethcode!=null)
+    var methods_elements=$("tr > td.billcell > input[type='hidden'][name$='[method]']");
+    var methods=[];
+    methods_elements.each(function(idx,elem)
+    {
+        methods.push(elem.value);
+    });
+    conmethcode=methods_elements.get(0).value;
+    if(methods.length!=0)
     {
         $.ajax(webroot+"/interface/forms/fee_sheet/contraception_products/ajax/find_contraception_products.php",
         {
             type: "POST",
             dataType: "json",
             data: {
-                ippfconmeth: conmethcode
+                methods:methods
             },
-            success: populate_contraception_products
+            success: function(data)
+            {
+                for(var idx=0;idx<data.length;idx++)
+                {
+                    populate_contraception_products(data[idx]);
+                }
+            }
         });
     }
 
