@@ -26,7 +26,7 @@ function find_contraceptive_methods($contraceptive_code)
         }
         if($match)
         {
-            array_push($retval,array("name"=>$row[name],"drug_id"=>$row[drug_id],"selector"=>$row[selector]));           
+            array_push($retval,array("name"=>$row['name'],"drug_id"=>$row['drug_id'],"selector"=>$row['selector']));           
         }
     }
     return $retval;
@@ -40,7 +40,8 @@ function get_method_description($contraceptive_code)
     $results = sqlStatement($sqlSearch,array($contraceptive_code));
     if($results)
     {
-        return sqlFetchArray($results)['code_text'];
+        $row=sqlFetchArray($results);
+        return $row['code_text'];
     }
 }
 if(!acl_check('acct', 'bill'))
