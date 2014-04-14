@@ -1876,4 +1876,5 @@ if ($alertmsg) {
 </html>
 <?php require_once("review/initialize_review.php"); ?>
 <?php require_once("code_choice/initialize_code_choice.php"); ?>
+<?php require_once("contraception_products/initialize_contraception_products.php"); ?>
 <script type="text/javascript" src="<?php echo $web_root;?>/interface/forms/fee_sheet/js/layout_changes.js"></script>
