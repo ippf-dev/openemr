@@ -42,15 +42,20 @@ td { font-size:10pt; }
 
  // Standard function
  function selcode(codetype, code, selector, codedesc) {
-if (opener.closed || ! opener.set_related) {
+  if (opener.closed || ! opener.set_related) {
    alert('<?php echo addslashes( xl('The destination form was closed; I cannot act on your selection.') ); ?>');
-   }
+  }
   else {
-    opener.set_related(codetype, code, selector, codedesc);
-    window.close();
-    return false;
-    }
+   var msg = opener.set_related(codetype, code, selector, codedesc);
+   if (msg) alert(msg);
+   window.close();
+   return false;
+  }
  }
+
+ // TBD: The following function is not necessary. See
+ // interface/forms/LBF/new.php for an alternative method that does not require it.
+ // Rod 2014-04-15
 
  // Standard function with additional parameter to select which
  // element on the target page to place the selected code into.
@@ -58,7 +63,7 @@ if (opener.closed || ! opener.set_related) {
   if (opener.closed || ! opener.set_related_target)
    alert('<?php echo addslashes( xl('The destination form was closed; I cannot act on your selection.') ); ?>');
   else {
-   var msg = opener.set_related(codetype, code, selector, codedesc);
+   var msg = opener.set_related_target(codetype, code, selector, codedesc, target_element);
    if (msg) alert(msg);
   }
   window.close();
