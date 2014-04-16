@@ -24,8 +24,15 @@ require_once("$srcdir/acl.inc");
 require_once("$srcdir/options.inc.php");
 require_once("$srcdir/patient.inc");
 
-// $PDF_OUTPUT = empty($_POST['pdf']) ? false : true;
-$PDF_OUTPUT = true; // temporarily?
+$patientid = empty($_REQUEST['patientid']) ? 0 : 0 + $_REQUEST['patientid'];
+if ($patientid < 0) $patientid = 0 + $pid; // -1 means current pid
+
+// True if to display as a form to complete, false to display as information.
+$isform = empty($_REQUEST['isform']) ? 0 : 1;
+
+// Html2pdf fails to generate checked checkboxes properly, so write plain HTML
+// if we are doing a patient-specific complete form.
+$PDF_OUTPUT = ($patientid && $isform) ? false : true;
 
 if ($PDF_OUTPUT) {
   require_once("$srcdir/html2pdf/html2pdf.class.php");
@@ -36,12 +43,6 @@ if ($PDF_OUTPUT) {
 }
 
 $CPR = 4; // cells per row
-
-$patientid = empty($_REQUEST['patientid']) ? 0 : 0 + $_REQUEST['patientid'];
-if ($patientid < 0) $patientid = 0 + $pid; // -1 means current pid
-
-// True if to display as a form to complete, false to display as information.
-$isform = empty($_REQUEST['isform']) ? 0 : 1;
 
 $prow = array();
 $erow = array();
