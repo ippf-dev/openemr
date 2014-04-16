@@ -102,6 +102,7 @@ function mysubmit() {
 function LBFccicon_javascript_onload() {
   global $formid, $pid, $encounter;
   global $contraception_billing_code, $contraception_billing_prov;
+  global $code_types, $contraception_billing_desc;
 
   $encrow = sqlQuery("SELECT date, provider_id FROM form_encounter " .
     "WHERE pid = '$pid' AND encounter = '$encounter' " .
@@ -114,6 +115,17 @@ function LBFccicon_javascript_onload() {
   // of that service, $contraception_billing_prov.
   //
   $newdisabled = contraception_billing_scan($pid, $encounter, $encrow['provider_id']) ? 'true' : 'false';
+
+  // Get the description of the contraceptive method.
+  $contraception_billing_desc = '';
+  if ($contraception_billing_code) {
+    $tmp = sqlQuery("SELECT code_text FROM codes WHERE " .
+      "code_type = ? AND code = ?",
+      array($code_types['IPPFCM']['id'], $contraception_billing_code));
+    if (!empty($tmp['code_text'])) {
+      $contraception_billing_desc = addslashes($tmp['code_text']);
+    }
+  }
 
   // Get details of previous instances of this form.
   // * "First contraception at this clinic" should be auto-set to NO
@@ -179,9 +191,16 @@ for (var i = 0; i < sel.options.length; ++i) {
  }
 }
 *********************************************************************/
+
 f.form_newmethod.disabled = $newdisabled;
+if (f.form_newmethod__desc) {
+ f.form_newmethod__desc.disabled = $newdisabled;
+}
 if ('$contraception_billing_code') {
  f.form_newmethod.value = 'IPPFCM:$contraception_billing_code';
+ if (f.form_newmethod__desc) {
+  f.form_newmethod__desc.value = '$contraception_billing_desc';
+ }
 }
 
 sel = f.form_provider;
@@ -195,7 +214,7 @@ for (var i = 0; i < sel.options.length; ++i) {
 
 f.form_newmauser.onchange = function () { current_method_changed(); };
 f.form_curmethod.onchange = function () { current_method_changed(); };
-f.form_newmethod.onchange = function () { current_method_changed(); };
+// f.form_newmethod.onchange = function () { current_method_changed(); };
 f.onsubmit = function () { return mysubmit(); };
 ";
 
