@@ -132,7 +132,6 @@ function set_related(codetype, code, selector, codedesc) {
   s += codetype + ':' + code;
  } else {
   s = '';
-  return '';  
  }
  f.form_related_code.value = s;
 }
