@@ -463,7 +463,11 @@ function echoProdLine($lino, $drug_id, $rx = FALSE, $del = FALSE, $units = NULL,
     if (justifiers_are_used()) { // KHY Evaluate proper position/usage of if justifiers
       echo "  <td class='billcell' align='center'$justifystyle>&nbsp;</td>\n"; // justify
     }
-    echo "  <td class='billcell' align='center'>&nbsp;</td>\n";             // provider
+    // Show warehouse for this line.
+    echo "  <td class='billcell' align='center'>";
+    genWarehouseSelect('', ' ', $warehouse_id, true, $drug_id, $sale_id > 0);
+    echo "</td>\n";
+    //
     echo "  <td class='billcell' align='center'$usbillstyle>&nbsp;</td>\n"; // auth
     if ($GLOBALS['gbl_auto_create_rx']) {
       echo "  <td class='billcell' align='center'><input type='checkbox'" . // rx
@@ -491,37 +495,9 @@ function echoProdLine($lino, $drug_id, $rx = FALSE, $del = FALSE, $units = NULL,
     }
     // Generate warehouse selector if there is a choice of warehouses.
     echo "  <td class='billcell' align='center'>";
-    if ($got_warehouses) {
-      // Normally would use generate_select_list() but it's not flexible enough here.
-      echo "<select name='prod[$lino][warehouse]'";
-      echo " onchange='warehouse_changed(this);'";
-      if ($sale_id) echo " disabled";
-      echo ">";
-      echo "<option value=''> </option>";
-      $lres = sqlStatement("SELECT * FROM list_options " .
-        "WHERE list_id = 'warehouse' ORDER BY seq, title");
-      while ($lrow = sqlFetchArray($lres)) {
-        $has_inventory = sellDrug($drug_id, 1, 0, 0, 0, 0, '', '', $lrow['option_id'], true);
-        echo "<option value='" . $lrow['option_id'] . "'";
-        if (((strlen($warehouse_id) == 0 && $lrow['is_default']) ||
-             (strlen($warehouse_id)  > 0 && $lrow['option_id'] == $warehouse_id)) &&
-            ($sale_id || $has_inventory))
-        {
-          echo " selected";
-        }
-        else {
-          // Disable this warehouse option if not selected and has no inventory.
-          if (!$has_inventory) echo " disabled";
-        }
-        echo ">" . xl_list_label($lrow['title']) . "</option>\n";
-      }
-      echo "</select>";
-    }
-    else {
-      echo "&nbsp;";
-    }
+    genWarehouseSelect("prod[$lino][warehouse]", ' ', $warehouse_id, false, $drug_id, $sale_id > 0);
     echo "</td>\n";
-    
+    //
     echo "  <td class='billcell' align='center'$usbillstyle>&nbsp;</td>\n"; // auth
     if ($GLOBALS['gbl_auto_create_rx']) {
       echo "  <td class='billcell' align='center'>" .
@@ -578,6 +554,46 @@ function genProviderSelect($selname, $toptext, $default=0, $disabled=false) {
     echo text($row['lname'] . ", " . $row['fname']) . "\n";
   }
   echo "   </select>\n";
+}
+
+// Build a drop-down list of warehouses.
+//
+function genWarehouseSelect($selname, $toptext, $default='', $disabled=false, $drug_id=0, $is_sold=0) {
+  global $got_warehouses;
+  if ($got_warehouses) {
+    // Normally would use generate_select_list() but it's not flexible enough here.
+    echo "<select name='$selname'";
+    if (!$disabled) echo " onchange='warehouse_changed(this);'";
+    if ($disabled ) echo " disabled";
+    echo ">";
+    echo "<option value=''>$toptext</option>";
+    $lres = sqlStatement("SELECT * FROM list_options " .
+      "WHERE list_id = 'warehouse' ORDER BY seq, title");
+    while ($lrow = sqlFetchArray($lres)) {
+      echo "<option value='" . $lrow['option_id'] . "'";
+      if ($disabled) {
+        if ($lrow['option_id'] == $default) echo " selected";
+      }
+      else {
+        $has_inventory = sellDrug($drug_id, 1, 0, 0, 0, 0, '', '', $lrow['option_id'], true);
+        if (((strlen($default) == 0 && $lrow['is_default']) ||
+             (strlen($default)  > 0 && $lrow['option_id'] == $default)) &&
+            ($is_sold || $has_inventory))
+        {
+          echo " selected";
+        }
+        else {
+          // Disable this warehouse option if not selected and has no inventory.
+          if (!$has_inventory) echo " disabled";
+        }
+      }
+      echo ">" . xl_list_label($lrow['title']) . "</option>\n";
+    }
+    echo "</select>";
+  }
+  else {
+    echo "&nbsp;";
+  }
 }
 
 function insert_lbf_item($form_id, $field_id, $field_value) {
