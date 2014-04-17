@@ -13,7 +13,6 @@ Translation Tool
     $definitions=array(
         "Patients"=>"Client List",
         "Codes"=>"Services",
-        "Transactions"=>"Referrals",
         "Encounter History"=>"Visit History",
         "Past Encounter List"=>"Past Visit List"
     );
