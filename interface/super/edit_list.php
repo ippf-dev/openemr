@@ -257,6 +257,10 @@ else if ($_POST['formaction']=='deletelist') {
     newEvent("delete_list", $_SESSION['authUser'], $_SESSION['authProvider'], "List = " . $_POST['list_id']);    
 }
 
+if (!empty($_POST['formaction'])) {
+  $current_checksum = listChecksum($list_id);
+}
+
 $opt_line_no = 0;
 
 // Given a string of multiple instances of code_type|code|selector,
