@@ -14,7 +14,9 @@ Translation Tool
         "Patients"=>"Client List",
         "Codes"=>"Services",
         "Encounter History"=>"Visit History",
-        "Past Encounter List"=>"Past Visit List"
+        "New Encounter"=>"New Visit",
+        "Past Encounter List"=>"Past Visit List",
+        "CLEAR ACTIVE PATIENT"=>"Clear Active Client"
     );
     verify_translations($definitions,1);
 ?>

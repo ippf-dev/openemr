@@ -240,7 +240,9 @@ if($StringEcho){
 <script>
     function gotoFee_sheet()
     {
-        top.left_nav.loadFrame2('cod2','RBot','patient_file/encounter/load_form.php?formname=fee_sheet');
+        var istop = parent.window.name == 'RTop';
+        parent.parent.left_nav.forceSpec(istop, !istop);        
+        top.left_nav.loadFrame2('cod2',parent.window.name,'patient_file/encounter/load_form.php?formname=fee_sheet');
     }
 </script>
 <table cellspacing="0" cellpadding="0" align="center">

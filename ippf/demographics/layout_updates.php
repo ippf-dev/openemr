@@ -50,14 +50,22 @@
         right_column.children("div:first").remove();
         position_billing();
         position_patient_reminders();
-        position_contraception();
+        position_left_side();
+        position_right_side();
     }
+
     function find_widget(translated_name)
     {
         var heading=$("span.text > b:contains('"+translated_name+"')");
         var section_heading=heading.parents("div.section-header");
         var widget=section_heading.parent().parent("tr");
         return widget;
+    }    
+    function find_widget_right(translated_name)
+    {
+        var heading=$("span.text > b:contains('"+translated_name+"')");
+        var section_heading=heading.parents("div.section-header-dynamic");
+        return section_heading;
     }
     function prep_left_widget_for_right_side(elem)
     {
@@ -72,18 +80,48 @@
     function position_billing()
     {
         var billing_widget=find_widget("<?php echo xl("Billing");?>");
-        right_column.prepend(prep_left_widget_for_right_side(billing_widget));
+        var billing_div=prep_left_widget_for_right_side(billing_widget);
+        right_column.prepend(billing_div);
+        style_billing(billing_div);
     }
     function position_patient_reminders()
     {
         var reminders_widget=prep_left_widget_for_right_side(find_widget("<?php echo xl("Patient Reminders");?>"));
         right_column.children("div:nth-child(2)").children().eq(1).after(reminders_widget);
     }
-    function position_contraception()
+    function position_left_side()
     {
         var demographics=find_widget("<?php echo xl("Demographics");?>");
+        var vitals=find_widget("<?php echo xl("Vitals");?>");
+
         var contraception=find_widget("<?php echo xl("Contraception");?>");
-        demographics.after(contraception);
+        demographics.after(vitals);
+        vitals.after(contraception);
+    }
+    function group_right_widget(header)
+    {
+        var header=find_widget_right(header);
+        var content=header.next();
+        var group=$("<span></span>");
+        group.append(header);
+        group.append(content);
+        return group;
+        
+    }
+    function position_right_side()
+    {
+        var appointment=group_right_widget("<?php echo xl("Appointments");?>");
+        var reminders_heading=find_widget_right("<?php echo xl("Clinical Reminders"); ?>");
+        reminders_heading.before(appointment);
+
+    }
+    function style_billing(elem)
+    {
+        elem.find("br").remove();
+        // Hide insurance balance due and total balance due
+        // Should consider displaying just total balance due
+        elem.find("tbody tbody > tr:nth-child(2)").hide();
+        elem.find("tbody tbody > tr:nth-child(3)").hide();
     }
     var columns=$("body > div > table > tbody > tr > td > div");
     var right_column=columns.eq(1).children("table").children("tbody").children("tr").children("td")
