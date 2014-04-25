@@ -961,6 +961,13 @@ $(document).ready(function(){
       $("#navigation-slide > li > a.expanded").next("ul").find("li > a.expanded_lv2").not(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
       $(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
     });
+
+    $("#navigation-slide > li > ul > li > ul > li> a.collapsed_lv2 + ul").slideToggle("medium");    
+    $("#navigation-slide > li > ul > li > ul > li> a.collapsed_lv2").click(function() {
+      //$("#navigation-slide > li > a.expanded").next("ul").find("li > a.expanded_lv2").not(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
+      // Need to figure out how to toggle 3rd level siblings correctly, but this works for now.
+      $(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
+    });    
     $("#navigation-slide > li  > a#cal0").prepend('<img src="../../images/calendar.png" class="nav-menu-img" />');
     $("#navigation-slide > li  > a#msg0").prepend('<img src="../../images/messages.png" class="nav-menu-img" />');
     $("#navigation-slide > li  > a#patimg").prepend('<img src="../../images/patient.png" class="nav-menu-img" />');
@@ -1416,7 +1423,7 @@ if (!empty($reg)) {
       </li>
 <?php } ?>
 <?php if (!empty($GLOBALS['code_types']['IPPF']) || !empty($GLOBALS['code_types']['IPPF2'])) { ?>
-      <li><span><?php xl('Statistics','e') ?></span>
+      <li><a class="collapsed_lv2"><span><?php xl('Statistics','e') ?></span></a>
         <ul>
 <?php if (!empty($GLOBALS['code_types']['IPPF2'])) { ?>
           <?php if ($GLOBALS['gbl_menu_stats_ippf' ]) genPopLink(xl('IPPF Stats'),'ippf_statistics_2.php?t=i'); ?>
@@ -1428,7 +1435,7 @@ if (!empty($reg)) {
           <?php if ($GLOBALS['gbl_menu_stats_c3'   ]) genPopLink(xl('C3'),'ippf_c3.php'); ?>
           <?php if (!empty($GLOBALS['code_types']['REPORT'])) genPopLink(xl('Visits by Item'),'famp_services_products_visits.php'); ?>
 <?php if (!empty($GLOBALS['code_types']['IPPF'])) { ?>
-          <li><span><?php xl('Legacy Statistics','e') ?></span>
+            <li><a class="collapsed_lv2"><span><?php xl('Legacy Statistics','e') ?></span></a>
             <ul>
               <?php if ($GLOBALS['gbl_menu_stats_ippf' ]) genPopLink(xl('IPPF Stats'),'ippf_statistics.php?t=i'); ?>
               <?php if ($GLOBALS['gbl_menu_stats_gcac' ]) genPopLink(xl('GCAC Stats'),'ippf_statistics.php?t=g'); ?>
