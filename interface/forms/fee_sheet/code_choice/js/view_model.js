@@ -64,6 +64,7 @@ function populate_vm_categories(idx,elem)
 {
     var jqElem=$(elem);
     jqElem.hide();
+    jqElem.parent().parent().hide(); // select is child of a td and a tr.
     var title=jqElem.find("option[value='']").text();
     
     var category=new code_category(title);
