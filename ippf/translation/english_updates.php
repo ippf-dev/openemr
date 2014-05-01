@@ -16,7 +16,8 @@ Translation Tool
         "Encounter History"=>"Visit History",
         "New Encounter"=>"New Visit",
         "Past Encounter List"=>"Past Visit List",
-        "CLEAR ACTIVE PATIENT"=>"Clear Active Client"
+        "CLEAR ACTIVE PATIENT"=>"Clear Active Client",
+        "Transactions{{Patient}}"=>"Referrals"
     );
     verify_translations($definitions,1);
 ?>
