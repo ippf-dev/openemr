@@ -573,7 +573,7 @@ if ($GLOBALS['patient_id_category_name']) {
 <?php echo htmlspecialchars(xl('Documents'),ENT_NOQUOTES); ?></a>
 |
 <a href="../transaction/transactions.php" class='iframe large_modal' onclick='top.restoreSession()'>
-<?php echo htmlspecialchars(xl('Transactions'),ENT_NOQUOTES); ?></a>
+<?php echo htmlspecialchars(xl('Transactions{{Patient}}'),ENT_NOQUOTES); ?></a>
 |
 <a href="stats_full.php?active=all" onclick='top.restoreSession()'>
 <?php echo htmlspecialchars(xl('Issues'),ENT_NOQUOTES); ?></a>
