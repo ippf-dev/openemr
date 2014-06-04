@@ -394,7 +394,7 @@ foreach (array(1 => 'Screen', 2 => 'Printer', 3 => 'Export File') as $key => $va
       "po.patient_id, po.encounter_id, po.date_ordered, " .
       "po.provider_id, pd.regdate, " .
       "pd.sex, pd.DOB, pd.lname, pd.fname, pd.mname, " .
-      "pd.contrastart, pd.referral_source$pd_fields, " .
+      "pd.referral_source$pd_fields, " .
       "ps.abnormal, " .
       // "pto.name AS order_name, ptr.name AS result_name, ptr.related_code " .
       "pc.procedure_name AS order_name, ptr.name AS result_name, ptr.related_code " .

@@ -3,3 +3,14 @@ ALTER TABLE `procedure_report` ADD COLUMN `review_status` varchar(31) NOT NULL d
 #EndIf
 
 update registry set state=0 where directory in ("vitalsM","vitalsigns");
+
+#IfMissingColumn procedure_order procedure_type_id
+ALTER TABLE `procedure_order` 
+ADD COLUMN `procedure_type_id` BIGINT(20) NOT NULL COMMENT "references procedure_type.procedure_type_id";
+#EndIf
+
+
+#IfMissingColumn procedure_result procedure_type_id
+ALTER TABLE `procedure_result` 
+ADD COLUMN `procedure_type_id` BIGINT(20) NOT NULL COMMENT "references procedure_type.procedure_type_id";
+#EndIf
