@@ -74,6 +74,29 @@
         var edi_270=find_link("edi_270.php").parent().remove();
         var edi_271=find_link("edi_271.php").parent().remove();
     }
+    
+    function create_button(title,targetURL,targetWindow,id)
+    {
+        var retval=$("<a onclick='top.restoreSession()' id='"+id+"'></a>");
+        var caption=$("<span>"+title+"</span>");
+        retval.append(caption);
+        retval.attr("target",targetWindow);
+        retval.attr("href",targetURL);
+        retval.addClass("css_button");
+        return retval;
+        
+    }
+    function add_ippf_buttons()
+    {
+        var support_link=$("#support_link");
+        
+        var logout=create_button("<?php echo xlt('Logout') ?>","../logout.php","_top","logout_link");
+        support_link.after(logout);
+        logout.css("clear","left");
+
+        var user_guide=create_button("<?php echo xlt('Online User Guide') ?>","http://open-emr.org/wiki/index.php/OpenEMR_4.1.2_Users_Guid","_blank","help_link");
+        support_link.after(user_guide);
+    }
     function setup_ippf_custom()
     {
         add_finanical_reports();
@@ -81,6 +104,7 @@
         remove_records_menu();
         remove_fee_menus();
         remove_eligibility_reports();
+        add_ippf_buttons();
     }
     
     function newEncounterForNewPatient()

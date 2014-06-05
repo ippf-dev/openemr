@@ -17,7 +17,8 @@ Translation Tool
         "New Encounter"=>"New Visit",
         "Past Encounter List"=>"Past Visit List",
         "CLEAR ACTIVE PATIENT"=>"Clear Active Client",
-        "Transactions{{Patient}}"=>"Referrals"
+        "Transactions{{Patient}}"=>"Referrals",
+        "Online Support"=>"IPPF Process Guides"
     );
     verify_translations($definitions,1);
 ?>
