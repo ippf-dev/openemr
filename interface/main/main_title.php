@@ -82,6 +82,7 @@ $res = sqlQuery("select * from users where username='".$_SESSION{"authUser"}."'"
 <tr><td style="vertical-align:text-bottom;">
 		<a href='' class="css_button_small" style="margin:0px;vertical-align:top;" id='new0' onClick=" return top.window.parent.left_nav.loadFrame2('new0','RTop','new/new.php')">
 		<span><?php echo htmlspecialchars( xl('NEW PATIENT'), ENT_QUOTES); ?></span></a>
+        <a href='main_title.php' class="css_button_small" onclick="javascript:parent.left_nav.goHome();return false;" ><span><?php xl('Home','e'); ?></span></a>
     </td>
     <td style="vertical-align:text-bottom;">
             <a href='' class="css_button_small" style="margin:0px;vertical-align:top;display:none;" id='clear_active' onClick="javascript:parent.left_nav.clearactive();return false;">
@@ -114,17 +115,12 @@ $res = sqlQuery("select * from users where username='".$_SESSION{"authUser"}."'"
 </td>
 
 <td align="right">
-	<table cellspacing="0" cellpadding="1" style="margin:0px 3px 0px 0px;"><tr>
-		<td align="right" class="text" style="vertical-align:text-bottom;"><a href='main_title.php' onclick="javascript:parent.left_nav.goHome();return false;" ><?php xl('Home','e'); ?></a>
-		&nbsp;|&nbsp;
-		<a href="http://open-emr.org/wiki/index.php/OpenEMR_4.1.2_Users_Guide" target="_blank" id="help_link" >
-			<?php xl('Manual','e'); ?></a>&nbsp;</td>
-		<td align="right" style="vertical-align:top;"><a href="../logout.php" target="_top" class="css_button_small" style='float:right;' id="logout_link" onclick="top.restoreSession()" >
-			<span><?php echo htmlspecialchars( xl('Logout'), ENT_QUOTES) ?></span></a></td>
-	</tr><tr>
-		<td colspan='2' valign="baseline" align='right'><B>
-			<span class="text title_bar_top" title="<?php echo htmlspecialchars( xl('Authorization group') .': '.$_SESSION['authGroup'], ENT_QUOTES); ?>"><?php echo htmlspecialchars($res{"fname"}.' '.$res{"lname"},ENT_NOQUOTES); ?></span></span></td>
-    	</tr></table>
+	<table cellspacing="0" cellpadding="1" style="margin:0px 3px 0px 0px;">
+            <tr>
+		<td colspan='2' valign="baseline" align='right'>
+			<span class="text title_bar_top" title="<?php echo htmlspecialchars( xl('Authorization group') .': '.$_SESSION['authGroup'], ENT_QUOTES); ?>"><?php echo htmlspecialchars($res{"fname"}.' '.$res{"lname"},ENT_NOQUOTES); ?></span></span>
+                </td>
+            </tr></table>
 </td>
 </tr>
 </table>
