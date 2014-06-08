@@ -6,10 +6,9 @@ function update_global_metadata($section,$entry,$description,$type_or_options,$d
                              $type_or_options,
                              $default,
                              xl($long_desc));
-    if($after==null)
+    if(is_null($after))
     {
         $GLOBALS['GLOBALS_METADATA'][$section][$entry]=$metadata_content;
-        
     }
     else {
         $pos=array_search($after, array_keys($GLOBALS['GLOBALS_METADATA'][$section]));

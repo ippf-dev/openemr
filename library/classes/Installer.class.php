@@ -31,7 +31,7 @@ class Installer
     $this->development_translations = $cgi_variables['development_translations'];
 
     // Make this true for IPPF.
-    $this->ippf_specific = false;
+    $this->ippf_specific = true;
 
     // Record name of sql access file
     $GLOBALS['OE_SITES_BASE'] = dirname(__FILE__) . '/../../sites';

@@ -2502,7 +2502,7 @@ CREATE TABLE `layout_options` (
   `edit_options` varchar(36) NOT NULL default '',
   `description` text,
   `fld_rows` int(11) NOT NULL default '0',
-  `source` char(1) NOT NULL default 'F' COMMENT 'F=Form, D=Demographics, H=History, E=Encounter'
+  `source` char(1) NOT NULL default 'F' COMMENT 'F=Form, D=Demographics, H=History, E=Encounter',
   PRIMARY KEY  (`form_id`,`field_id`,`seq`)
 ) ENGINE=MyISAM;
 

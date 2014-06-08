@@ -1,5 +1,4 @@
-<?php if (!empty($GLOBALS['code_types']['IPPF'])) { 
-?>
+<?php if (!empty($GLOBALS['ippf_specific'])) { ?>
 </script>
 <script>
     function find_link(target)

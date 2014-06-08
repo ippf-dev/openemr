@@ -1834,5 +1834,10 @@ $GLOBALS_METADATA = array(
     ),
   ),    
 );
-require_once($webserver_root."/ippf/globals_metadata/ippf_global_metadata.php");
+
+// A bit of a mess here. The installer includes globals.inc.php inside a function, so in that
+// case $GLOBALS_METADATA is not global and the included code below fails.
+if (!empty($GLOBALS['GLOBALS_METADATA'])) {
+  require_once(dirname(dirname(__FILE__)) . "/ippf/globals_metadata/ippf_global_metadata.php");
+}
 ?>
