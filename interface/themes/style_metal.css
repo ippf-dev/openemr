@@ -676,7 +676,7 @@ ul.tabNav li.current a { background:#D7DFE7 ;padding: 8px; }
 div.tabContainer { clear: both; float: left; width: 100%; }
 div.tabContainer div.tab { border: 1px solid #FFFFFF; color: #000; display: none; padding: 10px; }
 div.tabContainer div.current { display: block; }
-div.tab { 	min-height: 180px; background: #FFFFFF none repeat scroll 0 0; margin-bottom: 10px;width:665px;}
+div.tab {  background: #FFFFFF none repeat scroll 0 0; margin-bottom: 10px;width:665px;}
 div.tab_long { 	min-height: 180px; background: #FFFFFF none repeat scroll 0 0; margin-bottom: 10px;width:100%;}
 div.tab p:last-child { margin-bottom: 0; }
 
