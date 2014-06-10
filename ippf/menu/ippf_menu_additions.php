@@ -1,3 +1,22 @@
+/* 
+ * Copyright (C) 2014 Kevin Yeh <kevin.y@integralemr.com>
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 3
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  Kevin Yeh <kevin.y@integralemr.com>
+ * @link    http://www.open-emr.org
+ */
+ 
 <?php if (!empty($GLOBALS['ippf_specific'])) { ?>
 </script>
 <script>
@@ -87,15 +106,18 @@
     }
     function add_ippf_buttons()
     {
-        var support_link=$("#support_link");
+        // Put the new buttons at the end of the form
+        var form=$("body > form");
         
-        var logout=create_button("<?php echo xlt('Logout') ?>","../logout.php","_top","logout_link");
-        support_link.after(logout);
-        logout.css("clear","left");
 
-        var user_guide=create_button("<?php echo xlt('Online User Guide') ?>","http://open-emr.org/wiki/index.php/OpenEMR_4.1.2_Users_Guid","_blank","help_link");
-        support_link.after(user_guide);
-    }
+        var user_guide=create_button("<?php echo xlt('Online User Guide') ?>","http://open-emr.org/wiki/index.php/OpenEMR_4.1.2_Users_Guide","_blank","help_link");
+        form.append(user_guide);
+        user_guide.css("clear","left");
+
+        var logout=create_button("<?php echo xlt('Logout') ?>","../logout.php","_top","logout_link");
+        form.append(logout);
+        logout.css("clear","left");
+}
     function setup_ippf_custom()
     {
         add_finanical_reports();
