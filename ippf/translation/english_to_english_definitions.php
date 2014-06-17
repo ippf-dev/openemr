@@ -16,13 +16,14 @@
  * @author  Kevin Yeh <kevin.y@integralemr.com>
  * @link    http://www.open-emr.org
  */
-    require_once("../../interface/globals.php");
-    ini_set("display_errors","1");   
-    require_once("translation_utilities.php");
-    require_once("english_to_english_definitions.php")
-?>
-Translation Tool
-<br>
-<?php 
-    verify_translations($definitions,1);
-?>
+$definitions=array(
+        "Patients"=>"Client List",
+        "Codes"=>"Services",
+        "Encounter History"=>"Visit History",
+        "New Encounter"=>"New Visit",
+        "Past Encounter List"=>"Past Visit List",
+        "CLEAR ACTIVE PATIENT"=>"Clear Active Client",
+        "NEW PATIENT"=>"New Client",
+        "Transactions{{Patient}}"=>"Referrals",
+        "Online Support"=>"IPPF Process Guides"
+    );
