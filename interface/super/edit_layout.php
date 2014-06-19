@@ -936,6 +936,25 @@ foreach ($datatypes as $key=>$value) {
 // used when selecting a list-name for a field
 var selectedfield;
 
+// Get the next logical sequence number for a field in the specified group.
+// Note it guesses and uses the existing increment value.
+function getNextSeq(group) {
+  var f = document.forms[0];
+  var seq = 0;
+  var delta = 10;
+  for (var i = 1; true; ++i) {
+    var gelem = f['fld[' + i + '][group]'];
+    if (!gelem) break;
+    if (gelem.value != group) continue;
+    var tmp = parseInt(f['fld[' + i + '][seq]'].value);
+    if (isNaN(tmp)) continue;
+    if (tmp <= seq) continue;
+    delta = tmp - seq;
+    seq = tmp;
+  }
+  return seq + delta;
+}
+
 // jQuery stuff to make the page a little easier to use
 
 $(document).ready(function(){
@@ -997,6 +1016,8 @@ $(document).ready(function(){
         $('#groupdetail').css('display', 'block');
         $(btnObj).parent().append($("#groupdetail"));
         $('#groupdetail > #newgroupname').focus();
+        // Assign a sensible default sequence number.
+        $('#gnewseq').val(10);
     };
 
     // save the new group to the form
@@ -1138,11 +1159,12 @@ $(document).ready(function(){
         var parts = btnid.split("~");
         var groupid = parts[1];
         $('#fielddetail > #newfieldgroupid').attr('value', groupid);
-    
         // show the field details DIV
         $('#fielddetail').css('visibility', 'visible');
         $('#fielddetail').css('display', 'block');
         $(btnObj).parent().append($("#fielddetail"));
+        // Assign a sensible default sequence number.
+        $('#newseq').val(getNextSeq(groupid));
     };
 
     var DeleteFields = function(btnObj) {
@@ -1271,27 +1293,45 @@ function SetList(listid) {
 
 var fieldselectfield;
 
-function FieldIDClicked(elem) {
-<?php if (substr($layout_id,0,3) == 'LBF') { ?>
-  var ename = elem.name;
+function elemFromPart(part) {
+  var ename = fieldselectfield.name;
   // ename is like one of the following:
   //   fld[$fld_line_no][id]
   //   gnewid
   //   newid
-  // ... and we want the name of the "source" element on the same line.
+  // and "part" is what we substitute for the "id" part.
   var i = ename.lastIndexOf('id');
-  ename = ename.substr(0, i) + 'source' + ename.substr(i+2);
-  var srcval = document.forms[0][ename].value;
+  ename = ename.substr(0, i) + part + ename.substr(i+2);
+  return document.forms[0][ename];
+}
+
+function FieldIDClicked(elem) {
+<?php if (substr($layout_id,0,3) == 'LBF') { ?>
+  fieldselectfield = elem;
+  var srcval = elemFromPart('source').value;
   // If the field ID is for the local form, allow direct entry.
   if (srcval == 'F') return;
   // Otherwise pop up the selection window.
-  fieldselectfield = elem;
-  window.open('./field_id_popup.php?source=' + srcval, 'fields', 'width=300,height=500,scrollbars=yes');
+  window.open('./field_id_popup.php?source=' + srcval, 'fields',
+    'width=600,height=600,scrollbars=yes');
 <?php } ?>
 }
 
-function SetField(fieldid) {
-  fieldselectfield.value = fieldid;
+function SetField(field_id, title, data_type, uor, fld_length, max_length,
+  list_id, titlecols, datacols, edit_options, description, fld_rows)
+{
+  fieldselectfield.value             = field_id;
+  elemFromPart('title'       ).value = title;
+  elemFromPart('datatype'    ).value = data_type;
+  elemFromPart('uor'         ).value = uor;
+  elemFromPart('lengthWidth' ).value = fld_length;
+  elemFromPart('maxSize'     ).value = max_length;
+  elemFromPart('listid'      ).value = list_id;
+  elemFromPart('titlecols'   ).value = titlecols;
+  elemFromPart('datacols'    ).value = datacols;
+  elemFromPart('edit_options').value = edit_options;
+  elemFromPart('desc'        ).value = description;
+  elemFromPart('lengthHeight').value = fld_rows;
 }
 
 //////////////////////////////////////////////////////////////////////

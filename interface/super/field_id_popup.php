@@ -27,37 +27,41 @@ $source = empty($_REQUEST['source']) ? 'D' : $_REQUEST['source'];
 <html>
 <head>
 <?php html_header_show();?>
-<title><?php xl('List lists','e'); ?></title>
+<title><?php xl('List layout items','e'); ?></title>
 <link rel="stylesheet" href='<?php echo $css_header ?>' type='text/css'>
 
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/jquery-1.2.2.min.js"></script>
 
 <script language="javascript">
 
-function setAFieldID(fieldid) {
+function selectField(field_id, title, data_type, uor, fld_length, max_length,
+  list_id, titlecols, datacols, edit_options, description, fld_rows)
+{
   if (opener.closed || ! opener.SetField) {
     alert('The destination form was closed; I cannot act on your selection.');
   }
   else {
-    opener.SetField(fieldid);
+    opener.SetField(field_id, title, data_type, uor, fld_length, max_length,
+      list_id, titlecols, datacols, edit_options, description, fld_rows);
   }
   window.close();
   return false;
 }
 
-function setANewID() {
-  return setAFieldID(document.forms[0].new_field_id.value);
+function newField() {
+  return selectField(document.forms[0].new_field_id.value, '', 2, 1, 10, 255,
+    '', 1, 3, '', '', 0);
 }
 
 $(document).ready(function(){
 
   $('.oneresult').mouseover(function() { $(this).toggleClass('highlight'); });
   $('.oneresult').mouseout(function()  { $(this).toggleClass('highlight'); });
-  $('.oneresult').click(function()     { SelectField(this); });
 
-  var SelectField = function(obj) {
-    return setAFieldID($(obj).attr('id'));
-  };
+  // $('.oneresult').click(function()     { SelectField(this); });
+  // var SelectField = function(obj) {
+  //   return setAFieldID($(obj).attr('id'));
+  // };
 
 });
 
@@ -100,31 +104,50 @@ if ($source == 'E') echo xlt('Visit Attributes'    );
 ?>
 </h1>
 
-<ul>
 <?php
 if ($source == 'D' || $source == 'H') {
-  $res = sqlStatement("SELECT COLUMN_NAME FROM information_schema.COLUMNS " .
-    "WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY COLUMN_NAME",
-    array($dbase, $source == 'D' ? 'patient_data' : 'history_data'));
-  while ($row = sqlFetchArray($res)) {
-    echo "<li id='" . $row['COLUMN_NAME'] . "' class='oneresult'>" . text($row['COLUMN_NAME']) . "</li>";
-  }
+  $res = sqlStatement("SELECT * FROM layout_options " .
+    "WHERE form_id = ? AND uor > 0 ORDER BY field_id",
+    array($source == 'D' ? 'DEM' : 'HIS'));
 }
-else if ($source == 'E') {
-  $res = sqlStatement("SELECT DISTINCT field_id FROM shared_attributes ORDER BY field_id");
-  while ($row = sqlFetchArray($res)) {
-    echo "<li id='" . $row['field_id'] . "' class='oneresult'>" . text($row['field_id']) . "</li>";
-  }
+else {
+  $res = sqlStatement("SELECT * FROM layout_options WHERE " .
+    "form_id LIKE ? AND uor > 0 AND source = ? ORDER BY field_id, form_id",
+    array('LBF%', 'E'));
 }
+
+echo "<table>\n";
+$last_field_id = '';
+while ($row = sqlFetchArray($res)) {
+  if ($row['field_id'] === $last_field_id) continue;
+  $last_field_id = $row['field_id'];
+  echo " <tr class='oneresult' onclick='selectField(";
+  echo '"' . addslashes($row['field_id'    ]) . '",';
+  echo '"' . addslashes($row['title'       ]) . '",';
+  echo '"' . addslashes($row['data_type'   ]) . '",';
+  echo '"' . addslashes($row['uor'         ]) . '",';
+  echo '"' . addslashes($row['fld_length'  ]) . '",';
+  echo '"' . addslashes($row['max_length'  ]) . '",';
+  echo '"' . addslashes($row['list_id'     ]) . '",';
+  echo '"' . addslashes($row['titlecols'   ]) . '",';
+  echo '"' . addslashes($row['datacols'    ]) . '",';
+  echo '"' . addslashes($row['edit_options']) . '",';
+  echo '"' . addslashes($row['description' ]) . '",';
+  echo '"' . addslashes($row['fld_rows'    ]) . '"';
+  echo ")'>";
+  echo "<td>" . text($row['field_id']) . "</td>";
+  echo "<td>" . text($row['title'   ]) . "</td>";
+  echo "</tr>\n";
+}
+echo "</table>\n";
 ?>
-</ul>
 
 <?php if ($source == 'E') { ?>
 <p>
 <form>
 <center>
 <input type='text' name='new_field_id' size='20' />&nbsp;
-<input type='button' value='<?php echo xla('Or create this new field ID') ?>' onclick='setANewID()' />
+<input type='button' value='<?php echo xla('Or create this new field ID') ?>' onclick='newField()' />
 </center>
 </form>
 </p>
@@ -132,8 +155,4 @@ else if ($source == 'E') {
 
 </div>
 </body>
-<script language="javascript">
-
-
-</script>
 </html>
