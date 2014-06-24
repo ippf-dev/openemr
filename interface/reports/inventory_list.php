@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2008-2013 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2008-2014 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -17,8 +17,13 @@
 
 function addWarning($msg) {
   global $warnings;
-  if ($warnings) $warnings .= '<br />';
+  $break = empty($_POST['form_csvexport']) ? '<br />' : '; ';
+  if ($warnings) $warnings .= $break;
   $warnings .= $msg;
+}
+
+function output_csv($s) {
+  return str_replace('"', '""', $s);
 }
 
 // Check if a product needs to be re-ordered, optionally for a given warehouse.
@@ -73,6 +78,7 @@ function checkReorder($drug_id, $min, $warehouse='') {
 function write_report_line(&$row) {
   global $form_details, $wrl_last_drug_id, $warnings, $encount, $fwcond, $form_days;
 
+  $emptyvalue = empty($_POST['form_csvexport']) ? '&nbsp;' : '';
   $drug_id = 0 + $row['drug_id'];
   $on_hand = 0 + $row['on_hand'];
   $inventory_id = 0 + (empty($row['inventory_id']) ? 0 : $row['inventory_id']);
@@ -115,9 +121,9 @@ function write_report_line(&$row) {
   $months = $form_days / 30.5;
 
   $monthly = ($months && $sale_quantity) ?
-    sprintf('%0.1f', $sale_quantity / $months) : '&nbsp;';
+    sprintf('%0.1f', $sale_quantity / $months) : 0;
 
-  $stock_months = '&nbsp;';
+  $stock_months = 0;
   if ($sale_quantity != 0) {
     $stock_months = sprintf('%0.1f', $on_hand * $months / $sale_quantity);
     if ($stock_months < 1.0) {
@@ -195,30 +201,75 @@ function write_report_line(&$row) {
     }
   }
 
-  echo " <tr class='detail' bgcolor='$bgcolor'>\n";
+  // Per CV 2014-06-20:
+  // Reorder Quantity should be calculated only if Stock Months is less than Months Min.
+  // If Stock Months is [not] less than Months Min, Reorder Quantity should be zero.
+  // The calculation should be: (Min Months minus Stock Months) times Avg Monthly.
+  // Reorder Quantity should be rounded up to a whole number.
+  $reorder_qty = 0;
+  if ($monthly > 0.00) {
+    $min_months = 0 + ($form_details ? $row['pw_min_level'] : $row['reorder_point']);
+    // If min is not specified as months then compute it that way.
+    if (empty($GLOBALS['gbl_min_max_months'])) $min_months /= $monthly;
+    if ($stock_months < $min_months) {
+      $reorder_qty = ceil(($min_months - $stock_months) * $monthly);
+    }
+  }
 
-  if ($drug_id == $wrl_last_drug_id) {
-    echo "  <td colspan='5'>&nbsp;</td>\n";
-  }
+  if (empty($monthly)) $monthly = $emptyvalue;
+  if (empty($stock_months)) $stock_months = $emptyvalue;
+
+  if (!empty($_POST['form_csvexport'])) {
+    echo '"' . output_csv($row['name'])                          . '",';
+    echo '"' . output_csv($row['ndc_number'])                    . '",';
+    echo '"' . output_csv($row['active'] ? xl('Yes') : xl('No')) . '",';
+    echo '"' . output_csv(generate_display_field(array(
+      'data_type'=>'1', 'list_id'=>'drug_form'), $row['form']))  . '",';
+    if ($form_details) {
+      echo '"' . output_csv($row['title'])                       . '",';
+      echo '"' . output_csv($row['pw_min_level'])                . '",';
+      echo '"' . output_csv($row['pw_max_level'])                . '",';
+    }
+    else {
+      echo '"' . output_csv($row['reorder_point'])               . '",';
+      echo '"' . output_csv($row['max_level'])                   . '",';
+    }
+    echo '"' . output_csv($row['on_hand'])                       . '",';
+    echo '"' . output_csv($monthly)                              . '",';
+    echo '"' . output_csv($stock_months)                         . '",';
+    echo '"' . output_csv($reorder_qty)                          . '",';
+    echo '"' . output_csv($warnings)                             . '"';
+    echo "\n";
+  } // end exporting
+
   else {
-    echo "  <td>" . htmlspecialchars($row['name']) . "</td>\n";
-    echo "  <td>" . htmlspecialchars($row['ndc_number']) . "</td>\n";
-    echo "  <td>" . ($row['active'] ? xl('Yes') : xl('No')) . "</td>\n";
-    echo "  <td>" .
-         generate_display_field(array('data_type'=>'1','list_id'=>'drug_form'), $row['form']) .
-         "</td>\n";
-    echo "  <td align='right'>" . $row['reorder_point'] . "</td>\n";
-  }
-  if ($form_details) {
-    echo "  <td>" . htmlspecialchars($row['title']) . "</td>\n";
-    echo "  <td align='right'>" . htmlspecialchars($row['pw_min_level']) . "</td>\n";
-    echo "  <td align='right'>" . htmlspecialchars($row['pw_max_level']) . "</td>\n";
-  }
-  echo "  <td align='right'>" . $row['on_hand'] . "</td>\n";
-  echo "  <td align='right'>$monthly</td>\n";
-  echo "  <td align='right'>$stock_months</td>\n";
-  echo "  <td style='color:red'>$warnings</td>\n";
-  echo " </tr>\n";
+    echo " <tr class='detail' bgcolor='$bgcolor'>\n";
+    if ($drug_id == $wrl_last_drug_id) {
+      echo "  <td colspan='4'>&nbsp;</td>\n";
+    }
+    else {
+      echo "  <td>" . htmlspecialchars($row['name'])                       . "</td>\n";
+      echo "  <td>" . htmlspecialchars($row['ndc_number'])                 . "</td>\n";
+      echo "  <td>" . ($row['active'] ? xl('Yes') : xl('No'))              . "</td>\n";
+      echo "  <td>" . generate_display_field(array('data_type'=>'1',
+        'list_id'=>'drug_form'), $row['form'])                             . "</td>\n";
+    }
+    if ($form_details) {
+      echo "  <td>" . htmlspecialchars($row['title'])                      . "</td>\n";
+      echo "  <td align='right'>" . htmlspecialchars($row['pw_min_level']) . "</td>\n";
+      echo "  <td align='right'>" . htmlspecialchars($row['pw_max_level']) . "</td>\n";
+    }
+    else {
+      echo "  <td align='right'>" . htmlspecialchars($row['reorder_point']). "</td>\n";
+      echo "  <td align='right'>" . htmlspecialchars($row['max_level'])    . "</td>\n";
+    }
+    echo "  <td align='right'>" . $row['on_hand']                          . "</td>\n";
+    echo "  <td align='right'>" . $monthly                                 . "</td>\n";
+    echo "  <td align='right'>" . $stock_months                            . "</td>\n";
+    echo "  <td align='right'>" . $reorder_qty                             . "</td>\n";
+    echo "  <td style='color:red'>" . $warnings                            . "</td>\n";
+    echo " </tr>\n";
+  } // end not exporting
 
   $wrl_last_drug_id = $drug_id;
 }
@@ -285,6 +336,39 @@ else {
 }
 
 $res = sqlStatement($query);
+
+if (!empty($_POST['form_csvexport'])) {
+  header("Pragma: public");
+  header("Expires: 0");
+  header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+  header("Content-Type: application/force-download; charset=utf-8");
+  header("Content-Disposition: attachment; filename=inventory_list.csv");
+  header("Content-Description: File Transfer");
+  // Prepend a BOM (Byte Order Mark) header to mark the data as UTF-8.  This is
+  // said to work for Excel 2007 pl3 and up and perhaps also Excel 2003 pl3.  See:
+  // http://stackoverflow.com/questions/155097/microsoft-excel-mangles-diacritics-in-csv-files
+  // http://crashcoursing.blogspot.com/2011/05/exporting-csv-with-special-characters.html
+  echo "\xEF\xBB\xBF";
+
+  // CSV headers:
+  echo '"' . xl('Name'        ) . '",';
+  echo '"' . xl('NDC'         ) . '",';
+  echo '"' . xl('Active'      ) . '",';
+  echo '"' . xl('Form'        ) . '",';
+  if ($form_details) {
+    echo '"' . xl('Warehouse' ) . '",';
+  }
+  echo '"' . $mmtype . xl('Min') . '",';
+  echo '"' . $mmtype . xl('Max') . '",';
+  echo '"' . xl('QOH'         ) . '",';
+  echo '"' . xl('Avg Monthly' ) . '",';
+  echo '"' . xl('Stock Months') . '",';
+  echo '"' . xl('Reorder Qty' ) . '",';
+  echo '"' . xl('Warnings'    ) . '"';
+  echo "\n";
+}
+else { // not exporting
+
 ?>
 <html>
 
@@ -368,6 +452,7 @@ function facchanged() {
    <input type='checkbox' name='form_details' value='1'<?php if ($form_details) echo " checked"; ?>
    /><?php xl('Details','e'); ?>&nbsp;
    <input type="submit" value="<?php xl('Refresh','e'); ?>" />&nbsp;
+   <input type="submit" name="form_csvexport" value="<?php echo xl('Export to CSV'); ?>">&nbsp;
    <input type="button" value="<?php xl('Print','e'); ?>" onclick="window.print()" />
   </td>
  </tr>
@@ -381,21 +466,23 @@ function facchanged() {
    <th><?php  xl('NDC','e'); ?></th>
    <th><?php  xl('Active','e'); ?></th>
    <th><?php  xl('Form','e'); ?></th>
-   <th align='right'><?php  xl('Reorder','e'); ?></th>
 <?php if ($form_details) { ?>
    <th><?php  xl('Warehouse','e'); ?></th>
+<?php } ?>
    <th align='right'><?php echo "$mmtype " . xl('Min'); ?></th>
    <th align='right'><?php echo "$mmtype " . xl('Max'); ?></th>
-<?php } ?>
    <th align='right'><?php  xl('QOH','e'); ?></th>
    <th align='right'><?php  xl('Avg Monthly','e'); ?></th>
    <th align='right'><?php  xl('Stock Months','e'); ?></th>
+   <th align='right'><?php  xl('Reorder Qty','e'); ?></th>
    <th><?php xl('Warnings','e'); ?></th>
   </tr>
  </thead>
  <tbody>
 
-<?php 
+<?php
+} // end not exporting
+
 $encount = 0;
 $last_drug_id = '';
 $wrl_last_drug_id = '';
@@ -417,177 +504,6 @@ while ($row = sqlFetchArray($res)) {
   else {
     write_report_line($row);
   }
-
-  /*******************************************************************
-  $on_hand = 0 + $row['on_hand'];
-  $inventory_id = 0 + empty($row['inventory_id']) ? 0 : $row['inventory_id'];
-  $warnings = '';
-
-  // Get sales in the date range for this lot (if details) or drug.
-  if ($form_details) {
-    $srow = sqlQuery("SELECT " .
-      "SUM(s.quantity) AS sale_quantity " .
-      "FROM drug_sales AS s " .
-      "WHERE " .
-      "s.drug_id = '$drug_id' AND " .
-      "s.inventory_id = '$inventory_id' AND " .
-      "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
-      "AND s.pid != 0");
-  }
-  else {
-    $srow = sqlQuery("SELECT " .
-      "SUM(s.quantity) AS sale_quantity " .
-      "FROM drug_sales AS s " .
-      "LEFT JOIN drug_inventory AS di ON di.drug_id = s.drug_id " .
-      "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-      "lo.option_id = di.warehouse_id " .
-      "WHERE " .
-      "s.drug_id = '$drug_id' AND " .
-      "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
-      "AND s.pid != 0 $fwcond");
-  }
-  $sale_quantity = $srow['sale_quantity'];
-
-  $months = $form_days / 30.5;
-
-  $monthly = ($months && $sale_quantity) ?
-    sprintf('%0.1f', $sale_quantity / $months) : '&nbsp;';
-
-  $stock_months = '&nbsp;';
-  if ($sale_quantity != 0) {
-    $stock_months = sprintf('%0.1f', $on_hand * $months / $sale_quantity);
-    if ($stock_months < 1.0) {
-      addWarning(xl('QOH is less than monthly usage'));
-    }
-  }
-
-  // Check for reorder point reached, once per product.
-  if ($drug_id != $last_drug_id) {
-    if (checkReorder($drug_id, $row['reorder_point'])) {
-      addWarning(xl('Product-level reorder point has been reached'));
-    }
-    // Same check for each warehouse.
-    $pwres = sqlStatement("SELECT " .
-      "pw.pw_warehouse, pw.pw_min_level, lo.title " .
-      "FROM product_warehouse AS pw " .
-      "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-      "lo.option_id = pw.pw_warehouse " .
-      "WHERE pw.pw_drug_id = '$drug_id' AND pw.pw_min_level != 0 " .
-      "ORDER BY lo.title");
-    while ($pwrow = sqlFetchArray($pwres)) {
-      if (checkReorder($drug_id, $pwrow['pw_min_level'], $pwrow['pw_warehouse'])) {
-        addWarning(xl("Reorder point has been reached for warehouse") .
-          " '" . $pwrow['title'] . "'");
-      }
-    }
-  }
-
-  if ($form_details) {
-    // Compute the smallest quantity that might be taken from THIS lot based on the
-    // past 30 days of sales.  If lot combining is allowed this is always 1.
-    $min_sale = 1;
-    if (!$row['allow_combining']) {
-      $sminrow = sqlQuery("SELECT " .
-        "MIN(s.quantity) AS min_sale " .
-        "FROM drug_sales AS s " .
-        "WHERE " .
-        "s.drug_id = '$drug_id' AND " .
-        "s.inventory_id = '$inventory_id' AND " .
-        "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
-        "AND s.pid != 0 " .
-        "AND s.quantity > 0");
-      $min_sale = 0 + $sminrow['min_sale'];
-    }
-    $lotno = $row['lot_number'];
-    if ($row['on_hand'] < $min_sale) {
-      addWarning(xl('Lot') . " '$lotno' " . xl('quantity seems unusable'));
-    }
-    if (!empty($row['expiration'])) {
-      $expdays = (int) ((strtotime($row['expiration']) - time()) / (60 * 60 * 24));
-      if ($expdays <= 0) {
-        addWarning(xl('Lot') . " '$lotno' " . xl('has expired'));
-      }
-      else if ($expdays <= 30) {
-        addWarning(xl('Lot') . " '$lotno' " . xl('expires in') . " $expdays " . xl('days'));
-      }
-    }
-  }
-  else {
-    // Compute the smallest quantity that might be taken from ANY lot for this product
-    // based on the past 30 days of sales.  If lot combining is allowed this is always 1.
-    $min_sale = 1;
-    if (!$row['allow_combining']) {
-      $sminrow = sqlQuery("SELECT " .
-        "MIN(s.quantity) AS min_sale " .
-        "FROM drug_sales AS s " .
-        "LEFT JOIN drug_inventory AS di ON di.drug_id = s.drug_id " .
-        "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-        "lo.option_id = di.warehouse_id " .
-        "WHERE " .
-        "s.drug_id = '$drug_id' AND " .
-        "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
-        "AND s.pid != 0 " .
-        "AND s.quantity > 0 $fwcond");
-      $min_sale = 0 + $sminrow['min_sale'];
-    }
-    // Get all lots that we want to issue warnings about.  These are lots
-    // expired, soon to expire, or with insufficient quantity for selling.
-    $ires = sqlStatement("SELECT di.* " .
-      "FROM drug_inventory AS di " .
-      "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-      "lo.option_id = di.warehouse_id " .
-      "WHERE " .
-      "di.drug_id = '$drug_id' AND " .
-      "di.on_hand > 0 AND " .
-      "di.destroy_date IS NULL AND ( " .
-      "di.on_hand < '$min_sale' OR " .
-      "di.expiration IS NOT NULL AND di.expiration < DATE_ADD(NOW(), INTERVAL 30 DAY) " .
-      ") $fwcond ORDER BY di.lot_number");
-    // Generate warnings associated with individual lots.
-    while ($irow = sqlFetchArray($ires)) {
-      $lotno = $irow['lot_number'];
-      if ($irow['on_hand'] < $min_sale) {
-        addWarning(xl('Lot') . " '$lotno' " . xl('quantity seems unusable'));
-      }
-      if (!empty($irow['expiration'])) {
-        $expdays = (int) ((strtotime($irow['expiration']) - time()) / (60 * 60 * 24));
-        if ($expdays <= 0) {
-          addWarning(xl('Lot') . " '$lotno' " . xl('has expired'));
-        }
-        else if ($expdays <= 30) {
-          addWarning(xl('Lot') . " '$lotno' " . xl('expires in') . " $expdays " . xl('days'));
-        }
-      }
-    }
-  } // end not details
-  *******************************************************************/
-
-  /*******************************************************************
-  echo " <tr class='detail' bgcolor='$bgcolor'>\n";
-  if ($drug_id == $last_drug_id) {
-    echo "  <td colspan='5'>&nbsp;</td>\n";
-  }
-  else {
-    echo "  <td>" . htmlentities($row['name']) . "</td>\n";
-    echo "  <td>" . htmlentities($row['ndc_number']) . "</td>\n";
-    echo "  <td>" . ($row['active'] ? xl('Yes') : xl('No')) . "</td>\n";
-    echo "  <td>" .
-         generate_display_field(array('data_type'=>'1','list_id'=>'drug_form'), $row['form']) .
-         "</td>\n";
-    echo "  <td align='right'>" . $row['reorder_point'] . "</td>\n";
-  }
-  if ($form_details) {
-    echo "  <td>" . htmlentities($row['title']) . "</td>\n";
-    echo "  <td align='right'>" . htmlentities($row['pw_min_level']) . "</td>\n";
-    echo "  <td align='right'>" . htmlentities($row['pw_max_level']) . "</td>\n";
-  }
-  echo "  <td align='right'>" . $row['on_hand'] . "</td>\n";
-  echo "  <td align='right'>$monthly</td>\n";
-  echo "  <td align='right'>$stock_months</td>\n";
-  echo "  <td style='color:red'>$warnings</td>\n";
-  echo " </tr>\n";
-  *******************************************************************/
-
   $last_drug_id = $drug_id;
 }
 
@@ -596,6 +512,8 @@ if ($form_details) {
     write_report_line($warehouse_row);
   }
 }
+
+if (empty($_POST['form_csvexport'])) {
 ?>
  </tbody>
 </table>
@@ -608,3 +526,6 @@ facchanged();
 
 </body>
 </html>
+<?php
+} // end not exporting
+
