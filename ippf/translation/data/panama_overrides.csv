@@ -1,0 +1,40 @@
+constant_name,definition,source,openemr,test,spanish,argentina,panama,haiti
+AM,MA,panama,AM,NULL,NULL,NULL,MA,NULL
+"Accept Payment for","Aceptar pago de",panama,"Aceptar pago por",NULL,NULL,NULL,"Aceptar pago de",NULL
+"Age By","Agrupar por",panama,"Edad por",NULL,NULL,NULL,"Agrupar por",NULL
+"Amount for Past Balance","Total Saldo Anterior",panama,"Cantidad para balance anterior",NULL,NULL,NULL,"Total Saldo Anterior",NULL
+"Amount for This Visit","Total esta Visita",panama,"Cantidad por esta visita",NULL,NULL,NULL,"Total esta Visita",NULL
+Balance,Saldo,panama,Balance,NULL,NULL,NULL,Saldo,NULL
+"Billing Facility",Clínica,panama,"Centro de Facturacion",NULL,NULL,NULL,Clínica,NULL
+"COUNTER REFERRAL FORM","FORMA DE CONTRAREFERENCIA",panama,"CONTADOR DE REMISIÓN",NULL,NULL,NULL,"FORMA DE CONTRAREFERENCIA",NULL
+Charge,Cargo,panama,Cobrar,NULL,NULL,NULL,Cargo,NULL
+"Credit Card","T de Crédito",panama,"Tarjeta de Crédito",NULL,NULL,NULL,"T de Crédito",NULL
+"Date of Service","Fecha de servicio",panama,"Fecha De Servicio",NULL,NULL,NULL,"Fecha de servicio",NULL
+"Discounts as Monetary Amounts","Descuentos/Ajustes en montos absolutos",panama,"Descuentos como importes monetarios",NULL,NULL,NULL,"Descuentos/Ajustes en montos absolutos",NULL
+"Edit list","Editar Lista",panama,"Editar la lista",NULL,NULL,NULL,"Editar Lista",NULL
+"Encounters Section","Sección de Visitas",panama,"Sección visitas",NULL,NULL,NULL,"Sección de Visitas",NULL
+"External ID","ID Externa",panama,"Identificador externo",NULL,NULL,NULL,"ID Externa",NULL
+"Grand Total","Gran Total",panama,"Suma total",NULL,NULL,NULL,"Gran Total",NULL
+"Invoice Date","Fecha de factura",panama,"Fecha de Factura",NULL,NULL,NULL,"Fecha de factura",NULL
+"Issues Section","Sección de Condiciones Médicas",panama,"Sección de Incidencias",NULL,NULL,NULL,"Sección de Condiciones Médicas",NULL
+"Issues and Encounters for","Condiciones Médicas y Visitas de",panama,"Incidencias y Encuentros de",NULL,NULL,NULL,"Condiciones Médicas y Visitas de",NULL
+"Last Activity Date","Fecha última actividad",panama,"Última Actividad Fecha",NULL,NULL,NULL,"Fecha última actividad",NULL
+License/ID,Licencia/ID,panama,"Licencia/Nº Id.",NULL,NULL,NULL,Licencia/ID,NULL
+Mr.,Sr.,panama,"Sr. ",NULL,NULL,NULL,Sr.,NULL
+"Open Today`s Visit","Abrir la visita de hoy",panama,"Abrir visitas para hoy",NULL,NULL,NULL,"Abrir la visita de hoy",NULL
+"Please indicate visit reason","Por favor indique razón de la visita",panama,"Por favor indique el motivo de la visita",NULL,NULL,NULL,"Por favor indique razón de la visita",NULL
+Popups,"Ventana emergente",panama,"Menús emergentes",NULL,NULL,NULL,"Ventana emergente",NULL
+"Presenting Complaint","Razón de la visita / Queja que se presenta",panama,"Presentación de queja",NULL,NULL,NULL,"Razón de la visita / Queja que se presenta",NULL
+"Print Record","Imprimir Registro",panama,"Grabar Imprimir ",NULL,NULL,NULL,"Imprimir Registro",NULL
+"REFERRAL FORM","FORMA DE REFERENCIA",panama,"FORMULARIO DE DERIVACIÓN",NULL,NULL,NULL,"FORMA DE REFERENCIA",NULL
+"Received By","Recibido por",panama,"Recibido Por ",NULL,NULL,NULL,"Recibido por",NULL
+Refer,"Referencia en linea",panama,Referir,NULL,NULL,NULL,"Referencia en linea",NULL
+"Relate To","Mapeado a",panama,"Relaciónese Con ",NULL,NULL,NULL,"Mapeado a",NULL
+"Save Patient Demographics","Guardar datos demograficos",panama,"Guardar Demograficas de Paciente",NULL,NULL,NULL,"Guardar datos demograficos",NULL
+"Service Date","Fecha de servicio",panama,"Fecha de Servicio",NULL,NULL,NULL,"Fecha de servicio",NULL
+"This encounter has been billed. If you need to change it, it must be re-opened.","Esta visita ya ha sido facturada. Si necesita cambiarla, debe ser reabierta.",panama,"Esta visita ha sido facturada. Si necesita cambiarlo, debe ser re-abierta.",NULL,NULL,NULL,"Esta visita ya ha sido facturada. Si necesita cambiarla, debe ser reabierta.",NULL
+"Total Amount Paid","Total de pagos",panama,"Cantidad total pagada ",NULL,NULL,NULL,"Total de pagos",NULL
+"Visit date","Fecha Visita",panama,"Fecha visita",NULL,NULL,NULL,"Fecha Visita",NULL
+Warning,Alerta,panama,Aviso,NULL,NULL,NULL,Alerta,NULL
+"Warning: A visit was already created for this patient today!","Alerta: Hoy ya fue creada una visita para este cliente",panama,"Aviso: ya hay una cita para este paciente hoy! ",NULL,NULL,NULL,"Alerta: Hoy ya fue creada una visita para este cliente",NULL
+Warnings,Alertas,panama,Avisos,NULL,NULL,NULL,Alertas,NULL

@@ -1,0 +1,1616 @@
+constant_name,definition
+" Client has developed an oportunistic infection","Cliente ha desarrollado enf oportunista"
+" Patient History / Lifestyle","Historia / Estilo de Vida de la/el Cliente"
+" Up to:",Hasta
+"! Left w/o visit","! Se fue sin visita"
+"# Ins/fin issue","# Problema Ins/fin"
+"# of tablets:","No. de tabletas"
+"$ Coding done","$ Codificación hecha"
+"% Canceled < 24h","% Canceló en <24h"
+"% matches any string, _ matches any character","% reemplaza cualquier cadena, _ reemplaza cualquier caracter"
+"(% matches any string, _ matches any character)","(% reemplaza cualquier cadena, _ reemplaza cualquier caracter)"
+"(Add New Group)","Agregar nuevo grupo"
+"(Add Transaction)","Agregar Transacción"
+(admin),(admin)
+(Default),(Predeterminado)
+(Delete),Borrar
+(Edit),Modificar
+"(Fill here only if sending email notification to patients)","(Llene aquí solamente si envía notificación por email a clientes)"
+"(if entered, select only those who have had this service)","(solo mostrará clientes que tuvieron este servicio)"
+(More),Más
+"(New Patient)","Nuevo cliente"
+"(Notes and Authorizations)","Notas y Autorizaciones"
+"(only if billing location): ","(solamente si emite facturas)"
+"(Print Blank Referral Form)","Imprimir Forma de Referencia"
+"(Remove Group)","Remover grupo"
+"(To Clinical View) ","Vista datos clínicos"
+"* Reminder done","* Recordatorio realizado"
+"+ Chart pulled","+ Expediente localizado"
+"- None","- Ninguno"
+"-- or select from inventory --","-- o seleccionar del inventario --"
+"-- Please Select --","-- Seleccione --"
+"1 First Visit to Clinic","1 Primera vez"
+"2 Re-Visit / Re-Supply","2 Ulterior"
+"3 Administrative only","3 Administrativa"
+"4 Supply/Re-Supply","4 Sólo productos"
+"< In exam room	","< En consulta"
+"> Checked out","> Ya pagó"
+"? No show","? No se presentó"
+"@ Arrived","@ Llegó"
+a.c.,a.c.
+a.m.,a.m.
+"A/F Level Right:","Nivel de A/F Correcto"
+Abcess:,Abceso
+Abn,Anrml
+ABN1,ANRML1
+"Abnormal - Ectopic Pregnancy","Anormal - Embarazo ectópico"
+"Abnormal - Molar Pregnancy","Anormal - Embarazo molar"
+"Abnormal Blood Test:","Ex de sangre anormal"
+"Abnormal Hair Growth:","Crecimiento anormal del cabello"
+"Abnormal Mammogram","Mamog anormal"
+"Abnormal Menstrual Periods","Períodos menst anormal"
+"ABO and Rh blood groups","Abo y grupos sanguíneos Rh"
+Abortion,Aborto
+"Abortion Basic History","Historia clínica de Abortos"
+"Abortion Tests","Pruebas de aborto"
+Abortion:,Aborto:
+"Absence of Menstruation","Ausencia de menstruación"
+Abuse,Abuso
+"Acceptors New to Modern Contraception","Aceptantes nuevos de anticoncepción moderna"
+"Accepts Assignment","Acepta Facturar"
+"Access Control:","Privilegios/Accesos al sistema"
+Aches,Dolores
+ACL,"Seguridad del sistema"
+Acne:,Acné
+"Act Date",Fetcha
+Active,Activa
+"Active Encounter","Visita activa"
+"Active Patient","Cliente activo"
+"Active Patient:","Client activo:"
+"Active Viral Hepatitis","Hepatitis viral activa"
+Activity,"Saldos de Inventario"
+"Acute bronchitis or pneumonia","Bronquitis o neumonía aguda"
+Add,Agregar
+"Add a Pharmacy","Agregar Farmacia"
+"Add as New","Agreagar como nuevo"
+"Add Constant","Agregar constante"
+"Add Copay","Agregar pago"
+"Add Drug","Agregar productos"
+"Add Encounter","Agregar visita"
+"Add Field","Agregar campo"
+"Add Group","Agregar grupo"
+"Add Issue","Agregar condición"
+"Add Language","Agregar idioma"
+"Add Language or Add Constant or Edit definitions:","Agregar idioma /constante /Editar definiciones:"
+"Add Multiple","Agregar múltiples recetas"
+"Add new client record","Agregar nuevo registro de cliente"
+"Add New Group","Agregar grupo nuevo"
+"Add New Note","Agregar nueva nota"
+"Add Patient Record","Agregar nuevo reg cliente"
+"Add payment","Agregar pago"
+"Add Prescription","Agregar receta médica"
+"Add Row","Añadir fila"
+"Add to Medication List","Agregar a lista de medic"
+"Add Top Level","Agregar al inicio"
+"Add Transaction","Agregar transacción"
+"Additional Diagnosis:","Diagnósticos adicionales:"
+"Additional History","Historia Adicional"
+"Additional Info:","Información Adicional:"
+"Additional Notes:","Notas adicionales:"
+"Addr Book","Agenda Proveedores"
+Address,Dirección
+"Address Book Types","Tipos de Directorio"
+Address:,Dirección:
+Adj,Ajuste
+Adjustment,Ajuste
+"Adjustment reasons","Razones para ajuste"
+Adjustments,Ajustes
+"Adm adjust","Ajuste adm"
+admin,admin
+"Administered By","Administrado por"
+Administration,Administración
+"Administrator, The",Administrador
+Admission,"1a Vez"
+"Adolescent house","Casa del Adolescente"
+"Adopted Method","Método adoptado"
+"After hrs calls","Llamadas fuera de hora"
+Afternoon,Vespertino
+Age,Edad
+"Age at First Abortion","Edad al primer aborto"
+"Age at First Pregnancy","Edad al primer embarazo"
+"Age By:","Edad por:"
+"Age Category","Categoría de edad"
+"Age From","Edad desde"
+"Age From:","Edad desde:"
+"Age of Menarche","Edad a la menarquia"
+"Aging Columns:",Antiguedad
+Alcohol,Alcohol
+"Alcohol Abuse and Alcoholism","Abuso del alcohol y alcoholismo"
+All,Todos
+"All Clients / All Facilities","Todos los clientes / Todas las clínicas"
+"All Clinics - Detail","Todas las clínicas - Detalle"
+"All Clinics - Summary","Todas las clínicas - Resumen"
+"All Day","Todo el día"
+"All day event","Dia completo"
+"All Facilities","Todas las clínicas"
+"All providers","Todos los proveedores"
+"All Reviewed and Negative:",Rev/Negat
+"All Types","Todos los tipos"
+"All users",Todos
+Allergies,Alergias
+Allergies,Alergias
+Allergy,Alergia
+"Allergy to Prostaglandins/Mifepristone","Alergia a prostaglandinas/mifepristona"
+Allow,Permitir
+"Allow Email","Permitir eMail"
+"Allow email messages?","¿Autoriza el envío de emails?"
+"Allow Email?","¿Autoriza el envío de emails?"
+"Allow Mail Message","Permitir correo regular"
+"Allow SMS","Permitir mensajes SMS"
+"Allow SMS (text messages)?","¿Autoriza mensajes de texto SMS?"
+"Allow telephone messages?","¿Autoriza mensajes telefónicos?"
+"Allow Voice Message","Permitir mensajes de voz"
+alter,modificar
+alter_table,modificar_tabla
+Amount,Monto
+"Amount Paid","Monto pagado"
+"Analgesic Provided","Analgésico provisto"
+analgesics,analgésicos
+and,y
+"And :",y
+"and all subordinate data? This action will be logged!","y todos los datos subordinados? ¡Esta acción quedará registrada!"
+And:,y
+Anemia,Anemia
+"Anesthesia Complications","Complicaciones de anestesia"
+Anorexia,Anorexia
+ante,ante
+antibiotics,Antibióticos
+"Antiseptic Provided","Antiséptico provisto"
+Anxiety,Ansiedad
+Any,Cualquiera
+"Any category","Todas las categorías"
+Apnea:,Apnea
+Appearance,Apariencia
+Appearance:,Apariencia
+"Appointment Date","Fecha de Cita"
+"Appointment statuses","Estado de las citas"
+"Appointment within","Rango de fecha de cita"
+"Appointment within:","Rango de fecha de cita:"
+Appointments,Citas
+"Appointments and Encounters","Citas y Visitas"
+"Appointments and Visits","Citas y Visitas"
+"Appointments Report","Reporte de Citas"
+Appt-Enc,"Citas y Visitas"
+April,Abril
+Arrythmia:,Arritmia
+Arthritis:,Artritis
+"Artificial Insemination","Insem artif"
+"As Of","A partir de"
+Asian,Asiático
+Assessment:,Evaluación
+"Associated Clinics","Clínicas asociadas"
+"Associated Induced Procedure","Procedimiento asociado"
+Asthma,Asma
+Asthma:,Asma
+at,en
+atenolol,atenolol
+Atherosclerosis,Aterosclerosis
+August,Agosto
+Authorizations,Autorizaciones
+authorize,Autorizado
+Authorized?,Autorizado?
+"Average No. of Days","Promedio de días"
+"Avg Monthly","Promedio mensual"
+Axilar,Axila
+Axillary,Axila
+b.i.d.,b.i.d.
+Back,Regresar
+"Back one visit","Regresar una visita"
+Backup,Respaldos
+"Bacterial Vaginosis","Vaginosis bacteriana"
+"Bahasa Indonesia","Bahasa Indonesia"
+Bal,Saldo
+"Balance Due","Saldo pendiente"
+"Balance Due:","Saldo pendiente"
+Balanitis,Balanitis
+Barrier/IUD,Barrera/DIU
+"Basal Temperature","Temp. Basal"
+BASIC,Básico
+"Basic Data","Datos básicos"
+"Basic Information","Información básica"
+"basic normal 01","Normal básico 01"
+"Basic RH (female and male)","SR Básica (mujer y hombre)"
+"Basic RH (female only)","SR Básica (sólo mujer)"
+"Batch Communication Tool","Herramienta de Comunicaciones"
+"Batch Results","Resultados por lote"
+BatchCom,Notificaciones
+Begin,Inicio
+"Begin Date","Begin Date"
+between,entre
+"Between 1 and 3 months ago","Entre 1 y 3 meses"
+"Biliary System","Sistema biliar"
+Billed,Facturado
+Billing,Facturacion
+"Billing Information","Información de facturación"
+"Billing Location","Emite Facturas"
+"Billing Note","Nota de facturación"
+Biopsy:,Biopsia
+Black,Negro
+"Blank Forms","Formas en blanco"
+"Bleeding During Pregnancy","Sangramiento durante emb"
+"Bleeding Problems:","Problemas de sangramiento"
+"Bleeding/spotting since last period?","¿Sangrado/manchado desde FUM?"
+"Blood Group","Grupo sanguíneo"
+"Blood pressure ","Presión arterial"
+BMI,IMC
+"BMI Status","Estado del IMC"
+Bot,Inferior
+"Both Ears","Ambos oidos"
+Bottom,Inf
+"BP Diastolic","Presión Arterial /Diastólica"
+"BP Systolic","Presión Arterial/Sistólica"
+Breast,Mamas
+"Breast Cancer within the Past 5 Years","Cáncer de mama en los pasados 5 años"
+"Breast Disease","Enfermedad de mamas"
+"Breast Exam","Examen de mamas"
+"Breast Mass","Masa en las mamas"
+Breast-feeding,Amamantamiento
+By,Por
+Calendar,Agenda/Calendario
+"Calendar UI:",Agenda/Calendario
+Calendar:,Agenda/Calendario
+Cancel,Cancelar
+Cancer,Cáncer
+"Cardiac Arrest","Arresto cardíaco"
+"Cardiac Echo","Ecografia cardiaca"
+cardiology,Cardiología
+Cardiovascular,Cardiovascular
+Cash,Efectivo
+"Cash Rec","Ingresos efectivo"
+"Cash Receipts","Ingresos efectivo"
+"Cash Receipts by Provider","Ingresos efectivo por Proveedor(a)"
+Cast:,Casta
+Categories,Categorías
+Categories,Categorías
+Category,Categoría
+"Category Limits","Límites de Categoría"
+Category:,Categoría
+Caucasian,Caucásico
+"Causes of Infertility","Causas de infertilidad"
+"Causes of Infertility/Subfertility","Causas de infertilidad/subfertilidad"
+"CBD / CBS","DBC / SBC"
+"CD4 count","Conteo CD4"
+"Cell Phone Number","Teléfono celular"
+"Cerv patology","Patologia Cervical"
+"Cervical Cap","Tapón cervical"
+"Cervical cytology ","Citol. Cervical"
+Changed,Cambiado
+"Charge amount","Monto a pagar"
+Charges,Cargos
+Chart,Expediente
+"Chart Activity","Ubicación del Expediente - Movimientos"
+"Chart location","Ubicación del Expediente"
+"Chart Location Activity","Ubicación del Expediente - Movimientos"
+"Chart Storage Locations","Ubicación de Expedientes Almacenados"
+"Chart Tracker","Buscador de Expedientes"
+"Charts Checked Out","Expedientes chequeados"
+"Charts Out","Expedientes chequeados"
+Check,Cheque
+"Check All","Marcar todas"
+"Check/Reference Number","Número de cheque/ref"
+Checkout,"Final de visita"
+CHEST,Pecho
+"Chest Pain","Dolor de pecho"
+Chg,Cargo
+"Chief Complaint","Motivo de la visita"
+"Chief Compliant","Motivo de la visita"
+Choices,Opciones
+City,Ciudad
+"City 1","Ciudad 1"
+"City 2","Ciudad 2"
+"City 3","Ciudad 3"
+"City 4","Ciudad 4"
+"City 5","Ciudad 5"
+"City 6","Ciudad 6"
+"City Name","Nombre de la ciudad"
+"City, State Zip","Ciudad, Estado, Código Postal"
+City:,Ciudad
+"Civil Status","Estado civil"
+Clear,Limpliar
+"Clear All","Borrar todo"
+"Clear Smarty Cache","Limpiar caché"
+"CLIA Number","#SDP en SGIe"
+"click here to update priority, category and nickname settings","seleccione aquí para actualizar parámetros de prioridad, categoría y sobrenombre"
+"Click to select","Seleccione para buscar"
+Click:,Presionar
+Client,Cliente
+"Client Aware of Emergency Procedures","Cliente conoce proced emergencia"
+"Client Copy","Copia para la/el cliente"
+"Client has  been victim of stigma/discrimination","Cliente ha sido víctima estigma/discr"
+"Client has been HIV tested","Cliente se  ha hecho la prueba de VIH"
+"Client has been ITS tested","Cliente se ha hecho prueba de ITS"
+"Client has been victim of stigma/discrimination","Cliente ha sido víctima estigma/discr"
+"Client has developed AIDS","Cliente ha desarrollado SIDA"
+"Client has developed an oportunistic infection","Cliente ha desarrollado una infección oportunista"
+"Client has developed an opportunistic infection","Cliente ha desarrollado enf oportunista"
+"Client has received HIV Test Counselling","Cliente ha recibido Consejería prueba VIH"
+"Client has received HIV/AIDS treatment","Cliente ha recibido tratamiento VIH/SIDA"
+"Client has received ITS Counselling","Cliente ha recibido consejería de ITS"
+"Client has received ITS treatment","Cliente ha recibido tratamiento ITS"
+"Client has received psycho-social support","Cliente ha recibido apoyo psicosocial"
+"Client has tested HIV positive","Cliente ha resultado VIH-Positivo"
+"Client has tested ITS positive","Cliente ha resultado ITS-Positivo"
+"Client has undergone genital surgery","Cliente ha recibido cirugía genital"
+"Client has undergone genital treatment","Cliente ha recibido tratamiento genital"
+"Client ID","Identificación cliente"
+"Client ID:","Identificación cliente"
+"Client is informed about HIV transmission","Cliente informado sobre transmisión VIH"
+"Client is informed about ITS transmission","Cliente informado sobre transmisión ITS"
+"Client medical history summary","Resumen de historia médica del cliente"
+"Client Notes","Notas en Expediente del Cliente"
+"Client Notes (Back)","Notas en Expediente cliente (regresar)"
+"Client Notes (Just Mine)","Notas en expediente client (Solo las mías)"
+"Client Notes (See All)","Notas en expediente client (Ver todas)"
+"Client Report","Reporte de clientes"
+"Client reports genital infection","Cliente reporta infección genital"
+"Client reports genital pain","Cliente reporta dolor genital"
+"Client reports incontinency concerns","Cliente reporta problema incontinencia"
+"Client reports urinary concerns","Cliente reporta problema urinario"
+"Client Status","Estado del Cliente"
+Clients,Clientes
+"Clients who had a visit","Clientes que tuvieron una visita"
+"Clients with first visit at","Clientes con primera visita en"
+"Clients with last visit at","Clientes con última visita en"
+"Clinic consultation","Consulta Clínica"
+"Clinic Copy","Copia de la clínica"
+"Clinic Daily Record","Registro diario"
+"Clinic History #","Historia Clínica #"
+"Clinic ID","No. de registro de clinica"
+"Clinic ID:","No. de registro de clinica"
+Clinical,Clínica
+Clinics,Clínicas
+CO-PAY,Co-Pago
+"COC & POC","AOC y PPS"
+Code,Código
+Code:,Código
+Coding,Código
+Coffee,Café
+"collapse all","colapsar todo"
+Collections,"Ingresos y Ajustes"
+Color:,Color
+Columns,Columnas
+Columns:,Columnas:
+"Combined Injectable Contraceptives (1 month)","Inyectables combinados (1 mes)"
+"Combining Lots","Combinar lotes"
+"Comes from",Procedencia
+Comments,Comentarios
+"Commercial Marketing","Mercadeo comercial"
+Communications,Comunicaciones
+Complications,Complicaciones
+Compute,Calcular
+"Condom (Male or Female)","Condón(Fem o Masc)"
+Configuration,Configuración
+"Confirm Create New Patient","Confirmar creación nuevo cliente"
+"Consultation Brief Description","Razón de la visita"
+Contact,Contacto
+"Contact Email","Dirección electrónica"
+"Contact Email Address","Dirección correo de contacto"
+"Contact Lenses","Lentes de contacto"
+Content,Contenido
+Contraception,Anticoncepción
+"Contraception for","Anticoncepción para"
+"Contraceptive Complication (specify)","Complicaciones por uso de método"
+"Contraceptive Counseling Provided","Se proveyó consejería anticonceptiva"
+"Contraceptive Items Provided","Productos anticonceptivos provistos"
+"Contraceptive Last Menstrual Period","Última menstruación anticonceptiva"
+"Contraceptive Menstrual History","Historia menstrual anticonceptiva"
+"Contraceptive Method","Método anticonceptivo"
+"Contraceptive Method in use","Método anticonceptivo en uso"
+"Contraceptive Methods","Métodos anticonceptivos"
+"Contraceptive Products","Productos anticonceptivos"
+"Contraceptives Start","Fecha inicio uso de método anticonceptivo"
+COPAY,Co-Pago
+Copays,Co-pagos
+"Copper releasing IUD (10 years)","DIU liberador de cobre (10 años)"
+Counseling,Consejería
+Counseling,Consejería
+"Counseling services","Servicios de Consejería"
+"COUNTER REFERRAL FORM","FORMA DE CONTRAREFERENCIA"
+Counter-Referral,Contra-referencia
+Country,País
+Country:,País
+"Create and download a full backup","Crear y guardar respaldo"
+"Create Backup","Respaldar datos"
+"Create New Patient","Nuevo registro de cliente"
+Created,Creado
+Current,Actual
+"Current Method","Método actual"
+"Currently Active",Activo
+"Cycle Length (days)","Duración del período(en días)"
+CYP,APP
+"CYP Factor","Factor de APP"
+"CYP Factor:","Factor de APP"
+"CYP Report","Reporte de APPs"
+"Daily Record","Registro diario"
+"Data Cols","Col Datos"
+"Data Type","Tipo Dato"
+Database,"Adm Base de Datos"
+Date,Fecha
+"Date Administered","Fecha de administración"
+"Date Destroyed","Fecha de destrucción"
+"Date Last Pregnancy Ended","Fecha de parto"
+"Date of Birth","Fecha Nacimiento"
+"Date of Last Pap Smear","Fecha de última citología/Papanicolau"
+"Date of Next Pap Smear ","Fecha de próxima citología /Papanicolau"
+"Date of Service:","Fecha de servicio"
+"Date Ordered","Fecha de orden"
+Date/Appt,Fecha/Cita
+Date/Notes,Fecha/Notas
+Date:,Fecha
+day,Dia
+"Day View",Días
+days,Días
+"Days per Column:","Días por columna"
+deactivate,Desactivado
+December,Diciembre
+Default,Predeterminado
+"Default Facility:","Ubicación predeterm"
+"Default Method","Método predeterm"
+"Default provider is required","Debe definir un proveedor predeterminado"
+"Default Value","Valor predeterm"
+"Default Warehouse:","Bodega predeterm"
+del,borrar
+Delete,Borrar
+"Delete Group","Borrar Grupo"
+"Delete List","Borrar Lista"
+Dementia,Demencia
+Demographics,Demográficos
+"Demographics (All Values)","Demográficos (Todos)"
+Depression,Depresión
+Depression:,Depresión
+Description,Descripción
+Description:,Descripción
+Destination,Destino
+Destroy,Destruir
+Destroy...,Destruir
+Destroyed,Ajustes(Daño/Exp)
+"Destroyed Drugs","Productos destruidos"
+Details,Detalle
+Diabetes,Diabetes
+Diabetes,Diabetes
+"Diabetes Mellitus w/Vascular Complications","Diabetes Mellitus con complicaciones vasculares"
+Diag,Diagnosticos
+Diagnosis,Diagnósticos
+"Diagnosis Code","Código de diagnóstico"
+Diagnosis:,Diagnósticos
+Diagnostic,Diagnosticos
+"Diagnostic Imaging ","Imagen Diagnóstica"
+"Diagnostic Labs & Orders","Laboratorio y Diagnósticos"
+"Diagnostic Tests:","Exam de Diagn"
+Diaphragm,Diafragma
+Diarrhea:,Diarrea
+Dictation:,Dictado
+Difference,Diferencia
+Diffuse:,Difuso
+Discarded,"Dado de alta"
+Discharge,Secreción
+Discharge:,Secreción
+Discount,Descuento
+"Discount Amount","Monto descuento"
+"Discount Amount:","Monto descuento"
+Discount/Adjustment,Descuento/Ajuste
+Disease:,Enfermedad
+Dispensed,Entregado
+Distribution,Distribución
+Distributor,Distribuidor
+Divorced,Divorciado(a)
+Dizziness:,Mareos
+"Do Not Resuscitate Order","Orden de no resucitación"
+"do not substitute","no sustituir"
+"Do you really want to delete","¿Realmente desea borrar la"
+DOB,Fec.Nac
+DOB:,Fec.Nac
+"Doctor´s name and signature","Nombre y firma del médico"
+Document,Documento
+"Document Caetgories","Categorías de documentos"
+"Document Categories","Categorías de documentos"
+Documents,Documentos
+Documents:,Documentos
+"Domestic Partner","Pareja de hecho"
+"Don't Save","No guardar"
+DOS,Del
+DOS:,Del
+Dosage,Dosis
+"Dossier médical","Expediente médico"
+"Double Vision","Doble visión"
+"Download configuration data","Descargar datos de configuración"
+Drug,Medicamento
+"Drug Finder","Localizador de medicamentos"
+"Drug Forms","Formas de medicamentos"
+"Drug Intervals","Intervalo entre medicamentos"
+"Drug Lookup","Buscar Medicamento"
+"Drug Name","Nombre Producto"
+"Drug Units","Unidades de medicamento"
+Drug:,Medicamento
+duration,Duración
+"Duration of Absence (days)","Días ausencia"
+Duration:,Duración
+Dutch,Holandés
+Dysmenorrhea,Dismenorrea
+ECG,ECG
+"Economic (cost)","Económica  (costo)"
+Ectopic,Ectópico
+"Ectopic Pregnancy","Embarazo Ectópico"
+Edit,Editar
+"Edit Categories","Editar Categ"
+"Edit definitions","Editar definiciones"
+"Edit definitions:","Editar clínicas"
+"Edit Facilities:","Editar Ubicaciones"
+"Edit Facility Information","Editar Clínica / Centro de Costo"
+"Edit Global Settings","Editar Parámetros Globales"
+"Edit layout:","Editar Diseño"
+"Edit list:","Editar Lista"
+Education,Educación
+"Education Date","Nivel educativo"
+Ejaculations:,Eyaculaciones
+"Email Sender","Remitente (email)"
+"Email Sender :","Remitente (email)"
+"Email Subject","Asunto (email)"
+"Email Subject:","Asunto (email)"
+Emergency,Emergencia
+"Emergency Contact","Contacto emergencia"
+"Emergency Contact Person","Persona contacto de emergencia"
+"Emergency Contact Phone Number","Teléfono de emergencia"
+"Emergency Contraception","Anticonc Emergencia"
+"Emergency Phone","Teléfono emergencia"
+"Emergency Written Instructions Provided","Instrucciones de emergencia provistas por escrito"
+Employer,Empleador
+"Employer Address","Dirección Empleador"
+"Employer Name","Nombre Empleador"
+Empty,Vacía
+Enc,Visita
+Encounter,Visita
+"Encounter forms","Formas para visita"
+"Encounter Forms to Include in this Report:","Formas para visitas a incluir en este reporte"
+Encounters,Visitas
+"Encounters & Forms:","Visitas y Formas"
+"Encounters Report","Reporte de visitas"
+End,Fin
+"End date","Fecha final"
+"End Space","Espacio Endocrino"
+"End Time","Hora final"
+Endocrine,Endocrino
+"Endocrine Glands","Glándula endocrina"
+endocrinology,Endocrinología
+English,Inglés
+"Entitlement status",Activos
+"EOB Posting - Instructions","Instrucciones de cierre de facturacion"
+Epilepsy,Epilepsia
+Epilepsy:,Epilepsia:
+Error,Error
+Errors,Errores
+"Ethnicity or Race","Origen étnico o Raza"
+Evening,Nocturno
+Event,Evento
+"Event does not repeat","Evento sin repetic"
+"Event repeats every","Evento se repite cada"
+"Event repeats on:","Evento se repite en"
+every,Cada
+Exact,Exacto
+exam,Examen
+Exams/Tests,Exámenes/Pruebas
+Exams/Tests:,Exámenes/Pruebas
+"Excessive Bleeding/Hemorrhage","Sangram excesivo/hemorragia"
+"Exercise Patterns","Patrones de ejercicio"
+"Expected Date","Fecha esperada"
+"Expected Reply Date","Fecha esperada de respuesta"
+Expiration,Expiración
+"Expiration Date","Fecha de expiración"
+Expires,"Fecha Expiración"
+Export,Exportar
+"Export Configuration","Exportar configuración"
+"Export File","Exportar archivo"
+"Export Selected as CSV","Exportar a formato CSV"
+"Export Selected to Collections","Exportar seleccion"
+"Export to CSV","Exportar a formato CSV"
+"External identifier","Identificador externo"
+"External Only","Externo solamente"
+Facilities,"Clínicas/Centros Costo"
+Facility,Ubicación
+"Facility Administration","Admon de Clínicas/Centros de Costo"
+"Facility Code","Código Clínica/C Costo"
+"Facility Code:","Código Clínica/C Costo:"
+Facility:,"Clínica/C Costo:"
+"Family and GBV","Familia y VBG"
+"Family History of Glaucoma:","Historia familiar de glaucoma"
+"Family History:","Historia familiar"
+"Family Size","Tamaño de la Familia"
+"Family Violence","Violencia familiar"
+Father,Padre
+Fatigue:,Cansancio
+Fax/Scan,Fax/Escanear
+Fax:,Fax
+"Faxes In","Entrada de faxes"
+"Faxes Out","Salida de faxies"
+Features,Diseño
+February,Febrero
+"Federal Drug ID:","Cód Producto"
+"Federal EIN:","Cód Proveedor:"
+"Federal Tax ID:","Cód impuesto fed"
+"Fee Sheet","Hoja de Cargos por Serv & Prod"
+Fees,"Hoja de cargos/ Fin de visita"
+Fees:,Facturación
+Female,Mujer
+"Female AP","Femenino AP"
+"Female Condom","Condón femenino"
+"Female Endometriosis","Endometriósis Fem"
+"Female G","Femenino G"
+"Female is incapable of carrying a pregnancy to term","Mujer incapaz de llevar embarazo a término"
+"Female LC","Femenino LC"
+"Female VSC - Laparoscopy","AQV Femenina - Laparoscopia"
+"Female VSC - Laparotomy","AQV Femenina - Laparotomía"
+"Female VSC - Minilaparatomy","AQV Femenina - Minilaparotomía"
+Fertility,Fertilidad
+"Fertility Awareness Based","Métodos Basados en fertilidad"
+"Fertility Basic History","Historia de Fertilidad"
+"Fertility Tests","Exam. Fertilidad"
+"Fetal Monitoring","Monitoreo fetal"
+Fever:,Fiebre
+Fibroids,Fibroides
+Filename,"Nombre archivo"
+"Fill here only if sending email notification to patients","Llene aquí solamente si envía notificación por correo a clientes"
+Filter,Filtro
+"Filter for Constants","Filtro para constantes"
+"Filter for Constants:","Filtro p/constantes"
+Filters,Filtros
+Filters:,Filtros
+"Final Diagnosis","Diagnóstico final"
+Financial,Financieros
+"Financial Info","Información Financiera"
+"Financial Review Date","Fecha revisión"
+"Financial Review Date:","Fecha revisión"
+Financier,Financiero
+Find,Localizar
+"Find available","Localizar disponible"
+"Find Patient","Localizar Paciente"
+Findings,Hallazgos
+"First contraceptive at this clinic?","¿Primer anticonceptivo en esta institución?"
+"First Name","Primer nombre"
+"First Name:","Primer nombre"
+Flatulence:,Flatulencia
+"Flow Bleeding (L/M/H)","Flujo (L/M/I)"
+"Flow Length (days)","Flujo (días)"
+"Flow Types","Tipos de flujo"
+Flow:,Flujo
+"Flu Vaccination","Vacuna influenza"
+"Foam & Condom","Espuma y Condones"
+"follow up prn.",seguimiento
+Followup,Ulterior
+"Followup Appointment Recorded","Seguimiento a Cita Registrada"
+"Followup procedure from other site","Seguimiento a procedimiento de otro sitio"
+"Followup procedure from partner site","Seguimiento a procedimiento sitio asociado"
+"Followup procedure from this site","Seguimiento a procedimiento de este sitio"
+"Food Intolerance","Intolerancia a alimentos"
+for,Para
+"for Invoice","para la Factura"
+"For Referred Organization/Practitioner","Para Organización/Médico que refirió"
+"For the past","Para los anteriores"
+Form,Forma
+Forms,Formas
+"Forms Administration","Administracion de formas"
+French,Francés
+Frequency:,Frecuencia
+Friday,Viernes
+friend,Amigo(a)
+From,De
+From:,De
+"Front Office Receipts","Pagos recibidos por cajera"
+"Front Rec","Pagos recibidos"
+"Gall Bladder Condition","Condición de vesícula biliar"
+"Gastrointestinal Tract","Tracto Gastrointestinal"
+"GCAC Statistics Report","Estadísticas GCAC"
+"GCAC Stats","Estadísticas GCAC"
+Gender,Género
+"Gender :",Género
+"Gender-Based Violence","Violencia basada en género"
+General,General
+"General Service Category","Categorías Generales de Servicios"
+"General Tax","Impuesto general"
+"Generate Report","Producir reporte"
+"Generate XML","Producir archivo exportación"
+German,Alemán
+Globals,"Parámetros globales"
+Go,Proceder
+Government,Gobierno
+grams,gramos
+Group,Grupo
+"Gynecological Exam","Examen Gineco"
+"Gynecological services",Ginecología
+"Gynecological Tests","Exámenes Gin"
+Gynecology,Ginecología
+h,h
+h.s.,h.s.
+Handicap,Discapacidad
+Having,"Que realizaron"
+"Hazardous Activities","Actividades peligrosas"
+"Head Circumference","Circunferencia craneal"
+Headache:,"Dolor de cabeza"
+"Health centre/clinic","Centro de salud/Clínica"
+"health checkup","Chequeo de salud"
+"Heart Disease","Enfermedad cardiaca"
+"Heart Problem:","Problemas del corazón"
+"Heart Problems","Problemas del corazón"
+HEART:,Corazón
+Hebrew,Hebreo
+Height,Estatura
+Hemoglobin,Hemoglobina
+Hepatitis,Hepatitis
+"Hide Details","Ocultar detalles"
+High,Alta
+"High Blood Pressure","Presión alta"
+"High Blood Pressure:","Presion alta"
+Hispanic,Hispano
+History,"Historia Médica Familiar"
+"History Data","Historia Médica"
+"History of Heart Murmur","Historia de Soplo Cardiaco"
+Hits,Concidencias
+"HIV testing","Test VIH"
+HIV/AIDS,VIH/SIDA
+"HIV/AIDS during Pregnancy","VIH/SIDA en embarazon"
+"HIV/AIDS Tests","Test VIH/SIDA"
+HIV:,VIH
+Home,Inicio
+"Home Phone","Tel. casa"
+"Home Phone Number","Teléfono particular"
+"Home Phone:","Tel. casa"
+"Homeless or similar?","¿Sin techo o similar?"
+"Homeless, etc.","Sin hogar, etc."
+"Hormonal analysis","Análisis hormonal"
+"Hormonal Patch","Parche hormonal"
+"Hormone releasing IUD (5 years)","DIU Liberador de hormonas (5 años)"
+Hours,Horas
+"How did they hear about us","Cómo supo de nosotros"
+"How Many More Children Wanted","¿Cuántos más hijos desea?"
+Hypertension,Hipertensión
+"Hypertension with Vascular Disease","Hipertensión con enfermedad cardiovascular"
+ID,"DNI/No. Identificación"
+"ID (?)",Identificación
+"ID Type","Tipo de ID"
+Immunizations,Inmunizaciones
+Immunize,Inmunizaciones
+Implant,Implante
+"Import Configuration","Importar configuración"
+in,plg
+in-house,"en inventario"
+Inactive,Inactivo
+"Inactive Days","Días inactivo"
+"Inbound External Referrals","Referencias externas - Recibir"
+"Inbound Internal Referrals","Referencias internas - Recibir"
+"Inbound Referral","Referencias hacia la clínica"
+"Include Completed","Incluir completos"
+"Include inactive users","Incluir usuarios inactivos"
+"Include Uncategorized","Incluir no categorizados"
+"Include Vital Signs","Incluir signos vitales"
+Incontinence,Incontinencia
+increased:,Incremento
+"Indicates if DOB is estimated","Indica si Fecha Nac es estimada"
+Infection,Infección
+Infertility,Infertilidad
+"Infertility Treatment","Tratam. Infertilidad"
+Info,Información
+Injectable,Inyectable
+Instructed,Instrucción
+Insurance,Seguro
+"Insurance Data","Datos sobre Seguros"
+"Intermenstrual Bleeding","Sangrado intermenstrual"
+"Internal Identifier (pid)","Identificador interno del sistema"
+Interpreter,Intérprete
+"Interpreter needed?","¿Necesita intérprete?"
+Interval,Intervalo
+Intervention,Intervención
+Intolerance:,Intolerancia:
+Inventaire,Inventario
+Inventory,Inventario
+"Inventory Activity","Movimientos de inventario"
+"Inventory List",Existencias
+"Inventory Transactions","Transacciones de inventario"
+Invoice,Factura
+"Invoice Reference Number","Número de referencia de facturación"
+"IPPF HIV",IPPF-VIH
+"IPPF SRH",IPPF-SSR
+"IPPF Statistics Report","Reporte Estadistico IPPF"
+"IPPF Stats","Estadísticas IPPF"
+Issue,Condición
+Issues,"Condiciones Médicas"
+"Issues (Injuries/Medical/Allergy):","Condiciones Médicas"
+Issues:,"Condiciones Médicas"
+January,Enero
+"Job Description:","Descripción de la tarea"
+"Job skills workshop","Taller de oficio"
+July,Julio
+June,Junio
+"Just Mine","Mis notas"
+Keywords,"Palabras clave"
+"Label (?)",Etiqueta
+"Label Cols","Etiqueta de col"
+Language,Idioma
+"Language Code:","Codigo de idioma"
+"Language Name:","Nombe de idioma"
+Language:,Idioma:
+Laparoscopy,Laparoscopía
+Last,Apellido
+"Last Name",Apellido
+"Last name(s)",Apellido(s)
+"Last Name:",Apellido
+"Last Normal Period (date)","Fecha último período normal"
+"Last Visit","Ultima visita"
+Latitude,Latitud:
+"Layout Based","Formas configurables"
+LDL,"Lipoproteínas Baja Densidad"
+"Leave Message With","Dejar mensaje con"
+Left:,Izquierda
+"Legal Abortion","Aborto Legal"
+Length,Largo
+Letter,Notas
+Lifestyle,"Estilo de vida"
+Limits,Límites
+List,Lista
+"List Prescriptions","Lista de recetas"
+Lists,"Listas de datos"
+Liver,Hígado
+Locale,Locales
+Location,Ubicación
+Location:,Ubicación
+"Logged in:","Usuario activo"
+Login,Entrar
+Logout,Salir
+Logs,Bitacora
+"Logs Viewer","Visor de actividad"
+Longitude,Longitud:
+Lot,Lote
+"Lot Number","Núm de lote"
+Lot:,Lote
+MA,AM
+"MA Category","Categoría de la AM"
+"MA Client Accepting Abortion","Clienta AM que acepta el aborto"
+"MA Client Deferring Abortion","Clienta AM que difiere el aborto"
+"MA Client Refusing Abortion","Clienta AM que rehúsa el aborto"
+"MA Social Marketing","Mercadeo social AM"
+"MA Stats","Estadísticas de la AM"
+"Main Complication","Complicación principal"
+Male,Hombre
+"Male Condom","Condón masculino"
+"Male VSC - Incisional vasectomy","AQV Masculina - Vasectomía incisional"
+"Male VSC - No-scalpel Vasectomy","AQV Masculina - Vasectomía sin bisturí"
+Mammogram,Mamograma
+Mammography,Mamografía
+Management,"Admon Registros"
+"Manual Breast Exam ","Ex manual de senos"
+"Manual exams ","Ex manual"
+"Manual Pelvic Exam ","Ex manual pélvico"
+Manufacturer,Fabricante
+March,Marzo
+March,Marzo
+"Marital status","Estado civil"
+Married,Casado(a)
+May,Mayo
+"Medical - Allergy","Médica - Alergia"
+"Medical - Breast Feeding","Médica - Lactancia"
+"Medical - Contraindication","Médica - Contraindicación"
+"Medical - Menopause","Médica - Menopausia"
+"Medical - Side Effects of Current Method	","Médica - Efectos secundarios de método actual"
+"Medical Problems","Problemas médicos"
+"Medical Record","Datos Clínicos"
+Medication,Medicación
+Medications,Medicación
+Medications:,Medicación
+"Member Association Statistics Report","Reporte estadístico de la Asociación"
+Membership,Membresía
+"Memory Problems:","Problemas de memoria"
+Menarche:,Menarquia
+Menopause:,Menopausia
+"Menstrual Complications","Complicaciones menstruales"
+"Menstrual History","Historia menstrual"
+"Mental Illness","Enfermedad mental"
+"Met Space","Espacio Metabolico"
+"Metabolic Endocrin system","Espacio Metabólico Endocrino"
+Method,Método
+"Method change","Cambio de método"
+"Method of Destruction","Método de destrucción"
+"Method Too Complicated","Método demasiado complicado"
+"Middle Name:","Segundo nombre"
+"Migrant or seasonal worker?","¿Trabajador migrante o estacional?"
+Migrant/Seasonal,Migrante/Estacional
+minutes,Minutos
+Misc,Misceláneos
+Miscellaneous,Misceláneos
+"Mobile Phone","Tel. Celular"
+"Mobile/Outreach Clinic	","Clínicas Móviles/Brigadas"
+Monday,Lunes
+"Month View",Mes
+Month:,Nes
+"Monthly Income","Ingreso mensual"
+Months,Meses
+More,Más
+"More than 3 months ago","Hace más de 3 meses"
+Morning,Matutino
+Mother,Madre
+"Mother´s name","Nombre de la madre"
+"Move Down","Hacia abajo"
+"Move Up","Hacia arriba"
+"Multi Language Tool","Configuracion idiomas"
+"Multiple Lots","Lotes múltiples"
+Name,Nombre
+"Name (click for more)","Nombre (presione para ver más)"
+Name(s),Nombre(s)
+Name/Value,Nombre/Valor
+Name:,Nombre
+"National ID",DNI
+"National ID:",DNI:
+Nationality,Nacionalidad
+NDC,Código
+"NDC Number",Código
+New,Nuevo
+"New Acceptors","Aceptantes nuevos"
+"New Appointment","Nueva Cita"
+"New Category","Nueva categoría"
+"New Definition set added ","Nuevo conjunto de definiciones añadido"
+"New Encounter","Nueva Visita"
+"New Encounter Form","Formulario Nueva Visita"
+"New Facility Information:","Informac nueva ubicación"
+"New Limit of Events","Nuevo límite de evntos"
+"New List","Nueva Lista"
+"New Method","Nuevo Método"
+"New Patient","Nuevo Cliente"
+"New Patient Encounter","Nueva visita del cliente"
+"New Patient ID:","Nuevo ID de client"
+"New Payment","Nuevo pago"
+"New User:","Nuevo Usuario"
+"New Visit","Nueva Visita"
+"New Visit Form ","Nueva Forma de Visita"
+New/Search,"Nuevo Registro / Búsqueda"
+"No Box","Sin Caja"
+"No conception after 12 months w/o FP & female <34 years","No concibe después de 12 meses sin PF y mujer <34"
+"No conception after 6 months w/o FP & female >35 years","No concibe después de 6 meses sin PF y mujer <34"
+"No currently studying","No estudiando actualmente"
+"No Prescriptions Found","No se encontraron recetas"
+"No visit","Sin visita"
+"No, cancel","No, cancelar"
+"No. Children Now Living with You","Núm. Hijos que viven con usted"
+"No. Miscarriages/Spontaneous Abortions","Núm. Abortos espontáneos"
+"No. of Tubal Pregnancies (Ectopic)","Núm. Embarazos ectópicos"
+"Non enrolled","No escolarizado"
+"Non stated","No determinado"
+"Non-SRH - Family Health","No SSR - Salud Familiar"
+"Non-SRH - Risk Reduction","No SSR - Reducción Riesgos/Daños"
+"Non-SRH Medical","Servicios Médicos de Especialidad"
+None,Ninguna
+"Normal Flow","Flujo normal"
+"Normal Length of Menstrual Cycle","Duración normal de ciclo menstrual"
+"Normal Menarche","Menarquia normal"
+"Not Having","Que no realizaron"
+Note,Nota
+"Note Type","Tipo de nota"
+Notes,Notas
+Notifications,Notificaciones
+November,Noviembre
+"Num Seg. Social",DNI
+"Number of C Sections","Núm. de cesáreas"
+"Number of Induced Abortions","Núm. de abortos inducidos"
+"Number of Live Births","Núm. de partos"
+"Number of Living Children","Núm. de hijos vivos"
+"Number of Stillbirths","Núm. de mortinatos"
+"Number of Vaginal Deliveries","Núm. de partos vaginales"
+Obstetric,Obstétrico
+"Obstetric History","Historia obstétrica"
+"Obstetric services",Obstetricia
+"Obstetric Tests","Test obstétrico"
+Obstetrics,Obstétrico
+Occupation,Ocupación
+Occurrence,Ocurrencia
+October,Octubre
+"Ofc Notes","Notas Oficina"
+"Office Notes (Back) ","Notas (atrás)"
+"Office Notes (More)","Notas (Más)"
+"Office Visit",Administrativa
+Offspring,Hijos
+"On Hand",Existencias
+"On Order",Pedidos
+Open,Abierta
+Options,Opciones
+Or:,O
+Oral,Boca
+Order,Orden
+"Order Type","Tipo de Orden"
+Ordered,Ordenado
+Other,Otros
+"Other (specify)",Otro
+"Other Agencies","Otras agencias"
+"Other Complications","Otras complicaciones"
+"Other Information","Otra informacion"
+"Other Notes","Otras notas"
+"Other Pertinent Symptoms:","Otros síntomas pertinentes"
+"Other, Specify","Otros, especifique"
+Others,Otros
+"Outbound External Referrals","Referencias externas - Enviar"
+"Outbound Internal Referrals","Referencias internas - Enviar"
+"Outbound Referral","Referencia externa"
+"Outcome of Last Pregnancy","Resultado del último embarazo"
+"Oxygen Saturation","Saturación de oxígeno"
+Pages,Páginas
+Paid,Pagado
+Pain:,Dolor
+Password,Contraseña
+"Password (Again):","Contraseña (confirmación)"
+"Password Change","Cambio de contraseña"
+Password:,Contraseña
+"Past Encounters and Documents","Visitas y doc anteriores"
+"Past Visits and Documents ","Visitas y doc anteriores"
+Patient,Cliente
+"Patient Appointment","Cita(s) del Cliente"
+"Patient Checkout for ","Facturación de"
+"Patient Communication sent","Comunicación enviada a la/el cliente"
+"Patient Data","Datos de la/el cliente"
+"Patient Encounter","Visita de cliente"
+"Patient Encounter Form","Forma de visita de cliente"
+"Patient History","Historia clínica"
+"Patient History / Lifestyle (Back)","Historia/estilo de vida (Regresar)"
+"Patient History / Lifestyle (More)","Historia/estilo de vida (Más)"
+"Patient ID","ID de la/el cliente"
+"Patient ID card","Tarjeta de ID de la/el cliente"
+"Patient ID:","ID de la/el cliente"
+"Patient Immunization","Inmunización de la/el cliente"
+"Patient Information","Información de la/el cliente"
+"Patient Information","Información de la/el cliente"
+"Patient Instructions","Instructiones al cliente"
+"Patient List","Lista de clientes"
+"Patient Notes","Notas del cliente"
+"Patient Number","No. de Cliente"
+"Patient Record Report","Reporte de Registro de clientes"
+"Patient Report","Reporte de clientes"
+"Patient Results","Resultados por cliente"
+"Patient Transactions","Referencias y otros"
+Patient/Client,Clientes
+"Pay Methods","Métodos de pago"
+"Payment amount","Monto pagado"
+"Payment Date","Fecha de pago"
+"Payment Method","Método de pago"
+"Payment Pt","Pago de cliente"
+Payments,Pagos
+Pediatric,Pediatría
+"Pelvic Exam","Examen Pélvico"
+"Pelvic Inflammatory Disease (PID)","Enfermedad Inflamatoria Pélvica"
+"Pending F/U","Seguimientos pendientes"
+"Pending Followup from Results","Seguimiento pendiente"
+"Pending Orders","Ordenes pendientes"
+"Pending Res","Resultados pendientes"
+"per min","por min"
+Periods,Períodos
+"Personal - Family Pressure/Advice","Personal - Presión/Consejo familiar"
+"Personal - Fear of Infertility","Personal - Temor a infertilidad"
+"Personal - Other Reason","Personal - Otra razón"
+"Personal - Partner Opposes","Personal - Oposición de la pareja"
+"Personal - Religious","Personal - Religión"
+"Personal - Side Effects Concern","Personal - Preocupación por efectos secundarios"
+"Personal - Social Pressure/Friend Advice","Personal - Presión Social/Consejo de amistad"
+"Pessary/Cervicap Cap","Pesario/Tapón cervical"
+Pharmacies,Farmacias
+Pharmacy,Farmacia
+Phone,Teléfono
+Phone:,Teléfono
+physical,Físico
+"Physical Exam ","Examen Físico"
+PID,EIP
+"PID (Pelvic Inflammatory Disease)","(EIP) Enfermedad Inflamatoria Pélvica"
+"Pill Size",Tamaño
+"Planning Pregnancy","Planea embarazarse"
+"Please select",Seleccione
+"Pmt Method","Métodos de pago"
+"Pneumonia Vaccination","Vacuna neumonía"
+"POS Code","Canal en SGIe"
+"Postal Code","Código Postal"
+"Postal Code:","Código Postal"
+"Posting Date","Fecha de aplicación"
+Practice,"Otras especialidades"
+Practitioner,"Prestador de Servicios"
+"Preferred Language","Idioma preferido"
+"Preferred Pharmacy","Farmacia preferida"
+"Pregnancy Complications:","Complicaciones durante el embarazo"
+Pregnant,Embarazada
+"Preliminary Diagnosis","Diagnóstico preliminar"
+Prepay,Prepagos
+"Prescp & Disp","Recetas y Despachos"
+prescription,Recetas
+Prescriptions,Recetas
+"Prescriptions and Dispensations","Recetas y Despachos"
+"Prescriptions and other referrals","Recetas y otras referencias"
+Prescriptions/Referrals,Recetas/Referencias
+Previous,Previo
+"Previous modern contraceptive use?","¿Uso previo de anticonceptivos modernos?"
+Price,Precio
+"Price Level","Nivel de precios"
+Primary,Primaria
+"Primary Ins","Seguro Primario"
+"Primary Insurance Data","Datos del Seguro Primario"
+Print,Imprimir
+"Print Blank Referral Form","Imprimir Forma de Referencia en blanco"
+"Print Multiple (HTML)","Imprimir múltiples recetas (HTML)"
+"Print Multiple (PDF) ","Imprimir múltiples recetas (PDF)"
+"Print Multiple To Fax","Imprimir múltiples recetas a Fax"
+"Print Record (HTML)","Imprimir registro(HTML)"
+"Print Record (PDF)","Imprimir registro(PDF)"
+"Printable version","Versión para impresora"
+Printer,Impresor
+Priority,Prioridad
+Priority:,Prioridad
+"Private Physicians","Médicos privados"
+Problem,Problema
+Procedure,Procedimiento
+"Procedure at this site","Proc realizado en esta clínica"
+"Procedure Order ","Orden de Laboratorio"
+"Procedure Statistics Report","Reporte Estadístico de Laboratorio"
+Procedure:,Procedimiento
+Procedures,"Lab y Diagnósticos"
+Process,Procesos
+"Process Guides","Guías de proceso"
+Product,Producto
+Products,Productos
+"Progestogen Only Injectables (2 months)","Inyectables de Progestágeno Solo (2 meses)"
+"Progestogen Only Injectables (3 months)","Inyectables de Progestágeno Solo (3 meses)"
+Promotion,Promoción
+"Prostate Cancer","Cáncer de próstata"
+"Prostate Cancer Screening","Tamizaje cáncer de próstata"
+"Prostate Exam","Examen de próstata"
+"Prostate w/o enlrgmt, nodules, tender","Próstata sin agrandamiento, nódulos, sensibilidad"
+Prostatitis,Prsotatitis
+Provider,Agendado
+Providers,Proveedores
+Province,Provincia
+"Province/County or Parish",Provincia/Municipio
+PSA,"Antígeno prostático"
+"Pt Notes/Auth",Notas/Autorizaciones
+Pulse,Pulso
+Purchase,Compra
+Purchase/Return,Compra/Devolución
+Purchases,Compras
+QOH,"Existencia a la fecha"
+Qty,Cantidad
+Qty.,Cantidad
+Quantity,Cantidad
+"Quantity On Hand",Existencias
+Quarters,Trimestres
+Race/Ethnicity,Raza/Etnia
+radiology,Radiología
+Range,Rango
+Reactions,Reacciones
+"Real Name","Nombre real"
+"Real Name:","Nombre real"
+Reason,Razón
+"Reason for Method Change","Razón de cambio de método"
+Reason/Form,Razón/Forma
+"Rec Summary","Resumen recibos"
+"Receipt Generated","Recibo generado el"
+"Receipts Summary","Resumen de recibos/facturas"
+Received,Recibido
+"Recent Menstrual History","Historia menstrual reciente"
+Recommendations,Recomendaciones
+"Recommendations and treatment","Recomendaciones y tratamiento"
+"Records Found","Expedientes Localizado"
+Rectal,Recto
+"Rectal Exam","Examen rectal"
+"Refer By","Referido por"
+"Refer Date","Fecha de referencia"
+"Refer To","Referir a"
+Reference,Referencia
+"Reference classification (risk level)","Nivel de riesgo"
+"Reference Reason ","Motivo de la referencia"
+"Referer name and signature","Nombre y firma de quien refiere"
+Referral,Referencia
+"Referral Date","Fecha de Referencia"
+"REFERRAL FORM","FORMA DE REFERENCIA"
+"Referral Source","Referido por"
+"Referral Type","Tipo de Referencia"
+Referrals,Referencias
+"Referrals and Other Transactions","Referencias/Otras transacciones"
+"Referrals Pending Cabinet","Gabinete de Referencias pendientes"
+"Referred By","Referido por"
+"Referred To","Referido a"
+Refills,Resurtir
+"Reflexes normal","Reflejos normales"
+Refresh,Actualizar
+Refs,Resurt
+Registered,Registrado
+"Registration Date","Fecha de Registro"
+"Registration Date:","Fecha de Registro"
+"Registration Form","Ficha de Registro"
+"Relate To","Mapeado a"
+"Relate To:","Mapeado a"
+Related,"Mapeado a"
+Relatives,Familiares
+Religion,Religion
+"Rename Group","Renombrar grupo"
+Rendering,Predeterminado
+Repeats,Repite
+"Reply Date","Fecha de respuesta"
+"Reply From","Respuesta de"
+Report,Reporte
+Reported,Reportado
+Reports,Reportes
+"Reproductive General","SSR general"
+"Reproductive Women","SSR mujeres"
+"Requested Method","Método solicitado"
+"Requested Service","Servicio solicitado"
+Respiration,Respiración
+Result,Resultado
+"Results and Recommendations","Resultados y Recomendaciones"
+"Results of Last Pap Smear ","resultados del último Papanicolau"
+"Retinal Exam","Examen de retina"
+Return,Devolución
+"Return to calendar","Regresar a calendario"
+"Review Of Systems ","Chequeo Médico"
+"RH Factor","Factor RH"
+"RH Factor:","Factor RH:"
+"Risk Factors","Factores de riesgo"
+"Risk Level","Nivel de riesgo"
+"Risk Reduction","Reducción de Riesgos"
+"Risks and Complications Explained","Explicación de riesgos y complicaciones"
+Route,Ruta
+Rows,Filas
+Rows:,Filas
+Rx,Recetas
+Sale,Venta
+Sales,Ventas
+"Sales by Item","Ventas por producto"
+"Sales Tax","Impuesto de venta"
+Saturday,Sábado
+Save,Guardar
+"Save and Checkout","Guardar y Pagar"
+"Save and Close","Guardar y cerrar"
+"Save and Dispense","Guardar y Despachar"
+"Save and Tally Sheet","Guardar y Hoja de cargos"
+"Save Changes","Guardar cambios"
+"Save Form","Guardar Forma"
+"Save Immunization","Guardar inmunizaciones"
+"Save Patient Demographic","Guardar datos demográficos"
+"Save Transaction","Guardar transacción"
+Schedule,Dosis
+School,Escuela
+Screen,Pantalla
+Search,Búsqueda
+"search again","buscar de nuevo"
+"Search or Add Client","Buscar/Agregar Registro"
+"Search or Add Patient ","Buscar/Agregar Registro"
+"Search or Add Patient ","Buscar/Agregar Registro"
+"Search or Add Patient ","Buscar/Agregar Registro"
+"Search or Add Patient ","Buscar/Agregar Registro"
+"Search or Add Patient ","Buscar/Agregar Registro"
+"Search or Add Patient ","Buscar/Agregar Registro"
+"Search Results","Resultados de la búsqueda"
+"Searching for appointments","Búsqueda de citas"
+"Seatbelt Use","Cinturón de seguridad"
+Secondary,Secundaria
+"Secondary Insurance Data","Datos del Seguro Secundario"
+Security,Seguridad
+"see all","Ver todas"
+"See Authorizations:","Ver autorizaciones"
+Select,Seleccionar
+"Select All","Seleccionar todos"
+"Select Fields","Selección de campos"
+"Select one of these, or type your own title","Seleccione una de las opciones o introduzca una propia"
+"Select Patient","Seleccionar Registro"
+"Select Patient by Last","Selec cliente /por apellido"
+"Semen analysis","Análisis de seman"
+Sensitivity,Sensibilidad
+Sensitivity:,Sensibilidad
+Separated,Separado(a)
+September,Septiembre
+Service,Servicio
+"Service Code","Código del servicio"
+"Service Date:","Fecha de servicio"
+"Service Filter","Filtro de Servicio"
+"Service Location","Presta servicios"
+"Service Provided","Servicio provisto"
+"Service Provider","Proveedor de servicio"
+"Service Provider:","Proveedor de servicio"
+"Service Statistics Report","Reporte Estadísticas de Servicio"
+Services,Servicios
+"Services by Category","Servicios por categoria"
+"Services provided","Servicios provistos"
+Services/Products,Servicios/Productos
+Settings,Parámetros
+"Severe Migraine","Migraña severa"
+Sex,Sexo
+Sex:,Sexo
+"Sexually transmitted infection","Infección de transmisión sexual"
+"Sexually Transmitted Infection (STI)","Infección de transmisión sexual (ITS)"
+Shift,Turno
+Shifts,Turnos
+"Shifts Report","Reporte de Turnos"
+"Show Details","Mostrar detalles"
+Siblings,Hermanos
+"Sickle Cell",Falciformismo
+Sigmoid/Colonoscopy,Sigmoidoscopia/Colonoscopia
+Single,Soltero(a)
+Size,Tamaño
+"Sleep Patterns","Patrones de sueño"
+"Social Difficulties:","Dificultades sociales"
+"Social History:","Historia social"
+"Social Security","DNI Nacional/Extranjero"
+"Social Security Number",DNI
+"Social service","Servicio social"
+"Social services","Servicio social"
+Sonogram,Sonograma
+"Sort by","Ordenado por"
+"Sort by :","Ordenado por"
+"Source Lot","Lote de origen"
+Spanish,Español
+Special,Especial
+"Special Education","Eduación Especial"
+Specialist,Especialista
+"Specialist name and signature","Nombre y firma del especialista"
+Specialty,Especialidad
+Specialty:,Especialidad
+Specific,Específico
+"Specific Contraceptive Service","Servicio Anticonceptivo Específico"
+"Specific Result","Resultado específico"
+"Specific Service","Servicio específico"
+Specimen,Espécimen
+"Speech Dictation","Notas Médicas"
+Spermicides,Espermicidas
+"Spermicides - Cream & Jelly","Espermicidas - Crema y Jalea"
+"Spermicides - Foam Cans","Espermicidas - Espumas en aerosol"
+"Spermicides - Foam Tabs/Strip","Espermicidas - Espuma Tabletas/Tiras"
+"Spermicides - Foam Tabs/Tube/Suppositories","Espermicidas - Espuma Tubo/Supositorios"
+"Spermicides - Pessaries / C-film","Espermicidas - Pesarios/Película vaginal"
+Spermiogram,Espermiograma
+Spleen,Bazo
+"Spontaneous Abortion","Aborto espontáneo"
+Spouse,Cónyuge
+Sputum:,Esputo
+"SRH - Abortion","SSR - Aborto"
+"SRH - Contraceptive Services","SSR - Servicios anticonceptivos"
+"SRH - Family Counselling","SSR - Consejería familiar"
+"SRH - FP Counselling","SSR - Consejería de PF"
+"SRH - GBV Counselling","SSR - Consejería VBG"
+"SRH - Gynecology","SSR- Ginecología"
+"SRH - HIV/AIDS","SSR - VIH/SIDA"
+"SRH - Obstetrics","SSR - Obstetricia"
+"SRH - STI/RTI","SSR - ITS/ITR"
+"SRH Non Family Planning","SSR No Anticoncepción"
+"SRH services","Servicios de SSR"
+SSN,"No. Seguro Social"
+Standard,Estándar
+Start,Inicio
+"Start Time","Hora inicio"
+"Starting contraception at association","Inicia anticoncepción en la Asociación"
+"Starting Date","Fecha inicio"
+State,Estado
+State/Locality,Estado/Localidad
+State:,Estado
+"Static Clinic","Clínicas fijas"
+Statistics,Estadística
+Stats,Estadísticas
+Status,Condición
+Status:,Condición
+"Sterilization of Client","Esterilización de la/el cliente"
+"Sterilization of Partner","Esterilización de la pareja"
+STI,ITS
+Stigma/Discrimination,Estigma/Discriminación
+"Stock Months","Meses de existencia"
+Street,Calle
+"Street and Number","Calle y número"
+Stroke,Apoplejía
+Subcategory,Subcategoría
+"Subdermal implants 1 rod","Implantes subdérmicos 1 barra"
+"Subdermal implants 2 rods","Implantes subdérmicos 2 barras"
+"Subdermal implants 6 rods","Implantes subdérmicos 6 barras"
+Submit,Enviar
+"Submit All Content","Enviar todo el contenido"
+"Submit Selected Content","Enviar contenido selecto"
+"Subscriber Date of Birth","Fecha de Nacimiento del Asegurado"
+"substitution allowed","se permite sustituir"
+Suicide,Suicidio
+Summary,Resumen
+Sunday,Domingo
+Superbill,"Hoja de cargos"
+Surgery,Cirugía
+Surgical,Quirúrgico
+"Surgical - Other","Cirugia- otros"
+"Surgical History","Historia quirúrgica"
+"Surgical Procedures Explained","Procedimientos quirúrgicos explicados"
+suspension,suspensión
+Swedish,Sueco
+Symptoms,Síntomas
+System,Sistema
+"System ID","ID del sistema"
+t.i.d.,t.i.d.
+tablet,tableta
+Take,Tomar
+"Takes long","Toma tiempo"
+Taxes:,Impuestos
+Teaching,Docencia
+"Temp Location","Temperatura tomada en"
+Temperature,Temperatura
+Templates,Plantillas
+"Temporal Artery","Arteria temporal"
+"Tentative Invoice Ref No","Núm Ref Tentativo de Factura"
+Terciary,Terciaria
+"Termination of Pregnancy","Terminación del embarazo"
+"Tertiary Insurance Data","Datos del Seguro Terciario"
+"Test System","Sistema de exámenes"
+test:,Examen
+"text fragments","Fragmentos de texto"
+"The Administator",Administrador
+"The Administrator","La/el Administrador"
+"This Encounter","Esta visita"
+"Thorax ",Tórax
+Thrombosis/Stroke,Trombosis/Apoplejía
+Thursday,Jueves
+Time,Hora
+"Timestamp and Text",Fecha/Detalle
+Title,Titulo
+Title:,Título
+To,A
+"To Affected Area","Al área afectada"
+"To Billing View","A vista de facturación"
+"to category","a categoría"
+"To Clinical View","A vista clínica"
+"To copay","A copago"
+"To History","A historia"
+"To issues","A Condiciones"
+"To link this encounter/consult to an existing issue, click the desired issue above to highlight it and then click [Save]. Hold down [Ctrl] button to select multiple issues.","Para vincular esta visita con una condición médica existente, seleccione la condición para destacarla y oprima [Guardar]. Oprima el botón [Ctrl] para seleccionar múltiples condiciones."
+To:,A
+Tobacco,Tabaco
+Today,Hoy
+"Today`s Visit","Esta visita (hoy)"
+Top,Superior
+Total,Total
+"Total  Charges","Cargos totales"
+"Total - All","Total - Todos"
+"Total charges this visit","Total cargos de esta visita"
+"Total Cost","Costo Total"
+"Total Negatives","Total de negativos"
+"Total No. of Pregnancies","Núm. total de embarazos"
+"Total Number of Patients","Núm. total de clientes"
+"Total Number of Patients :","Núm. total de clientes"
+"Total payments this visit","Pago total en esta visita"
+"Total SRH & Family Planning","Total  SSR y PF"
+Totals,Totales
+Transact,Referencias
+Transaction,Transacción
+"Transaction Type","Tipo de transacción"
+Transactions,Transacciones
+"Transactions Type","Tipo de transacciones"
+"Transdermal Patch (1 month)","Parche transdérmico (1 mes)"
+Transfer,Transferencia
+Transfers,Transferencias
+Transgender,Transgénero
+Transition,Transición
+Translation,Traducción
+"Translation (?)","Traducción (?)"
+"Treatment for cervical cancer","Tratamiento para cáncer cerviciouterino"
+Treatment:,Tratamiento
+"Tried unsuccessfully to have a child for a year or more","Trató infructuosamente de tener un hijo por un año o más"
+tsp,tsp
+Tuberculosis,Tuberculosis
+Tuesday,Martes
+"Tympanic Membrane","Membrana timpánica"
+Type,Tipo
+"Type of Visit","Tipo de visita"
+Type:,Tipo
+"Types of Orders and Results","Tipo de Ordenes y Resultados"
+"Types of Orders, Results and Recommendations","Tipo de Ord/Res y Recomendaciones"
+Ulcers:,Úlceras
+"Ultrasonography ",Ultrasonografía
+Unassigned,"No asignado"
+"Unavailable at Clinic","No disponible en clínica"
+Uncategorized,"Categoría no asignada"
+"Undo Checkout","Deshacer cierre visita"
+Unemployed,Desempleado
+"Unique Clients","Clientes únicos (no repetidos)"
+"Unique New Clients","Clientes únicos nuevos"
+"Unique Returning Clients","Clientes únicos que regresan"
+Unit,Unidad
+Units,Unidades
+"units, $ ","unidades, $"
+University,Universidad
+Unknown,"No asignado"
+Unregistered,"No registrado"
+Unspecified,"No especificado"
+"Unspecified - No Reason Provided","No especificada - No se dio una razón"
+"Unspecified Type of Abortion","Tipo de aborto no especificado"
+until,Hasta
+"Up to",Hasta
+"Up to:",Hasta
+"Upcoming Appointments","Citas próximas"
+update,Actualizar
+UPIN:,UPIN:
+Upload,Carga
+"Upload configuration data","Cargar datos de configuración"
+"Upload Document","Cargar documento"
+Urgency:,Emergencia
+"Urine Test for HIV","Prueba de orina para VIH"
+"Urography ",Urografía
+Urology,Urología
+"Urology Basic History","Historia básica de urología"
+"Urology Tests","Test urológico"
+User,Usuario
+"User & Group Administration","Administracion de Usuarios y Grupos"
+"User Administration","Admon Usuarios"
+"User defined","Definido por usuario"
+"User Manual","Manual del sistema"
+"User Memberships",Membresía
+User:,Usuario:
+Username,"Nombre de Usuario"
+Username:,"Nombre de Usuario"
+Users,"Administrar Usuarios"
+Vaccinations,Vacunas
+"Vaginal Ring (1 month)","Anillo vaginal (1 mes)"
+Value,Valor
+"Varicella 1","Varicela 1"
+"Varicella 2","Varicela 2"
+Varicocele,Varicocele
+"Varicose Veins","Venas varicosas"
+Vendor,Vendedor
+Vertigo,Vértigo
+view,Vista
+"View Comprehensive Patient Report","Ver Registro Detallado de Cliente"
+View:,Vista
+"Viral Load","Carga viral"
+Visit,Visita
+"Visit Category:","Categoría de Visita"
+"Visit Forms","Formas para Visitas"
+Visits,Visitas
+"Visits from","Visitas desde"
+"Visits From:","Visitas desde"
+"Visits Report","Reporte de visitas"
+"Vital Signs Recorded","Signos vitales registrados"
+Vitals,"Signos Vitales"
+"Vitals (Metric)","Signos Vitales (métrico)"
+"Voluntary Surgical Contraception",AQV
+"Waist Circumference","Circunferencia de la cintura"
+Warehouse,Bodega
+Warm,Templado
+Weakness:,Debilidad
+Wednesday,Miércoles
+"Week View",Semana
+Weight,Peso
+"Weight Change","Cambio de peso"
+"Western Blot Assay","Ensayo Western Blot"
+Who,Quien
+Widowed,"Viudo (a)"
+"With whom may we leave a message?","¿A quién dejamos el mensaje?"
+"Without Update","Sin actualizar"
+Witness,Testigo
+"Work Phone","Tel Trabajo"
+"Work Phone Number","Teléfono del trabajo"
+"Work Phone:	","Tel Trabajo"
+X-Ray,"Rayos X"
+"Year View",Año
+Years,Años
+"Years of Education","Años de Educ"
+"Years of Education:","Años de Educ"
+Yes,SÍ
+"Yes, Delete and Log","Sí, borrar y registrar"
+Zip,CP
+"Zip Code","Codigo Postal"
+"Zip Code:","Codigo Postal"
+"[Add as New]",Agregar
+"[Add Issue]","Agregar patología"
+"[Add New Note]","Agregar Nueva Nota"
+[Add],Agretar
+[All],Todo
+"[Change Activity]","Cambiar actividad"
+"[Check All]","Revisar todo"
+"[Clear All]","Limpiar todo"
+[Delete],Borrar
+[Edit],Editar
+[Help],Ayuda
+"[Leave The Form]","Salir de la forma"
+"[Only Active]","Solo activos"
+"[Only Inactive]","Solo inactivos"
+[pick],Seleccionar
+[Refresh],Actualizar
+[Save],Guardar
+[Update],Actualizar
+"~ Arrived late","~ Llegó tarde"

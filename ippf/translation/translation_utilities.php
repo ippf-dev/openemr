@@ -31,7 +31,17 @@ function find_or_create_constant($constant)
         if($row_count>1)
         {
             error_log("Duplicate Entries for language constant:".$constant);
-            return -1;
+            $row=sqlFetchArray($result);
+            $retval = $row['cons_id'];
+            while($row=sqlFetchArray($result))
+            {
+                $sqlDelete = " DELETE FROM lang_constants where cons_id=? ";
+                sqlStatement($sqlDelete,array($row['cons_id']));
+                $sqlDelete = " DELETE FROM lang_definitions where cons_id=? ";
+                sqlStatement($sqlDelete,array($row['cons_id']));
+                error_log ("DELETED Definitions for duplicate constant:".$constant."|".$row['cons_id']);
+            }
+            return $retval;
         }
         if($row_count==0)
         {
@@ -44,7 +54,23 @@ function find_or_create_constant($constant)
     
 }
 
-function verify_translation($constant,$definition,$language)
+function update_metainfo($constant,$definition,$source,$set_source=false)
+{
+    if($source!="")
+    {
+        $sqlUpdate= " UPDATE ippf_lang_definitions set ".$source."=? where BINARY constant_name=?";
+        $parameters=array($definition,$constant);
+        sqlStatement($sqlUpdate,$parameters);
+        if($set_source)
+        {
+            $sqlUpdate= " UPDATE ippf_lang_definitions set source=? where BINARY constant_name=?";
+            $parameters=array($source,$constant);
+            sqlStatement($sqlUpdate,$parameters);
+            
+        }
+    }
+}
+function verify_translation($constant,$definition,$language,$replace=true,$source="",$set_metainfo=false)
 {
     $cons_id=find_or_create_constant($constant);
     $whereClause=" lang_id=? and cons_id=? ";
@@ -57,15 +83,25 @@ function verify_translation($constant,$definition,$language)
         if($row_count==1)
         {
             $row=sqlFetchArray($result);
-            if($row['definition']==$definition)
+            $row['definition']=iconv('utf-8', 'utf-8', $row['definition']);
+            if($row['definition']===$definition)
             {
                 return "Definition Exists:".$infoText;
             }
             else
             {
-                $sqlUpdate=" UPDATE lang_definitions SET definition=? WHERE def_id=?";
-                $result=sqlStatement($sqlUpdate,array($definition,$row['def_id']));
-                return "Definition Updated from:".$row['definition']."|".$infoText;
+                if($replace)
+                {
+                    $sqlUpdate=" UPDATE lang_definitions SET definition=? WHERE def_id=?";
+                    $result=sqlStatement($sqlUpdate,array($definition,$row['def_id']));
+                    if($set_metainfo) {update_metainfo($constant,$definition,$source,true);}
+                    return "Definition Updated from:".$row['definition']."|New:".$infoText."(".$cons_id.")";                    
+                }
+                else
+                {
+                    if($set_metainfo) {update_metainfo($constant,$definition,$source,false);}
+                    return "Definition Not Updated: Current".$row['definition']."|".$infoText;
+                }
             }
         }
         if($row_count>1)
@@ -84,16 +120,49 @@ function verify_translation($constant,$definition,$language)
         {
             $sqlInsert=" INSERT INTO lang_definitions (cons_id,lang_id,definition) VALUES (?,?,?) ";
             $id=sqlInsert($sqlInsert,array($cons_id,$language,$definition));
+            if($set_metainfo) {update_metainfo($constant,$definition,$source,true);}
             return "Definition Created:".$infoText;
             
         }
     }
 }
-function verify_translations($definitions,$language)
+function verify_translations($definitions,$language,$replace=true)
 {
     foreach($definitions as $constant=>$definition)
     {
-        verify_translation($constant,$definition,$language);
+        verify_translation($constant,$definition,$language,$replace);
+    }
+}
+
+function utf8_fopen_read($fileName) {
+    $fc = iconv('utf-8', 'utf-8', file_get_contents($fileName));
+    $handle=fopen("php://memory", "rw");
+    fwrite($handle, $fc);
+    fseek($handle, 0);
+    return $handle;
+} 
+function verify_file($filename,$language,$replace=true,$source_name='')
+{
+    if (($handle = utf8_fopen_read("$filename")) !== FALSE) {
+    $first=true;
+    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+        $num = count($data);
+        if($num>=2)
+        {
+            $constant=$data[0];
+            $definition=$data[1];
+            if(!$first ||$constant!='constant_name')
+            {
+                $result=verify_translation($constant,$definition,$language,$replace,$source_name);
+                if(strstr($result,"Definition Exists:")===false)
+                {
+                    echo  $result."<br>";
+                }
+            }
+            $first=false;
+        }
+    }
+    fclose($handle);
     }
 }
 ?>

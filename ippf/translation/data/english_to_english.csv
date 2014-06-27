@@ -1,0 +1,91 @@
+(New Patient),New Client
+Active Encounter,Active visit
+Active Patient,Active Client
+Active Patient:,Active Client:
+Add Copay,Add Payment
+Add Drug,Add Product
+Add Patient Record,Create a new OpenEMR record
+Appointments and Encounters,Appointments and Visits
+Appointments and Visits,Charges by Visit
+Appt-Enc,Appt-Visit
+Cash Rec,Svcs Provider Cash Rec
+Cash Receipts,Service Provider Cash Receipts
+Chart,System ID
+Chief Complaint,Reason of Visit
+Clear Active Patient,Clear Active Client
+CLEAR ACTIVE PATIENT,Clear Active Client
+CLIA Number,SDP ID
+Clinic ID,Clinic
+Clinic ID:,Clinic:
+CO-PAY,Payment
+Codes,Services
+Collections,Collection Report
+Confirm Create New Patient,Confirm create new client record
+COPAY,Payment
+CPT4,C3
+Encounter,Visit
+Encounter Forms to Include in this Report:,Visit Forms to include in this Report:
+Encounter History,Visit History
+Encounters,Visits
+Encounters Report,Visits Report
+Export,Export to XML
+Facility,Clinic
+Facility:,Clinic:
+Fee Sheet,Tally Sheet
+Find Patient,Find Client
+Gender :,Sexe
+ID,ID
+IPPF SRH Data,GCAC Form (example)
+IPPF SRH Data for,GCAC Form (example) for
+Last,Last name
+Layout Based,Program
+Load Definitions,Add Definitions
+NDC,Drug Code
+New Acceptors,New Users
+New Encounter,New Visit
+New Encounter Form,New Visit Form
+New Patient,New Client
+NEW PATIENT,New Client
+No matches were found. Create new patient now?,No matches were found. Create new client record now?
+Not Examined:,Not Examined:
+OK to close this other popup window?,Reuse this window?
+Online Support,IPPF Process Guides
+Past Encounter List,Past Visit List
+Past Encounters and Documents,Past Visits and Documents
+Patient,Client
+Patient Appointment,Client Appointment
+Patient Data,Client Data
+Patient Encounter Form,Client Visit Form
+Patient ID,Client ID
+Patient Instructions,Client Instructions
+Patient List,Client List
+Patient Notes,Client Notes
+Patient Number,Client number
+Patient Record Report,Client Record Report
+Patient Report,Client Report
+Patient Results,Client Results
+Patient Transactions,Referrals and Other Transactions
+Patient/Client,Client
+Patients,Client List
+PID,Client ID (assign by the system)
+Prepay,Payments
+Procedures,Diagnostic Labs & Orders
+Provider,Service Provider
+Pt Notes/Auth,Client notes/Auth
+Reference Reason,Referral Reason
+Rendering,Default
+Rx,Rx
+Sales by Item,Sales by Item
+Save Patient Demographic,Save Demographic Client  Data
+Search or Add Patient ,Search or Add Client
+Select Patient,Select Client
+Select Patient by Last,Select Client by Last
+Sensitivity,Risk
+SSN,National ID
+Superbill,Tally Sheet
+This Encounter,This Visit
+Transact,Referrals
+Transactions{{Patient}},Referrals
+Types of Orders and Results,"Types of Orders, Results and Recommendations"
+User & Group Administration,User Administration
+View Comprehensive Patient Report,View Comprehensive Client Report
