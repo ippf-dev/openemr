@@ -277,7 +277,7 @@ function method_to_ippf2_code($ippfcm) {
   global $code_types;
   $ret = '';
   $rrow = sqlQuery("SELECT related_code FROM codes WHERE " .
-    "code_type = '" . $code_types[$codetype]['IPPFCM'] . "' AND " .
+    "code_type = '" . $code_types['IPPFCM']['id'] . "' AND " .
     "code = '$ippfcm' AND active = 1 " .
     "ORDER BY id LIMIT 1");
   $relcodes = explode(';', $rrow['related_code']);

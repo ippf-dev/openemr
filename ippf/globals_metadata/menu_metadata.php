@@ -50,6 +50,13 @@
       xl('C3 statistical reports.')
     ),
 
+    'gbl_menu_stats_cc' => array(
+      xl('Cervical Cancer Reporting'),
+      'bool',                           // data type
+      '1',                              // default
+      xl('Cervical cancer statistical reports.')
+    ),
+
     'gbl_menu_acct_trans' => array(
       xl('Accounting Transactions Export'),
       'bool',                           // data type
