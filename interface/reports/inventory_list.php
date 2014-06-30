@@ -29,9 +29,9 @@ function output_csv($s) {
 // Check if a product needs to be re-ordered, optionally for a given warehouse.
 //
 function checkReorder($drug_id, $min, $warehouse='') {
-  if (!$min) return false;
+  global $form_days;
 
-  // echo "<!-- Drug/min/warehouse = '$drug_id' '$min' '$warehouse' -->\n"; // debugging
+  if (!$min) return false;
 
   $query = "SELECT " .
     "SUM(s.quantity) AS sale_quantity " .
@@ -39,7 +39,8 @@ function checkReorder($drug_id, $min, $warehouse='') {
     "LEFT JOIN drug_inventory AS di ON di.inventory_id = s.inventory_id " .
     "WHERE " .
     "s.drug_id = '$drug_id' AND " .
-    "s.sale_date > DATE_SUB(NOW(), INTERVAL 90 DAY) " .
+    // "s.sale_date > DATE_SUB(NOW(), INTERVAL 90 DAY) " .
+    "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
     "AND s.pid != 0";
   if ($warehouse !== '') {
     $query .= " AND di.warehouse_id = '$warehouse'";
@@ -50,7 +51,7 @@ function checkReorder($drug_id, $min, $warehouse='') {
   $query = "SELECT SUM(on_hand) AS on_hand " .
     "FROM drug_inventory AS di WHERE " .
     "di.drug_id = '$drug_id' AND " .
-    "di.expiration > NOW() AND " .
+    "(di.expiration IS NULL OR di.expiration > NOW()) AND " .
     "di.destroy_date IS NULL";
   if ($warehouse !== '') {
     $query .= " AND di.warehouse_id = '$warehouse'";
@@ -65,8 +66,9 @@ function checkReorder($drug_id, $min, $warehouse='') {
   }
   else {
     if ($sales != 0) {
-      $stock_months = sprintf('%0.1f', $onhand * 3 / $sales);
+      $stock_months = sprintf('%0.1f', $onhand * ($form_days / 30.5) / $sales);
       if ($stock_months <= $min) {
+        // echo "<!-- $drug_id $min '$warehouse' $onhand $sales $stock_months -->\n"; // debugging
         return true;
       }
     }
@@ -81,12 +83,9 @@ function write_report_line(&$row) {
   $emptyvalue = empty($_POST['form_csvexport']) ? '&nbsp;' : '';
   $drug_id = 0 + $row['drug_id'];
   $on_hand = 0 + $row['on_hand'];
-  $inventory_id = 0 + (empty($row['inventory_id']) ? 0 : $row['inventory_id']);
+  // $inventory_id = 0 + (empty($row['inventory_id']) ? 0 : $row['inventory_id']);
   $warehouse_id = isset($row['warehouse_id']) ? $row['warehouse_id'] : '';
   $warnings = '';
-
-  if ($drug_id != $wrl_last_drug_id) ++$encount;
-  $bgcolor = "#" . (($encount & 1) ? "ddddff" : "ffdddd");
 
   // Get sales in the date range for this drug (and warehouse if details).
   if ($form_details) {
@@ -123,6 +122,15 @@ function write_report_line(&$row) {
   $monthly = ($months && $sale_quantity) ?
     sprintf('%0.1f', $sale_quantity / $months) : 0;
 
+  if ($monthly == 0.0 && $on_hand == 0) {
+    // The row has no QOH and no recent sales, so is deemed uninteresting.
+    // See CV email 2014-06-25.
+    return;
+  }
+
+  if ($drug_id != $wrl_last_drug_id) ++$encount;
+  $bgcolor = "#" . (($encount & 1) ? "ddddff" : "ffdddd");
+
   $stock_months = 0;
   if ($sale_quantity != 0) {
     $stock_months = sprintf('%0.1f', $on_hand * $months / $sale_quantity);
@@ -136,25 +144,38 @@ function write_report_line(&$row) {
     if (checkReorder($drug_id, $row['reorder_point'])) {
       addWarning(xl('Product-level reorder point has been reached'));
     }
-    // Same check for each warehouse.
-    $pwres = sqlStatement("SELECT " .
-      "pw.pw_warehouse, pw.pw_min_level, lo.title " .
-      "FROM product_warehouse AS pw " .
-      "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-      "lo.option_id = pw.pw_warehouse " .
-      "WHERE pw.pw_drug_id = '$drug_id' AND pw.pw_min_level != 0 " .
-      "ORDER BY lo.title");
-    while ($pwrow = sqlFetchArray($pwres)) {
-      if (checkReorder($drug_id, $pwrow['pw_min_level'], $pwrow['pw_warehouse'])) {
-        addWarning(xl("Reorder point has been reached for warehouse") .
-          " '" . $pwrow['title'] . "'");
+    /*****************************************************************
+    if (!$form_details) {
+      // Same check for each warehouse if not in details mode.
+      $pwres = sqlStatement("SELECT " .
+        "pw.pw_warehouse, pw.pw_min_level, lo.title " .
+        "FROM product_warehouse AS pw " .
+        "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+        "lo.option_id = pw.pw_warehouse " .
+        "WHERE pw.pw_drug_id = '$drug_id' AND pw.pw_min_level != 0 " .
+        "ORDER BY lo.title");
+      while ($pwrow = sqlFetchArray($pwres)) {
+        if (checkReorder($drug_id, $pwrow['pw_min_level'], $pwrow['pw_warehouse'])) {
+          addWarning(xl("Reorder point has been reached for warehouse") .
+            " '" . $pwrow['title'] . "'");
+        }
       }
+    }
+    *****************************************************************/
+  }
+  // For details mode we want the message on the line for this warehouse.
+  // If the warehouse is not shown because it has no QOH and no recent
+  // activity, then this message doesn't matter any more either.
+  if ($form_details) {
+    if (checkReorder($drug_id, $row['pw_min_level'], $warehouse_id)) {
+      addWarning(xl("Reorder point has been reached for warehouse") .
+        " '" . $row['title'] . "'");
     }
   }
 
   // Compute the smallest quantity that might be taken from ANY lot for this product
-  // (and warehouse if details) based on the past 30 days of sales.  If lot combining
-  // is allowed this is always 1.
+  // (and warehouse if details) based on the past $form_days days of sales.  If lot
+  // combining is allowed this is always 1.
   $extracond = $form_details ? "AND di.warehouse_id = '$warehouse_id'" : $fwcond;
   $min_sale = 1;
   if (!$row['allow_combining']) {
@@ -314,7 +335,8 @@ if ($form_details) {
     "pw.pw_min_level, pw.pw_max_level " .
     "FROM drugs AS d " .
     "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
-    "AND di.on_hand != 0 AND di.destroy_date IS NULL " .
+    // "AND di.on_hand != 0 AND di.destroy_date IS NULL " .
+    "AND di.destroy_date IS NULL " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id " .
     "LEFT JOIN product_warehouse AS pw ON pw.pw_drug_id = d.drug_id AND " .
@@ -327,7 +349,8 @@ else {
   $query = "SELECT d.*, SUM(di.on_hand) AS on_hand " .
     "FROM drugs AS d " .
     "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
-    "AND di.on_hand != 0 AND di.destroy_date IS NULL " .
+    // "AND di.on_hand != 0 AND di.destroy_date IS NULL " .
+    "AND di.destroy_date IS NULL " .
     // Join with list_options needed to support facility filter ($fwcond).
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id " .

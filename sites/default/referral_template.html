@@ -73,18 +73,22 @@ body, td {
    </td>
    <td align='right' width='10%' valign='top' nowrap>
     <table border='1' cellpadding='2' cellspacing='0'>
+     <!--
      <tr>
       <td nowrap>{label_clinic_id}</td>
       <td style='width:60pt' nowrap>{fac_facility_npi}</td>
      </tr>
+     -->
      <tr>
-      <td nowrap>{label_clinic_id}</td>
-      <td nowrap>{ref_pid}</td>
+      <td nowrap>{label_client_id}</td>
+      <td nowrap>{pt_pubpid}&nbsp;</td>
      </tr>
+     <!--
      <tr>
       <td nowrap>{label_control_no}</td>
       <td nowrap>{ref_id}</td>
      </tr>
+     -->
      <tr>
       <td nowrap>{label_date}</td>
       <td nowrap>{ref_refer_date}&nbsp;</td>
@@ -137,6 +141,19 @@ body, td {
   </tr>
  </table>
 
+ <br />&nbsp;<br />{label_history_summary}:
+
+ <table cellspacing='0' cellpadding='0' class='linetable'>
+  <tr>
+   <td width='1%' nowrap>{label_bp} &nbsp;</td>
+   <td class='under'>{v_bps}/{v_bpd}&nbsp;</td>
+   <td width='1%' nowrap>&nbsp; {label_ht} &nbsp;</td>
+   <td class='under'>{v_height}&nbsp;</td>
+   <td width='1%' nowrap>&nbsp; {label_wt} &nbsp;</td>
+   <td class='under'>{v_weight}&nbsp;</td>
+  </tr>
+ </table>
+
  <table cellspacing='0' cellpadding='0' class='linetable'>
   <tr>
    <td width='1%' nowrap>{label_dr_name_sig} &nbsp;</td>
@@ -159,20 +176,24 @@ body, td {
     {header1}
     <span class='subhead'>{label_subhead_patient}</span>
    </td>
-   <td align='right' width='10%' nowrap>
+   <td align='right' valign='top' width='10%' nowrap>
     <table border='1' cellpadding='2' cellspacing='0'>
+     <!--
      <tr>
       <td nowrap>{label_clinic_id}</td>
       <td style='width:60pt' nowrap>{fac_facility_npi}</td>
      </tr>
+     -->
      <tr>
-      <td nowrap>{label_clinic_id}</td>
-      <td nowrap>{ref_pid}</td>
+      <td nowrap>{label_client_id}</td>
+      <td nowrap>{pt_pubpid}&nbsp;</td>
      </tr>
+     <!--
      <tr>
       <td nowrap>{label_control_no}</td>
       <td nowrap>{ref_id}</td>
      </tr>
+     -->
      <tr>
       <td nowrap>{label_date}</td>
       <td nowrap>{ref_refer_date}&nbsp;</td>
@@ -258,23 +279,27 @@ body, td {
     {header2}
     <span class='subhead'>{label_subhead_referred}</span>
    </td>
-   <td align='right' width='10%' nowrap>
+   <td align='right' valign='top' width='10%' nowrap>
     <table border='1' cellpadding='2' cellspacing='0'>
+     <!--
      <tr>
       <td nowrap>{label_clinic_id}</td>
       <td style='width:60pt' nowrap>{fac_facility_npi}</td>
      </tr>
+     -->
      <tr>
-      <td nowrap>{label_clinic_id}</td>
-      <td nowrap>{ref_pid}</td>
+      <td nowrap>{label_client_id}</td>
+      <td nowrap>{pt_pubpid}&nbsp;</td>
      </tr>
+     <!--
      <tr>
       <td nowrap>{label_control_no}</td>
       <td nowrap>{ref_id}</td>
      </tr>
+     -->
      <tr>
       <td nowrap>{label_date}</td>
-      <td nowrap>{ref_reply_date}&nbsp;</td>
+      <td nowrap style='width:72pt'>{ref_reply_date}&nbsp;</td>
      </tr>
     </table>
    </td>

@@ -119,13 +119,20 @@ if (empty($trow['id'])) $trow['id'] = '&nbsp;';
 if (empty($patient_id)) $patient_id = '&nbsp;';
 if (empty($facrow['facility_npi'])) $facrow['facility_npi'] = '&nbsp;';
 
+// Generate link to MA logo if it exists.
+$logo = "<!-- '$ma_logo_path' does not exist. -->";
+$ma_logo_path = "sites/" . $_SESSION['site_id'] . "/images/ma_logo.png";
+if (is_file("$webserver_root/$ma_logo_path")) {
+  $logo = "<img src='$web_root/$ma_logo_path' />";
+}
+
 $s = '';
 $fh = fopen($template_file, 'r');
 while (!feof($fh)) $s .= fread($fh, 8192);
 fclose($fh);
 
-$s = str_replace("{header1}", genFacilityTitle($TEMPLATE_LABELS['label_form1_title'], -1), $s);
-$s = str_replace("{header2}", genFacilityTitle($TEMPLATE_LABELS['label_form2_title'], -1), $s);
+$s = str_replace("{header1}", genFacilityTitle($TEMPLATE_LABELS['label_form1_title'], -1, $logo), $s);
+$s = str_replace("{header2}", genFacilityTitle($TEMPLATE_LABELS['label_form2_title'], -1, $logo), $s);
 
 $s = str_replace("{fac_name}"        , $facrow['name']        , $s);
 $s = str_replace("{fac_facility_npi}", $facrow['facility_npi'], $s);

@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006-2013 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2014 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -34,6 +34,7 @@ $ORDERHASH = array(
 );
 
 $form_facility = 0 + empty($_REQUEST['form_facility']) ? 0 : $_REQUEST['form_facility'];
+$form_show_empty = empty($_REQUEST['form_show_empty']) ? 0 : 1;
 
 // Incoming form_warehouse, if not empty is in the form "warehouse/facility".
 // The facility part is an attribute used by JavaScript logic.
@@ -49,13 +50,15 @@ $where = "WHERE 1 = 1";
 if ($form_facility ) $where .= " AND lo.option_value IS NOT NULL AND lo.option_value = '$form_facility'";
 if ($form_warehouse) $where .= " AND di.warehouse_id IS NOT NULL AND di.warehouse_id = '$form_warehouse'";
 
+$dion = $form_show_empty ? "" : "AND di.on_hand != 0";
+
  // get drugs
  $res = sqlStatement("SELECT d.*, " .
   "di.inventory_id, di.lot_number, di.expiration, di.manufacturer, " .
   "di.on_hand, lo.title, lo.option_value AS facid, f.name AS facname " .
   "FROM drugs AS d " .
   "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
-  "AND di.destroy_date IS NULL " .
+  "AND di.destroy_date IS NULL $dion " .
   "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
   "lo.option_id = di.warehouse_id " .
   "LEFT JOIN facility AS f ON f.id = lo.option_value " .         
@@ -161,6 +164,9 @@ function facchanged() {
   }
   echo "   </select>\n";
 ?>
+   &nbsp;
+   <input type='checkbox' name='form_show_empty' value='1'<?php if ($form_show_empty) echo " checked"; ?> />
+   <?php echo xl('Show empty lots'); ?>
    &nbsp;
    <input type='submit' name='form_refresh' value="<?php xl('Refresh','e') ?>" />
   </td>
