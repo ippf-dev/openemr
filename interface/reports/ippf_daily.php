@@ -4,6 +4,7 @@
 include_once("../globals.php");
 include_once("../../library/patient.inc");
 include_once("../../library/acl.inc");
+include_once("../../custom/code_types.inc.php");
 
 // Might want something different here.
 //
@@ -73,6 +74,34 @@ function genNumCell($num, $cnum) {
   $atotals[$cnum] += $num;
   if (empty($num) && $form_output != 3) $num = '&nbsp;';
   genAnyCell($num, true, 'detail');
+}
+
+// Recursive function to look up the IPPF2 (or other type) code, if any,
+// for a given related code field.
+//
+function get_related_code($related_code, $typewanted='IPPF2', $depth=0) {
+  global $code_types;
+  // echo "<!-- related_code = '$related_code' depth = '$depth' -->\n"; // debugging
+  if (++$depth > 4) return false; // protects against relation loops
+  if (empty($related_code)) return false;
+  $relcodes = explode(';', $related_code);
+  foreach ($relcodes as $codestring) {
+    if ($codestring === '') continue;
+    list($codetype, $code) = explode(':', $codestring);
+    if ($codetype === $typewanted) {
+      // echo "<!-- returning '$code' -->\n"; // debugging
+      return $code;
+    }
+    $row = sqlQuery("SELECT related_code FROM codes WHERE " .
+      "code_type = ? AND code = ? AND active = 1 " .
+      "ORDER BY id LIMIT 1",
+      array($code_types[$codetype]['id'], $code));
+    $tmp = get_related_code($row['related_code'], $typewanted, $depth);
+    if ($tmp !== false) {
+      return $tmp;
+    }
+  }
+  return false;
 }
 
 // If we are doing the CSV export then generate the needed HTTP headers.
@@ -213,17 +242,30 @@ if ($_POST['form_submit']) {
       if ($row['pid'] != $last_pid) { // new patient
         $last_pid = $row['pid'];
 
-        $crow = sqlQuery("SELECT lc.new_method " .
-          "FROM lists AS l, lists_ippf_con AS lc WHERE " .
-          "l.pid = '$last_pid' AND l.begdate <= '$from_date' AND " .
-          "( l.enddate IS NULL OR l.enddate > '$from_date' ) AND " .
-          "l.activity = 1 AND l.type = 'contraceptive' AND lc.id = l.id " .
-          "ORDER BY l.begdate DESC LIMIT 1");
-        $amethods = explode('|', empty($crow) ? 'zzz' : $crow['new_method']);
-
-        // TBD: We probably want to select the method with highest CYP here,
-        // but for now we'll settle for the first one that appears.
-        $method = $amethods[0];
+        // Get the current contraceptive method as of the report date.
+        // This is an IPPFCM code, or nothing.
+        $method = '';
+        $contrameth_row = sqlQuery("SELECT " .
+          "fe.date AS contrastart, d1.field_value AS contrameth FROM forms AS f " .
+          "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
+          "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' " .
+          "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = ? " .
+          "AND fe.date <= ? ORDER BY contrastart DESC LIMIT 1",
+          array($last_pid, "$from_date 23:59:59"));
+        if (!empty($contrameth_row['contrameth'])) {
+          $methodid = substr($contrameth_row['contrameth'], 7);
+          // Get the method category name.
+          $crow = sqlQuery("SELECT lo.option_id, lo.title " .
+            "FROM codes AS c " .
+            "JOIN list_options AS lo ON lo.list_id = 'contrameth' AND " .
+            "lo.option_id = c.code_text_short " .
+            "WHERE c.code_type = '32' AND c.code = ?",
+            array($methodid));
+          if (!empty($crow['option_id'])) {
+            $method = $crow['option_id'];
+            // $methodcat = $crow['title'];
+          }
+        }
 
         if (empty($areport[$method])) {
           // This should not happen.
@@ -241,17 +283,15 @@ if ($_POST['form_submit']) {
           ++$areport[$method][2];
         }
 
-        /*************************************************************
-        // Maybe count as old Client First Visit this year.
-        $regyear = substr($row['regdate'], 0, 4);
-        $thisyear = substr($from_date, 0, 4);
-        if ($regyear && $regyear < $thisyear) {
-          $trow = sqlQuery("SELECT count(*) AS count FROM form_encounter " .
-            "WHERE date >= '$thisyear-01-01 00:00:00' AND " .
-            "date < '" . $row['encdate'] . " 00:00:00'");
-          if (empty($trow['count'])) ++$areport[$method][5];
-        }
-        *************************************************************/
+        //// Maybe count as old Client First Visit this year.
+        // $regyear = substr($row['regdate'], 0, 4);
+        // $thisyear = substr($from_date, 0, 4);
+        // if ($regyear && $regyear < $thisyear) {
+        //   $trow = sqlQuery("SELECT count(*) AS count FROM form_encounter " .
+        //     "WHERE date >= '$thisyear-01-01 00:00:00' AND " .
+        //     "date < '" . $row['encdate'] . " 00:00:00'");
+        //   if (empty($trow['count'])) ++$areport[$method][5];
+        // }
 
       } // end new patient
 
@@ -259,25 +299,33 @@ if ($_POST['form_submit']) {
       //
       if ($row['encounter'] != $last_encounter) { // new visit
         $last_encounter = $row['encounter'];
-
-        // Count unique clients coming for supply or re-supply.
-        if ($row['pc_catid'] == '10' && $last_pid != $last_contra_pid) {
-          $last_contra_pid = $last_pid;
-          ++$areport[$method][4];
-        }
+        // Count visits with any contraceptive service, but only once per visit.
+        $has_contra_svc = false;
+      }
+      if (!$has_contra_svc && get_related_code("MA:$code", 'IPPFCM')) {
+        ++$areport[$method][4];
+        $has_contra_svc = true;
       }
 
       // Logic for specific services.
       //
-      $code = 0 + $row['code'];
-      if ($code == 255004) ++$areport[$method][5];  // pap smear
-      if ($code == 256101) ++$areport[$method][6];  // preg test
-      if ($code == 375008) ++$areport[$method][7];  // dr's check
-      if ($code == 375015) ++$areport[$method][8];  // dr's visit (was 375014)
-      if ($code == 375011) ++$areport[$method][9];  // advice
-      if ($code == 019916) ++$areport[$method][10]; // couns by method
-      if ($code == 039916) ++$areport[$method][11]; // infert couns
-      if ($code == 019911) ++$areport[$method][12]; // std/aids couns
+      $code = $row['code'];
+      $icode = get_related_code("MA:$code", 'IPPF2');
+
+      if ($icode == '2144040402102') ++$areport[$method][5];  // pap smear
+      if ($icode == '2155050503301') ++$areport[$method][6];  // preg test
+      if ($icode == '2142020200000') ++$areport[$method][7];  // dr's check
+      if ($icode == '3120020000000') ++$areport[$method][8];  // dr's visit (was 375014)
+      if ($icode == '2184100000800') ++$areport[$method][9];  // advice
+      if ($icode == '1110010900000') ++$areport[$method][10]; // couns by method
+      if ($icode == '2171110000000') ++$areport[$method][11]; // infert couns
+      if ($icode == '2131010111000') ++$areport[$method][12]; // std/aids couns
+      if ($icode == '2131010112000') ++$areport[$method][12]; // std/aids couns
+      if ($icode == '2131010123000') ++$areport[$method][12]; // std/aids couns
+      if ($icode == '2121010112000') ++$areport[$method][12]; // std/aids couns
+      if ($icode == '2121010123000') ++$areport[$method][12]; // std/aids couns
+      if ($icode == '2121010124000') ++$areport[$method][12]; // std/aids couns
+
     }
   } // end while
 
