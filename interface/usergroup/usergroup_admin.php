@@ -456,7 +456,7 @@ function create_sortable_header($text,$field,$width)
 	<tbody><tr height="22" class="showborder_head">
                 <?php 
                     create_sortable_header(xlt("Username"),"username","12%"); 
-                    create_sortable_header(xlt("Real Name"),"realname","12%"); 
+                    create_sortable_header(xlt("Real Name"),"realnamelf","12%"); 
                     create_sortable_header(xlt("Job Description"),"specialty","16%"); 
                 ?>
                     <th class="bold" valign="top" width="12%"><?php echo xl('Provider'); ?>?</th>
@@ -490,6 +490,7 @@ for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
   }
   $row['acl_groups'] = $acl_groups;
   $row['realname'] = $row['fname'] . ' ' . $row['lname'];
+  $row['realnamelf'] = $row['lname'] . ', ' . $row['fname'];
   $result4[$iter] = $row;
 }
 
@@ -509,7 +510,7 @@ foreach ($result4 as $iter) {
     "<td class='text' valign='top'>" . htmlspecialchars($iter["username"]) .
     "<a href='user_admin.php?id=" . $iter["id"] .
     "' class='iframe_medium' onclick='top.restoreSession()'>(" . xl('Edit') . ")</a></td>" .
-    "<td class='text' valign='top'>" . attr_nbsp($iter['realname']) . "</td>" .
+    "<td class='text' valign='top' title='" . attr($iter['realnamelf']) . "'>" . attr_nbsp($iter['realname']) . "</td>" .
     "<td class='text' valign='top'>" . attr_nbsp($iter["specialty"]) . "</td>" .
     "<td class='text' valign='top'>" . ($iter["authorized"] ? xl('Yes') : '&nbsp;') . "</td>" .
     "<td class='text' valign='top'>" . attr_nbsp($iter['facname']) . "</td>" .
