@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2012 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2014 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -157,27 +157,27 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
    <?php if ($_POST['form_details']) echo xl('Total for') . ' '; echo display_desc($product); ?>
   </td>
 <?php } ?>
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $secei - $secqtys[0] - $secqtys[1] - $secqtys[2] - $secqtys[3] - $secqtys[4]; ?>
   </td>
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $secqtys[0]; ?>
   </td>
   <!--
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $secqtys[1]; ?>
   </td>
   -->
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $secqtys[2]; ?>
   </td>
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $secqtys[3]; ?>
   </td>
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $secqtys[4]; ?>
   </td>
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $secei; ?>
   </td>
  </tr>
@@ -211,7 +211,7 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
   <td class="detail">
    &nbsp;
   </td>
-  <td class="detail" colspan="3">
+  <td class="dehead" colspan="3">
    <?php echo xl('Total for') . ' '; echo display_desc($product_first ? $product : $warehouse); ?>
   </td>
   <td class="dehead" align="right">
@@ -288,30 +288,36 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
    <?php echo display_desc($prodleft); $prodleft = "&nbsp;"; ?>
   </td>
 <?php } ?>
-  <td class="dehead">
+  <td class="detail">
    <?php echo oeFormatShortDate($transdate); ?>
   </td>
-  <td class="detail">
-   <?php echo $invnumber; ?>
-  </td>
+<?php
+  if ($patient_id) {
+    echo "  <td class='delink' onclick='doinvopen($patient_id,$encounter_id)'>\n";
+  }
+  else {
+    echo "  <td class='detail'>\n";
+  }
+  echo "   $invnumber\n  </td>\n";
+?>
   <td class="detail">
    &nbsp;
   </td>
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $qtys[0]; ?>
   </td>
   <!--
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $qtys[1]; ?>
   </td>
   -->
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $qtys[2]; ?>
   </td>
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $qtys[3]; ?>
   </td>
-  <td class="dehead" align="right">
+  <td class="detail" align="right">
    <?php echo $qtys[4]; ?>
   </td>
   <td class="detail">
@@ -374,10 +380,25 @@ else {
 <head>
 <?php html_header_show();?>
 <title><?php xl('Inventory Activity','e') ?></title>
+
+<style type="text/css">
+ .dehead { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:bold }
+ .detail { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:normal }
+ .delink { color:#0000cc; font-family:sans-serif; font-size:10pt; font-weight:normal; cursor:pointer }
+</style>
+
 <script type="text/javascript" src="../../library/textformat.js"></script>
+<script type="text/javascript" src="../../library/topdialog.js"></script>
+<script type="text/javascript" src="../../library/dialog.js"></script>
+
 <script language='JavaScript'>
- var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
+var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
+<?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
+function doinvopen(ptid,encid) {
+ dlgopen('../patient_file/pos_checkout.php?ptid=' + ptid + '&enc=' + encid, '_blank', 750, 550);
+}
 </script>
+
 </head>
 
 <body leftmargin='0' topmargin='0' marginwidth='0' marginheight='0'>
@@ -625,7 +646,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     $grei = getEndInventory();
 ?>
  <tr bgcolor="#dddddd">
-  <td class="detail" colspan="4">
+  <td class="dehead" colspan="4">
    <?php xl('Grand Total','e'); ?>
   </td>
   <td class="dehead" align="right">
