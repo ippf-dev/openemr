@@ -34,7 +34,8 @@ $ORDERHASH = array(
 );
 
 $form_facility = 0 + empty($_REQUEST['form_facility']) ? 0 : $_REQUEST['form_facility'];
-$form_show_empty = empty($_REQUEST['form_show_empty']) ? 0 : 1;
+$form_show_empty    = empty($_REQUEST['form_show_empty'   ]) ? 0 : 1;
+$form_show_inactive = empty($_REQUEST['form_show_inactive']) ? 0 : 1;
 
 // Incoming form_warehouse, if not empty is in the form "warehouse/facility".
 // The facility part is an attribute used by JavaScript logic.
@@ -49,6 +50,7 @@ $orderby = $ORDERHASH[$form_orderby];
 $where = "WHERE 1 = 1";
 if ($form_facility ) $where .= " AND lo.option_value IS NOT NULL AND lo.option_value = '$form_facility'";
 if ($form_warehouse) $where .= " AND di.warehouse_id IS NOT NULL AND di.warehouse_id = '$form_warehouse'";
+if (!$form_show_inactive) $where .= " AND d.active = 1";
 
 $dion = $form_show_empty ? "" : "AND di.on_hand != 0";
 
@@ -164,10 +166,14 @@ function facchanged() {
   }
   echo "   </select>\n";
 ?>
-   &nbsp;
+  </td>
+  <td>
    <input type='checkbox' name='form_show_empty' value='1'<?php if ($form_show_empty) echo " checked"; ?> />
-   <?php echo xl('Show empty lots'); ?>
-   &nbsp;
+   <?php echo xl('Show empty lots'); ?><br />
+   <input type='checkbox' name='form_show_inactive' value='1'<?php if ($form_show_inactive) echo " checked"; ?> />
+   <?php echo xl('Show inactive'); ?>
+  </td>
+  <td>
    <input type='submit' name='form_refresh' value="<?php xl('Refresh','e') ?>" />
   </td>
  </tr>
