@@ -201,7 +201,7 @@ function generate_form_field($frow, $currvalue) {
   // date
   else if ($data_type == 4) {
     echo "<input type='text' size='10' name='form_$field_id_esc' id='form_$field_id_esc'" .
-      " value='$currescaped'" .
+      " value='" . substr($currescaped, 0, 10) . "'" .
       " title='$description'" .
       " onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' />" .
       "<img src='$rootdir/pic/show_calendar.gif' align='absbottom' width='24' height='22'" .
@@ -395,6 +395,33 @@ function generate_form_field($frow, $currvalue) {
         " value='$currescaped'" .
         " onclick='sel_related(this,\"$codetype\")'" .
         " readonly />";
+    }
+  }
+
+  // Visit categories.
+  else if ($data_type == 18) {
+    $cres = sqlStatement("SELECT pc_catid, pc_catname " .
+      "FROM openemr_postcalendar_categories ORDER BY pc_catname");
+    echo "<select name='form_$field_id_esc' id='form_$field_id_esc' title='$description'>";
+    echo "<option value=''>" . xlt($empty_title) . "</option>";
+    $got_selected = false;
+    while ($crow = sqlFetchArray($cres)) {
+      $catid = $crow['pc_catid'];
+      if (($catid < 9 && $catid != 5) || $catid == 11) continue;
+      echo "<option value='" . attr($catid) . "'";
+      if ($catid == $currvalue) {
+        echo " selected";
+        $got_selected = true;
+      }
+      echo ">" . text(xl_appt_category($crow['pc_catname'])) . "</option>";
+    }
+    if (!$got_selected && strlen($currvalue) > 0) {
+      echo "<option value='" . attr($currvalue) . "' selected>* " . text($currvalue) . " *</option>";
+      echo "</select>";
+      echo " <font color='red' title='" . xla('Please choose a valid selection from the list.') . "'>" . xlt('Fix this') . "!</font>";
+    }
+    else {
+      echo "</select>";
     }
   }
 
@@ -1039,6 +1066,21 @@ function generate_print_field($frow, $currvalue) {
     echo $tmp;
   }
 
+  // Visit categories.
+  else if ($data_type == 18) {
+    $tmp = '';
+    if ($currvalue) {
+      $crow = sqlQuery("SELECT pc_catid, pc_catname " .
+        "FROM openemr_postcalendar_categories WHERE pc_catid = ?",
+        array($currvalue));
+      $tmp = xl_appt_category($crow['pc_catname']);
+      if (empty($tmp)) $tmp = "($currvalue)";
+    }
+    if ($tmp === '') { $tmp = '&nbsp;'; }
+    else { $tmp = htmlspecialchars($tmp, ENT_QUOTES); }
+    echo $tmp;
+  }
+
   // a set of labeled checkboxes
   else if ($data_type == 21) {
     // In this special case, fld_length is the number of columns generated.
@@ -1454,6 +1496,14 @@ function generate_display_field($frow, $currvalue) {
     }
   }
 
+  // visit category
+  else if ($data_type == 18) {
+    $crow = sqlQuery("SELECT pc_catid, pc_catname " .
+      "FROM openemr_postcalendar_categories WHERE pc_catid = ?",
+      array($currvalue));
+    $s = htmlspecialchars($crow['pc_catname'],ENT_NOQUOTES);
+  }
+
   // a set of labeled checkboxes
   else if ($data_type == 21) {
     $avalue = explode('|', $currvalue);
@@ -1711,6 +1761,14 @@ function generate_plaintext_field($frow, $currvalue) {
     $uname = $urow['lname'];
     if ($urow['fname']) $uname .= ", " . $urow['fname'];
     $s = $uname;
+  }
+
+  // visit category
+  else if ($data_type == 18) {
+    $crow = sqlQuery("SELECT pc_catid, pc_catname " .
+      "FROM openemr_postcalendar_categories WHERE pc_catid = ?",
+      array($currvalue));
+    $s = $crow['pc_catname'];
   }
 
   // a set of labeled checkboxes
