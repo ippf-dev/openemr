@@ -76,16 +76,34 @@ foreach($dem_fields_to_disable as $field)
 
 // Array of global settings to confirm are updated
 $global_settings = array("css_header"=>"style_metal.css",
-                'gbl_min_max_months'=>'1'
+                'gbl_min_max_months'=>'1',
+                'concurrent_layout'=>'3',
                 );
 
 function verify_global_settings($setting,$value)
 {
     $sqlUpdate=" REPLACE INTO globals set gl_name=?, gl_index=0, gl_value=?";
     sqlStatement($sqlUpdate,array($setting,$value));
+    echo "Verified Global:".$setting."=>".$value."<br>";
 }
 
 foreach($global_settings as $setting=>$value)
 {
     verify_global_settings($setting,$value);
+}
+
+$user_settings = array(
+        "global:concurrent_layout",
+        "global:css_header",
+    );
+function reset_users_settings_to_default($setting)
+{
+    $sqlUpdate=" DELETE FROM user_settings WHERE setting_label=?";
+    sqlStatement($sqlUpdate,array($setting));
+    echo "Resetting ".$setting." to default for All Users"."<br>";
+}
+
+foreach($user_settings as $setting)
+{
+    reset_users_settings_to_default($setting);
 }
