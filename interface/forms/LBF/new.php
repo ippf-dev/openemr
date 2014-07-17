@@ -151,7 +151,7 @@ function lbf_current_value($frow, $formid, $encounter) {
     else if ($formid) {
       // Get value from the form_encounter that this form is linked to.
       $ferow = sqlQuery("SELECT fe.* " .
-        "FROM forms AS f, form_encounter AS re WHERE " .
+        "FROM forms AS f, form_encounter AS fe WHERE " .
         "f.form_id = ? AND f.formdir = ? AND f.deleted = 0 AND " .
         "fe.pid = f.pid AND fe.encounter = f.encounter",
         array($formname, $formid));
