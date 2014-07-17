@@ -44,21 +44,6 @@
         var stats_section=last_report.parent();
         stats_section.append(create_link("report","ippf_c3.php","<?php echo xlt("C3");?>")); 
     }
-    function add_finanical_reports()
-    {
-        var last_report=find_link('sales_by_item.php').parent();
-        var fin_section=last_report.parent();   
-        fin_section.find("li:first").next().after(create_link("report",'services_by_provider.php',"<?php echo xlt('Svcs by Prov'); ?>"))
-                .next().next().after(create_link("report",'receipts_by_method_report.php',"<?php echo xlt('Rec Summary'); ?>")); 
-        
-        fin_section.append(create_link("report",'export_accounting_transactions.php',"<?php echo xlt('Acct Export'); ?>")); 
-        <?php if ($GLOBALS['gbl_menu_projects']) {?> 
-                fin_section.append(create_link("report",'restricted_projects_report.php',"<?php echo xlt('Projects'); ?>")); 
-        <?php } ?>
-
-            
-    }
-    
     function add_blank_forms()
     {
         var fee_sheet_link=find_link("return repPopup('../patient_file/printed_fee_sheet.php')").parent();
@@ -120,7 +105,6 @@
 }
     function setup_ippf_custom()
     {
-        add_finanical_reports();
         add_blank_forms();
         remove_records_menu();
         remove_fee_menus();

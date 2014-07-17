@@ -56,11 +56,36 @@ function update_layout_option($form_id,$field_id,$option,$value)
 echo "<b>Updating Layout Fields</b><br>";
 
 // Add additional demographics field identifiers to this array to have them flagged as "unused" in layout options
-$dem_fields_to_disable=array('vfc','mothersname','guardiansname','allow_imm_reg_use','allow_imm_info_share','allow_health_info_ex','email_direct');
+$dem_fields_to_disable=array('vfc',
+                             'mothersname',
+                             'guardiansname',
+                             'allow_imm_reg_use',
+                             'allow_imm_info_share',
+                             'allow_health_info_ex',
+                             'email_direct',
+                             'deceased_date',
+                             'deceased_reason',
+                             'ref_providerID',
+                             'ethnicity',
+                             );
 foreach($dem_fields_to_disable as $field)
 {
     echo "Setting ".$field." as unused<br>";
     update_layout_option("DEM",$field,'uor','0');
 }
 
+// Array of global settings to confirm are updated
+$global_settings = array("css_header"=>"style_metal.css",
+                'gbl_min_max_months'=>'1'
+                );
 
+function verify_global_settings($setting,$value)
+{
+    $sqlUpdate=" REPLACE INTO globals set gl_name=?, gl_index=0, gl_value=?";
+    sqlStatement($sqlUpdate,array($setting,$value));
+}
+
+foreach($global_settings as $setting=>$value)
+{
+    verify_global_settings($setting,$value);
+}

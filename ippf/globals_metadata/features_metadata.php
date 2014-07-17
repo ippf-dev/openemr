@@ -32,7 +32,7 @@ array(
     'gbl_min_max_months' => array(
       xl('Min/Max Inventory as Months'),
       'bool',                           // data type
-      '0',                              // default = false
+      '1',                              // default = true
       xl('Min/max inventory is expressed as months of supply instead of units')
     ),
     

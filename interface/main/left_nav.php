@@ -1388,10 +1388,18 @@ if (!empty($reg)) {
         <ul>
           <?php genMiscLink('RTop','rep','0',xl('Sales'),'reports/sales_by_item.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Cash Rec'), 'billing/sl_receipts_report.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Svcs by Prov'), 'reports/services_by_provider.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Front Rec'), 'reports/front_receipts_report.php'); ?>
-          <?php genMiscLink('RTop','rep','0',xl('Rec/Inv by Pay Method'), 'reports/receipts_by_method_report.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Rec Summary'), 'reports/receipts_by_method_report.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Rec/Inv by Pay Methods'), 'reports/methods_by_invoice.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Collections'), 'reports/collections_report.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Financial Summary by Service Code'),'reports/svc_code_financial_report.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Acct Export'),'reports/export_accounting_transactions.php'); ?>
+
+        <?php if ($GLOBALS['gbl_menu_projects']) {
+                genMiscLink('RTop','rep','0',xl('Projects'),'reports/restricted_projects_report.php');
+            }
+        ?>
         </ul>
       </li>
 <?php } ?>
