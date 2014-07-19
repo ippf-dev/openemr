@@ -32,9 +32,6 @@ function change_default_global_metadata($section,$entry,$default)
     $GLOBALS['GLOBALS_METADATA'][$section][$entry][2]=$default;
 }
 
-change_default_global_metadata('Appearance','concurrent_layout','2');  // Use tree menu
-change_default_global_metadata('Appearance','gbl_nav_area_width','130');  // Use tree menu
-
 update_global_metadata('Appearance','patient_search_results_sort',
         'Patient Search Results Sorting',
         array(
