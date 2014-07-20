@@ -131,7 +131,7 @@ function cloneClicked() {
 ?>
 
 <?php
- if ($state == 7) {
+ if ($state == 8) {
 ?>
 
 <p>Congratulations! OpenEMR is now installed.</p>
@@ -500,7 +500,7 @@ else {
     echo "Gave the '$installer->iuser' user (password is '$installer->iuserpass') administrator access.<br><br>";
     
     echo "Done installing and configuring access controls (php-GACL).<br>";
-    echo "Next step will configure PHP.";
+    echo "Next step will apply IPPF customizations.";
     
     echo "<br><FORM METHOD='POST'>\n
 <INPUT TYPE='HIDDEN' NAME='state' VALUE='5'>\n
@@ -511,8 +511,26 @@ else {
 <INPUT TYPE='SUBMIT' VALUE='Continue'><br></FORM><br>\n";
 
     break;
-    
+
   case 5:
+    echo "<b>Step $state</b><br><br>\n";
+    echo "Applying IPPF customizations...<br><br>";
+    
+    ?>
+    <iframe style="width:600px; "src="ippf/upgrade/dbNew.php?site=<?php echo $site_id; ?>#end"></iframe>
+<?php
+    echo "<br>Next step will configure PHP.";
+    echo "<br><FORM METHOD='POST'>\n
+<INPUT TYPE='HIDDEN' NAME='state' VALUE='6'>\n
+<INPUT TYPE='HIDDEN' NAME='site' VALUE='$site_id'>\n
+<INPUT TYPE='HIDDEN' NAME='iuser' VALUE='$installer->iuser'>\n
+<INPUT TYPE='HIDDEN' NAME='iuserpass' VALUE='$installer->iuserpass'>\n	
+<br>\n
+<INPUT TYPE='SUBMIT' VALUE='Continue'><br></FORM><br>\n";
+
+    break;
+    
+  case 6:
     echo "<b>Step $state</b><br><br>\n";
     echo "Configuration of PHP...<br><br>\n";
     echo "We recommend making the following changes to your PHP installation, which can normally be done by editing the php.ini configuration file:\n";
@@ -536,7 +554,7 @@ echo "<br>We recommend you print these instructions for future reference.<br><br
 echo "Next step will configure Apache web server.";
 
 echo "<br><FORM METHOD='POST'>\n
-<INPUT TYPE='HIDDEN' NAME='state' VALUE='6'>\n
+<INPUT TYPE='HIDDEN' NAME='state' VALUE='7'>\n
 <INPUT TYPE='HIDDEN' NAME='site' VALUE='$site_id'>\n
 <INPUT TYPE='HIDDEN' NAME='iuser' VALUE='$installer->iuser'>\n
 <INPUT TYPE='HIDDEN' NAME='iuserpass' VALUE='$installer->iuserpass'>\n
@@ -545,7 +563,7 @@ echo "<br><FORM METHOD='POST'>\n
 
 break;
 
-       case 6:
+       case 7:
 echo "<b>Step $state</b><br><br>\n";
 echo "Configuration of Apache web server...<br><br>\n";
 echo "The \"".preg_replace("/${site_id}/","*",realpath($docsDirectory))."\", \"".preg_replace("/${site_id}/","*",realpath($billingDirectory))."\" and \"".preg_replace("/${site_id}/","*",realpath($billingDirectory2))."\" directories contain patient information, and
@@ -569,7 +587,7 @@ echo "<br>We recommend you print these instructions for future reference.<br><br
 echo "Click 'continue' for further instructions.";
 
 echo "<br><FORM METHOD='POST'>\n
-<INPUT TYPE='HIDDEN' NAME='state' VALUE='7'>\n
+<INPUT TYPE='HIDDEN' NAME='state' VALUE='8'>\n
 <INPUT TYPE='HIDDEN' NAME='site' VALUE='$site_id'>\n
 <INPUT TYPE='HIDDEN' NAME='iuser' VALUE='$installer->iuser'>\n
 <INPUT TYPE='HIDDEN' NAME='iuserpass' VALUE='$installer->iuserpass'>\n

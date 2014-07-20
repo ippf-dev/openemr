@@ -28,14 +28,19 @@ require_once('../../library/sql_upgrade_fx.php');
 require_once("../translation/english_to_english_definitions.php");
 require_once("../translation/translation_utilities.php");
 
-require_once("../translation/translation_utilities.php");
-
 $translation_files_directory=$GLOBALS['webserver_root']."/ippf/translation/data";
 $translation_file="english_to_english.csv";
 echo "<b>Loading translations from:</b>".$translation_file."<br>";
 verify_file("$translation_files_directory/english_to_english.csv",1);
 
-$patches=array('3_2_0-to-4_0_0_upgrade.sql','4_0_0-to-4_1_0_upgrade.sql','4_1_0-to-4_1_1_upgrade.sql','4_1_1-to-4_1_2_upgrade.sql',"4_1_2-to-4_1_3_upgrade.sql","3_2_0-to-3_3_0_upgrade.sql","ippf_merge_changes.sql");
+if($new_database_setup)
+{
+    $patches=array("3_2_0-to-3_3_0_upgrade.sql","ippf_merge_changes.sql");
+}
+ else {
+    $patches=array('3_2_0-to-4_0_0_upgrade.sql','4_0_0-to-4_1_0_upgrade.sql','4_1_0-to-4_1_1_upgrade.sql','4_1_1-to-4_1_2_upgrade.sql',"4_1_2-to-4_1_3_upgrade.sql","3_2_0-to-3_3_0_upgrade.sql","ippf_merge_changes.sql"); 
+}
+
 function applyUpgrade($string)
 {
     echo "<B>Applying:".$string."<BR></B>";
@@ -123,3 +128,6 @@ foreach($user_settings as $setting)
       }
     }
   }
+  ?>
+<font color='green'><b>All Settings successful</b></font>
+<a name='end'></a>
