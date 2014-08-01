@@ -2629,4 +2629,25 @@ function getListItemTitle($list, $option) {
   return xl_list_label($row['title']);
 }
 
+// Return the displayable value of a field given its form ID, field ID and value.
+// Note this is already escaped for HTML.
+//
+function gen_specified_display_field($form_id, $field_id, $value) {
+  $row = sqlQuery("SELECT * FROM layout_options WHERE " .
+    "form_id = ? AND field_id = ? " .
+    "ORDER BY group_name, seq LIMIT 1",
+    array($form_id, $field_id));
+  return generate_display_field($row, $value);
+}
+
+// Return a plaintext value of a field given its form ID, field ID and value.
+//
+function gen_specified_plaintext_field($form_id, $field_id, $value) {
+  $row = sqlQuery("SELECT * FROM layout_options WHERE " .
+    "form_id = ? AND field_id = ? " .
+    "ORDER BY group_name, seq LIMIT 1",
+    array($form_id, $field_id));
+  return generate_plaintext_field($row, $value);
+}
+
 ?>

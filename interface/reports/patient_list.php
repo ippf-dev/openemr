@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006-2012 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2014 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -277,7 +277,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     echo '"' . qescape($row['pubpid']) . '",';
     echo '"' . qescape($row['street']) . '",';
     echo '"' . qescape($row['city']) . '",';
-    echo '"' . qescape($row['state']) . '",';
+    echo '"' . qescape(gen_specified_plaintext_field('DEM', 'state', $row['state'])) . '",';
     echo '"' . qescape($row['postal_code']) . '",';
     echo '"' . qescape($row['phone_home']) . '",';
     echo '"' . qescape($row['phone_biz']) . '"' . "\n";
@@ -289,28 +289,28 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
    <?php echo oeFormatShortDate(substr($row['edate'], 0, 10)) ?>
   </td>
   <td>
-    <?php echo htmlspecialchars( $row['lname'] . ', ' . $row['fname'] . ' ' . $row['mname'] ) ?>
+    <?php echo text($row['lname'] . ', ' . $row['fname'] . ' ' . $row['mname']); ?>
   </td>
   <td>
-   <?php echo $row['pubpid'] ?>
+   <?php echo text($row['pubpid']); ?>
   </td>
   <td>
-   <?php echo $row['street'] ?>
+   <?php echo text($row['street']); ?>
   </td>
   <td>
-   <?php echo $row['city'] ?>
+   <?php echo text($row['city']); ?>
   </td>
   <td>
-   <?php echo $row['state'] ?>
+   <?php echo gen_specified_display_field('DEM', 'state', $row['state']); ?>
   </td>
   <td>
-   <?php echo $row['postal_code'] ?>
+   <?php echo text($row['postal_code']); ?>
   </td>
   <td>
-   <?php echo $row['phone_home'] ?>
+   <?php echo text($row['phone_home']); ?>
   </td>
   <td>
-   <?php echo $row['phone_biz'] ?>
+   <?php echo text($row['phone_biz']); ?>
   </td>
  </tr>
 <?php
