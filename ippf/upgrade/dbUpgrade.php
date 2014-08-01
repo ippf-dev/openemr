@@ -25,7 +25,6 @@ unset($_SESSION['authUserID']);
 require_once('../../interface/globals.php');
 require_once('../../library/sql.inc');
 require_once('../../library/sql_upgrade_fx.php');
-require_once("../translation/english_to_english_definitions.php");
 require_once("../translation/translation_utilities.php");
 
 $translation_files_directory=$GLOBALS['webserver_root']."/ippf/translation/data";
@@ -128,6 +127,20 @@ foreach($user_settings as $setting)
       }
     }
   }
+
+  echo "<font color='green'>Updating Access Controls...</font><br />\n";
+  require("../../acl_upgrade.php");
+  echo "<br />\n";
+
+  echo "<font color='green'>Updating version indicators...</font><br />\n";
+  sqlStatement("UPDATE version SET v_major = '$v_major', v_minor = '$v_minor', " .
+    "v_patch = '$v_patch', v_tag = '$v_tag', v_database = '$v_database'");
+  
+  echo "<span> Version $v_major.$v_minor.$v_patch$v_tag</span>";
+
+  echo "<p><font color='green'>Database and Access Control upgrade finished.</font></p>\n";
+
   ?>
+
 <font color='green'><b>All Settings successful</b></font>
 <a name='end'></a>
