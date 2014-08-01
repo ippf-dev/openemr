@@ -191,6 +191,7 @@
     "t.id, t.refer_date, t.refer_reply_date, t.reply_date, t.body, " .
     "ut.organization, uf.facility_id, p.pubpid, " .
     "CONCAT(uf.fname,' ', uf.lname) AS referer_name, " .
+    "CONCAT(ut.fname,' ', ut.lname) AS referto_name, " .
     "CONCAT(p.fname,' ', p.lname) AS patient_name " .
     "FROM transactions AS t " .
     "LEFT OUTER JOIN patient_data AS p ON p.pid = t.pid " .
@@ -221,7 +222,7 @@
    <?php echo $row['referer_name'] ?>
   </td>
   <td>
-   <?php echo $row['organization'] ?>
+   <?php echo text($row['referto_name'] . ' / ' . $row['organization']); ?>
   </td>
   <td>
    <a href='#' onclick="return show_referral(<?php echo $row['id']; ?>)">
