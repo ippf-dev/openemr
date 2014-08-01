@@ -12,8 +12,6 @@ ADD COLUMN `procedure_type_id` BIGINT(20) NOT NULL COMMENT "references procedure
 #EndIf
 
 
-UPDATE list_options SET title = 'User Defined List 2' WHERE list_id = 'lists' AND option_id = 'userlist2';
-
 #IfMissingColumn procedure_result procedure_type_id
 ALTER TABLE `procedure_result` 
 ADD COLUMN `procedure_type_id` BIGINT(20) NOT NULL COMMENT "references procedure_type.procedure_type_id";
