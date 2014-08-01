@@ -53,9 +53,7 @@
         first.after(demo);
         first.hide();
         var demo_all=create_link("report","../patient_file/summary/demographics_print.php?isform=1","<?php echo xlt("Demographics (All Values)");?>");
-        var patient=create_link("report","../patient_file/summary/demographics_print.php?patientid=-1&isform=0","<?php echo xlt('Patient'); ?>");
         demo.after(demo_all);
-        demo_all.after(patient);
     }
     function remove_records_menu()
     {

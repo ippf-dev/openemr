@@ -1388,7 +1388,6 @@ if (!empty($reg)) {
         <ul>
           <?php genMiscLink('RTop','rep','0',xl('Sales'),'reports/sales_by_item.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Cash Rec'), 'billing/sl_receipts_report.php'); ?>
-          <?php genMiscLink('RTop','rep','0',xl('Rec by Cashier'), 'reports/cash_receipts_by_cashier.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Svcs by Prov'), 'reports/services_by_provider.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Front Rec'), 'reports/front_receipts_report.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Rec Summary'), 'reports/receipts_by_method_report.php'); ?>
