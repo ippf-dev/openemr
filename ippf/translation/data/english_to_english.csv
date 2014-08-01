@@ -68,6 +68,7 @@ Patient Transactions,Referrals and Other Transactions
 Patient/Client,Client
 Patients,Client List
 PID,Client ID (assign by the system)
+Practitioner,Service Provider
 Prepay,Payments
 Procedures,Diagnostic Labs & Orders
 Provider,Service Provider
