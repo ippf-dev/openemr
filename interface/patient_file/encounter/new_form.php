@@ -141,13 +141,19 @@ include_once("$srcdir/registry.inc");
 
 function myGetRegistered($state="1", $limit="unlimited", $offset="0") {
   $sql = "SELECT category, nickname, name, state, directory, id, sql_run, " .
-    "unpackaged, date FROM registry WHERE " .
+    "unpackaged, date, priority FROM registry WHERE " .
     "state LIKE \"$state\" ORDER BY category, priority, name";
   if ($limit != "unlimited") $sql .= " limit $limit, $offset";
   $res = sqlStatement($sql);
   if ($res) {
     for($iter=0; $row=sqlFetchArray($res); $iter++) {
-      $all[$iter] = $row;
+      // Skip fee_sheet from list of registered forms, since redundant with Direct Link Provided
+      if($row['directory']!='fee_sheet')
+      {
+          // Flag this entry as not LBF
+          $row['LBF']=false;
+          $all[$iter] = $row;      
+      }
     }
   }
   else {
@@ -156,7 +162,54 @@ function myGetRegistered($state="1", $limit="unlimited", $offset="0") {
   return $all;
 }
 
+function addLBFToRegistry(&$reg)
+{
+    // Merge any LBF entries into the registry array of forms.
+    // Note that the mapping value is used as the category name.
+    //
+    $lres = sqlStatement("SELECT * FROM list_options " .
+    "WHERE list_id = 'lbfnames' ORDER BY mapping, seq, title");
+    if (sqlNumRows($lres)) {
+        while ($lrow = sqlFetchArray($lres)) {
+            $rrow = array();
+            $rrow['category'] = $lrow['mapping'] ? $lrow['mapping'] : 'Clinical';
+            $rrow['name'] = $lrow['title'];
+            $rrow['nickname'] = $lrow['title'];
+            $rrow['directory'] = $lrow['option_id']; // should start with LBF
+            $rrow['priority'] = $lrow['seq'];
+            $rrow['LBF']=true; // Flag this form as LBF so we can prioritze 
+            $reg[] = $rrow;
+        }
+    }
+    // Sort by category.
+    usort($reg, 'cmp_forms');
+
+}
+// usort comparison function for $reg table.
+function cmp_forms($a, $b) {
+if ($a['category'] == $b['category']) {
+    if ($a['priority'] == $b['priority']) {
+        if($a['LBF']==$b['LBF'])
+        {
+            $name1 = $a['nickname'] ? $a['nickname'] : $a['name'];
+            $name2 = $b['nickname'] ? $b['nickname'] : $b['name'];
+            if ($name1 == $name2) return 0;
+            return $name1 < $name2 ? -1 : 1;        
+        }
+        else
+        {
+            // Sort LBF with the same priority after standard forms
+            return $b['LBF'] ? -1 : 1;
+        }
+}
+return $a['priority'] < $b['priority'] ? -1 : 1;
+}
+return $a['category'] < $b['category'] ? -1 : 1;
+}
+
 $reg = myGetRegistered();
+addLBFToRegistry($reg);
+
 $old_category = '';
 
   $DivId=1;
@@ -213,28 +266,15 @@ if($StringEcho){
   </tr>
 </table>-->
 <?php
-//$StringEcho='';
-// This shows Layout Based Form names just like the above.
-//
 if ( $encounterLocked === false ) {
-    $lres = sqlStatement("SELECT * FROM list_options " .
-      "WHERE list_id = 'lbfnames' ORDER BY seq, title");
-    if (sqlNumRows($lres)) {
       if(!$StringEcho){
         $StringEcho= '<ul id="sddm">';
       }
-      $StringEcho.= "<li class=\"encounter-form-category-li\"><a href='JavaScript:void(0);' onClick=\"mopen('lbf');\" >".xl('Layout Based') ."</a><div id='lbf' ><table border='0'  cellspacing='0' cellpadding='0'>";
-      while ($lrow = sqlFetchArray($lres)) {
-      $option_id = $lrow['option_id']; // should start with LBF
-      $title = $lrow['title'];
-      $StringEcho.= "<tr><td style='border-top: 1px solid #000000;padding:0px;'><a href='" . $rootdir .'/patient_file/encounter/load_form.php?formname=' 
-    				.urlencode($option_id) ."' >" . xl_form_title($title) . "</a></td></tr>";
-      }
-    }
-}
+
 $fee_sheet_link="<li><a href='#' onclick='gotoFee_sheet()'>".xlt("Fee Sheet")."</a></li>";
 if($StringEcho){
-  $StringEcho.= "</table></div></li>".$fee_sheet_link."</ul>".$StringEcho2;
+  $StringEcho.= $fee_sheet_link."</ul>".$StringEcho2;
+}
 }
 ?>
 <script>
@@ -242,7 +282,7 @@ if($StringEcho){
     {
         var istop = parent.window.name == 'RTop';
         parent.parent.left_nav.forceSpec(istop, !istop);        
-        top.left_nav.loadFrame2('cod2',parent.window.name,'patient_file/encounter/load_form.php?formname=fee_sheet');
+        openNewForm('<?php echo $GLOBALS['webroot'];?>/interface/patient_file/encounter/load_form.php?formname=fee_sheet');
     }
 </script>
 <table cellspacing="0" cellpadding="0" align="center">
