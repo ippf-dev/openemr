@@ -83,6 +83,8 @@ foreach($dem_fields_to_disable as $field)
 $global_settings = array("css_header"=>"style_metal.css",
                 'gbl_min_max_months'=>'1',
                 'concurrent_layout'=>'3',
+                'esign_individual'=>'0',
+                'lock_esign_individual'=>'0'
                 );
 
 function verify_global_settings($setting,$value)
