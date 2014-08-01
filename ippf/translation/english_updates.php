@@ -19,10 +19,12 @@
     require_once("../../interface/globals.php");
     ini_set("display_errors","1");   
     require_once("translation_utilities.php");
-    require_once("english_to_english_definitions.php")
 ?>
 Translation Tool
 <br>
 <?php 
-    verify_translations($definitions,1);
+    $translation_files_directory=$GLOBALS['webserver_root']."/ippf/translation/data";
+    $translation_file="english_to_english.csv";
+    echo "<b>Loading translations from:</b>".$translation_file."<br>";
+    verify_file("$translation_files_directory/english_to_english.csv",1);
 ?>

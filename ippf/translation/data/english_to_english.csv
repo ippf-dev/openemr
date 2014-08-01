@@ -84,6 +84,7 @@ Select Patient by Last,Select Client by Last
 Sensitivity,Risk
 SSN,National ID
 Superbill,Tally Sheet
+Superbill/Fee Sheet,Tally Sheet
 This Encounter,This Visit
 Transact,Referrals
 Transactions{{Patient}},Referrals
