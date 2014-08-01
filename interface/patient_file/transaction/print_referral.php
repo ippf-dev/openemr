@@ -23,6 +23,7 @@ $template_file = $GLOBALS['OE_SITE_DIR'] . "/referral_template.html";
 
 $TEMPLATE_LABELS = array(
   'label_clinic_id'             => htmlspecialchars( xl('Clinic ID')),
+  'label_client_id'             => htmlspecialchars( xl('Client ID')),
   'label_control_no'            => htmlspecialchars( xl('Control No.')),
   'label_date'                  => htmlspecialchars( xl('Date')),
   'label_webpage_title'         => htmlspecialchars( xl('Referral Form')),
