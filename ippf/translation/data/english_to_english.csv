@@ -28,6 +28,7 @@ Encounter Forms to Include in this Report:,Visit Forms to include in this Report
 Encounter History,Visit History
 Encounters,Visits
 Encounters Report,Visits Report
+Encounter Summary,Visit Summary
 Export,Export to XML
 Facility,Clinic
 Facility:,Clinic:
@@ -81,6 +82,7 @@ Save Patient Demographic,Save Demographic Client  Data
 Search or Add Patient ,Search or Add Client
 Select Patient,Select Client
 Select Patient by Last,Select Client by Last
+Selected Encounter,Selected Visit
 Sensitivity,Risk
 SSN,National ID
 Superbill,Tally Sheet
