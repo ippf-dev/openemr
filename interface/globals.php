@@ -189,9 +189,11 @@ $GLOBALS['sell_non_drug_products'] = 0;
 $glrow = sqlQuery("SHOW TABLES LIKE 'globals'");
 if (!empty($glrow)) {
   // Collect user specific settings from user_settings table.
+  // Don't do this at upgrade time  ($ignoreAuth == true) because the table
+  // may not exist and because the current user is not applicable anyway.
   //
   $gl_user = array();
-  if (!empty($_SESSION['authUserID'])) {
+  if (empty($ignoreAuth) && !empty($_SESSION['authUserID'])) {
     $glres_user = sqlStatement("SELECT `setting_label`, `setting_value` " .
       "FROM `user_settings` " .
       "WHERE `setting_user` = ? " .
