@@ -16,13 +16,16 @@ require_once("$srcdir/formatting.inc.php");
 $thisauth = acl_check('admin', 'drugs');
 if (!$thisauth) die(xl('Not authorized'));
 
+$form_inactive = empty($_REQUEST['form_inactive']) ? 0 : 1;
+
 $mmtype = $GLOBALS['gbl_min_max_months'] ? xl('Months') : xl('Units');
 
 // Query for the main loop.
 $query = "SELECT d.*, dt.selector, dt.period, dt.quantity, dt.refills " .
   "FROM drugs AS d " .
-  "LEFT JOIN drug_templates AS dt ON dt.drug_id = d.drug_id " .
-  "ORDER BY d.name, d.drug_id, dt.selector";
+  "LEFT JOIN drug_templates AS dt ON dt.drug_id = d.drug_id ";
+if (empty($form_inactive)) $query .= "WHERE d.active = 1 ";
+$query .= "ORDER BY d.name, d.drug_id, dt.selector";
 $res = sqlStatement($query);
 ?>
 <html>
@@ -53,6 +56,8 @@ tr.detail { font-size:10pt; }
    <?php xl('Inventory Price List','e'); ?>
   </td>
   <td class='text' align='right'>
+   <input type='checkbox' name='form_inactive' value='1'<?php if ($form_inactive) echo " checked"; ?>
+   /><?php xl('Include Inactive','e'); ?>&nbsp;
    <input type="submit" value="<?php xl('Refresh','e'); ?>" />&nbsp;
    <input type="button" value="<?php xl('Print','e'); ?>" onclick="window.print()" />
   </td>
