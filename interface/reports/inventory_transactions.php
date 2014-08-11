@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2014 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -33,18 +33,22 @@ function esc4Export($str) {
 function thisLineItem($row, $xfer=false) {
   global $grandtotal, $grandqty, $encount, $form_action;
 
+  $patient_id   = $row['pid'];
+  $encounter_id = $row['encounter'];
   $invnumber = '';
   $dpname = '';
 
-  if (!empty($row['pid'])) {
+  if (!empty($patient_id)) {
     $ttype = xl('Sale');
+    // Patient name display was removed in favor of invoice number, but leave
+    // the logic here in case someone wants it again.
     $dpname = $row['plname'];
     if (!empty($row['pfname'])) {
       $dpname .= ', ' . $row['pfname'];
       if (!empty($row['pmname'])) $dpname .= ' ' . $row['pmname'];
     }
     $invnumber = empty($row['invoice_refno']) ?
-      "{$row['pid']}.{$row['encounter']}" : $row['invoice_refno'];
+      "$patient_id.$encounter_id" : $row['invoice_refno'];
   }
   else if (!empty($row['distributor_id'])) {
     $ttype = xl('Distribution');
@@ -75,7 +79,7 @@ function thisLineItem($row, $xfer=false) {
     echo '"' . esc4Export($row['name'])             . '",';
     echo '"' . esc4Export($row['lot_number'])       . '",';
     echo '"' . esc4Export($row['warehouse'])        . '",';
-    echo '"' . esc4Export($dpname)                  . '",';
+    echo '"' . esc4Export($invnumber)               . '",';
     echo '"' . (0 - $row['quantity'])               . '",';
     echo '"' . bucks($row['fee'])                   . '",';
     echo '"' . $row['billed']                       . '",';
@@ -101,9 +105,15 @@ function thisLineItem($row, $xfer=false) {
   <td class="detail">
    <?php echo htmlspecialchars($row['warehouse']); ?>
   </td>
-  <td class="detail">
-   <?php echo htmlspecialchars($dpname); ?>
-  </td>
+<?php
+  if ($patient_id) {
+    echo "  <td class='delink' onclick='doinvopen($patient_id,$encounter_id)'>\n";
+  }
+  else {
+    echo "  <td class='detail'>\n";
+  }
+  echo "   " . text($invnumber) . "\n  </td>\n";
+?>
   <td class="detail" align="right">
    <?php echo htmlspecialchars(0 - $row['quantity']); ?>
   </td>
@@ -160,7 +170,7 @@ if ($form_action == 'export') {
   echo '"' . xl('Product'    ) . '",';
   echo '"' . xl('Lot'        ) . '",';
   echo '"' . xl('Warehouse'  ) . '",';
-  echo '"' . xl('Who'        ) . '",';
+  echo '"' . xl('Invoice'    ) . '",';
   echo '"' . xl('Qty'        ) . '",';
   echo '"' . xl('Amount'     ) . '",';
   echo '"' . xl('Billed'     ) . '",';
@@ -188,20 +198,28 @@ else {
  body       { font-family:sans-serif; font-size:10pt; font-weight:normal }
  .dehead    { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:bold }
  .detail    { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:normal }
+ .delink    { color:#0000cc; font-family:sans-serif; font-size:10pt; font-weight:normal; cursor:pointer }
 </style>
 
 <style type="text/css">@import url(../../library/dynarch_calendar.css);</style>
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
+<script type="text/javascript" src="../../library/dialog.js"></script>
 
 <script language='JavaScript'>
+
  function mysubmit(action) {
   var f = document.forms[0];
   f.form_action.value = action;
   top.restoreSession();
   f.submit();
  }
+
+ function doinvopen(ptid,encid) {
+  dlgopen('../patient_file/pos_checkout.php?ptid=' + ptid + '&enc=' + encid, '_blank', 750, 550);
+ }
+
 </script>
 
 </head>
@@ -314,7 +332,7 @@ foreach (array(
    <?php echo htmlspecialchars(xl('Warehouse'), ENT_NOQUOTES); ?>
   </td>
   <td class="dehead">
-   <?php echo htmlspecialchars(xl('Who'), ENT_NOQUOTES); ?>
+   <?php echo htmlspecialchars(xl('Invoice'), ENT_NOQUOTES); ?>
   </td>
   <td class="dehead" align="right">
    <?php echo htmlspecialchars(xl('Qty'), ENT_NOQUOTES); ?>
