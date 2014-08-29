@@ -39,10 +39,6 @@ if ( !defined('ADODB_DIR') ) {
 	define('ADODB_DIR', dirname(__FILE__).'/adodb');
 }
 
-//openemr configuration file - bm - 05-2009
-// to collect sql database login info and the utf8 flag
-include_once(dirname(__FILE__).'/../library/sqlconf.php');
-
 /**
 * phpGACL main class
 *
@@ -145,7 +141,11 @@ class gacl {
 		}
 
                 //collect openemr sql info from include at top of script - bm 05-2009
-                global $sqlconf, $disable_utf8_flag;
+                //
+                // Modified to be more straightforward with respect to what's included and when;
+                // without this change acl_check for phpmyadmin was failing. -- Rod 2014-08-29
+                //
+                require($GLOBALS['OE_SITE_DIR'] . "/sqlconf.php");
                 $this->_db_host = $sqlconf["host"].":".$sqlconf["port"];
                 $this->_db_user = $sqlconf["login"];
                 $this->_db_password = $sqlconf["pass"];
