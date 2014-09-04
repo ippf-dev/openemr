@@ -353,6 +353,10 @@ if ($form_step == 101) {
   echo "</td><td valign='top'>\n";
   echo "<b>" . xlt('Layouts') . "</b><br />\n";
   echo "<select multiple name='form_sel_layouts[]' size='15'>";
+  echo "<option value='DEM'   >" . xlt('Demographics'          ) . "</option>\n";
+  echo "<option value='HIS'   >" . xlt('History'               ) . "</option>\n";
+  echo "<option value='REF'   >" . xlt('Referrals'             ) . "</option>\n";
+  echo "<option value='FACUSR'>" . xlt('Facility User Settings') . "</option>\n";
   $lres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
     "list_id = 'lbfnames' ORDER BY title, seq");
   while ($lrow = sqlFetchArray($lres)) {
