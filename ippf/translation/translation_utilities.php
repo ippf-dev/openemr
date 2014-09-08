@@ -46,7 +46,7 @@ function find_or_create_constant($constant)
         if($row_count==0)
         {
             $sqlInsert = " INSERT INTO lang_constants (constant_name) VALUES (?)";
-            $new_index=sqlInsert($sqlInsert,$constant);
+            $new_index=sqlInsert($sqlInsert,array($constant));
             return $new_index;
         }
     }
@@ -72,6 +72,10 @@ function update_metainfo($constant,$definition,$source,$set_source=false)
 }
 function verify_translation($constant,$definition,$language,$replace=true,$source="",$set_metainfo=false)
 {
+    if(empty($constant) || empty($definition))
+    {
+        return;
+    }
     $cons_id=find_or_create_constant($constant);
     $whereClause=" lang_id=? and cons_id=? ";
     $sqlFind = " SELECT def_id,definition FROM lang_definitions WHERE ".$whereClause;
@@ -135,13 +139,13 @@ function verify_translations($definitions,$language,$replace=true)
 }
 
 function utf8_fopen_read($fileName) {
-    $fc = iconv('utf-8', 'utf-8', file_get_contents($fileName));
+    $fc = iconv('UTF-8', 'UTF-8', file_get_contents($fileName));
     $handle=fopen("php://memory", "rw");
     fwrite($handle, $fc);
     fseek($handle, 0);
     return $handle;
 } 
-function verify_file($filename,$language,$replace=true,$source_name='')
+function verify_file($filename,$language,$replace=true,$source_name='',$constant_colummn=0,$definition_column=1)
 {
     if (($handle = utf8_fopen_read("$filename")) !== FALSE) {
     $first=true;
@@ -149,8 +153,8 @@ function verify_file($filename,$language,$replace=true,$source_name='')
         $num = count($data);
         if($num>=2)
         {
-            $constant=$data[0];
-            $definition=$data[1];
+            $constant=$data[$constant_colummn];
+            $definition=$data[$definition_column];
             if(!$first ||$constant!='constant_name')
             {
                 $result=verify_translation($constant,$definition,$language,$replace,$source_name);
