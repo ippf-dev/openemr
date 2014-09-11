@@ -56,6 +56,7 @@ Past Encounters and Documents,Past Visits and Documents
 Patient,Client
 Patient Appointment,Client Appointment
 Patient Data,Client Data
+Patient Encounter,Client Encounter
 Patient Encounter Form,Client Visit Form
 Patient ID,Client ID
 Patient Instructions,Client Instructions
