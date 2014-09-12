@@ -737,37 +737,34 @@ if ($_POST['form_action'] == "save") {
  else {
     // a NEW event
     $eventstartdate = $date; // for repeating event stuff - JRM Oct-08
- 
-    //-------------------------------------
-    //(CHEMED)
-    //Set default facility for a new event based on the given 'userid'
+    // Set default facility for a new event.
     if ($userid) {
-        /*************************************************************
-        $pref_facility = sqlFetchArray(sqlStatement("SELECT facility_id, facility FROM users WHERE id = $userid"));
-        *************************************************************/
-        if ($_SESSION['pc_facility']) {
-	        $pref_facility = sqlFetchArray(sqlStatement("
-		        SELECT f.id as facility_id,
-		        f.name as facility
-		        FROM facility f
-		        WHERE f.id = ?
-	          ",
-		        array($_SESSION['pc_facility'])
-	          ));	
-        } else {
-          $pref_facility = sqlFetchArray(sqlStatement("
-            SELECT u.facility_id, 
-	          f.name as facility 
-            FROM users u
-            LEFT JOIN facility f on (u.facility_id = f.id)
-            WHERE u.id = ?
-            ", array($userid) ));
-        }
-        /************************************************************/
-        $e2f = $pref_facility['facility_id'];
-        $e2f_name = $pref_facility['facility'];
+      $pref_facility = sqlQuery("
+        SELECT u.facility_id, 
+        f.name as facility 
+        FROM users u
+        LEFT JOIN facility f on (u.facility_id = f.id)
+        WHERE u.id = ?
+        ", array($userid));
     }
-    //END of CHEMED -----------------------
+    else if ($_SESSION['pc_facility']) {
+      $pref_facility = sqlQuery("
+        SELECT f.id as facility_id,
+        f.name as facility
+        FROM facility f
+        WHERE f.id = ?
+        ",
+        array($_SESSION['pc_facility']));	
+    }
+    else {
+      $pref_facility = sqlQuery("SELECT u.facility_id, f.name as facility " .
+        "FROM users AS u " .
+        "LEFT JOIN facility AS f on u.facility_id = f.id " .
+        "WHERE u.id = ?",
+        array($_SESSION['authUserID']));
+    }
+    $e2f = $pref_facility['facility_id'];
+    $e2f_name = $pref_facility['facility'];
  }
 
  // If we have a patient ID, get the name and phone numbers to display.
@@ -1177,36 +1174,13 @@ $classpati='';
       <select name="facility" id="facility" >
       <?php
 
-      // ===========================
-      // EVENTS TO FACILITIES
-      //(CHEMED) added service_location WHERE clause
-      // get the facilities
-      /***************************************************************
-      $qsql = sqlStatement("SELECT * FROM facility WHERE service_location != 0");
-      ***************************************************************/
       $facils = getUserFacilities($_SESSION['authId']);
       $qsql = sqlStatement("SELECT id, name FROM facility WHERE service_location != 0");
-      /**************************************************************/
       while ($facrow = sqlFetchArray($qsql)) {
-        /*************************************************************
-        $selected = ( $facrow['id'] == $e2f ) ? 'selected="selected"' : '' ;
-        echo "<option value={$facrow['id']} $selected>{$facrow['name']}</option>";
-        *************************************************************/
-        if ($_SESSION['authorizedUser'] || in_array($facrow, $facils)) {
-          $selected = ( $facrow['id'] == $e2f ) ? 'selected="selected"' : '' ;
-          echo "<option value='" . attr($facrow['id']) . "' $selected>" . text($facrow['name']) . "</option>";
-        }
-        else{
-		$selected = ( $facrow['id'] == $e2f ) ? 'selected="selected"' : '' ;
-         echo "<option value='" . attr($facrow['id']) . "' $selected>" . text($facrow['name']) . "</option>";
-        }
-        /************************************************************/
+        $selected = ($facrow['id'] == $e2f) ? 'selected="selected"' : '';
+        echo "<option value='" . attr($facrow['id']) . "' $selected>" . text($facrow['name']) . "</option>";
       }
-      // EOS E2F
-      // ===========================
       ?>
-      <?php
-      //END (CHEMED) IF ?>
       </td>
       </select>
     </tr>
