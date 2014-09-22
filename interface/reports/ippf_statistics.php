@@ -541,7 +541,7 @@ function accumClinicPeriod($key, $row, $quantity, $clikey, $perkey) {
   needClinicArray($key, $clikey);
 
   // Increment the correct sex category.
-  if (strcasecmp($row['sex'], 'Male') == 0)
+  if (strtoupper(substr($row['sex'], 0, 1)) == 'M')
     $areport[$key]['.dtl'][$clikey][$perkey]['.men'] += $quantity;
   else
     $areport[$key]['.dtl'][$clikey][$perkey]['.wom'] += $quantity;
@@ -1671,9 +1671,9 @@ if ($_POST['form_submit']) {
     }
 
     $sexcond = '';
-    if ($form_sexes == '1') $sexcond = "AND pd.sex LIKE 'Female' ";
-    else if ($form_sexes == '2') $sexcond = "AND pd.sex LIKE 'Male' ";
-    else if ($form_sexes == '3') $sexcond = "AND pd.sex NOT LIKE 'Male' AND pd.sex NOT LIKE 'Female' ";
+    if ($form_sexes == '1') $sexcond = "AND pd.sex LIKE 'F%' ";
+    else if ($form_sexes == '2') $sexcond = "AND pd.sex LIKE 'M%' ";
+    else if ($form_sexes == '3') $sexcond = "AND pd.sex NOT LIKE 'M%' AND pd.sex NOT LIKE 'F%' ";
 
     if ($form_by == '105' && $form_content != 5 && $form_content != 3 && $form_content != 6) {
       $alertmsg = xl("Contraceptive Products report requires Contraceptive Items Provided or New Acceptors content type.");
