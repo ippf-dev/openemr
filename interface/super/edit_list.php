@@ -925,20 +925,20 @@ while ($row = sqlFetchArray($res)) {
   <td><b><?php xl('Facility','e'); ?></b></td>
 <?php } else if ($list_id == 'lbfnames') { ?>
   <td title='<?php xl('Number of past history columns','e'); ?>'><b><?php xl('Repeats','e'); ?></b></td>
+<?php } else if ($list_id == 'abook_type') { ?>
+  <td><b><?php xl('Type','e'); ?></b></td>
+<?php } else if ($list_id == 'immunizations') { ?>
+  <td><b>&nbsp;&nbsp;&nbsp;&nbsp;<?php xl('CVX Code Mapping','e'); ?></b></td>
 <?php } ?>
 <?php if ($list_id == 'lbfnames') { ?>
   <td><b><?php xl('Category','e'); ?></b></td>  
 <?php } else if ($list_id == 'fitness') { ?>
   <td><b><?php xl('Color:Abbr','e'); ?></b></td>
-
-<?php } else if ($list_id == 'abook_type') { ?>
-  <td><b><?php xl('Type','e'); ?></b></td>
-<?php } else if ($list_id == 'immunizations') { ?>
-  <td><b>&nbsp;&nbsp;&nbsp;&nbsp;<?php xl('CVX Code Mapping','e'); ?></b></td>
 <?php } else if ($GLOBALS['ippf_specific']) { ?>
 <td><b><?php xl('Global ID','e'); ?></b></td>
 <?php } ?>
 <td><b><?php xl('Notes','e'); ?></b></td>        
+<td><b><?php xl('Code(s)','e'); ?></b></td>
 <?php } // end not feesheet nor code_types ?>
  </tr>
 
