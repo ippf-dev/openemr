@@ -231,8 +231,16 @@ function validate(f) {
  if ( errMsgs.length > 0 ) {
 	alert(msg);
  }
- 
-//Patient Data validations
+
+ // DOB validation. Must not be later than today or before 1900.
+ if (f.form_DOB && f.form_DOB.value != '') {
+  if (f.form_DOB.value > '<?php echo date('Y-m-d') ?>' || f.form_DOB.value < '1900-01-01') {
+   alert('<?php echo xls('Birth date must not be in the future or before 1900'); ?>');
+   return false;
+  }
+ }
+
+ //Patient Data validations
  <?php if($GLOBALS['erx_enable']){ ?>
  alertMsg='';
  for(i=0;i<f.length;i++){
@@ -261,8 +269,8 @@ function validate(f) {
  }
  <?php } ?>
  //return false;
- 
-// Some insurance validation.
+
+ // Some insurance validation.
  for (var i = 1; i <= 3; ++i) {
   subprov = 'i' + i + 'provider';
   if (!f[subprov] || f[subprov].selectedIndex <= 0) continue;

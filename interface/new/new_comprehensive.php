@@ -252,6 +252,13 @@ function trimlen(s) {
 function validate(f) {
   var errMsgs = new Array();
   <?php generate_layout_validation('DEM'); ?>
+  // DOB validation. Must not be later than today or before 1900.
+  if (f.form_DOB && f.form_DOB.value != '') {
+    if (f.form_DOB.value > '<?php echo date('Y-m-d') ?>' || f.form_DOB.value < '1900-01-01') {
+      alert('<?php echo xls('Birth date must not be in the future or before 1900'); ?>');
+      return false;
+    }
+  }
   <?php if($GLOBALS['erx_enable']){ ?>
   alertMsg='';
   for(i=0;i<f.length;i++){
