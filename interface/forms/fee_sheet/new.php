@@ -1668,9 +1668,23 @@ if ($_POST['prod']) {
 
 // If new billing code(s) were <select>ed, add their line(s) here.
 //
-if ($_POST['newcodes']) {
+if ($_POST['newcodes'] && !$alertmsg) {
   $arrcodes = explode('~', $_POST['newcodes']);
+
+  // A first pass here checks for any sex restriction errors.
   foreach ($arrcodes as $codestring) {
+    if ($codestring === '') continue;
+    list($newtype, $newcode) = explode('|', $codestring);
+    if ($newtype == 'MA') {
+      $tmp = sqlQuery("SELECT sex FROM codes WHERE code_type = ? AND code = ? LIMIT 1",
+        array($code_types[$newtype]['id'], $newcode));
+      if ($tmp['sex'] == '1' && $patient_male || $tmp['sex'] == '2' && !$patient_male) {
+        $alertmsg = xl('Service is not compatible with the sex of this client.');
+      }
+    }
+  }
+
+  if (!$alertmsg) foreach ($arrcodes as $codestring) {
     if ($codestring === '') continue;
     $arrcode = explode('|', $codestring);
     $newtype = $arrcode[0];

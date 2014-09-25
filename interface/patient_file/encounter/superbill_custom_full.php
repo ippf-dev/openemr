@@ -48,6 +48,7 @@ if (isset($mode)) {
   $superbill  = $_POST['form_superbill'];
   $related_code = $_POST['related_code'];
   $cyp_factor = $_POST['cyp_factor'] + 0;
+  $sex        = empty($_POST['sex']) ? 4 : ($_POST['sex'] + 0);
   $active     = empty($_POST['active']) ? 0 : 1;
   $reportable = empty($_POST['reportable']) ? 0 : 1; // dx reporting
   $financial_reporting = empty($_POST['financial_reporting']) ? 0 : 1; // financial service reporting
@@ -84,6 +85,7 @@ if (isset($mode)) {
         "superbill = '"    . ffescape($superbill)    . "', " .
         "related_code = '" . ffescape($related_code) . "', " .
         "cyp_factor = '"   . ffescape($cyp_factor)   . "', " .
+        "sex = '"          . ffescape($sex)          . "', " .
         "taxrates = '"     . ffescape($taxrates)     . "', " .
         "active = "        . add_escape_custom($active) . ", " .
         "financial_reporting = " . add_escape_custom($financial_reporting) . ", " .
@@ -113,6 +115,7 @@ if (isset($mode)) {
         $code_id = 0;
         $related_code = '';
         $cyp_factor = 0;
+        $sex = 4;
         $taxrates = '';
         $active = 1;
         $reportable = 0;
@@ -132,6 +135,7 @@ if (isset($mode)) {
       $superbill    = $row['superbill'];
       $related_code = $row['related_code'];
       $cyp_factor   = $row['cyp_factor'];
+      $sex          = $row['sex'];
       $taxrates     = $row['taxrates'];
       $active       = 0 + $row['active'];
       $reportable   = 0 + $row['reportable'];
@@ -154,6 +158,7 @@ if (isset($mode)) {
       $superbill    = $row['superbill'];
       $related_code = $row['related_code'];
       $cyp_factor   = $row['cyp_factor'];
+      $sex          = $row['sex'];
       $taxrates     = $row['taxrates'];
       $active       = $row['active'];
       $reportable   = $row['reportable'];
@@ -381,9 +386,11 @@ function code_type_changed() {
  var showConsult = false;
  var showMethod  = false;
  var showCYP     = false;
+ var showSex     = false;
 <?php if ($GLOBALS['ippf_specific']) { ?>
  if (type == '12')      { // MA
   showConsult = true;
+  showSex     = true;
  }
  else if (type == '32') { // IPPFCM
   showMethod  = true;
@@ -396,6 +403,7 @@ function code_type_changed() {
  document.getElementById('id_cyp_factor').style.display      = showCYP     ? '' : 'none';
  document.getElementById('id_initial_consult').style.display = showConsult ? '' : 'none';
  document.getElementById('id_code_text_short').style.display = showMethod  ? '' : 'none';
+ document.getElementById('id_sex').style.display             = showSex     ? '' : 'none';
  f.code_text_short.disabled = !showMethod;
  f.initial_consult_used.value = showConsult ? '1' : '0';
 }
@@ -538,6 +546,20 @@ generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'sup
   <td></td>
   <td colspan='2'>
    <input type='text' size='10' maxlength='20' name="cyp_factor" value='<?php echo $cyp_factor ?>'>
+  </td>
+ </tr>
+
+ <tr id='id_sex'>
+  <td><?php echo xlt('Sex Specific'); ?>:</td>
+  <td></td>
+  <td colspan='2'>
+<?php
+  foreach (array(4 => xl('All'), 1 => xl('Women Only'), 2 => xl('Men Only')) as $key => $value) {
+    echo "   <input type='radio' name='sex' value='$key'";
+    if ($key == $sex) echo " checked";
+    echo " />$value&nbsp;";
+  }
+?>
   </td>
  </tr>
 

@@ -528,6 +528,7 @@ CREATE TABLE `codes` (
   `active` TINYINT(1) DEFAULT 1 COMMENT '0 = inactive, 1 = active',
   `reportable` TINYINT(1) DEFAULT 0 COMMENT '0 = non-reportable, 1 = reportable',
   `financial_reporting` TINYINT(1) DEFAULT 0 COMMENT '0 = negative, 1 = considered important code in financial reporting',
+  `sex` TINYINT(1) DEFAULT 4 COMMENT '4 = All, 1 = Women Only, 2 = Men Only, 3 = Other Only',
   PRIMARY KEY  (`id`),
   KEY `code` (`code`),
   KEY `code_type` (`code_type`)

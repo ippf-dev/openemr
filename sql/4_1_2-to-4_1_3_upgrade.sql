@@ -171,3 +171,7 @@ ALTER TABLE `layout_options` ADD COLUMN `source` char(1) NOT NULL default 'F'
   COMMENT 'F=Form, D=Demographics, H=History, E=Encounter';
 #EndIf
 
+#IfMissingColumn codes sex
+ALTER TABLE `codes` ADD COLUMN
+  `sex` TINYINT(1) DEFAULT 4 COMMENT '4 = All, 1 = Women Only, 2 = Men Only, 3 = Other Only';
+#EndIf
