@@ -16,7 +16,7 @@
 // Called to recompute displayed age dynamically when the corresponding date is
 // changed. Must generate the same age formats as the oeFormatAge() function.
 //
-function updateAgeString(fieldid, asof, format) {
+function updateAgeString(fieldid, asof, format, description) {
   var datefld = document.getElementById('form_' + fieldid);
   var f = datefld.form;
   var age = '';
@@ -28,7 +28,8 @@ function updateAgeString(fieldid, asof, format) {
     var days  = Math.round(msecs / (24 * 60 * 60 * 1000));
     var weeks = Math.floor(days / 7);
     days = days % 7;
-    age = '<?php echo xls('Gest age') ?> ' +
+    if (description == '') description = '<?php echo xls('Gest age') ?>';
+    age = description + ' ' +
       weeks + (weeks == 1 ? ' <?php echo xls('week') ?>' : ' <?php echo xls('weeks') ?>') + ' ' +
       days  + (days  == 1 ? ' <?php echo xls('day' ) ?>' : ' <?php echo xls('days' ) ?>');
   }
@@ -50,7 +51,8 @@ function updateAgeString(fieldid, asof, format) {
         age = age + ' ' + (ageInMonths == 1 ? '<?php echo xls('month') ?>' : '<?php echo xls('months') ?>'); 
       }
     }
-    if (age != '') age = '<?php echo xls('Age') ?> ' + age;
+    if (description == '') description = '<?php echo xls('Age') ?>';
+    if (age != '') age = description + ' ' + age;
   }
   document.getElementById('span_' + fieldid).innerHTML = age;
 }
