@@ -93,6 +93,9 @@ if (isset($mode)) {
       if (isset($_POST['code_text_short'])) {
         $sql .= ", code_text_short = '" . ffescape($_POST['code_text_short']) . "'";
       }      
+      else if (isset($_POST['contra_method'])) {
+        $sql .= ", code_text_short = '" . ffescape($_POST['contra_method']) . "'";
+      }      
       if ($code_id) {
         $query = "UPDATE codes SET $sql WHERE id = ?";
         sqlStatement($query, array($code_id) );
@@ -402,9 +405,11 @@ function code_type_changed() {
 <?php } ?>
  document.getElementById('id_cyp_factor').style.display      = showCYP     ? '' : 'none';
  document.getElementById('id_initial_consult').style.display = showConsult ? '' : 'none';
- document.getElementById('id_code_text_short').style.display = showMethod  ? '' : 'none';
+ document.getElementById('id_contra_method').style.display   = showMethod  ? '' : 'none';
+ document.getElementById('id_code_text_short').style.display = showMethod  ? 'none' : '';
  document.getElementById('id_sex').style.display             = showSex     ? '' : 'none';
- f.code_text_short.disabled = !showMethod;
+ f.contra_method.disabled = !showMethod;
+ f.code_text_short.disabled = showMethod;
  f.initial_consult_used.value = showConsult ? '1' : '0';
 }
 
@@ -498,13 +503,11 @@ function code_type_changed() {
   <td><?php echo xlt('Description'); ?>:</td>
   <td></td>
   <td>
-
    <?php if ($mode == "modify") { ?>
      <input type='text' size='60'  maxlength='255' name="code_text" readonly="readonly" value='<?php echo attr($code_text) ?>'>
    <?php } else { ?>
      <input type='text' size='60'  maxlength='255' name="code_text" value='<?php echo attr($code_text) ?>'>
    <?php } ?>
-
   </td>
   <td id='id_initial_consult'>
    <input type='checkbox' name="initial_consult" value='1' <?php echo $cyp_factor ? 'checked' : ''; ?> />
@@ -529,18 +532,15 @@ generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'sup
    <?php echo xlt('Service Reporting'); ?>
   </td>
  </tr>
- <tr id='id_code_text_short'>
+
+ <tr id='id_contra_method'>
   <td><?php xl('Contraceptive Method','e'); ?>:</td>
   <td></td>
   <td colspan='2'>
-   <?php echo generate_select_list('code_text_short', 'contrameth', $code_text_short); ?>
-   <!--
-   <input type='text' size='24' maxlength='24' name='code_text_short' value='<?php echo $code_text_short ?>'>&nbsp;
-   <?php if (!empty($GLOBALS['ippf_specific'])) echo xl('IPPFCM codes: Put contraceptive method ID here.'); ?>
-   -->
+   <?php echo generate_select_list('contra_method', 'contrameth', $code_text_short); ?>
   </td>
  </tr>
- 
+
  <tr id='id_cyp_factor'>
   <td><?php echo xl('CYP Factor'); ?>:</td>
   <td></td>
@@ -567,11 +567,20 @@ generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'sup
   <td><?php echo xlt('Relate To'); ?>:</td>
   <td></td>
   <td colspan='2'>
-   <input type='text' size='80' name='related_desc'
+   <input type='text' size='60' name='related_desc'
     value='<?php echo attr($related_desc) ?>' onclick="sel_related()"
     title='<?php echo xla('Click to select related code'); ?>' readonly />
    <input type='hidden' name='related_code' value='<?php echo attr($related_code) ?>' />
   </td>
+ </tr>
+
+ <tr id='id_code_text_short'>
+  <td><?php xl('Short Description','e'); ?>:</td>
+  <td></td>
+  <td>
+   <input type='text' size='60'  maxlength='24' name='code_text_short' value='<?php echo $code_text_short ?>' />
+  </td>
+  <td></td>
  </tr>
 
  <tr>
