@@ -2714,7 +2714,7 @@ function expand_collapse_widget($title, $label, $buttonLabel, $buttonLink, $butt
 
 //billing_facility fuction will give the dropdown list which contain billing faciliies.
 function billing_facility($name,$select){
-	$qsql = sqlStatement("SELECT id, name FROM facility WHERE billing_location = 1");
+	$qsql = sqlStatement("SELECT id, name FROM facility WHERE billing_location = 1 ORDER BY name");
 		echo "   <select id='".htmlspecialchars($name, ENT_QUOTES)."' name='".htmlspecialchars($name, ENT_QUOTES)."'>";
 			while ($facrow = sqlFetchArray($qsql)) {
 				$selected = ( $facrow['id'] == $select ) ? 'selected="selected"' : '' ;

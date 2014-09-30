@@ -239,7 +239,8 @@ if ($fres) {
 		<td class='text'>
 			<div id="ajaxdiv">
 			<?php
-			billing_facility('billing_facility',$result['billing_facility']);
+      // If default facility is also a billing facility then we default to that in a new visit.
+			billing_facility('billing_facility', $viewmode ? $result['billing_facility'] : $def_facility);
 			?>
 			</div>
 		</td>
