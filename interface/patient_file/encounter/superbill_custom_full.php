@@ -516,6 +516,15 @@ function code_type_changed() {
   </td>
  </tr>
 
+ <tr id='id_code_text_short'>
+  <td><?php xl('Short Description','e'); ?>:</td>
+  <td></td>
+  <td>
+   <input type='text' size='24'  maxlength='24' name='code_text_short' value='<?php echo $code_text_short ?>' />
+  </td>
+  <td></td>
+ </tr>
+
  <tr>
   <td><?php echo xlt('Category'); ?>:</td>
   <td></td>
@@ -572,15 +581,6 @@ generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'sup
     title='<?php echo xla('Click to select related code'); ?>' readonly />
    <input type='hidden' name='related_code' value='<?php echo attr($related_code) ?>' />
   </td>
- </tr>
-
- <tr id='id_code_text_short'>
-  <td><?php xl('Short Description','e'); ?>:</td>
-  <td></td>
-  <td>
-   <input type='text' size='60'  maxlength='24' name='code_text_short' value='<?php echo $code_text_short ?>' />
-  </td>
-  <td></td>
  </tr>
 
  <tr>

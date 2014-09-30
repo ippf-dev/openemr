@@ -1190,7 +1190,8 @@ $classpati='';
 		</td>
 		<td>
 			<?php
-			billing_facility('billing_facility',$row['pc_billing_location']);
+      // For a new event billing facility defaults to the service facility default.
+			billing_facility('billing_facility', $eid ? $row['pc_billing_location'] : $e2f);
 			?>
 		</td>
 	</tr>

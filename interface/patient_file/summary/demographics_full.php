@@ -232,10 +232,10 @@ function validate(f) {
 	alert(msg);
  }
 
- // DOB validation. Must not be later than today or before 1900.
+ // DOB validation. Must not be later than today or before 1920.
  if (f.form_DOB && f.form_DOB.value != '') {
-  if (f.form_DOB.value > '<?php echo date('Y-m-d') ?>' || f.form_DOB.value < '1900-01-01') {
-   alert('<?php echo xls('Birth date must not be in the future or before 1900'); ?>');
+  if (f.form_DOB.value > '<?php echo date('Y-m-d') ?>' || f.form_DOB.value < '1920-01-01') {
+   alert('<?php echo xls('Birth date must not be in the future or before 1920'); ?>');
    return false;
   }
  }
