@@ -1676,8 +1676,9 @@ if ($_POST['newcodes'] && !$alertmsg) {
     if ($codestring === '') continue;
     list($newtype, $newcode) = explode('|', $codestring);
     if ($newtype == 'MA') {
+      list($code, $modifier) = explode(":", $newcode);
       $tmp = sqlQuery("SELECT sex FROM codes WHERE code_type = ? AND code = ? LIMIT 1",
-        array($code_types[$newtype]['id'], $newcode));
+        array($code_types[$newtype]['id'], $code));
       if ($tmp['sex'] == '1' && $patient_male || $tmp['sex'] == '2' && !$patient_male) {
         $alertmsg = xl('Service is not compatible with the sex of this client.');
       }
