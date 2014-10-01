@@ -99,26 +99,26 @@ if ($GLOBALS['language_menu_login']) {
         if ($mainLangID == '1' && !empty($GLOBALS['skip_english_translation']))
         {
           $sql = "SELECT *,lang_description as trans_lang_description FROM lang_languages ORDER BY lang_description, lang_id";
-	  $res3=SqlStatement($sql);
+          $res3=SqlStatement($sql);
         }
         else {
           // Use and sort by the translated language name.
           $sql = "SELECT ll.lang_id, " .
             "IF(LENGTH(ld.definition),ld.definition,ll.lang_description) AS trans_lang_description, " .
-	    "ll.lang_description " .
+            "ll.lang_description " .
             "FROM lang_languages AS ll " .
             "LEFT JOIN lang_constants AS lc ON lc.constant_name = ll.lang_description " .
             "LEFT JOIN lang_definitions AS ld ON ld.cons_id = lc.cons_id AND " .
             "ld.lang_id = ? " .
             "ORDER BY IF(LENGTH(ld.definition),ld.definition,ll.lang_description), ll.lang_id";
           $res3=SqlStatement($sql, array($mainLangID));
-	}
+        }
     
         for ($iter = 0;$row = sqlFetchArray($res3);$iter++)
-               $result3[$iter] = $row;
+          $result3[$iter] = $row;
         if (count($result3) == 1) {
-	       //default to english if only return one language
-               echo "<input type='hidden' name='languageChoice' value='1' />\n";
+          //default to english if only return one language
+          echo "<input type='hidden' name='languageChoice' value='1' />\n";
         }
 }
 else {
@@ -126,102 +126,117 @@ else {
 }
 ?>
 
-<table width="100%" height="90%">
-<td align='center' valign='middle' width='34%'>
-<div class="login-box">
-<div class="logo-left"><?php echo $logocode;?></div>
+<table height="90%">
+ <tr>
+  <td align='center' valign='middle'>
+   <div class="login-box">
+    <div class="logo-left"><?php echo $logocode;?></div>
+    <div class="table-right">
+     <table width="100%">
 
-<div class="table-right">
-<table width="100%">
 <?php if (count($result) != 1) { ?>
-<tr>
-<td><span class="text"><?php echo xlt('Group:'); ?></span></td>
-<td>
-<select name=authProvider>
+      <tr>
+       <td><span class="text"><?php echo xlt('Group:'); ?></span></td>
+       <td>
+        <select name=authProvider>
 <?php
-	foreach ($result as $iter) {
-		echo "<option value='".attr($iter{"name"})."'>".text($iter{"name"})."</option>\n";
-	}
+  foreach ($result as $iter) {
+    echo "<option value='".attr($iter{"name"})."'>".text($iter{"name"})."</option>\n";
+  }
 ?>
-</select>
-</td></tr>
+        </select>
+       </td>
+      </tr>
 <?php } ?>
 
 <?php if (isset($_SESSION['loginfailure']) && ($_SESSION['loginfailure'] == 1)): ?>
-<tr><td colspan='2' class='text' style='color:red'>
-<?php echo xlt('Invalid username or password'); ?>
-</td></tr>
+      <tr>
+       <td colspan='2' class='text' style='color:red'>
+        <?php echo xlt('Invalid username or password'); ?>
+       </td>
+      </tr>
 <?php endif; ?>
 
 <?php if (isset($_SESSION['relogin']) && ($_SESSION['relogin'] == 1)): ?>
-<tr><td colspan='2' class='text' style='color:red;background-color:#dfdfdf;border:solid 1px #bfbfbf;text-align:center'>
-<b><?php echo xlt('Password security has recently been upgraded.'); ?><br>
-<?php echo xlt('Please login again.'); ?></b>
+      <tr>
+       <td colspan='2' class='text' style='color:red;background-color:#dfdfdf;border:solid 1px #bfbfbf;text-align:center'>
+        <b><?php echo xlt('Password security has recently been upgraded.'); ?><br>
+        <?php echo xlt('Please login again.'); ?></b>
 <?php unset($_SESSION['relogin']); ?>
-</td></tr>
+       </td>
+      </tr>
 <?php endif; ?>
 
-<tr>
-<td><span class="text"><?php echo xlt('Username:'); ?></span></td>
-<td>
-<input class="entryfield" type="text" size="10" name="authUser">
-</td></tr><tr>
-<td><span class="text"><?php echo xlt('Password:'); ?></span></td>
-<td>
-<input class="entryfield" type="password" size="10" name="clearPass">
-</td></tr>
+      <tr>
+       <td><span class="text"><?php echo xlt('Username:'); ?></span></td>
+       <td>
+        <input class="entryfield" type="text" size="10" name="authUser">
+       </td>
+      </tr>
+      <tr>
+       <td><span class="text"><?php echo xlt('Password:'); ?></span></td>
+       <td>
+        <input class="entryfield" type="password" size="10" name="clearPass">
+       </td>
+      </tr>
 
 <?php
 if ($GLOBALS['language_menu_login']) {
-if (count($result3) != 1) { ?>
-<tr>
-<td><span class="text"><?php echo xlt('Language'); ?>:</span></td>
-<td>
-<select class="entryfield" name=languageChoice size="1">
-<?php
-        echo "<option selected='selected' value='" . attr($defaultLangID) . "'>" . xlt('Default') . " - " . xlt($defaultLangName) . "</option>\n";
-        foreach ($result3 as $iter) {
-	        if ($GLOBALS['language_menu_showall']) {
-                    if ( !$GLOBALS['allow_debug_language'] && $iter[lang_description] == 'dummy') continue; // skip the dummy language
-                    echo "<option value='".attr($iter['lang_id'])."'>".text($iter['trans_lang_description'])."</option>\n";
-		}
-	        else {
-		    if (in_array($iter[lang_description], $GLOBALS['language_menu_show'])) {
-                        if ( !$GLOBALS['allow_debug_language'] && $iter['lang_description'] == 'dummy') continue; // skip the dummy language
-		        echo "<option value='".attr($iter['lang_id'])."'>" . text($iter['trans_lang_description']) . "</option>\n";
-		    }
-		}
-        }
+  if (count($result3) != 1) {
 ?>
-</select>
-</td></tr>
+      <tr>
+       <td><span class="text"><?php echo xlt('Language'); ?>:</span></td>
+       <td>
+        <select class="entryfield" name=languageChoice size="1">
+<?php
+    echo "<option selected='selected' value='" . attr($defaultLangID) . "'>" . xlt('Default') . " - " . xlt($defaultLangName) . "</option>\n";
+    foreach ($result3 as $iter) {
+      if ($GLOBALS['language_menu_showall']) {
+        if ( !$GLOBALS['allow_debug_language'] && $iter[lang_description] == 'dummy') continue; // skip the dummy language
+        echo "<option value='".attr($iter['lang_id'])."'>".text($iter['trans_lang_description'])."</option>\n";
+      }
+      else {
+        if (in_array($iter[lang_description], $GLOBALS['language_menu_show'])) {
+          if ( !$GLOBALS['allow_debug_language'] && $iter['lang_description'] == 'dummy') continue; // skip the dummy language
+          echo "<option value='".attr($iter['lang_id'])."'>" . text($iter['trans_lang_description']) . "</option>\n";
+        }
+      }
+    }
+?>
+        </select>
+       </td>
+      </tr>
 <?php }} ?>
 
-<tr><td>&nbsp;</td><td>
-<input class="button large" type="submit" onClick="transmit_form()" value="<?php echo xla('Login');?>">
-</td></tr>
-<tr><td colspan='2' class='text' style='color:red'>
+      <tr>
+       <td>&nbsp;</td>
+       <td>
+        <input class="button large" type="submit" onClick="transmit_form()" value="<?php echo xla('Login');?>">
+       </td>
+      </tr>
+      <tr>
+       <td colspan='2' class='text' style='color:red'>
 <?php
-$ip=$_SERVER['REMOTE_ADDR'];
+    $ip = $_SERVER['REMOTE_ADDR'];
 ?>
-</div>
-</td></tr>
-</table>
+       </td>
+      </tr>
+     </table>
 
-</div>
-<div style="clear: both;"> </div>
-<div class="version">
-<?php echo "v".text($openemr_version) ?> | <a  href="../../acknowledge_license_cert.html" target="main"><?php echo xlt('Acknowledgments, Licensing and Certification'); ?></a>
-</div>
-</div>
-<div class="demo">
+    </div>
+    <div style="clear: both;"> </div>
+    <div class="version">
+     <?php echo "v".text($openemr_version) ?> | <a  href="../../acknowledge_license_cert.html" target="main"><?php echo xlt('Acknowledgments, Licensing and Certification'); ?></a>
+    </div>
+   </div>
+   <div class="demo">
 		<!-- Uncomment this for the OpenEMR demo installation
 		<p><center>login = admin
 		<br>password = pass
 		-->
-</div>
-</td>
-</tr>
+   </div>
+  </td>
+ </tr>
 </table>
 </form>
 </center>
