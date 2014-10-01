@@ -140,6 +140,10 @@ function verify_translations($definitions,$language,$replace=true)
 
 function utf8_fopen_read($fileName) {
     $fc = iconv('UTF-8', 'UTF-8', file_get_contents($fileName));
+    if(empty($fc))
+    {
+        return false;
+    }
     $handle=fopen("php://memory", "rw");
     fwrite($handle, $fc);
     fseek($handle, 0);

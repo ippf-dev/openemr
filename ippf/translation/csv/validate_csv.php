@@ -52,6 +52,11 @@ if($handle)
             $translations[]=array($data[1],$data[3]);
         }
 }
+if(count($translations)===0)
+{
+    echo "Unable to Parse file! Verify File encoding";
+    die;
+}
 
 ?>
 <div id="header">
