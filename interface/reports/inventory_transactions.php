@@ -21,6 +21,16 @@ require_once("$srcdir/patient.inc");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/formatting.inc.php");
 
+// For each sorting option, specify the ORDER BY argument.
+//
+$ORDERHASH = array(
+  'date' => 's.sale_date, s.sale_id',
+  'tran' => 's.trans_type, s.sale_date, s.sale_id',
+  'prod' => 'd.name, s.sale_date, s.sale_id',
+  'wh'   => 'warehouse, s.sale_date, s.sale_id',
+  // 'who'  => 'plname, pfname, pmname, s.sale_date, s.sale_id',
+);
+
 function bucks($amount) {
   if ($amount != 0) return oeFormatMoney($amount);
   return '';
@@ -32,6 +42,14 @@ function esc4Export($str) {
 
 function thisLineItem($row, $xfer=false) {
   global $grandtotal, $grandqty, $encount, $form_action;
+
+  // If this row is for the target lot of a transfer, invert quantity and fee.
+  if (!empty($row['xfer_inventory_id'])) {
+    if ($row['di_inventory_id'] == $row['xfer_inventory_id']) {
+      $row['quantity'] = 0 - $row['quantity'];
+      $row['fee'] = 0 - $row['fee'];
+    }
+  }
 
   $patient_id   = $row['pid'];
   $encounter_id = $row['encounter'];
@@ -50,24 +68,11 @@ function thisLineItem($row, $xfer=false) {
     $invnumber = empty($row['invoice_refno']) ?
       "$patient_id.$encounter_id" : $row['invoice_refno'];
   }
-  else if (!empty($row['distributor_id'])) {
-    $ttype = xl('Distribution');
-    if (!empty($row['organization'])) {
-      $dpname = $row['organization'];
-    }
-    else {
-      $dpname = $row['dlname'];
-      if (!empty($row['dfname'])) {
-        $dpname .= ', ' . $row['dfname'];
-        if (!empty($row['dmname'])) $dpname .= ' ' . $row['dmname'];
-      }
-    }
-  }
   else if (!empty($row['xfer_inventory_id']) || $xfer) {
     $ttype = xl('Transfer');
   }
-  else if ($row['fee'] != 0) {
-    $ttype = xl('Purchase');
+  else if ($row['trans_type'] != 5) {
+    $ttype = xl('Purchase/Receipt');
   }
   else {
     $ttype = xl('Adjustment');
@@ -155,6 +160,12 @@ $form_from_date  = fixDate($_POST['form_from_date'], date('Y-m-d'));
 $form_to_date    = fixDate($_POST['form_to_date']  , date('Y-m-d'));
 $form_trans_type = isset($_POST['form_trans_type']) ? $_POST['form_trans_type'] : '0';
 
+// The selected facility ID, if any.
+$form_facility = 0 + empty($_POST['form_facility']) ? 0 : $_POST['form_facility'];
+
+$form_orderby = $ORDERHASH[$_REQUEST['form_orderby']] ? $_REQUEST['form_orderby'] : 'date';
+$orderby = $ORDERHASH[$form_orderby];
+
 $encount = 0;
 
 if ($form_action == 'export') {
@@ -216,6 +227,15 @@ else {
   f.submit();
  }
 
+ function dosort(orderby) {
+  var f = document.forms[0];
+  f.form_orderby.value = orderby;
+  f.form_action.value = 'submit';
+  top.restoreSession();
+  f.submit();
+  return false;
+ }
+
  function doinvopen(ptid,encid) {
   dlgopen('../patient_file/pos_checkout.php?ptid=' + ptid + '&enc=' + encid, '_blank', 750, 550);
  }
@@ -239,6 +259,22 @@ else {
   <td width='50%'>
    <table class='text'>
     <tr>
+     <td nowrap>
+<?php
+  // Build a drop-down list of facilities.
+  //
+  $fres = sqlStatement("SELECT id, name FROM facility ORDER BY name");
+  echo "   <select name='form_facility'>\n";
+  echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
+  while ($frow = sqlFetchArray($fres)) {
+    $facid = $frow['id'];
+    echo "    <option value='$facid'";
+    if ($facid == $form_facility) echo " selected";
+    echo ">" . $frow['name'] . "</option>\n";
+  }
+  echo "   </select>\n&nbsp;";
+?>
+     </td>
      <td class='label'>
       <?php echo htmlspecialchars(xl('Type'), ENT_NOQUOTES); ?>:
      </td>
@@ -247,9 +283,9 @@ else {
 <?php
 foreach (array(
   '0' => xl('All'),
-  '2' => xl('Purchase/Return'),
+  '2' => xl('Purchase/Receipt'),
   '1' => xl('Sale'),
-  '6' => xl('Distribution'),
+  // '6' => xl('Distribution'),
   '4' => xl('Transfer'),
   '5' => xl('Adjustment'),
 ) as $key => $value)
@@ -317,34 +353,42 @@ foreach (array(
 <table border='0' cellpadding='1' cellspacing='2' width='98%'>
  <tr bgcolor="#dddddd">
   <td class="dehead">
-   <?php echo htmlspecialchars(xl('Date'), ENT_NOQUOTES); ?>
+   <a href="#" onclick="return dosort('date')"
+   <?php if ($form_orderby == "date") echo " style=\"color:#00cc00\""; ?>>
+   <?php echo xlt('Date'); ?> </a>
   </td>
   <td class="dehead">
-   <?php echo htmlspecialchars(xl('Transaction'), ENT_NOQUOTES); ?>
+   <a href="#" onclick="return dosort('tran')"
+   <?php if ($form_orderby == "tran") echo " style=\"color:#00cc00\""; ?>>
+   <?php echo xlt('Transaction'); ?> </a>
   </td>
   <td class="dehead">
-   <?php echo htmlspecialchars(xl('Product'), ENT_NOQUOTES); ?>
+   <a href="#" onclick="return dosort('prod')"
+   <?php if ($form_orderby == "prod") echo " style=\"color:#00cc00\""; ?>>
+   <?php echo xlt('Product'); ?> </a>
   </td>
   <td class="dehead">
-   <?php echo htmlspecialchars(xl('Lot'), ENT_NOQUOTES); ?>
+   <?php echo xlt('Lot'); ?>
   </td>
   <td class="dehead">
-   <?php echo htmlspecialchars(xl('Warehouse'), ENT_NOQUOTES); ?>
+   <a href="#" onclick="return dosort('wh')"
+   <?php if ($form_orderby == "wh") echo " style=\"color:#00cc00\""; ?>>
+   <?php echo xlt('Warehouse'); ?> </a>
   </td>
   <td class="dehead">
-   <?php echo htmlspecialchars(xl('Invoice'), ENT_NOQUOTES); ?>
+   <?php echo xlt('Invoice'); ?>
   </td>
   <td class="dehead" align="right">
-   <?php echo htmlspecialchars(xl('Qty'), ENT_NOQUOTES); ?>
+   <?php echo xlt('Qty'); ?>
   </td>
   <td class="dehead" align="right">
-   <?php echo htmlspecialchars(xl('Amount'), ENT_NOQUOTES); ?>
+   <?php echo xlt('Amount'); ?>
   </td>
   <td class="dehead" align="Center">
-   <?php echo htmlspecialchars(xl('Billed'), ENT_NOQUOTES); ?>
+   <?php echo xlt('Billed'); ?>
   </td>
   <td class="dehead">
-   <?php echo htmlspecialchars(xl('Notes'), ENT_NOQUOTES); ?>
+   <?php echo xlt('Notes'); ?>
   </td>
  </tr>
 <?php
@@ -359,42 +403,36 @@ if ($form_action) { // if submit or export
   $grandqty = 0;
 
   $query = "SELECT s.sale_date, s.fee, s.quantity, s.pid, s.encounter, " .
-    "s.billed, s.notes, s.distributor_id, s.xfer_inventory_id, " .
+    "s.billed, s.notes, s.distributor_id, s.xfer_inventory_id, s.trans_type, " .
     "p.fname AS pfname, p.mname AS pmname, p.lname AS plname, " .
-    "u.fname AS dfname, u.mname AS dmname, u.lname AS dlname, u.organization, " .
     "d.name, fe.date, fe.invoice_refno, " .
-    "i1.lot_number, i2.lot_number AS lot_number_2, " .
-    "lo1.title AS warehouse, lo2.title AS warehouse_2 " .
+    "di.lot_number, di.inventory_id AS di_inventory_id, " .
+    "lo.title AS warehouse " .
     "FROM drug_sales AS s " .
     "JOIN drugs AS d ON d.drug_id = s.drug_id " .
-    "LEFT JOIN drug_inventory AS i1 ON i1.inventory_id = s.inventory_id " .
-    "LEFT JOIN drug_inventory AS i2 ON i2.inventory_id = s.xfer_inventory_id " .
     "LEFT JOIN patient_data AS p ON p.pid = s.pid " .
-    "LEFT JOIN users AS u ON u.id = s.distributor_id " .
-    "LEFT JOIN list_options AS lo1 ON lo1.list_id = 'warehouse' AND " .
-    "lo1.option_id = i1.warehouse_id " .
-    "LEFT JOIN list_options AS lo2 ON lo2.list_id = 'warehouse' AND " .
-    "lo2.option_id = i2.warehouse_id " .
+    "LEFT JOIN drug_inventory AS di ON di.inventory_id = s.inventory_id OR di.inventory_id = s.xfer_inventory_id " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND lo.option_id = di.warehouse_id " .
     "LEFT JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter " .
-    "WHERE s.sale_date >= ? AND s.sale_date <= ? "
-    ." AND ( s.pid = 0 OR s.inventory_id != 0 ) ";
-  if ($form_trans_type == 2) { // purchase/return
-    $query .= "AND s.pid = 0 AND s.distributor_id = 0 AND s.xfer_inventory_id = 0 AND s.fee != 0 ";
+    "WHERE s.sale_date >= ? AND s.sale_date <= ? AND " .
+    "( s.pid = 0 OR s.inventory_id != 0 ) ";
+  if ($form_trans_type == 2) { // purchase/receipt
+    $query .= "AND s.pid = 0 AND s.xfer_inventory_id = 0 AND s.trans_type != 5 ";
   }
   else if ($form_trans_type == 4) { // transfer
     $query .= "AND s.xfer_inventory_id != 0 ";
   }
   else if ($form_trans_type == 5) { // adjustment
-    $query .= "AND s.pid = 0 AND s.distributor_id = 0 AND s.xfer_inventory_id = 0 AND s.fee = 0 ";
-  }
-  else if ($form_trans_type == 6) { // distribution
-    $query .= "AND s.distributor_id != 0 ";
+    $query .= "AND s.pid = 0 AND s.xfer_inventory_id = 0 AND s.trans_type = 5 ";
   }
   else if ($form_trans_type == 1) { // sale
     $query .= "AND s.pid != 0 ";
   }
-  $query .= "ORDER BY s.sale_date, s.sale_id";
-  //
+  if ($form_facility) {
+    $query .= "AND ((lo.option_value IS NOT NULL AND lo.option_value = '$form_facility')) ";
+  }
+  $query .= "ORDER BY $orderby";
+
   $res = sqlStatement($query, array($from_date, $to_date));
   while ($row = sqlFetchArray($res)) {
     thisLineItem($row);
@@ -431,6 +469,8 @@ if ($form_action != 'export') {
 <?php
   } // end if ($form_action)
 ?>
+
+<input type="hidden" name="form_orderby" value="<?php echo $form_orderby ?>" />
 
 </form>
 </center>
