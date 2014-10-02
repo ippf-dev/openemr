@@ -1521,8 +1521,8 @@ function validate(valu) {
     <?php
     if($_GET['prov']!=true){
     ?>
-     if(f.form_pid.value == ''){
-      alert('<?php echo addslashes(xl('Patient Name Required'));?>');
+     if(f.form_pid.value == '' && f.form_comments.value == '') {
+      alert('<?php echo xls('Please either select a patient or enter name and contact information in the Comments field.');?>');
       return false;
      }
     <?php
