@@ -11,6 +11,8 @@ require_once("../../custom/code_types.inc.php");
 require_once("$srcdir/sql.inc");
 require_once("$srcdir/formatting.inc.php");
 
+$sexarray = array(4 => xl('All'), 1 => xl('Women Only'), 2 => xl('Men Only'));
+
 // Format dollars for display.
 //
 function bucks($amount) {
@@ -44,7 +46,6 @@ while ($ctrow = sqlFetchArray($ctres)) {
 }
 ksort($ctarr);
 
-
 // Determine if we are listing only active entries. Default is yes.
 $activeonly = 1;
 if (isset($_REQUEST['filter'])) {
@@ -58,6 +59,9 @@ if ($filter) $where .= " AND c.code_type = '$filter'";
 
 if (empty($_REQUEST['include_uncat']))
   $where .= " AND c.superbill != '' AND c.superbill != '0'";
+
+$sex = empty($_REQUEST['sex']) ? 4 : ($_REQUEST['sex'] + 0);
+if ($sex != 4) $where .= " AND sex LIKE '$sex'";
 
 if ($_POST['form_csvexport']) {
   header("Pragma: public");
@@ -91,6 +95,7 @@ else { // not export
    <?php xl('Services by Category','e'); ?>
   </td>
   <td class='text' align='right'>
+   <?php echo xlt('Code Type'); ?>:
    <select name='filter'>
     <option value='0'><?php xl('All','e'); ?></option>
 <?php
@@ -98,6 +103,17 @@ foreach ($code_types as $key => $value) {
   echo "<option value='" . $value['id'] . "'";
   if ($value['id'] == $filter) echo " selected";
   echo ">$key</option>\n";
+}
+?>
+   </select>
+   &nbsp;
+   <?php echo xlt('Sex'); ?>:
+   <select name='sex'>
+<?php
+foreach ($sexarray as $key => $value) {
+  echo "<option value='" . $key . "'";
+  if ($key == $sex) echo " selected";
+  echo ">$value</option>\n";
 }
 ?>
    </select>
@@ -136,7 +152,9 @@ if ($_POST['form_submit'] || $_POST['form_csvexport']) {
     if ($GLOBALS['ippf_specific']) {
       echo '"' . xl('Initial Consult') . '",';
     }
-    echo '"' . xl('Description'    ) . '"';
+    echo '"' . xl('Description'    ) . '",';
+    echo '"' . xl('Short Description') . '",';
+    echo '"' . xl('Sex') . '"';
     foreach ($ctarr as $ctkey => $dummy) {
       echo ',"' . addslashes(xl('Related') . ' ' . $ctkey) . '"';
       echo ',"' . addslashes(xl('Description')) . '"';
@@ -161,6 +179,8 @@ if ($_POST['form_submit'] || $_POST['form_csvexport']) {
    <th class='bold' title='<?php echo xl('Initial Consult'); ?>'><?php echo xl('IC'); ?></th>
 <?php } ?>
    <th class='bold'><?php xl('Description','e'); ?></th>
+   <th class='bold'><?php echo xlt('Short Description'); ?></th>
+   <th class='bold'><?php echo xlt('Sex'); ?></th>
 <?php
     foreach ($ctarr as $ctkey => $dummy) {
       echo "   <th class='bold' align='right' nowrap>" . htmlspecialchars(xl('Related') . " $ctkey") . "</th>\n";
@@ -250,8 +270,9 @@ if ($_POST['form_submit'] || $_POST['form_csvexport']) {
         }
         echo '",';
       }
-      echo '"' . addslashes($row['code_text']) . '"';
-
+      echo '"' . addslashes($row['code_text']) . '",';
+      echo '"' . addslashes($row['code_text_short']) . '",';
+      echo '"' . addslashes($sexarray[$row['sex']]) . '"';
       foreach ($ctarr as $ctkey => $dummy) {
         $tmp1 = '';
         $tmp2 = '';
@@ -300,7 +321,9 @@ if ($_POST['form_submit'] || $_POST['form_csvexport']) {
         }
         echo "</td>\n";
       }
-      echo "   <td class='text'>" . $row['code_text'] . "</td>\n";
+      echo "   <td class='text'>" . text($row['code_text']) . "</td>\n";
+      echo "   <td class='text'>" . text($row['code_text_short']) . "</td>\n";
+      echo "   <td class='text'>" . text($sexarray[$row['sex']]) . "</td>\n";
 
       foreach ($ctarr as $ctkey => $dummy) {
         $tmp = '';
