@@ -119,6 +119,14 @@ td { font-size:10pt; }
  function validate() {
   var f = document.forms[0];
 
+  // Transaction date validation. Must not be later than today or before 2000.
+  if (f.form_trans_type.value > '0') {
+   if (f.form_sale_date.value > '<?php echo date('Y-m-d') ?>' || f.form_sale_date.value < '2000-01-01') {
+    alert('<?php echo xls('Transaction date must not be in the future or before 2000'); ?>');
+    return false;
+   }
+  }
+
   // Get source and target facility IDs.
   var facfrom = 0;
   var facto = 0;
