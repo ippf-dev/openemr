@@ -1266,7 +1266,6 @@ if  ($GLOBALS['select_multi_providers']) {
 // single provider 
 // =======================================
 } else {
-
     if ($eid) {
         // get provider from existing event
         $qprov = sqlStatement ("SELECT pc_aid FROM openemr_postcalendar_events WHERE pc_eid = ?", array($eid) );
@@ -1274,59 +1273,31 @@ if  ($GLOBALS['select_multi_providers']) {
         $defaultProvider = $provider['pc_aid'];
     }
     else {
-      // this is a new event so smartly choose a default provider 
-    /*****************************************************************
+      // This is a new event so smartly choose a default provider .
       if ($userid) {
         // Provider already given to us as a GET parameter.
         $defaultProvider = $userid;
       }
-        else {
-        // default to the currently logged-in user
+      else if (count($_SESSION['pc_username']) == 1) {
+        // There is only one provider selected in the calendar so use that.
+        $tmp = sqlQuery("SELECT id FROM users WHERE username = ?", array($_SESSION['pc_username'][0]));
+        $defaultProvider = $tmp['id'];
+      }
+      else {
+        // Default to the currently logged-in user.
         $defaultProvider = $_SESSION['authUserID'];
-        // or, if we have chosen a provider in the calendar, default to them
-        // choose the first one if multiple have been selected
-        if (count($_SESSION['pc_username']) >= 1) {
-          // get the numeric ID of the first provider in the array
-          $pc_username = $_SESSION['pc_username'];
-          $firstProvider = sqlFetchArray(sqlStatement("select id from users where username='".$pc_username[0]."'"));
-          $defaultProvider = $firstProvider['id'];
-        }
       }
     }
-
-    echo "<select name='form_provider' style='width:100%' />";
+    echo "<select name='form_provider' style='width:100%' />\n";
+    echo " <option value='0'>-- " . xlt('Unassigned') . " --</option>\n";
     while ($urow = sqlFetchArray($ures)) {
-        echo "    <option value='" . $urow['id'] . "'";
-        if ($urow['id'] == $defaultProvider) echo " selected";
-        echo ">" . $urow['lname'];
-        if ($urow['fname']) echo ", " . $urow['fname'];
-        echo "</option>\n";
-    }
-    echo "</select>";
-    *****************************************************************/
-      // default to the currently logged-in user
-      $defaultProvider = $_SESSION['authUserID'];
-      // or, if we have chosen a provider in the calendar, default to them
-      // choose the first one if multiple have been selected
-      if (count($_SESSION['pc_username']) >= 1) {
-        // get the numeric ID of the first provider in the array
-        $pc_username = $_SESSION['pc_username'];
-        $firstProvider = sqlFetchArray(sqlStatement("select id from users where username=?", array($pc_username[0]) ));
-        $defaultProvider = $firstProvider['id'];
-      }
-      // if we clicked on a provider's schedule to add the event, use THAT.
-      if ($userid) $defaultProvider = $userid;
-    }
-    echo "<select name='form_provider' style='width:100%' />";
-    while ($urow = sqlFetchArray($ures)) {
-      echo "    <option value='" . attr($urow['id']) . "'";
+      echo " <option value='" . attr($urow['id']) . "'";
       if ($urow['id'] == $defaultProvider) echo " selected";
       echo ">" . text($urow['lname']);
       if ($urow['fname']) echo ", " . text($urow['fname']);
       echo "</option>\n";
     }
-    echo "</select>";
-    /****************************************************************/
+    echo "</select>\n";
 }
 
 ?>
@@ -1512,7 +1483,11 @@ $(document).ready(function(){
 
 // Check for errors when the form is submitted.
 function validate(valu) {
-     var f = document.getElementById('theform');
+    var f = document.getElementById('theform');
+    if (f.form_provider.value == '0') {
+      alert('<?php echo xls('Please select a provider.'); ?>');
+      return false;
+    }
     if (f.form_repeat.checked &&
         (! f.form_enddate.value || f.form_enddate.value < f.form_date.value)) {
         alert('<?php echo addslashes(xl("An end date later than the start date is required for repeated events!")); ?>');
