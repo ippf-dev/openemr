@@ -32,12 +32,24 @@ $translation_file="english_to_english.csv";
 echo "<b>Loading translations from:</b>".$translation_file."<br>";
 verify_file("$translation_files_directory/english_to_english.csv",1);
 
-if($new_database_setup)
-{
-    $patches=array("3_2_0-to-3_3_0_upgrade.sql","ippf_merge_changes.sql");
+if($new_database_setup) {
+    $patches = array(
+        '3_2_0-to-3_3_0_upgrade.sql',
+        'ippf_merge_changes.sql',
+    );
 }
- else {
-    $patches=array('3_2_0-to-4_0_0_upgrade.sql','4_0_0-to-4_1_0_upgrade.sql','4_1_0-to-4_1_1_upgrade.sql','4_1_1-to-4_1_2_upgrade.sql',"4_1_2-to-4_1_3_upgrade.sql","3_2_0-to-3_3_0_upgrade.sql","ippf_merge_changes.sql","ippf_3_3_0-to-4_1_3_upgrade.sql"); 
+else {
+    $patches = array(
+        'ippf_upgrade.sql',
+        '3_2_0-to-4_0_0_upgrade.sql',
+        '4_0_0-to-4_1_0_upgrade.sql',
+        '4_1_0-to-4_1_1_upgrade.sql',
+        '4_1_1-to-4_1_2_upgrade.sql',
+        '4_1_2-to-4_1_3_upgrade.sql',
+        '3_2_0-to-3_3_0_upgrade.sql',
+        'ippf_merge_changes.sql',
+        'ippf_3_3_0-to-4_1_3_upgrade.sql',
+    ); 
 }
 
 function applyUpgrade($string)

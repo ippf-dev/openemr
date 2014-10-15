@@ -1,3 +1,17 @@
+# The following re-inserted on 2014-10-14 so that upgrades from 3.2.0.8-p1 will work.
+# --Rod
+
+#IfNotRow code_types ct_key ADM
+INSERT INTO code_types (ct_key, ct_id, ct_seq, ct_mod, ct_just, ct_fee, ct_rel, ct_nofs, ct_diag ) VALUES ('ADM',17, 5, 0, '', 1, 0, 0, 0);
+#EndIf
+
+#IfNotRow2D list_options list_id ippfconmeth option_id 145212110
+INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','145212110','Emergency Contraception',26,0);
+#EndIf
+
+UPDATE list_options SET title = 'Client has received ITS Counselling' WHERE
+  list_id = 'genitshist' AND title = 'Client has received ITS  Counselling';
+
 # On 2014-02-07 this file was copied to ippf_upgrade_obsolete.sql and then all
 # updates prior to 2013 were removed.  So do not use this to upgrade sites
 # currently on releases older than 3.2.0.9.
@@ -1630,4 +1644,3 @@ UPDATE codes SET related_code = 'IPPF:113172110;IPPF2:1132120000000' WHERE code_
 UPDATE codes SET related_code = 'IPPF:121181000;IPPF2:1141130000800' WHERE code_type = 32 AND code = '4560';
 UPDATE codes SET related_code = 'IPPF:122182000;IPPF2:1142030000800' WHERE code_type = 32 AND code = '4570';
 UPDATE codes SET related_code = 'IPPF:145212000;IPPF2:1151020000000' WHERE code_type = 32 AND code = '4620';
-
