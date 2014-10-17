@@ -43,6 +43,8 @@ else {
     }
     
 ?>
+<h1>Select a CSV file with translation information to review</h1>
+<div>Choose a UTF-8 encoded comma separated values to parse</div>
 <form method="POST" enctype="multipart/form-data" name="process_csv" action="validate_csv.php" accept-charset="utf-8">
     <select name="language_id">
         <?php

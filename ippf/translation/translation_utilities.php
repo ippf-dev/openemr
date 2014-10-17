@@ -70,17 +70,17 @@ function update_metainfo($constant,$definition,$source,$set_source=false)
         }
     }
 }
-function verify_translation($constant,$definition,$language,$replace=true,$source="",$set_metainfo=false)
+function verify_translation($constant,$definition,$language,$replace=true,$source="",$set_metainfo=false, $preview=false)
 {
     if(empty($constant) || empty($definition))
     {
-        return;
+        return "Empty Definition";
     }
     $cons_id=find_or_create_constant($constant);
     $whereClause=" lang_id=? and cons_id=? ";
     $sqlFind = " SELECT def_id,definition FROM lang_definitions WHERE ".$whereClause;
     $result = sqlStatement($sqlFind,array($language,$cons_id));
-    $infoText=$constant."|".$definition."|".$language;
+    $infoText=$constant."|".$definition;
     if($result)
     {
         $row_count=sqlNumRows($result);        
@@ -97,13 +97,19 @@ function verify_translation($constant,$definition,$language,$replace=true,$sourc
                 if($replace)
                 {
                     $sqlUpdate=" UPDATE lang_definitions SET definition=? WHERE def_id=?";
-                    $result=sqlStatement($sqlUpdate,array($definition,$row['def_id']));
-                    if($set_metainfo) {update_metainfo($constant,$definition,$source,true);}
-                    return "Definition Updated from:".$row['definition']."|New:".$infoText."(".$cons_id.")";                    
+                    if(!$preview)
+                    {
+                        $result=sqlStatement($sqlUpdate,array($definition,$row['def_id']));
+                        if($set_metainfo) {update_metainfo($constant,$definition,$source,true);}                        
+                    }
+                    return "Update From:".$row['definition']." To=>".$definition ." (for:  ".$constant.")";                    
                 }
                 else
                 {
-                    if($set_metainfo) {update_metainfo($constant,$definition,$source,false);}
+                    if(!$preview)
+                    {                   
+                        if($set_metainfo) {update_metainfo($constant,$definition,$source,false);}
+                    }
                     return "Definition Not Updated: Current".$row['definition']."|".$infoText;
                 }
             }
@@ -111,8 +117,11 @@ function verify_translation($constant,$definition,$language,$replace=true,$sourc
         if($row_count>1)
         {
             // Too many definitions, delete then recreate.
-            $sqlDelete = " DELETE FROM lang_definitions WHERE ".$whereClause;
-            $sqlStatement($sqlDelete,array($language,$cons_id));
+            if(!$preview)
+            {                   
+                $sqlDelete = " DELETE FROM lang_definitions WHERE ".$whereClause;
+                $sqlStatement($sqlDelete,array($language,$cons_id));
+            }
             $create=true;
             
         }
@@ -123,9 +132,12 @@ function verify_translation($constant,$definition,$language,$replace=true,$sourc
         if($create)
         {
             $sqlInsert=" INSERT INTO lang_definitions (cons_id,lang_id,definition) VALUES (?,?,?) ";
-            $id=sqlInsert($sqlInsert,array($cons_id,$language,$definition));
-            if($set_metainfo) {update_metainfo($constant,$definition,$source,true);}
-            return "Definition Created:".$infoText;
+            if(!$preview)
+            {                   
+                $id=sqlInsert($sqlInsert,array($cons_id,$language,$definition));
+                if($set_metainfo) {update_metainfo($constant,$definition,$source,true);}
+            }
+            return "Create:".$constant."=>".$definition;
             
         }
     }
@@ -162,7 +174,7 @@ function verify_file($filename,$language,$replace=true,$source_name='',$constant
             if(!$first ||$constant!='constant_name')
             {
                 $result=verify_translation($constant,$definition,$language,$replace,$source_name);
-                if(strstr($result,"Definition Exists:")===false)
+                if((strstr($result,"Definition Exists:")===false) && (strstr($result,"Empty Definition")===false))
                 {
                     echo  $result."<br>";
                 }

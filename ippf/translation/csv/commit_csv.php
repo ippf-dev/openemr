@@ -34,10 +34,56 @@ if(!isset($_REQUEST['lang_id']))
     echo "No Language ID specified!";
     return;
 }
+
+
+if(!isset($_REQUEST['preview']))
+{
+    $preview=true;
+}
+else
+{
+    $preview==$_REQUEST['preview'];
+    if($preview==="false")
+    {
+        $preview=false;
+    }
+}
 $lang_id=$_REQUEST['lang_id'];
 $translations=json_decode($_REQUEST['translations']);
+$unchanged=0;
+$empty=0;
+$changed=array();
 foreach($translations as $translation)
 {
-    echo verify_translation($translation[0],$translation[1],$lang_id) . "<br>";
+    $result=verify_translation($translation[0],$translation[1],$lang_id,true,"",false,$preview);
+    if(strstr($result,"Definition Exists:")===false)
+    {
+        if(strstr($result,"Empty Definition")===false)
+        {
+            if($result)
+            {
+                array_push($changed,$result);
+
+            }
+        }
+        else {
+            $empty++;
+        }
+    }
+    else
+    {
+        $unchanged++;
+    }
 }
+$retval=array();
+$retval['changed']=$changed;
+$retval['unchanged']=$unchanged;
+$retval['empty']=$empty;
+$changes_html="";
+foreach($changed as $change)
+{
+    $changes_html.=$change."<br>";
+}
+$retval['html_changes']=$changes_html;
+echo json_encode($retval);
 ?>
