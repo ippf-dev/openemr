@@ -1,6 +1,10 @@
 # The following re-inserted on 2014-10-14 so that upgrades from 3.2.0.8-p1 will work.
 # --Rod
 
+#IfNotColumnType codes code varchar(31)
+ALTER TABLE `codes` CHANGE `code` `code` varchar(31) NOT NULL default '';
+#EndIf
+
 #IfNotRow code_types ct_key ADM
 INSERT INTO code_types (ct_key, ct_id, ct_seq, ct_mod, ct_just, ct_fee, ct_rel, ct_nofs, ct_diag ) VALUES ('ADM',17, 5, 0, '', 1, 0, 0, 0);
 #EndIf
@@ -23,6 +27,7 @@ UPDATE facility SET billing_location = 1 WHERE pos_code = 1 AND billing_location
 
 # Add IPPF2 code set (numeric type 31).
 INSERT INTO code_types (ct_key,ct_id,ct_seq,ct_mod,ct_just,ct_fee,ct_rel,ct_nofs,ct_diag) VALUES ('IPPF2',31,7,0,'',0,0,1,0);
+DELETE FROM codes WHERE code_type = 31;
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '1110010900000', '', 'Contraceptives - Counselling - General' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '1121120000000', '', 'Oral Contraceptives - Consultation' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '1122120000000', '', 'Injectable - Consultation' );
