@@ -105,6 +105,18 @@ if ($_POST['formaction'] == "save" && $layout_id) {
         $field_id = formTrim($iter['id']);
         $data_type = formTrim($iter['data_type']);
         $listval = $data_type == 34 ? formTrim($iter['contextName']) : formTrim($iter['list_id']);
+
+        $conditions = '';
+        if (!empty($iter['condition_id'])) {
+          // Condition attributes will be stored as a serialized array.
+          $conditions = serialize(array(0 => array(
+            'id'       => strip_escape_custom($iter['condition_id'      ]),
+            'itemid'   => strip_escape_custom($iter['condition_itemid'  ]),
+            'operator' => strip_escape_custom($iter['condition_operator']),
+            'value'    => strip_escape_custom($iter['condition_value'   ]),
+          )));
+        }
+
         if ($field_id) {
             sqlStatement("UPDATE layout_options SET " .
                 "source = '"        . formTrim($iter['source'])    . "', " .
@@ -121,7 +133,8 @@ if ($_POST['formaction'] == "save" && $layout_id) {
                 "list_id= '"        . $listval   . "', " .
                 "edit_options = '"  . formTrim($iter['edit_options']) . "', " .
                 "default_value = '" . formTrim($iter['default'])   . "', " .
-                "description = '"   . formTrim($iter['desc'])      . "' " .
+                "description = '"   . formTrim($iter['desc'])      . "', " .
+                "conditions = '"    . add_escape_custom($conditions) . "' " .
                 "WHERE form_id = '$layout_id' AND field_id = '$field_id'");
         }
     }
@@ -362,10 +375,12 @@ if ($layout_id) {
 // global counter for field numbers
 $fld_line_no = 0;
 
+$extra_html = '';
+
 // Write one option line to the form.
 //
 function writeFieldLine($linedata) {
-    global $fld_line_no, $sources, $lbfonly;
+    global $fld_line_no, $sources, $lbfonly, $extra_html;
     ++$fld_line_no;
     $checked = $linedata['default_value'] ? " checked" : "";
   
@@ -589,7 +604,68 @@ function writeFieldLine($linedata) {
       }
     }
 
+    // The "?" to click on for yet more field attributes.
+    echo "  <td class='bold' style='cursor:pointer' " .
+      "onclick='extShow($fld_line_no, this)' align='center' " .
+      "title='" . xla('Click here to view/edit more details') . "'>";
+    echo "&nbsp;?&nbsp;";
+    echo "</td>\n";
+
     echo " </tr>\n";
+
+    // Create a floating div for the additional attributes of this field.
+    $conditions = empty($linedata['conditions']) ?
+      array(0 => array('id' => '', 'itemid' => '', 'operator' => '', 'value' => '')) :
+      unserialize($linedata['conditions']);
+    //
+    $extra_html .= "<div id='ext_$fld_line_no' " .
+      "style='position:absolute;width:750px;border:1px solid black;" .
+      "padding:2px;background-color:#cccccc;visibility:hidden;" .
+      "z-index:1000;left:-1000px;top:0px;font-size:9pt;'>\n" .
+      // Fields here for other field name, operator and value.
+      // Is there an easy way to have an arbitrary number of these?
+      "<table width='100%'>\n" .
+      " <tr>\n" .
+      "  <th colspan='2' align='left' class='bold'>" . xlt('Hide this field if') . ":</th>\n" .
+      "  <th colspan='2' align='right' class='text'><input type='button' " .
+      "value='" . xla('Close') . "' onclick='extShow($fld_line_no, false)' />&nbsp;</th>\n" .
+      " </tr>\n" .
+      " <tr>\n" .
+      "  <th align='left' class='bold'>" . xlt('Field ID') . "</th>\n" .
+      "  <th align='left' class='bold'>" . xlt('List item ID if applicable') . "</th>\n" .
+      "  <th align='left' class='bold'>" . xlt('Operator') . "</th>\n" .
+      "  <th align='left' class='bold'>" . xlt('Value if applicable') . "</th>\n" .
+      " </tr>\n" .
+      " <tr>\n" .
+      "  <td align='left'>\n" .
+      "   <input type='text' name='fld[$fld_line_no][condition_id]' value='" .
+      attr($conditions[0]['id']) . "' size='15' maxlength='31' />\n" .
+      "  </td>\n" .
+      "  <td align='left'>\n" .
+      "   <input type='text' name='fld[$fld_line_no][condition_itemid]' value='" .
+      attr($conditions[0]['itemid']) . "' size='15' maxlength='31' />\n" .
+      "  </td>\n" .
+      "  <td align='left'>\n" .
+      "   <select name='fld[$fld_line_no][condition_operator]' />\n";
+    foreach (array(
+      'eq' => xl('Equals'         ),
+      'ne' => xl('Does not equal' ),
+      'se' => xl('Is selected'    ),
+      'ns' => xl('Is not selected'),
+    ) as $key => $value) {
+      $extra_html .= "    <option value= '$key'";
+      if ($key == $conditions[0]['operator']) $extra_html .= " selected";
+      $extra_html .= ">" . text($value) . "</option>\n";
+    }
+    $extra_html .= "   </select>\n" .
+      "  </td>\n" .
+      "  <td align='left' title='" . xla('Only for comparisons') . "'>\n" .
+      "   <input type='text' name='fld[$fld_line_no][condition_value]' value='" .
+      attr($conditions[0]['value']) . "' size='15' maxlength='63' />\n" .
+      "  </td>\n" .
+      " </tr>\n" .
+      "</table>\n" .
+      "</div>";
 }
 ?>
 <html>
@@ -641,6 +717,52 @@ a, a:visited, a:hover { color:#0000cc; }
     color: black;
 }
 </style>
+
+<script language="JavaScript">
+
+// Helper functions.
+function extGetX(elem) {
+ var x = 0;
+ while(elem != null) {
+  x += elem.offsetLeft;
+  elem = elem.offsetParent;
+ }
+ return x;
+}
+function extGetY(elem) {
+ var y = 0;
+ while(elem != null) {
+  y += elem.offsetTop;
+  elem = elem.offsetParent;
+ }
+ return y;
+}
+
+// Show or hide the "extras" div for a row.
+var extdiv = null;
+function extShow(lino, show) {
+ var thisdiv = document.getElementById("ext_" + lino);
+ if (extdiv) {
+  extdiv.style.visibility = 'hidden';
+  extdiv.style.left = '-1000px';
+  extdiv.style.top = '0px';
+ }
+ if (show && thisdiv != extdiv) {
+  extdiv = thisdiv;
+  var dw = window.innerWidth ? window.innerWidth - 20 : document.body.clientWidth;
+  x = dw - extdiv.offsetWidth;
+  if (x < 0) x = 0;
+  var y = extGetY(show) + show.offsetHeight;
+  extdiv.style.left = x;
+  extdiv.style.top  = y;
+  extdiv.style.visibility = 'visible';
+ }
+ else {
+  extdiv = null;
+ }
+}
+
+</script>
 
 </head>
 
@@ -733,6 +855,7 @@ while ($row = sqlFetchArray($res)) {
   if ($GLOBALS['translate_layout'] && $_SESSION['language_choice'] > 1) {
    echo "<th>" . xl('Translation')."<span class='help' title='" . xl('The translation of description in current language')."'>&nbsp;(?)</span></th>";
   } ?>
+  <th><?php echo xlt('?'); ?></th>
  </tr>
 </thead>
 <tbody>
@@ -748,6 +871,8 @@ while ($row = sqlFetchArray($res)) {
 ?>
 </tbody>
 </table></div>
+
+<?php echo $extra_html; ?>
 
 <?php if ($layout_id) { ?>
 <span style="font-size:90%">

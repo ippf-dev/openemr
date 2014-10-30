@@ -175,3 +175,8 @@ ALTER TABLE `layout_options` ADD COLUMN `source` char(1) NOT NULL default 'F'
 ALTER TABLE `codes` ADD COLUMN
   `sex` TINYINT(1) DEFAULT 4 COMMENT '4 = All, 1 = Women Only, 2 = Men Only, 3 = Other Only';
 #EndIf
+
+#IfMissingColumn layout_options conditions
+ALTER TABLE `layout_options` ADD COLUMN
+  `conditions` text NOT NULL DEFAULT '' COMMENT 'serialized array of skip conditions';
+#EndIf
