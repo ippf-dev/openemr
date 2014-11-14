@@ -149,11 +149,11 @@ HANDLE commOpen() {
     return NULL;
   }
   COMMTIMEOUTS timeouts = {0};
-  timeouts.ReadIntervalTimeout         = 100;
-  timeouts.ReadTotalTimeoutMultiplier  =   2;
-  timeouts.ReadTotalTimeoutConstant    = 100;
-  timeouts.WriteTotalTimeoutMultiplier =   2;
-  timeouts.WriteTotalTimeoutConstant   = 100;
+  timeouts.ReadIntervalTimeout         =  100;
+  timeouts.ReadTotalTimeoutMultiplier  =    2;
+  timeouts.ReadTotalTimeoutConstant    =  100;
+  timeouts.WriteTotalTimeoutMultiplier =    2;
+  timeouts.WriteTotalTimeoutConstant   =  100;
   if(!SetCommTimeouts(hSerial, &timeouts)) {
     myError("Error setting serial port timeouts.");
     return NULL;
@@ -172,6 +172,10 @@ char * commRW(HANDLE hSerial) {
       myError(pError);
       return NULL;
     }
+    BOOL nakError = FALSE;
+    char * pIn = pComBuf;
+
+    /******************************************************************
     int readRetry = 10;
     while (--readRetry > 0) {
       if(!ReadFile(hSerial, pComBuf, 1, &dwBytes, NULL)) continue;
@@ -180,10 +184,11 @@ char * commRW(HANDLE hSerial) {
         continue;
       }
       if (pComBuf[0] != 0x15 && pComBuf[0] != 0x02) {
-        sprintf(pError, "Expected 0x02 from serial port, got 0x%02X, discarded.", (unsigned int) pComBuf[0]);
+        sprintf(pError, "Expected 0x02 from serial port, got 0x%02X.", (unsigned int) pComBuf[0]);
         myError(pError);
-        readRetry = 10;
+        // readRetry = 10;
         continue;
+        // return NULL;
       }
     }
     if (readRetry <= 0) {
@@ -196,7 +201,8 @@ char * commRW(HANDLE hSerial) {
       continue;
     }
     readRetry = 10;
-    char * pIn = pComBuf + 1;
+    ++pIn;
+
     while (--readRetry > 0) {
       if (pIn + 6 - pComBuf > COM_BUF_LEN) {
         myError("Serial port input buffer overflow.");
@@ -209,15 +215,63 @@ char * commRW(HANDLE hSerial) {
     readRetry = 10;
     ReadFile(hSerial, pIn, 4, &dwBytes, NULL);
     pIn[4] = 0;
+    ******************************************************************/
 
-    // TBD: Verify checksum here. If failing, send NAK and continue. If OK, break.
-    break;
+    // The following replaces the above for figuring out WTF is going on.
+    int readRetry = 10;
+    while (--readRetry > 0) {
+      if (pIn + 1 - pComBuf > COM_BUF_LEN) {
+        myError("Serial port input buffer overflow.");
+        return NULL;
+      }
+      dwBytes = 0;
+      if(!ReadFile(hSerial, pIn, 1, &dwBytes, NULL)) {
+        sprintf(pError, "Error %d reading from serial port.", GetLastError());
+        myError(pError);
+        if (readRetry > 2) readRetry = 2;
+        continue;
+      }
+      if (dwBytes < 1) {
+        // This is a timeout.
+        continue;
+      }
+      if (*pIn == 0x12 || *pIn == 0x14) {
+        // The printer is saying it's still alive and we need to be patient.
+        readRetry = 20;
+        continue;
+      }
+      if (*pIn == 0x15) {
+        myError("NAK from printer.");
+        nakError = TRUE;
+        break;
+      }
+      else if (*pIn == 0x03) {
+        // TBD: Set to stop reading after 4 more characters to avoid needless timeouts.
+      }
+      ++pIn;
+      readRetry = 10;
+    }
+    if (nakError || readRetry <= 0) {
+      if (writeRetry > 1)
+        myError("Read from printer failed. Re-sending request.");
+      else
+        myError("Read from printer failed. Giving up.");
+      continue;
+    }
+    *pIn = 0;
+
+    // TBD: Verify checksum here and confirm that first byte was 0x02 and 0x03 was received.
+    // If all is OK, break. Otherwise send NAK and continue.
+    break; // end write retry loop
 
   }
   if (writeRetry <= 0) {
-    myError("Giving up writing to printer.");
+    // myError("Giving up writing to printer.");
     return NULL;
   }
+
+  // TBD: Somewhere we need to check the device's state and do whatever makes sense with it.
+
   return pComBuf;
 }
 
@@ -313,9 +367,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
   char inbytes[] = "0x2a|N";
   makePrintString(inbytes);
   FILE * hFile = fopen("e:\\fptest.bin", "w");
-  fprintf(hFile, "> %s\n", pPrintBuf);
+  fprintf(hFile, ">%s", pPrintBuf);
   HANDLE hSerial = commOpen();
-  if (hSerial && commRW(hSerial)) fprintf(hFile, "< %s\n", pComBuf);
+  if (hSerial && commRW(hSerial)) fprintf(hFile, "<%s", pComBuf);
   CloseHandle(hSerial);
   fclose(hFile);
   /////////////////////////////////////////////////////////////////////
