@@ -106,16 +106,19 @@ if ($_POST['formaction'] == "save" && $layout_id) {
         $data_type = formTrim($iter['data_type']);
         $listval = $data_type == 34 ? formTrim($iter['contextName']) : formTrim($iter['list_id']);
 
-        $conditions = '';
-        if (!empty($iter['condition_id'])) {
-          // Condition attributes will be stored as a serialized array.
-          $conditions = serialize(array(0 => array(
-            'id'       => strip_escape_custom($iter['condition_id'      ]),
-            'itemid'   => strip_escape_custom($iter['condition_itemid'  ]),
-            'operator' => strip_escape_custom($iter['condition_operator']),
-            'value'    => strip_escape_custom($iter['condition_value'   ]),
-          )));
+        // Skip conditions for the line are stored as a serialized array.
+        $condarr = array();
+        for ($cix = 0; !empty($iter['condition_id'][$cix]); ++$cix) {
+          $andor = empty($iter['condition_andor'][$cix]) ? '' : $iter['condition_andor'][$cix];
+          $condarr[$cix] = array(
+            'id'       => strip_escape_custom($iter['condition_id'      ][$cix]),
+            'itemid'   => strip_escape_custom($iter['condition_itemid'  ][$cix]),
+            'operator' => strip_escape_custom($iter['condition_operator'][$cix]),
+            'value'    => strip_escape_custom($iter['condition_value'   ][$cix]),
+            'andor'    => strip_escape_custom($andor),
+          );
         }
+        $conditions = empty($condarr) ? '' : serialize($condarr);
 
         if ($field_id) {
             sqlStatement("UPDATE layout_options SET " .
@@ -626,7 +629,7 @@ function writeFieldLine($linedata) {
       // Is there an easy way to have an arbitrary number of these?
       "<table width='100%'>\n" .
       " <tr>\n" .
-      "  <th colspan='2' align='left' class='bold'>" . xlt('Hide this field if') . ":</th>\n" .
+      "  <th colspan='3' align='left' class='bold'>" . xlt('Hide this field if') . ":</th>\n" .
       "  <th colspan='2' align='right' class='text'><input type='button' " .
       "value='" . xla('Close') . "' onclick='extShow($fld_line_no, false)' />&nbsp;</th>\n" .
       " </tr>\n" .
@@ -635,37 +638,68 @@ function writeFieldLine($linedata) {
       "  <th align='left' class='bold'>" . xlt('List item ID if applicable') . "</th>\n" .
       "  <th align='left' class='bold'>" . xlt('Operator') . "</th>\n" .
       "  <th align='left' class='bold'>" . xlt('Value if applicable') . "</th>\n" .
-      " </tr>\n" .
-      " <tr>\n" .
-      "  <td align='left'>\n" .
-      "   <input type='text' name='fld[$fld_line_no][condition_id]' value='" .
-      attr($conditions[0]['id']) . "' size='15' maxlength='31' />\n" .
-      "  </td>\n" .
-      "  <td align='left'>\n" .
-      "   <input type='text' name='fld[$fld_line_no][condition_itemid]' value='" .
-      attr($conditions[0]['itemid']) . "' size='15' maxlength='31' />\n" .
-      "  </td>\n" .
-      "  <td align='left'>\n" .
-      "   <select name='fld[$fld_line_no][condition_operator]' />\n";
-    foreach (array(
-      'eq' => xl('Equals'         ),
-      'ne' => xl('Does not equal' ),
-      'se' => xl('Is selected'    ),
-      'ns' => xl('Is not selected'),
-    ) as $key => $value) {
-      $extra_html .= "    <option value= '$key'";
-      if ($key == $conditions[0]['operator']) $extra_html .= " selected";
-      $extra_html .= ">" . text($value) . "</option>\n";
+      "  <th align='left' class='bold'>&nbsp;</th>\n" .
+      " </tr>\n";
+    // There may be multiple condition lines for each field.
+    foreach ($conditions as $i => $condition) {
+      // $extra_html .= "<!-- {$condition['id']} {$condition['andor']} -->\n"; // debugging
+      $extra_html .=
+        " <tr>\n" .
+        "  <td align='left'>\n" .
+        "   <input type='text' name='fld[$fld_line_no][condition_id][$i]' value='" .
+        attr($condition['id']) . "' size='15' maxlength='31' />\n" .
+        "  </td>\n" .
+        "  <td align='left'>\n" .
+        "   <input type='text' name='fld[$fld_line_no][condition_itemid][$i]' value='" .
+        attr($condition['itemid']) . "' size='15' maxlength='31' />\n" .
+        "  </td>\n" .
+        "  <td align='left'>\n" .
+        "   <select name='fld[$fld_line_no][condition_operator][$i]'>\n";
+      foreach (array(
+        'eq' => xl('Equals'         ),
+        'ne' => xl('Does not equal' ),
+        'se' => xl('Is selected'    ),
+        'ns' => xl('Is not selected'),
+      ) as $key => $value) {
+        $extra_html .= "    <option value='$key'";
+        if ($key == $condition['operator']) $extra_html .= " selected";
+        $extra_html .= ">" . text($value) . "</option>\n";
+      }
+      $extra_html .=
+        "   </select>\n" .
+        "  </td>\n" .
+        "  <td align='left' title='" . xla('Only for comparisons') . "'>\n" .
+        "   <input type='text' name='fld[$fld_line_no][condition_value][$i]' value='" .
+        attr($condition['value']) . "' size='15' maxlength='63' />\n" .
+        "  </td>\n";
+      if (count($conditions) == $i + 1) {
+        $extra_html .=
+          "  <td align='right' title='" . xla('Add a condition') . "'>\n" .
+          "   <input type='button' value='+' onclick='extAddCondition($fld_line_no,this)' />\n" .
+          "  </td>\n";
+      }
+      else {
+        $extra_html .=
+          "  <td align='right'>\n" .
+          "   <select name='fld[$fld_line_no][condition_andor][$i]'>\n";
+        foreach (array(
+          'and' => xl('And'),
+          'or'  => xl('Or' ),
+        ) as $key => $value) {
+          $extra_html .= "    <option value='$key'";
+          if ($key == $condition['andor']) $extra_html .= " selected";
+          $extra_html .= ">" . text($value) . "</option>\n";
+        }
+        $extra_html .=
+          "   </select>\n" .
+          "  </td>\n";
+      }
+      $extra_html .=
+        " </tr>\n";
     }
-    $extra_html .= "   </select>\n" .
-      "  </td>\n" .
-      "  <td align='left' title='" . xla('Only for comparisons') . "'>\n" .
-      "   <input type='text' name='fld[$fld_line_no][condition_value]' value='" .
-      attr($conditions[0]['value']) . "' size='15' maxlength='63' />\n" .
-      "  </td>\n" .
-      " </tr>\n" .
+    $extra_html .=
       "</table>\n" .
-      "</div>";
+      "</div>\n";
 }
 ?>
 <html>
@@ -760,6 +794,52 @@ function extShow(lino, show) {
  else {
   extdiv = null;
  }
+}
+
+// Add an extra condition line for the given row.
+function extAddCondition(lino, btnelem) {
+  var f = document.forms[0];
+  var i = 0;
+
+  // Get index of next condition line.
+  while (f['fld[' + lino + '][condition_id][' + i + ']']) ++i;
+  if (i == 0) alert('f["fld[' + lino + '][condition_id][' + i + ']"] not found');
+
+  // Get containing <td>, <tr> and <table> nodes of the "+" button.
+  var tdplus = btnelem.parentNode;
+  var trelem = tdplus.parentNode;
+  var telem  = trelem.parentNode;
+
+  // Replace contents of the tdplus cell.
+  tdplus.innerHTML =
+    "<select name='fld[" + lino + "][condition_andor][" + i + "]'>" +
+    "<option value='and'><?php echo xls('And') ?></option>" +
+    "<option value='or' ><?php echo xls('Or' ) ?></option>" +
+    "</select>";
+
+  // Add the new row.
+  var newtrelem = telem.insertRow(i+2);
+  newtrelem.innerHTML =
+    "<td align='left'>" +
+    "<input type='text' name='fld[" + lino + "][condition_id][" + i + "]' value='' size='15' maxlength='31' />" +
+    "</td>" +
+    "<td align='left'>" +
+    "<input type='text' name='fld[" + lino + "][condition_itemid][" + i + "]' value='' size='15' maxlength='31' />" +
+    "</td>" +
+    "<td align='left'>" +
+    "<select name='fld[" + lino + "][condition_operator][" + i + "]'>" +
+    "<option value='eq'><?php echo xls('Equals'         ) ?></option>" +
+    "<option value='ne'><?php echo xls('Does not equal' ) ?></option>" +
+    "<option value='se'><?php echo xls('Is selected'    ) ?></option>" +
+    "<option value='ns'><?php echo xls('Is not selected') ?></option>" +
+    "</select>" +
+    "</td>" +
+    "<td align='left'>" +
+    "<input type='text' name='fld[" + lino + "][condition_value][" + i + "]' value='' size='15' maxlength='63' />" +
+    "</td>" +
+    "<td align='right'>" +
+    "<input type='button' value='+' onclick='extAddCondition(" + lino + ",this)' />" +
+    "</td>";
 }
 
 </script>

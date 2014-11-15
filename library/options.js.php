@@ -63,6 +63,8 @@ function updateAgeString(fieldid, asof, format, description) {
 var cskerror = false; // to avoid repeating error messages
 function checkSkipConditions() {
   var myerror = cskerror;
+  var prevandor = '';
+  var prevcond = false;
   for (var i = 0; i < skipArray.length; ++i) {
     var target   = skipArray[i].target;
     var id       = skipArray[i].id;
@@ -87,6 +89,15 @@ function checkSkipConditions() {
     if (operator == 'ne') condition = srcelem.value != value; else
     if (operator == 'se') condition = srcelem.checked       ; else
     if (operator == 'ns') condition = !srcelem.checked;
+
+    // Logic to accumulate multiple conditions for the same target.
+    // alert('target = ' + target + ' prevandor = ' + prevandor + ' prevcond = ' + prevcond); // debugging
+    if (prevandor == 'and') condition = condition && prevcond; else
+    if (prevandor == 'or' ) condition = condition || prevcond;
+    prevandor = skipArray[i].andor;
+    prevcond = condition;
+    var j = i + 1;
+    if (j < skipArray.length && skipArray[j].target == target) continue;
 
     // At this point condition indicates if the target should be hidden.
 

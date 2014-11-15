@@ -388,13 +388,15 @@ function validate(f) {
     $conditions = empty($frow['conditions']) ? array() : unserialize($frow['conditions']);
     foreach ($conditions as $condition) {
       if (empty($condition['id'])) continue;
+      $andor = empty($condition['andor']) ? '' : $condition['andor'];
       if ($condition_str) $condition_str .= ",\n";
       $condition_str .= "{" .
         "target:'"   . addslashes($field_id)              . "', " .
         "id:'"       . addslashes($condition['id'])       . "', " .
         "itemid:'"   . addslashes($condition['itemid'])   . "', " .
         "operator:'" . addslashes($condition['operator']) . "', " .
-        "value:'"    . addslashes($condition['value'])    . "'}";
+        "value:'"    . addslashes($condition['value'])    . "', " .
+        "andor:'"    . addslashes($andor)                 . "'}";
     }
 
     $currvalue  = '';
