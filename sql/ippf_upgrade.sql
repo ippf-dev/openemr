@@ -49,15 +49,30 @@ INSERT INTO list_options ( list_id, option_id, title, seq, is_default, mapping )
 UPDATE openemr_postcalendar_categories SET pc_catname = '1 Admission', pc_catcolor = '#FFFFFF' WHERE pc_catid = 10 AND pc_catname = 'New Patient';
 UPDATE openemr_postcalendar_categories SET pc_catname = '2 Re-Visit', pc_catcolor = '#CCFFFF' WHERE pc_catid = 9 AND pc_catname = 'Established Patient';
 
-#IfNotRow openemr_postcalendar_categories pc_catid 12
-INSERT INTO `openemr_postcalendar_categories` VALUES (12,'3 Counselling Only','#FFFFCC','Counselling',1,NULL,'a:5:{s:17:\"event_repeat_freq\";s:1:\"1\";s:22:\"event_repeat_freq_type\";s:1:\"4\";s:19:\"event_repeat_on_num\";s:1:\"1\";s:19:\"event_repeat_on_day\";s:1:\"0\";s:20:\"event_repeat_on_freq\";s:1:\"0\";}',0,900,0,3,2,0,0);
-#EndIf
-#IfNotRow openemr_postcalendar_categories pc_catid 13
-INSERT INTO `openemr_postcalendar_categories` VALUES (13,'4 Supply/Re-Supply','#CCCCCC','Supply/Re-Supply',1,NULL,'a:5:{s:17:\"event_repeat_freq\";s:1:\"1\";s:22:\"event_repeat_freq_type\";s:1:\"4\";s:19:\"event_repeat_on_num\";s:1:\"1\";s:19:\"event_repeat_on_day\";s:1:\"0\";s:20:\"event_repeat_on_freq\";s:1:\"0\";}',0,900,0,3,2,0,0);
-#EndIf
-#IfNotRow openemr_postcalendar_categories pc_catid 14
-INSERT INTO `openemr_postcalendar_categories` VALUES (14,'5 Administrative','#FFFFFF','Supply/Re-Supply',1,NULL,'a:5:{s:17:\"event_repeat_freq\";s:1:\"1\";s:22:\"event_repeat_freq_type\";s:1:\"4\";s:19:\"event_repeat_on_num\";s:1:\"1\";s:19:\"event_repeat_on_day\";s:1:\"0\";s:20:\"event_repeat_on_freq\";s:1:\"0\";}',0,900,0,3,2,0,0);
-#EndIf
+# The following is problematic here because pc_cattype was added later and is required.
+# We might want to handle it later.
+#
+# #IfNotRow openemr_postcalendar_categories pc_catid 12
+# INSERT INTO `openemr_postcalendar_categories`
+#   (pc_catid,pc_catname,pc_catcolor,pc_catdesc,pc_recurrtype,pc_recurrspec,pc_duration,pc_end_date_type,pc_end_date_freq) VALUES
+#   (12,'3 Counselling Only','#FFFFCC','Counselling',1,
+#   'a:5:{s:17:\"event_repeat_freq\";s:1:\"1\";s:22:\"event_repeat_freq_type\";s:1:\"4\";s:19:\"event_repeat_on_num\";s:1:\"1\";s:19:\"event_repeat_on_day\";s:1:\"0\";s:20:\"event_repeat_on_freq\";s:1:\"0\";}',
+#   900,3,2);
+# #EndIf
+# #IfNotRow openemr_postcalendar_categories pc_catid 13
+# INSERT INTO `openemr_postcalendar_categories`
+#   (pc_catid,pc_catname,pc_catcolor,pc_catdesc,pc_recurrtype,pc_recurrspec,pc_duration,pc_end_date_type,pc_end_date_freq) VALUES
+#   (13,'4 Supply/Re-Supply','#CCCCCC','Supply/Re-Supply',1,
+#   'a:5:{s:17:\"event_repeat_freq\";s:1:\"1\";s:22:\"event_repeat_freq_type\";s:1:\"4\";s:19:\"event_repeat_on_num\";s:1:\"1\";s:19:\"event_repeat_on_day\";s:1:\"0\";s:20:\"event_repeat_on_freq\";s:1:\"0\";}',
+#   900,3,2);
+# #EndIf
+# #IfNotRow openemr_postcalendar_categories pc_catid 14
+# INSERT INTO `openemr_postcalendar_categories`
+#   (pc_catid,pc_catname,pc_catcolor,pc_catdesc,pc_recurrtype,pc_recurrspec,pc_duration,pc_end_date_type,pc_end_date_freq) VALUES
+#   (14,'5 Administrative','#FFFFFF','Supply/Re-Supply',1,
+#   'a:5:{s:17:\"event_repeat_freq\";s:1:\"1\";s:22:\"event_repeat_freq_type\";s:1:\"4\";s:19:\"event_repeat_on_num\";s:1:\"1\";s:19:\"event_repeat_on_day\";s:1:\"0\";s:20:\"event_repeat_on_freq\";s:1:\"0\";}',
+#   900,3,2);
+# #EndIf
 
 #IfNotTable globals
 CREATE TABLE `globals` (
