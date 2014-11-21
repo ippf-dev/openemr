@@ -608,9 +608,10 @@ function writeFieldLine($linedata) {
     }
 
     // The "?" to click on for yet more field attributes.
-    echo "  <td class='bold' style='cursor:pointer' " .
-      "onclick='extShow($fld_line_no, this)' align='center' " .
-      "title='" . xla('Click here to view/edit more details') . "'>";
+    echo "  <td class='bold' id='querytd_$fld_line_no' style='cursor:pointer;";
+    if (!empty($linedata['conditions'])) echo "background-color:#77ff77;";
+    echo "' onclick='extShow($fld_line_no, this)' align='center' ";
+    echo "title='" . xla('Click here to view/edit more details') . "'>";
     echo "&nbsp;?&nbsp;";
     echo "</td>\n";
 
@@ -647,7 +648,7 @@ function writeFieldLine($linedata) {
         " <tr>\n" .
         "  <td align='left'>\n" .
         "   <input type='text' name='fld[$fld_line_no][condition_id][$i]' value='" .
-        attr($condition['id']) . "' size='15' maxlength='31' />\n" .
+        attr($condition['id']) . "' size='15' maxlength='31' onchange='cidChanged($fld_line_no)' />\n" .
         "  </td>\n" .
         "  <td align='left'>\n" .
         "   <input type='text' name='fld[$fld_line_no][condition_itemid][$i]' value='" .
@@ -840,6 +841,12 @@ function extAddCondition(lino, btnelem) {
     "<td align='right'>" +
     "<input type='button' value='+' onclick='extAddCondition(" + lino + ",this)' />" +
     "</td>";
+}
+
+function cidChanged(lino) {
+  var thisid = document.forms[0]['fld[' + lino + '][condition_id][0]'].value;
+  var thistd = document.getElementById("querytd_" + lino);
+  thistd.style.backgroundColor = thisid ? '#77ff77' : '';
 }
 
 </script>
