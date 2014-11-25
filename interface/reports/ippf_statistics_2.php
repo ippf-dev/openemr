@@ -17,10 +17,63 @@ include_once("../../custom/code_types.inc.php");
 
 $alertmsg = '';
 
+
 // Might want something different here.
 //
 if (! acl_check('acct', 'rep')) die("Unauthorized access.");
+/**
+ * 
+ * @param type $post_variable
+ * @return type an integer representing the parsed post variable, or null if non-existent or not numeric
+ * if the return value is null, it will not be used as a filter.
+ * 
+ */
+function validate_age_filter($post_variable)
+{
+    if(isset($_POST[$post_variable]))
+    {
+        $value=$_POST[$post_variable];
+        if(is_numeric($value))
+        {
+            return intval($value);
+        }
+        else
+        {
+            return null;
+        }
+    }
+    else
+    {
+        return null;
+    }
+}
 
+/**
+ * 
+ * 
+ * @global type $age_maximum
+ * @global type $age_minimum
+ * @param type $encdate  the field to compare the DOB to in order to determine the age at the time for the given record (typically fe.date)
+ * @return string SQL clause to filter the age
+ */
+function sql_age_filter($encdate)
+{
+    // Age min/max is already validated to be an intval so no need to escape in SQL
+    global $age_maximum,$age_minimum;
+    $retval= "";
+    if(!is_null($age_minimum))
+    {
+        $retval.= " AND (timestampdiff(YEAR,pd.DOB,$encdate) >= ".$age_minimum . " OR timestampdiff(YEAR,pd.DOB,$encdate) is null )"; // If DOB is null then age is very large, and hence will be included
+    }
+    
+    if(!is_null($age_maximum))
+    {
+        $retval.= " AND (timestampdiff(YEAR,pd.DOB,$encdate) <= ".$age_maximum . " AND timestampdiff(YEAR,pd.DOB,$encdate) is NOT null   )"; // If DOB is null then age is very large then it's above the maximum and thus excluded
+        
+    }
+    
+    return $retval;
+}
 $report_type = empty($_GET['t']) ? 'i' : $_GET['t'];
 
 $from_date     = fixDate($_POST['form_from_date']);
@@ -32,6 +85,9 @@ $form_adjreason = isset($_POST['form_adjreason']) ? $_POST['form_adjreason'] : '
 $form_sexes    = isset($_POST['form_sexes']) ? $_POST['form_sexes'] : '4';
 $form_content  = isset($_POST['form_content']) ? $_POST['form_content'] : '1';
 $form_output   = isset($_POST['form_output']) ? 0 + $_POST['form_output'] : 1;
+
+$age_minimum = validate_age_filter('age_minimum');
+$age_maximum = validate_age_filter('age_maximum');
 
 // Clinics: 0=Combined, 1=Detail
 $form_clinics  = isset($_POST['form_clinics']) ? 0 + $_POST['form_clinics'] : 0;
@@ -587,7 +643,9 @@ function accumClinicPeriod($key, $row, $quantity, $clikey, $perkey) {
     $areport[$key]['.dtl'][$clikey][$perkey]['.wom'] += $quantity;
 
   // Increment the correct age categories.
+  
   $age = getAge(fixDate($row['DOB']), $row['encdate']);
+  
   $i = min(intval(($age - 5) / 5), 8);
   if ($age < 10) $i = 0;
   $areport[$key]['.dtl'][$clikey][$perkey]['.age9'][$i] += $quantity;
@@ -1543,6 +1601,18 @@ while ($lrow = sqlFetchArray($lres)) {
        title='<?php xl('Click here to choose a date','e'); ?>'>
      </td>
     </tr>
+    <tr>
+        <td colspan="2" class='detail' nowrap>
+            <?php echo xlt("Age >="); ?>
+                <input type='text' name='age_minimum' size='4'
+                       value='<?php echo xlt($age_minimum); ?>'
+                       title='<?php echo xlt("Do not include clients younger this value in results");?>'/>
+            <?php echo xlt("Age <="); ?>
+                <input type='text' name='age_maximum' size='4'
+                       value='<?php echo xlt($age_maximum); ?>'
+                       title='<?php echo xlt("Do not include clients older this value in results");?>'/>
+        </td>
+    </tr>
    </table>
   </td>
  </tr>
@@ -1678,7 +1748,7 @@ if ($_POST['form_submit']) {
         "fe.date AS encdate, fe.provider_id, fe.facility_id " .
         "FROM drug_sales AS ds " .
         "JOIN drugs AS d ON d.drug_id = ds.drug_id " .
-        "JOIN patient_data AS pd ON pd.pid = ds.pid $sexcond" .
+        "JOIN patient_data AS pd ON pd.pid = ds.pid $sexcond" . sql_age_filter("fe.date") .
         "LEFT JOIN form_encounter AS fe ON fe.pid = ds.pid AND fe.encounter = ds.encounter " .
         "WHERE ds.sale_date >= '$from_date' AND " .
         "ds.sale_date <= '$to_date' AND " .
@@ -1765,7 +1835,7 @@ if ($_POST['form_submit']) {
         "pd.regdate, pd.referral_source, " .
         "pd.sex, pd.DOB, pd.lname, pd.fname, pd.mname $pd_fields " .
         "FROM transactions AS t " .
-        "JOIN patient_data AS pd ON pd.pid = t.pid $sexcond" .
+        "JOIN patient_data AS pd ON pd.pid = t.pid $sexcond" . sql_age_filter($datefld) .
         "WHERE t.title = 'Referral' AND $datefld IS NOT NULL AND " .
         "$datefld >= '$from_date' AND $datefld <= '$to_date' AND $exttest " .
         "ORDER BY t.pid, t.id";
@@ -1847,7 +1917,7 @@ if ($_POST['form_submit']) {
       $query .=
         "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' AND d1.field_value != '' " .
         "JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'pastmodern' AND d2.field_value = '0' " .
-        "JOIN patient_data AS pd ON pd.pid = f.pid $sexcond " .
+        "JOIN patient_data AS pd ON pd.pid = f.pid $sexcond " . sql_age_filter("fe.date") .
         "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 ";
 
       $query .=
@@ -1939,7 +2009,7 @@ if ($_POST['form_submit']) {
         "FROM form_encounter AS fe " .
         "JOIN forms AS f ON f.pid = fe.pid AND f.encounter = fe.encounter AND " .
         "f.formdir = 'newpatient' AND f.form_id = fe.id AND f.deleted = 0 " .
-        "JOIN patient_data AS pd ON pd.pid = fe.pid $sexcond" .
+        "JOIN patient_data AS pd ON pd.pid = fe.pid $sexcond" . sql_age_filter("fe.date") .
         "LEFT OUTER JOIN billing AS b ON " .
         "b.pid = fe.pid AND b.encounter = fe.encounter AND b.activity = 1 " .
         "AND ( b.code_type = 'MA' OR b.code_type = 'ADM' ) " .
