@@ -1605,11 +1605,11 @@ while ($lrow = sqlFetchArray($lres)) {
         <td colspan="2" class='detail' nowrap>
             <?php echo xlt("Age >="); ?>
                 <input type='text' name='age_minimum' size='4'
-                       value='<?php echo xlt($age_minimum); ?>'
+                       value='<?php echo $age_minimum; ?>'
                        title='<?php echo xlt("Do not include clients younger this value in results");?>'/>
             <?php echo xlt("Age <="); ?>
                 <input type='text' name='age_maximum' size='4'
-                       value='<?php echo xlt($age_maximum); ?>'
+                       value='<?php echo $age_maximum; ?>'
                        title='<?php echo xlt("Do not include clients older this value in results");?>'/>
         </td>
     </tr>
