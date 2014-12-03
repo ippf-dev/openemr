@@ -296,7 +296,10 @@ function genAnyCell($data, $align='left', $class='', $colspan=1, $forcetext=fals
       // Next line is to force the spreadsheet app to recognize the column as
       // text and not a number.  We don't like IPPF2 codes shown in floating
       // point notation.  :)
-      if ($forcetext) echo '=';
+      // if ($forcetext) echo '=';
+      // The above freaked out LibreOffice when the field includes a comma. So now this:
+      if (preg_match('^[0-9]+$', $datum)) echo '=';
+      //
       echo '"' . $datum . '"';
       while ($colspan-- > 1) echo ',""';
     }
