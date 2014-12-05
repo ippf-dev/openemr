@@ -380,6 +380,25 @@ $fld_line_no = 0;
 
 $extra_html = '';
 
+// This is called to generate a select option list for fields within this form.
+// Used for selecting a field for testing in a skip condition.
+//
+function genFieldOptionList($current='') {
+  global $layout_id;
+  $option_list = "<option value=''>-- " . xlt('Please Select') . " --</option>";
+  if ($layout_id) {
+    $query = "SELECT field_id FROM layout_options WHERE form_id = ? ORDER BY group_name, seq";
+    $res = sqlStatement($query, array($layout_id));
+    while ($row = sqlFetchArray($res)) {
+      $field_id = $row['field_id'];
+      $option_list .= "<option value='" . attr($field_id) . "'";
+      if ($field_id == $current) $option_list .= " selected";
+      $option_list .= ">" . text($field_id) . "</option>";
+    }
+  }
+  return $option_list;
+}
+
 // Write one option line to the form.
 //
 function writeFieldLine($linedata) {
@@ -626,33 +645,33 @@ function writeFieldLine($linedata) {
       "style='position:absolute;width:750px;border:1px solid black;" .
       "padding:2px;background-color:#cccccc;visibility:hidden;" .
       "z-index:1000;left:-1000px;top:0px;font-size:9pt;'>\n" .
-      // Fields here for other field name, operator and value.
-      // Is there an easy way to have an arbitrary number of these?
       "<table width='100%'>\n" .
       " <tr>\n" .
-      "  <th colspan='3' align='left' class='bold'>" . xlt('Hide this field if') . ":</th>\n" .
+      "  <th colspan='3' align='left' class='bold'>\"" . text($linedata['field_id']) . "\" " .
+      xlt('will be hidden if') . ":</th>\n" .
       "  <th colspan='2' align='right' class='text'><input type='button' " .
       "value='" . xla('Close') . "' onclick='extShow($fld_line_no, false)' />&nbsp;</th>\n" .
       " </tr>\n" .
       " <tr>\n" .
       "  <th align='left' class='bold'>" . xlt('Field ID') . "</th>\n" .
-      "  <th align='left' class='bold'>" . xlt('List item ID if applicable') . "</th>\n" .
+      "  <th align='left' class='bold'>" . xlt('List item ID') . "</th>\n" .
       "  <th align='left' class='bold'>" . xlt('Operator') . "</th>\n" .
-      "  <th align='left' class='bold'>" . xlt('Value if applicable') . "</th>\n" .
+      "  <th align='left' class='bold'>" . xlt('Value if comparing') . "</th>\n" .
       "  <th align='left' class='bold'>&nbsp;</th>\n" .
       " </tr>\n";
     // There may be multiple condition lines for each field.
     foreach ($conditions as $i => $condition) {
-      // $extra_html .= "<!-- {$condition['id']} {$condition['andor']} -->\n"; // debugging
       $extra_html .=
         " <tr>\n" .
         "  <td align='left'>\n" .
-        "   <input type='text' name='fld[$fld_line_no][condition_id][$i]' value='" .
-        attr($condition['id']) . "' size='15' maxlength='31' onchange='cidChanged($fld_line_no)' />\n" .
+        "   <select name='fld[$fld_line_no][condition_id][$i]' onchange='cidChanged($fld_line_no, $i)'>" .
+        genFieldOptionList($condition['id']) . " </select>\n" .
         "  </td>\n" .
         "  <td align='left'>\n" .
-        "   <input type='text' name='fld[$fld_line_no][condition_itemid][$i]' value='" .
-        attr($condition['itemid']) . "' size='15' maxlength='31' />\n" .
+        // List item choices are populated on the client side but will need the current value,
+        // so we insert a temporary option here to hold that value.
+        "   <select name='fld[$fld_line_no][condition_itemid][$i]'><option value='" .
+        attr($condition['itemid']) . "'>...</option></select>\n" .
         "  </td>\n" .
         "  <td align='left'>\n" .
         "   <select name='fld[$fld_line_no][condition_operator][$i]'>\n";
@@ -755,7 +774,7 @@ a, a:visited, a:hover { color:#0000cc; }
 
 <script language="JavaScript">
 
-// Helper functions.
+// Helper functions for positioning the floating divs.
 function extGetX(elem) {
  var x = 0;
  while(elem != null) {
@@ -804,7 +823,7 @@ function extAddCondition(lino, btnelem) {
 
   // Get index of next condition line.
   while (f['fld[' + lino + '][condition_id][' + i + ']']) ++i;
-  if (i == 0) alert('f["fld[' + lino + '][condition_id][' + i + ']"] not found');
+  if (i == 0) alert('f["fld[' + lino + '][condition_id][' + i + ']"] <?php echo xls('not found') ?>');
 
   // Get containing <td>, <tr> and <table> nodes of the "+" button.
   var tdplus = btnelem.parentNode;
@@ -822,10 +841,12 @@ function extAddCondition(lino, btnelem) {
   var newtrelem = telem.insertRow(i+2);
   newtrelem.innerHTML =
     "<td align='left'>" +
-    "<input type='text' name='fld[" + lino + "][condition_id][" + i + "]' value='' size='15' maxlength='31' />" +
+    "<select name='fld[" + lino + "][condition_id][" + i + "]' onchange='cidChanged(" + lino + "," + i + ")'>" +
+    "<?php echo addslashes(genFieldOptionList()) ?>" +
+    "</select>" +
     "</td>" +
     "<td align='left'>" +
-    "<input type='text' name='fld[" + lino + "][condition_itemid][" + i + "]' value='' size='15' maxlength='31' />" +
+    "<select name='fld[" + lino + "][condition_itemid][" + i + "]' style='display:none' />" +
     "</td>" +
     "<td align='left'>" +
     "<select name='fld[" + lino + "][condition_operator][" + i + "]'>" +
@@ -843,10 +864,57 @@ function extAddCondition(lino, btnelem) {
     "</td>";
 }
 
-function cidChanged(lino) {
+// This is called when a field ID is chosen for testing within a skip condition.
+// It checks to see if a corresponding list item must also be chosen for the test, and
+// if so then inserts the dropdown for selecting an item from the appropriate list.
+function setListItemOptions(lino, seq, init) {
+  var f = document.forms[0];
+  var target = 'fld[' + lino + '][condition_itemid][' + seq + ']';
+  // field_id is the ID of the field that the condition will test.
+  var field_id = f['fld[' + lino + '][condition_id][' + seq + ']'].value;
+  if (!field_id) {
+    f[target].options.length = 0;
+    f[target].style.display = 'none';
+    return;
+  }
+  // Find the occurrence of that field in the layout.
+  var i = 1;
+  while (true) {
+    var idname = 'fld[' + i + '][id]';
+    if (!f[idname]) {
+      alert('<?php echo xls('Condition field not found') ?>: ' + field_id);
+      return;
+    }
+    if (f[idname].value == field_id) break;
+    ++i;
+  }
+  // If this is startup initialization then preserve the current value.
+  var current = init ? f[target].value : '';
+  f[target].options.length = 0;
+  // Get the corresponding data type and list ID.
+  var data_type = f['fld[' + i + '][data_type]'].value;
+  var list_id   = f['fld[' + i + '][list_id]'].value;
+  // WARNING: If new data types are defined the following test may need enhancing.
+  // We're getting out if the type does not generate multiple fields with different names.
+  if (data_type != '21' && data_type != '22' && data_type != '23' && data_type != '25') {
+    f[target].style.display = 'none';
+    return;
+  }
+  // OK, list item IDs do apply so go get 'em.
+  // This happens asynchronously so the generated code needs to stand alone.
+  f[target].style.display = '';
+  $.getScript('layout_listitems_ajax.php' +
+    '?listid='  + encodeURIComponent(list_id) +
+    '&target='  + encodeURIComponent(target)  +
+    '&current=' + encodeURIComponent(current));
+}
+
+// This is called whenever a condition's field ID selection is changed.
+function cidChanged(lino, seq) {
   var thisid = document.forms[0]['fld[' + lino + '][condition_id][0]'].value;
   var thistd = document.getElementById("querytd_" + lino);
   thistd.style.backgroundColor = thisid ? '#77ff77' : '';
+  setListItemOptions(lino, seq, false);
 }
 
 </script>
@@ -1488,6 +1556,14 @@ $(document).ready(function(){
       }
     };
 
+    // Initialize the list item selectors in skip conditions.
+    var f = document.forms[0];
+    for (var lino = 1; f['fld[' + lino + '][id]']; ++lino) {
+      for (var seq = 0; f['fld[' + lino + '][condition_itemid][' + seq + ']']; ++seq) {
+        setListItemOptions(lino, seq, true);
+      }
+    }
+
 });
 
 function NationNotesContext(lineitem,val){
@@ -1614,6 +1690,7 @@ function IsNumeric(value, min, max) {
 
 // tell if num is an Integer
 function IsN(num) { return !/\D/.test(num); }
+
 </script>
 
 </html>
