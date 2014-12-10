@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2007-2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2007-2014 Rod Roark <rod@sunsetsystems.com>
 //
 // 2012 - Refactored extensively to allow for creating multiple feesheets on demand
 // uses a session array of PIDS by Medical Information Integration, LLC - mi-squared.com
@@ -220,6 +220,7 @@ border-width: 0 0 1px 1px;
 border-spacing: 0;
 border-collapse: collapse;
 border-color: #999999;
+page-break-after: always;
 }
 td.toprow {
 height: 1px;
@@ -301,12 +302,16 @@ window.print();
 onsubmit='return opener.top.restoreSession()'>
 <center>";
 
+// I don't see why this was here or how it could possibly work.
+// Commented out 2014-12-09 by Rod.
+/**********************************************************************
 // Set Pagebreak for multi forms
 if ($form_fill == 2) {
     $html .= "<div class=pagebreak>\n";
 } else {
     $html .= "<div>\n";
 }
+**********************************************************************/
 
 $today = date('Y-m-d');
 
@@ -533,9 +538,10 @@ foreach ($pid_list as $pid) {
 </tr>
 
 </table>";
-        
-        $html .= "</div>";  //end of div.pageLetter
-        
+
+// Commented out 2014-12-09 by Rod (see corresponding above):
+//         $html .= "</div>";  //end of div.pageLetter
+
     } // end while
     $pages = $saved_pages; //RESET
 }
