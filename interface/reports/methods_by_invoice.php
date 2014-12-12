@@ -220,7 +220,7 @@ td.delink { color:#0000cc; font-size:10pt; cursor:pointer }
 function dosort(orderby) {
  var f = document.forms[0];
  f.form_orderby.value = orderby;
- opener.top.restoreSession();
+ if (opener) opener.top.restoreSession(); else top.restoreSession();
  f.submit();
  return false;
 }
