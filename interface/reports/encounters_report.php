@@ -506,5 +506,8 @@ if ($res) {
 
 </script>
 <script type="text/javascript" src="<?php echo $web_root;?>/library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript">
+    var export_label="<?php echo xlt("Export to CSV"); ?>";
+</script>
 <script type="text/javascript" src="csvExport/encounter_report_export.js"></script>
 </html>

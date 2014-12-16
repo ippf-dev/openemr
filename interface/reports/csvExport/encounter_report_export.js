@@ -43,7 +43,7 @@ function setup_csv_export_form()
 
 function setup_export_control()
 {
-    var export_button=$("<input type='button' value='Save as CSV'/>");
+    var export_button=$("<input type='button' value='"+export_label+"'/>");
     var print_button=$("#encreport_parameters input:last");
     print_button.after(export_button);
     export_button.on({click: export_csv});

@@ -2215,8 +2215,8 @@ if ($_POST['form_submit']) {
           genHeadCell(xl('F 0-24' ), 'right');
           genHeadCell(xl('F 25+'  ), 'right');
           genHeadCell(xl('F Total'  ), 'right');
-          genHeadCell(xl('T 0-24' ), 'right');
-          genHeadCell(xl('T 25+'  ), 'right');
+          genHeadCell(xl('Tot 0-24' ), 'right');
+          genHeadCell(xl('Tot 25+'  ), 'right');
         }
         else if ($value == '.age9G') { // Age
           genHeadCell(xl('M 0-9'  ), 'right');
@@ -2239,15 +2239,15 @@ if ($_POST['form_submit']) {
           genHeadCell(xl('F 40-44'), 'right');
           genHeadCell(xl('F 45+'  ), 'right');
           genHeadCell(xl('F Total'  ), 'right');
-          genHeadCell(xl('T 0-9'  ), 'right');
-          genHeadCell(xl('T 10-14'), 'right');
-          genHeadCell(xl('T 15-19'), 'right');
-          genHeadCell(xl('T 20-24'), 'right');
-          genHeadCell(xl('T 25-29'), 'right');
-          genHeadCell(xl('T 30-34'), 'right');
-          genHeadCell(xl('T 35-39'), 'right');
-          genHeadCell(xl('T 40-44'), 'right');
-          genHeadCell(xl('T 45+'  ), 'right');
+          genHeadCell(xl('Tot 0-9'  ), 'right');
+          genHeadCell(xl('Tot 10-14'), 'right');
+          genHeadCell(xl('Tot 15-19'), 'right');
+          genHeadCell(xl('Tot 20-24'), 'right');
+          genHeadCell(xl('Tot 25-29'), 'right');
+          genHeadCell(xl('Tot 30-34'), 'right');
+          genHeadCell(xl('Tot 35-39'), 'right');
+          genHeadCell(xl('Tot 40-44'), 'right');
+          genHeadCell(xl('Tot 45+'  ), 'right');
         }
         else if ($arr_show[$value]['list_id']) {
           foreach ($arr_titles[$value] as $key => $dummy) {
