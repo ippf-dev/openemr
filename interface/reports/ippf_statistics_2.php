@@ -1426,8 +1426,8 @@ $arr_show   = array(
   // '.total' => array('title' => xl('Total')),
   '.age2'  => array('title' => xl('Age Category') . ' (2)'),
   '.age9'  => array('title' => xl('Age Category') . ' (9)'),
-  '.age2G'  => array('title' => xl('Age Category and Gender') . ' (2)'),
-  '.age9G'  => array('title' => xl('Age Category and Gender') . ' (9)'),
+  '.age2G'  => array('title' => xl('Age Category and Sex') . ' (2)'),
+  '.age9G'  => array('title' => xl('Age Category and Sex') . ' (9)'),
 ); // info about selectable columns
 
 // This holds 2 levels of column headers. The first level of keys are the
