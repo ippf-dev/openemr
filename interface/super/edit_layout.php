@@ -917,6 +917,11 @@ function cidChanged(lino, seq) {
   setListItemOptions(lino, seq, false);
 }
 
+// This is called when the New Layout button is clicked.
+function doNewLayout() {
+  top.restoreSession();
+  location = 'edit_list.php?list_id=lbfnames&from_layout=1';
+}
 </script>
 
 </head>
@@ -937,7 +942,8 @@ function cidChanged(lino, seq) {
 <input type="hidden" name="selectedfields" id="selectedfields" value="">
 <input type="hidden" id="targetgroup" name="targetgroup" value="">
 
-<p><b><?php xl('Edit layout','e'); ?>:</b>&nbsp;
+<p>
+<b><?php xl('Edit layout','e'); ?>:</b>&nbsp;
 <select name='layout_id' id='layout_id'>
  <option value=''>-- <?php echo xl('Select') ?> --</option>
 <?php
@@ -947,7 +953,10 @@ foreach ($layouts as $key => $value) {
   echo ">$value</option>\n";
 }
 ?>
-</select></p>
+</select>
+&nbsp;
+<input type='button' value='<?php echo xla('New Layout'); ?>' onclick='doNewLayout()' />
+</p>
 
 <?php if ($layout_id) { ?>
 <div style='margin: 0 0 8pt 0;'>
