@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2005-2010 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2005-2014 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -300,6 +300,14 @@ function postError($msg) {
  if ($res) {
   $docrow = array('docname' => '', 'charges' => 0, 'copays' => 0, 'encounters' => 0);
 
+  // Determine if the IPPF GCAC form is in use.
+  $ippf_gcac_applies = false;
+  if ($GLOBALS['ippf_specific']) {
+    $grow = sqlQuery("SELECT COUNT(*) AS count FROM list_options " .
+      "WHERE list_id = 'lbfnames' AND option_id = 'LBFgcac'");
+    $ippf_gcac_applies = !empty($grow['count']);
+  }
+
   while ($row = sqlFetchArray($res)) {
    $patient_id = $row['pid'];
    $encounter  = $row['encounter'];
@@ -324,23 +332,27 @@ function postError($msg) {
    //
    while ($brow = sqlFetchArray($bres)) {
     $code_type = $brow['code_type'];
-    if ($code_types[$code_type]['fee'] && !$brow['billed'])
+    if ($code_type != 'TAX' && $code_types[$code_type]['fee'] && !$brow['billed'])
       $billed = "";
     if (!$GLOBALS['simplified_demographics'] && !$brow['authorized'])
       postError(xl('Needs Auth'));
-    if ($code_types[$code_type]['just']) {
+    if ($code_type != 'TAX' && $code_types[$code_type]['just']) {
      if (! $brow['justify']) postError(xl('Needs Justify'));
     }
-    if ($code_types[$code_type]['fee']) {
+    if ($code_type == 'TAX') {
+     $charges += $brow['fee'];
+    }
+    else if ($code_types[$code_type]['fee']) {
      $charges += $brow['fee'];
      if ($brow['fee'] == 0 && !$GLOBALS['ippf_specific']) postError(xl('Missing Fee'));
-    } else {
+    }
+    else {
      if ($brow['fee'] != 0) postError(xl('Fee is not allowed'));
     }
 
     // Custom logic for IPPF to determine if a GCAC issue applies.
-    if ($GLOBALS['ippf_specific']) {
-      if (!empty($code_types[$code_type]['fee'])) {
+    if ($ippf_gcac_applies) {
+      if ($code_type != 'TAX' && !empty($code_types[$code_type]['fee'])) {
         $query = "SELECT related_code FROM codes WHERE code_type = '" .
           $code_types[$code_type]['id'] . "' AND " .
           "code = '" . $brow['code'] . "' AND ";
@@ -355,8 +367,12 @@ function postError($msg) {
         foreach ($relcodes as $codestring) {
           if ($codestring === '') continue;
           list($codetype, $code) = explode(':', $codestring);
-          if ($codetype !== 'IPPF') continue;
-          if (preg_match('/^25222/', $code)) $gcac_related_visit = true;
+          if ($codetype == 'IPPF' && preg_match('/^25222/', $code)) {
+            $gcac_related_visit = true;
+          }
+          if ($codetype == 'IPPF2' && preg_match('/^211/', $code)) {
+            $gcac_related_visit = true;
+          }
         }
       }
     } // End IPPF stuff
