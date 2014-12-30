@@ -180,3 +180,11 @@ ALTER TABLE `codes` ADD COLUMN
 ALTER TABLE `layout_options` ADD COLUMN
   `conditions` text NOT NULL DEFAULT '' COMMENT 'serialized array of skip conditions';
 #EndIf
+
+#IfNotRow globals gl_name gbl_visit_sensitivity
+INSERT INTO `globals` (gl_name, gl_index, gl_value) VALUES ('gbl_visit_sensitivity', 0, '1');
+#EndIf
+
+#IfNotRow globals gl_name gbl_visit_voucher_number
+INSERT INTO `globals` (gl_name, gl_index, gl_value) VALUES ('gbl_visit_voucher_number', 0, '1');
+#EndIf

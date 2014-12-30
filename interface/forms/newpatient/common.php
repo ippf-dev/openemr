@@ -245,7 +245,7 @@ if ($fres) {
 			</div>
 		</td>
      </tr>
-    <tr>
+    <tr<?php if (!$GLOBALS['gbl_visit_sensitivity']) echo " style='display:none;'"; ?>>
 <?php
  $sensitivities = acl_get_sensitivities();
  if ($sensitivities && count($sensitivities)) {
@@ -300,7 +300,7 @@ if ($fres) {
      </td>
     </tr>
     
-    <tr>
+    <tr<?php if (!$GLOBALS['gbl_visit_voucher_number']) echo " style='display:none;'"; ?>>
      <td class='bold' nowrap><?php echo xl('Voucher Number') . ':'; ?></td>
      <td class='text' nowrap>
       <input type='text' size='20' maxlength='255' name='form_voucher_number'

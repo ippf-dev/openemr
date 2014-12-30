@@ -605,6 +605,20 @@ $GLOBALS_METADATA = array(
       xl('A referral source may be specified for each visit.')
     ),
 
+    'gbl_visit_sensitivity' => array(
+      xl('Sensitivity for Encounters'),
+      'bool',                           // data type
+      '1',                              // default = true
+      xl('A sensitivity may be specified for each visit.')
+    ),
+
+    'gbl_visit_voucher_number' => array(
+      xl('Voucher Number for Encounters'),
+      'bool',                           // data type
+      '1',                              // default = true
+      xl('A voucher number may be specified for each visit.')
+    ),
+
     'gbl_mask_patient_id' => array(
       xl('Mask for Patient IDs'),
       'text',                           // data type
