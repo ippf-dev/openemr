@@ -16,6 +16,9 @@
 
  $form_from_date  = fixDate($_POST['form_from_date'], date('Y-01-01'));
  $form_to_date    = fixDate($_POST['form_to_date']  , date('Y-m-d'));
+
+ // The selected facility ID, if any.
+ $form_facility = 0 + empty($_REQUEST['form_facility']) ? 0 : $_REQUEST['form_facility'];
 ?>
 <html>
 <head>
@@ -46,7 +49,23 @@
 
  <tr>
   <td>
-   <?php xl('From','e'); ?>:
+<?php
+// Build a drop-down list of facilities.
+//
+$query = "SELECT id, name FROM facility ORDER BY name";
+$fres = sqlStatement($query);
+echo "   <select name='form_facility'>\n";
+echo "    <option value=''>-- " . xlt('All Facilities') . " --</option>\n";
+while ($frow = sqlFetchArray($fres)) {
+  $facid = $frow['id'];
+  echo "    <option value='$facid'";
+  if ($facid == $form_facility) echo " selected";
+  echo ">" . $frow['name'] . "</option>\n";
+}
+echo "   </select>&nbsp;\n";
+?>
+
+   &nbsp;<?php xl('From','e'); ?>:
    <input type='text' name='form_from_date' id='form_from_date'
     size='10' value='<?php echo $form_from_date ?>'
     onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title=<?php xl('yyyy-mm-dd','e','\'','\''); ?>>
@@ -105,14 +124,20 @@
  </tr>
 <?
  if ($_POST['form_refresh']) {
-  $where = "i.destroy_date >= '$form_from_date' AND " .
+  $where = "i.destroy_date IS NOT NULL AND i.destroy_date >= '$form_from_date' AND " .
    "i.destroy_date <= '$form_to_date'";
+
+  if ($form_facility) {
+    $where .= " AND lo.option_value IS NOT NULL AND lo.option_value = '$form_facility'";
+  }
 
   $query = "SELECT i.inventory_id, i.lot_number, i.on_hand, i.drug_id, " .
    "i.destroy_date, i.destroy_method, i.destroy_witness, i.destroy_notes, " .
    "d.name, d.ndc_number " .
    "FROM drug_inventory AS i " .
    "LEFT OUTER JOIN drugs AS d ON d.drug_id = i.drug_id " .
+   "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+   "lo.option_id = i.warehouse_id " .
    "WHERE $where " .
    "ORDER BY d.name, i.drug_id, i.destroy_date, i.lot_number";
 
