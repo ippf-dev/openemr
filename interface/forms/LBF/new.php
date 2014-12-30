@@ -584,7 +584,7 @@ if (function_exists($formname . '_additional_buttons')) {
 &nbsp;
 <?php } ?>
 <?php } else { ?>
-<input type='button' value='<?php echo xla('Back') ?>' onclick='window.back();' />
+<input type='button' value='<?php echo xla('Back') ?>' onclick='window.history.back();' />
 <?php } ?>
 </p>
 
