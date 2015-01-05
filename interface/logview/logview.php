@@ -119,6 +119,7 @@ if ($start_date && $end_date)
 ?>
 <?php
 $form_user = formData('form_user','R');
+$form_facility = formData('form_facility','R');
 $form_pid = formData('form_pid','R');
 if ($form_patient == '' ) $form_pid = '';
 
@@ -139,7 +140,7 @@ if (!$_REQUEST['form_csvexport']) {
 <FORM METHOD="GET" name="theform" id="theform">
 <?php
   $count = getEventsCount(array('sdate' => $get_sdate, 'edate' => $get_edate,
-    'user' => $form_user, 'levent' => $eventname));
+    'user' => $form_user, 'facility' => $form_facility, 'levent' => $eventname));
   $fstart = formdata('fstart','R') + 0;
   $pagesize = 500;
   while ($fstart >= $count) $fstart -= $pagesize;
@@ -162,7 +163,7 @@ if (!$_REQUEST['form_csvexport']) {
 <input type="text" size="10" name="end_date" id="end_date" value="<?php echo $end_date ? substr($end_date, 0, 10) : date('Y-m-d'); ?>" title="<?php  xl('yyyy-mm-dd Date of service','e'); ?>" onkeyup="datekeyup(this,mypcc)" onblur="dateblur(this,mypcc)" />
 <img src="../pic/show_calendar.gif" align="absbottom" width="24" height="22" id="img_end_date" border="0" alt="[?]" style="cursor: pointer; cursor: hand" title="<?php  xl('Click here to choose a date','e'); ?>">&nbsp;
 </td>
-<!--VicarePlus :: Feature For Generating Log For The Selected Patient --!>
+<!--VicarePlus :: Feature For Generating Log For The Selected Patient -->
 <td>
 &nbsp;&nbsp;<span class='text'><?php echo htmlspecialchars(xl('Patient'),ENT_NOQUOTES); ?>: </span>
 </td>
@@ -262,7 +263,28 @@ else{
 echo "</select>\n";
 ?>
 </td>
-<tr><td>
+<tr>
+
+  <td>
+   <span class='text'><?php echo xlt('User Facility'); ?>: </span>
+  </td>
+  <td>
+<?php
+// Build a drop-down list of facilities.
+$fres = sqlStatement("SELECT id, name FROM facility ORDER BY name");
+echo "   <select name='form_facility'>\n";
+echo "    <option value=''>-- " . xlt('All Facilities') . " --</option>\n";
+while ($frow = sqlFetchArray($fres)) {
+  $facid = $frow['id'];
+  echo "    <option value='$facid'";
+  if ($facid == $form_facility) echo " selected";
+  echo ">" . $frow['name'] . "</option>\n";
+}
+echo "   </select>\n";
+?>
+  </td>
+
+<td>
 <span class='text'><?php xl('Include Checksum','e'); ?>: </span>
 </td><td>
 <?php
@@ -308,6 +330,7 @@ $check_sum = formData('check_sum','G');
     echo '"' . xl('Date'    ) . '",';
     echo '"' . xl('Event'   ) . '",';
     echo '"' . xl('User'    ) . '",';
+    echo '"' . xl('Facility') . '",';
     if (empty($GLOBALS['disable_non_default_groups'])) {
       echo '"' . xl('Group'   ) . '",';
     }
@@ -322,6 +345,7 @@ $check_sum = formData('check_sum','G');
   <th id="sortby_date" class="text" title="<?php xl('Sort by date/time','e'); ?>"><?php xl('Date','e'); ?></th>
   <th id="sortby_event" class="text" title="<?php xl('Sort by Event','e'); ?>"><?php  xl('Event','e'); ?></th>
   <th id="sortby_user" class="text" title="<?php xl('Sort by User','e'); ?>"><?php  xl('User','e'); ?></th>
+  <th id="sortby_facility" class="text" title="<?php echo xla('Sort by Facility'); ?>"><?php echo xlt('Facility'); ?></th>
   <th id="sortby_cuser" class="text" title="<?php xl('Sort by Crt User','e'); ?>"><?php  xl('Certificate User','e'); ?></th>
   <th id="sortby_group" class="text" title="<?php xl('Sort by Group','e'); ?>"><?php  xl('Group','e'); ?></th>
   <th id="sortby_pid" class="text" title="<?php xl('Sort by PatientID','e'); ?>"><?php  xl('PatientID','e'); ?></th>
@@ -352,42 +376,52 @@ if($eventname != "" && $type_event != "")
  	{$gev = "";}
  else 
     {$gev = $getevent;}
-    
-if ($ret = getEvents(array('sdate' => $get_sdate,'edate' => $get_edate, 'user' => $form_user, 'patient' => $form_pid, 'sortby' => $_GET['sortby'], 'levent' =>$gev, 'tevent' =>$tevent,
-                        'limit' => ($_REQUEST['form_csvexport'] ? "" : ("LIMIT $fstart, " . ($fend - $fstart)))
-                          )
-                    )
-    ) {
 
-
+if ($ret = getEvents(array(
+  'sdate'    => $get_sdate,
+  'edate'    => $get_edate,
+  'user'     => $form_user,
+  'facility' => $form_facility,
+  'patient'  => $form_pid,
+  'sortby'   => $_GET['sortby'],
+  'levent'   => $gev,
+  'tevent'   => $tevent,
+  'limit'    => ($_REQUEST['form_csvexport'] ? "" : ("LIMIT $fstart, " . ($fend - $fstart)))
+))) {
   foreach ($ret as $iter) {
+    /******************************************************************
     //translate comments
     $patterns = array ('/^success/','/^failure/','/ encounter/');
     $replace = array ( xl('success'), xl('failure'), xl('encounter','',' '));
     $trans_comments = preg_replace($patterns, $replace, $iter["comments"]);
+    ******************************************************************/
+    // Translation is wrong, don't want to mess up column names and such.
+    $trans_comments = str_replace('"', '""', $iter['comments']);
+    //
     if ($_REQUEST['form_csvexport']) {
       echo '"' . oeFormatShortDate(substr($iter["date"], 0, 10)) . substr($iter["date"], 10) . '",';
       echo '"' . xl($iter["event"]    ) . '",';
-      echo '"' . xl($iter["user"]     ) . '",';
+      echo '"' . $iter["user"] . '",';
+      echo '"' . $iter["name"] . '",'; // facility name
       if (empty($GLOBALS['disable_non_default_groups'])) {
-        echo '"' . xl($iter["groupname"]) . '",';
+        echo '"' . $iter["groupname"] . '",';
       }
-      echo '"' . $trans_comments        . '"' . "\n";
+      echo '"' . $trans_comments . '"' . "\n";
     }
     else { // not export
-	
 ?>
  <TR class="oneresult">
   <TD class="text"><?php echo oeFormatShortDate(substr($iter["date"], 0, 10)) . substr($iter["date"], 10) ?></TD>
-  <TD class="text"><?php echo xl($iter["event"])?></TD>
-  <TD class="text"><?php echo $iter["user"]?></TD>
-  <TD class="text"><?php echo $iter["crt_user"]?></TD>
-  <TD class="text"><?php echo $iter["groupname"]?></TD>
-  <TD class="text"><?php echo $iter["patient_id"]?></TD>
-  <TD class="text"><?php echo $iter["success"]?></TD>
-  <TD class="text"><?php echo $trans_comments?></TD>
+  <TD class="text"><?php echo xlt($iter["event"]) ?></TD>
+  <TD class="text"><?php echo text($iter["user"]) ?></TD>
+  <TD class="text"><?php echo text($iter["name"]) ?></TD>
+  <TD class="text"><?php echo text($iter["crt_user"]) ?></TD>
+  <TD class="text"><?php echo text($iter["groupname"]) ?></TD>
+  <TD class="text"><?php echo text($iter["patient_id"]) ?></TD>
+  <TD class="text"><?php echo text($iter["success"]) ?></TD>
+  <TD class="text"><?php echo text($trans_comments) ?></TD>
   <?php  if($check_sum) { ?>
-  <TD class="text"><?php echo $iter["checksum"]?></TD>
+  <TD class="text"><?php echo text($iter["checksum"]) ?></TD>
   <?php } ?>
  </TR>
 
@@ -395,26 +429,31 @@ if ($ret = getEvents(array('sdate' => $get_sdate,'edate' => $get_edate, 'user' =
         }// end NOT CSV Export
     }
   }
-if (($eventname=="disclosure") || ($gev == ""))
-{
-$eventname="disclosure";
-if ($ret = getEvents(array('sdate' => $get_sdate,'edate' => $get_edate, 'user' => $form_user, 'patient' => $form_pid, 'sortby' => $_GET['sortby'], 'event' =>$eventname,
-                           'limit' => ($_REQUEST['form_csvexport'] ? "" : ("LIMIT $fstart, " . ($fend - $fstart)))
-                          )
-                    )
-        ) {
-foreach ($ret as $iter) {
-        $comments=xl('Recipient Name').":".$iter["recipient"].";".xl('Disclosure Info').":".$iter["description"];
+if ($eventname == "disclosure" || $gev == "") {
+  $eventname = "disclosure";
+  if ($ret = getEvents(array(
+    'sdate'    => $get_sdate,
+    'edate'    => $get_edate,
+    'user'     => $form_user,
+    'facility' => $form_facility,
+    'patient'  => $form_pid,
+    'sortby'   => $_GET['sortby'],
+    'event'    => $eventname,
+    'limit'    => ($_REQUEST['form_csvexport'] ? "" : ("LIMIT $fstart, " . ($fend - $fstart)))
+  ))) {
+    foreach ($ret as $iter) {
+      $comments = xl('Recipient Name') . ":" . $iter["recipient"] . ";" . xl('Disclosure Info') . ":" . $iter["description"];
 ?>
 <TR class="oneresult">
-  <TD class="text"><?php echo htmlspecialchars(oeFormatShortDate(substr($iter["date"], 0, 10)) . substr($iter["date"], 10),ENT_NOQUOTES); ?></TD>
-  <TD class="text"><?php echo htmlspecialchars(xl($iter["event"]),ENT_NOQUOTES);?></TD>
-  <TD class="text"><?php echo htmlspecialchars($iter["user"],ENT_NOQUOTES);?></TD>
-  <TD class="text"><?php echo htmlspecialchars($iter["crt_user"],ENT_NOQUOTES);?></TD>
-  <TD class="text"><?php echo htmlspecialchars($iter["groupname"],ENT_NOQUOTES);?></TD>
-  <TD class="text"><?php echo htmlspecialchars($iter["patient_id"],ENT_NOQUOTES);?></TD>
-  <TD class="text"><?php echo htmlspecialchars($iter["success"],ENT_NOQUOTES);?></TD>
-  <TD class="text"><?php echo htmlspecialchars($comments,ENT_NOQUOTES);?></TD>
+  <TD class="text"><?php echo text(oeFormatShortDate(substr($iter["date"], 0, 10)) . substr($iter["date"], 10),ENT_NOQUOTES); ?></TD>
+  <TD class="text"><?php echo xlt($iter["event"]); ?></TD>
+  <TD class="text"><?php echo text($iter["user"]); ?></TD>
+  <TD class="text"><?php echo text($iter["name"]); ?></TD>
+  <TD class="text"><?php echo text($iter["crt_user"]); ?></TD>
+  <TD class="text"><?php echo text($iter["groupname"]); ?></TD>
+  <TD class="text"><?php echo text($iter["patient_id"]); ?></TD>
+  <TD class="text"><?php echo text($iter["success"]); ?></TD>
+  <TD class="text"><?php echo text($comments); ?></TD>
   <?php  if($check_sum) { ?>
   <TD class="text"><?php echo htmlspecialchars($iter["checksum"],ENT_NOQUOTES);?></TD>
   <?php } ?>
@@ -454,6 +493,7 @@ $(document).ready(function(){
     $("#sortby_date").click(function() { $("#sortby").val("date"); $("#theform").submit(); });
     $("#sortby_event").click(function() { $("#sortby").val("event"); $("#theform").submit(); });
     $("#sortby_user").click(function() { $("#sortby").val("user"); $("#theform").submit(); });
+    $("#sortby_facility").click(function() { $("#sortby").val("name"); $("#theform").submit(); });
     $("#sortby_cuser").click(function() { $("#sortby").val("user"); $("#theform").submit(); });
     $("#sortby_group").click(function() { $("#sortby").val("groupname"); $("#theform").submit(); });
     $("#sortby_pid").click(function() { $("#sortby").val("patient_id"); $("#theform").submit(); });
@@ -461,7 +501,6 @@ $(document).ready(function(){
     $("#sortby_comments").click(function() { $("#sortby").val("comments"); $("#theform").submit(); });
     $("#sortby_checksum").click(function() { $("#sortby").val("checksum"); $("#theform").submit(); });
 });
-
 
 /* required for popup calendar */
 Calendar.setup({inputField:"start_date", ifFormat:"%Y-%m-%d", button:"img_begin_date"});
@@ -473,4 +512,3 @@ Calendar.setup({inputField:"end_date", ifFormat:"%Y-%m-%d", button:"img_end_date
 <?php
 } // end not export
 ?>
-

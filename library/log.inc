@@ -36,6 +36,7 @@ function getEventByDate($date, $user="", $cols="DISTINCT date, event, user, grou
  * using the optional parameters:
  *   date : a specific date  (defaults to today)
  *   user : a specific user  (defaults to none)
+ *   facility: ID of user's default facility (defaults to 0 for all)
  *   cols : gather specific columns  (defaults to date,event,user,groupname,comments)
  *   sortby : sort the results by  (defaults to none)
  * RETURNS:
@@ -44,7 +45,8 @@ function getEventByDate($date, $user="", $cols="DISTINCT date, event, user, grou
 function getEvents($params) 
 {
     // parse the parameters
-    $cols = "DISTINCT date, event, user, groupname, patient_id, success, comments,checksum,crt_user";
+    $cols = "DISTINCT log.date, log.event, log.user, log.groupname, log.patient_id, log.success, " .
+      "log.comments, log.checksum, log.crt_user, users.facility_id, facility.name";
     if (isset($params['cols']) && $params['cols'] != "") $cols = $params['cols'];
 
     $date1 = date("Y-m-d", time());
@@ -56,6 +58,8 @@ function getEvents($params)
     $user = "";
     if (isset($params['user']) && $params['user'] != "") $user= $params['user'];
 
+    $facility = empty($params['facility']) ? 0 : intval($params['facility']);
+
     //VicarePlus :: For Generating log with patient id.
     $patient = "";
     if (isset($params['patient']) && $params['patient'] != "") $patient= $params['patient'];
@@ -66,41 +70,51 @@ function getEvents($params)
     $levent = "";
     if (isset($params['levent']) && $params['levent'] != "") $levent = $params['levent'];
     
-     $tevent = "";
+    $tevent = "";
     if (isset($params['tevent']) && $params['tevent'] != "") $tevent = $params['tevent'];
     
-     $event = "";
+    $event = "";
     if (isset($params['event']) && $params['event'] != "") $event = $params['event'];
-    if ($event!=""){
-    if ($sortby == "comments") $sortby = "description";
-    if ($sortby == "groupname") $sortby = ""; //VicarePlus :: since there is no groupname in extended_log
-    if ($sortby == "success") $sortby = "";   //VicarePlus :: since there is no success field in extended_log
-    if ($sortby == "checksum") $sortby = "";  //VicarePlus :: since there is no checksum field in extended_log
-    $columns = "DISTINCT date, event, user, recipient,patient_id,description";
-    $sql = "SELECT $columns FROM extended_log WHERE date >= '$date1 00:00:00' AND date <= '$date2 23:59:59'";
-    if ($user != "") $sql .= " AND user LIKE '$user'";
-    if ($patient != "") $sql .= " AND patient_id LIKE '$patient'";
-    if ($levent != "") $sql .= " AND event LIKE '$levent%'";
-    if ($sortby != "") $sql .= " ORDER BY ".$sortby." DESC "; // descending order
-    $sql .= " LIMIT 5000";
+
+    if ($event != "") {
+      if ($sortby == "comments" ) $sortby = "el.description";
+      if ($sortby == "groupname") $sortby = ""; //VicarePlus :: since there is no groupname in extended_log
+      if ($sortby == "success"  ) $sortby = ""; //VicarePlus :: since there is no success field in extended_log
+      if ($sortby == "checksum" ) $sortby = ""; //VicarePlus :: since there is no checksum field in extended_log
+      if ($sortby != '') $sortby .= ' DESC, ';
+      $sortby .= 'el.id DESC';
+      $sql = "SELECT DISTINCT el.date, el.event, el.user, el.recipient, el.patient_id, " .
+        "el.description, users.facility_id, facility.name " .
+        "FROM extended_log AS el " .
+        "LEFT JOIN users ON el.user != '' AND users.username = el.user " .
+        "LEFT JOIN facility ON facility.id = users.facility_id " .
+        "WHERE el.date >= '$date1 00:00:00' AND el.date <= '$date2 23:59:59'";
+      if ($user    != "") $sql .= " AND el.user = '$user'";
+      if ($patient != "") $sql .= " AND el.patient_id LIKE '$patient'";
+      if ($levent  != "") $sql .= " AND el.event LIKE '$levent%'";
+      $sql .= " ORDER BY $sortby";
+      $sql .= " LIMIT 5000";
     }
-    else
-    {
-    // do the query
-    $sql = "SELECT $cols FROM log WHERE date >= '$date1 00:00:00' AND date <= '$date2 23:59:59'";
-    if ($user != "") $sql .= " AND user LIKE '$user'";
-    if ($patient != "") $sql .= " AND patient_id LIKE '$patient'";
-    if ($levent != "") $sql .= " AND event LIKE '$levent%'";
-    if ($tevent != "") $sql .= " AND event LIKE '%$tevent'";
-    if ($sortby != "") $sql .= " ORDER BY ".$sortby." DESC "; // descending order
-    if (!empty($params['limit'])) {
-            $sql .= ' ' . $params['limit'];
-        }
-        else
-        {
-            $sql .= " LIMIT 5000";
-        }
-    
+    else {
+      // do the query
+      if ($sortby != '') $sortby .= ' DESC, ';
+      $sortby .= 'log.id DESC';
+      $sql = "SELECT $cols FROM log " .
+        "LEFT JOIN users ON log.user != '' AND users.username = log.user " .
+        "LEFT JOIN facility ON facility.id = users.facility_id " .
+        "WHERE log.date >= '$date1 00:00:00' AND log.date <= '$date2 23:59:59'";
+      if ($user    != "") $sql .= " AND log.user LIKE '$user'";
+      if ($facility     ) $sql .= " AND users.facility_id IS NOT NULL AND users.facility_id = $facility";
+      if ($patient != "") $sql .= " AND log.patient_id LIKE '$patient'";
+      if ($levent  != "") $sql .= " AND log.event LIKE '$levent%'";
+      if ($tevent  != "") $sql .= " AND log.event LIKE '%$tevent'";
+      $sql .= " ORDER BY $sortby";
+      if (!empty($params['limit'])) {
+        $sql .= ' ' . $params['limit'];
+      }
+      else {
+        $sql .= " LIMIT 5000";
+      }
     }
     $res = sqlStatement($sql);
     for($iter=0; $row=sqlFetchArray($res); $iter++) {
@@ -781,6 +795,7 @@ function deleteDisclosure($deletelid)
  *   sdate : start date  (defaults to today)
  *   edate : end date  (defaults to today)
  *   user  : a specific user  (defaults to none)
+ *   facility: ID of user's default facility (defaults to 0 for all)
  *   levent: event name
  * RETURNS:
  *   the numeric count
@@ -789,13 +804,17 @@ function getEventsCount($params) {
   $date1  = empty($params['sdate']) ? date("Y-m-d", time()) : $params['sdate'];
   $date2  = empty($params['edate']) ? date("Y-m-d", time()) : $params['edate'];
   $user   = empty($params['user']) ? '' : $params['user'];
+  $facility = empty($params['facility']) ? 0 : intval($params['facility']);
   $levent = empty($params['levent']) ? '' : $params['levent'];
-  $cols   = empty($params['cols']) ? "DISTINCT date, event, user, groupname, comments" : $params['cols'];
+  $cols   = empty($params['cols']) ? "DISTINCT log.date, log.event, log.user, log.groupname, log.comments" : $params['cols'];
 
   // do the query
-  $sql = "SELECT COUNT($cols) AS count FROM log WHERE date >= '$date1 00:00:00' AND date <= '$date2 23:59:59'";
-  if ($user != "") $sql .= " AND user LIKE '$user'";
-  if ($levent != "") $sql .= " AND event LIKE '$levent%'";
+  $sql = "SELECT COUNT($cols) AS count FROM log " .
+    "LEFT JOIN users ON log.user != '' AND users.username = log.user " .
+    "WHERE log.date >= '$date1 00:00:00' AND log.date <= '$date2 23:59:59'";
+  if ($user   != "") $sql .= " AND log.user = '$user'";
+  if ($facility    ) $sql .= " AND users.facility_id IS NOT NULL AND users.facility_id = $facility";
+  if ($levent != "") $sql .= " AND log.event LIKE '$levent%'";
 
   // echo "<!-- $sql -->\n"; // debugging
 
