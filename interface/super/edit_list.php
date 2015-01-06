@@ -2,7 +2,7 @@
 /**
  * Administration Lists Module.
  *
- * Copyright (C) 2007-2014 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2007-2015 Rod Roark <rod@sunsetsystems.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -182,57 +182,68 @@ if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
         if ($list_id == 'immunizations') {
           $ok_map_cvx_codes = isset($_POST['ok_map_cvx_codes']) ? $_POST['ok_map_cvx_codes'] : 0;
         }
-        // erase lists options and recreate them from the submitted form data
-        sqlStatement("DELETE FROM list_options WHERE list_id = '$list_id'");
+        $larray = array();
+        $lres = sqlStatement("SELECT * FROM list_options WHERE list_id = '$list_id'");
+        while ($lrow = sqlFetchArray($lres)) {
+          $larray[$lrow['option_id']] = $lrow;
+        }
         for ($lino = 1; isset($opt["$lino"]['id']); ++$lino) {
-            $iter = $opt["$lino"];
-            $value = empty($iter['value']) ? 0 : (formTrim($iter['value']) + 0);
-            $id = formTrim($iter['id']);
-            if (strlen($id) > 0) {
-
-              // Special processing for the immunizations list
-              // Map the entered cvx codes into the immunizations table cvx_code
-              // Ensure the following conditions are met to do this:
-              //   $list_id == 'immunizations'
-              //   $value is an integer and greater than 0
-              //   $id is set, not empty and not equal to 0
-              //    (note that all these filters are important. Not allowing $id
-              //     of zero here is extremely important; never remove this conditional
-              //     or you risk corrupting your current immunizations database entries)
-              //   $ok_map_cvx_codes is equal to 1
-              if ($list_id == 'immunizations' &&
-                  is_int($value) &&
-                  $value > 0 &&
-                  isset($id) &&
-                  !empty($id) &&
-                  $id != 0 &&
-                  $ok_map_cvx_codes == 1 ) {
-                    sqlStatement ("UPDATE `immunizations` " .
-                                  "SET `cvx_code`='".$value."' " .
-                                 "WHERE `immunization_id`='".$id."'");
+          $iter = $opt["$lino"];
+          $value = empty($iter['value']) ? 0 : (trim($iter['value']) + 0);
+          $id = formTrim($iter['id']);
+          if (strlen($id) == 0) continue;
+          // Special processing for the immunizations list
+          // Map the entered cvx codes into the immunizations table cvx_code
+          if ($list_id == 'immunizations' && is_int($value) && $value > 0 &&
+            !empty($id) && $ok_map_cvx_codes == 1 ) {
+            sqlStatement ("UPDATE `immunizations` " .
+              "SET `cvx_code` = '$value' " .
+              "WHERE `immunization_id` = '$id'");
+          }
+          // Force List Based Form names to start with LBF.
+          if ($list_id == 'lbfnames' && substr($id,0,3) != 'LBF') {
+            $id = "LBF$id";
+          }
+          // Put the table keys and values into an array to simplify things.
+          // Force numeric values to strings so that !== will work as desired.
+          $lrow = array();
+          $lrow['title'       ] = strip_escape_custom($iter['title'  ]);
+          $lrow['seq'         ] = strip_escape_custom($iter['seq'    ]);
+          $lrow['is_default'  ] = strval(0 + strip_escape_custom($iter['default']));
+          $lrow['option_value'] = strval($value);
+          $lrow['mapping'     ] = strip_escape_custom($iter['mapping']);
+          $lrow['notes'       ] = strip_escape_custom($iter['notes'  ]);
+          $lrow['codes'       ] = strip_escape_custom($iter['codes'  ]);
+          $sets = '';
+          if (isset($larray[$id])) {
+            // If the list item was already in the database, update or ignore it as appropriate.
+            // Only the fields that changed will be updated.
+            foreach ($lrow as $key => $val) {
+              if ($larray[$id][$key] !== $val) {
+                if ($sets) $sets .= ", ";
+                $sets .= "`$key` = '" . add_escape_custom($val) . "'";
               }
-
-              // Force List Based Form names to start with LBF.
-              if ($list_id == 'lbfnames' && substr($id,0,3) != 'LBF')
-                $id = "LBF$id";
-
-              // Insert the list item
-              sqlInsert("INSERT INTO list_options ( " .
-                "list_id, option_id, title, seq, is_default, option_value, mapping, notes, codes " .
-                ") VALUES ( " .
-                "'$list_id', "                       .
-                "'" . $id                        . "', " .
-                "'" . formTrim($iter['title'])   . "', " .
-                "'" . formTrim($iter['seq'])     . "', " .
-                "'" . formTrim($iter['default']) . "', " .
-                "'" . $value                     . "', " .
-                "'" . formTrim($iter['mapping']) . "', " .
-                "'" . formTrim($iter['notes'])   . "', " .
-                "'" . formTrim($iter['codes'])   . "' " .
-                ")");
-
-              $last_list_item_id = $id;
             }
+            if ($sets) {
+              sqlStatement("UPDATE list_options SET $sets WHERE list_id = '$list_id' AND option_id = '$id'");
+            }
+            // Delete $larray entries for table rows that match up with form rows.
+            // Whatever remains will be the table rows that should be deleted from the database.
+            unset($larray[$id]);
+          }
+          else {
+            // Not already in the database so insert it.
+            foreach ($lrow as $key => $val) {
+              if ($sets) $sets .= ", ";
+              $sets .= "`$key` = '" . add_escape_custom($val) . "'";
+            }
+            sqlStatement("INSERT INTO list_options SET `list_id` = '$list_id', `option_id` = '$id', $sets");
+          }
+          $last_list_item_id = $id;
+        }
+        // Delete any list items from the database that are not in the form.
+        foreach ($larray as $id => $dummy) {
+          sqlStatement("DELETE FROM list_options WHERE list_id = '$list_id' AND option_id = '$id'");
         }
     }
     newEvent("edit_list", $_SESSION['authUser'], $_SESSION['authProvider'], "List = $list_id");    
