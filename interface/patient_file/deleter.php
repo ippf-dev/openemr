@@ -175,6 +175,16 @@ function popup_close() {
 
   if ($patient) {
    if (!acl_check('admin', 'super')) die("Not authorized!");
+
+   // Log a user friendly message about deleting this patient.
+   $trow = sqlQuery("SELECT fname AS FirstName, mname AS MiddleName, lname AS LastName, " .
+    "pubpid AS ExternalID FROM patient_data WHERE pid = ?", array($patient));
+   $logstring = xl('Deleting patient') . ':';
+   foreach ($trow as $key => $value) {
+    $logstring .= " $key = '" . addslashes($value) . "'";
+   }
+   newEvent("patient_delete", $_SESSION['authUser'], $_SESSION['authProvider'], 1, $logstring, $patient);
+
    row_modify("billing"       , "activity = 0", "pid = '$patient'");
    row_modify("pnotes"        , "deleted = 1" , "pid = '$patient'");
    // row_modify("prescriptions" , "active = 0"  , "patient_id = '$patient'");
