@@ -243,9 +243,11 @@ function ensureLineAmounts($patient_id, $encounter_id, $def_provider_id=0, $set_
   }
 
   // Get charges from drug_sales table and associated taxes.
-  $tres = sqlStatement("SELECT s.drug_id, s.fee, s.sale_id " .
-    "FROM drug_sales AS s WHERE " .
-    // "s.pid = '$patient_id' AND s.encounter = '$encounter_id' AND s.fee != 0");
+  $tres = sqlStatement("SELECT s.drug_id, s.fee, s.sale_id, " .
+    "u.id AS uid, u.lname, u.fname, u.username " .
+    "FROM drug_sales AS s " .
+    "LEFT JOIN users AS u ON u.id = '$def_provider_id' " .
+    "WHERE " .
     "s.pid = '$patient_id' AND s.encounter = '$encounter_id'");
   while ($trow = sqlFetchArray($tres)) {
     $codekey = 'PROD:' . $trow['drug_id'];
@@ -253,6 +255,10 @@ function ensureLineAmounts($patient_id, $encounter_id, $def_provider_id=0, $set_
     $aItems[$invno][$codekey]['fee'] += $trow['fee'];
     $denom += $trow['fee'];
     $denom += getItemTaxes($patient_id, $encounter_id, $codekey, 'P:' . $trow['sale_id']);
+    $aItems[$invno][$codekey]['uid']      = isset($trow['uid']     ) ? $trow['uid']      : '';
+    $aItems[$invno][$codekey]['username'] = isset($trow['username']) ? $trow['username'] : '';
+    $aItems[$invno][$codekey]['lname']    = isset($trow['lname']   ) ? $trow['lname']    : '';
+    $aItems[$invno][$codekey]['fname']    = isset($trow['fname']   ) ? $trow['fname']    : '';
   }
 
   // Get adjustments and other payments from ar_activity table.
