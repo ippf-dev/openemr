@@ -599,24 +599,31 @@ $GLOBALS_METADATA = array(
     ),
 
     'gbl_visit_referral_source' => array(
-      xl('Referral Source for Encounters'),
+      xl('Display Referral Source for Encounters'),
       'bool',                           // data type
       '0',                              // default = false
       xl('A referral source may be specified for each visit.')
     ),
 
     'gbl_visit_sensitivity' => array(
-      xl('Sensitivity for Encounters'),
+      xl('Display Sensitivity for Encounters'),
       'bool',                           // data type
       '1',                              // default = true
       xl('A sensitivity may be specified for each visit.')
     ),
 
     'gbl_visit_voucher_number' => array(
-      xl('Voucher Number for Encounters'),
+      xl('Display Voucher Number for Encounters'),
       'bool',                           // data type
       '1',                              // default = true
       xl('A voucher number may be specified for each visit.')
+    ),
+
+    'gbl_visit_shift' => array(
+      xl('Display Shift for Encounters'),
+      'bool',                           // data type
+      '1',                              // default = true
+      xl('A shift may be specified for each visit.')
     ),
 
     'gbl_mask_patient_id' => array(

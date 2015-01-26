@@ -309,11 +309,7 @@ if ($fres) {
      </td>
     </tr>
 
-<?php
-  // We will show the shift selector only if the shift list is not empty.
-  $tmp = sqlQuery("SELECT COUNT(*) AS count FROM list_options WHERE list_id = 'shift'");
-?>
-    <tr<?php if (empty($tmp['count'])) echo " style='display:none;'"; ?>>
+    <tr<?php if (!$GLOBALS['gbl_visit_shift']) echo " style='display:none;'"; ?>>
      <td class='bold' nowrap><?php echo xlt('Shift'); ?>:</td>
      <td class='text'>
 <?php

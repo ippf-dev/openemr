@@ -188,3 +188,7 @@ INSERT INTO `globals` (gl_name, gl_index, gl_value) VALUES ('gbl_visit_sensitivi
 #IfNotRow globals gl_name gbl_visit_voucher_number
 INSERT INTO `globals` (gl_name, gl_index, gl_value) VALUES ('gbl_visit_voucher_number', 0, '1');
 #EndIf
+
+#IfNotRow globals gl_name gbl_visit_shift
+INSERT INTO `globals` (gl_name, gl_index, gl_value) VALUES ('gbl_visit_shift', 0, '1');
+#EndIf
