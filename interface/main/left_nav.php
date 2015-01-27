@@ -1351,11 +1351,12 @@ if (!empty($reg)) {
     <ul>
       <li><a class="collapsed_lv2"><span><?php xl('Clients','e') ?></span></a>
         <ul>
-	  <?php genMiscLink('RTop','rep','0',xl('List'),'reports/patient_list.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('List'),'reports/patient_list.php'); ?>
           <?php if (acl_check('patients', 'med') && !$GLOBALS['disable_prescriptions']) genMiscLink('RTop','rep','0',xl('Rx'),'reports/prescriptions_report.php'); ?>
           <?php if (acl_check('patients', 'med')) genMiscLink('RTop','rep','0',xl('Clinical'),'reports/clinical_reports.php'); ?>
-	  <?php genMiscLink('RTop','rep','0',xl('Referrals'),'reports/referrals_report.php'); ?>
-	  <?php genMiscLink('RTop','rep','0',xl('Immunization Registry'),'reports/immunization_report.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Referrals'),'reports/referrals_report.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Immunization Registry'),'reports/immunization_report.php'); ?>
+          <?php if ($GLOBALS['gbl_menu_shifts']) genPopLink(xl('Shifts Report'),'shifts_report.php'); ?>
         </ul>
       </li>
       <li><a class="collapsed_lv2"><span><?php xl('Clinic','e') ?></span></a>

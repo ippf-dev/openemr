@@ -70,6 +70,13 @@
       '0', // default
       xl('For IPPF Belize and maybe others')
     ),
+
+    'gbl_menu_shifts' => array(
+      xl('Shifts Reporting'),
+      'bool', // data type
+      '0', // default
+      xl('For IPPF Argentina and maybe others')
+    ),
   );
 
 ?>
