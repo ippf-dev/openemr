@@ -225,6 +225,7 @@ if ($_POST['form_save'] || $_POST['form_delete']) {
   list($form_warehouse_id) = explode('|', $_POST['form_warehouse_id']);
   
   $form_distributor_id = $_POST['form_distributor_id'] + 0;
+  $form_expiration = $_POST['form_expiration'];
 
   // Some fixups depending on transaction type.
   if ($form_trans_type == '3') { // return
@@ -270,7 +271,7 @@ if ($_POST['form_save'] || $_POST['form_delete']) {
           sqlStatement("UPDATE drug_inventory SET " .
             "lot_number = '"   . add_escape_custom($_POST['form_lot_number'])    . "', " .
             "manufacturer = '" . add_escape_custom($_POST['form_manufacturer'])  . "', " .
-            "expiration = "    . QuotedOrNull($_POST['form_expiration']) . ", "  .
+            "expiration = "    . QuotedOrNull($form_expiration) . ", "  .
             "vendor_id = '"    . add_escape_custom($_POST['form_vendor_id'])     . "', " .
             "warehouse_id = '" . add_escape_custom($form_warehouse_id)  . "', " .
             "on_hand = on_hand + '" . add_escape_custom($form_quantity)            . "' "  .
@@ -288,7 +289,8 @@ if ($_POST['form_save'] || $_POST['form_delete']) {
         $info_msg = xl('Transaction failed, quantity is less than zero');
       }
       else {
-        $exptest = $form_expiration ? "expiration = '$form_expiration'" : "expiration IS NULL";
+        $exptest = $form_expiration ?
+          ("expiration = '" . add_escape_custom($form_expiration) . "'") : "expiration IS NULL";
         $crow = sqlQuery("SELECT count(*) AS count from drug_inventory " .
           "WHERE lot_number = '" . formData('form_lot_number') . "' " .
           "AND warehouse_id = '" . $form_warehouse_id          . "' " .
