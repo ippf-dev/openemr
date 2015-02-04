@@ -1,10 +1,13 @@
 <?php
-// Copyright (C) 2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010, 2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; either version 2
 // of the License, or (at your option) any later version.
+
+$fake_register_globals = false;
+$sanitize_all_escapes  = true;
 
 require_once("../globals.php");
 require_once("$srcdir/acl.inc");
@@ -23,25 +26,25 @@ if ($_GET['mode'] != "user") {
 function checkCreateCDB(){
   $globalsres = sqlStatement("SELECT gl_name, gl_index, gl_value FROM globals WHERE gl_name IN 
   ('couchdb_host','couchdb_user','couchdb_pass','couchdb_port','couchdb_dbase','document_storage_method')");
-    $options = array();
-    while($globalsrow = sqlFetchArray($globalsres)){
-      $GLOBALS[$globalsrow['gl_name']] = $globalsrow['gl_value'];
-    }
-    $directory_created = false;
-  if($GLOBALS['document_storage_method'] != 0){
+  $options = array();
+  while($globalsrow = sqlFetchArray($globalsres)) {
+    $GLOBALS[$globalsrow['gl_name']] = $globalsrow['gl_value'];
+  }
+  $directory_created = false;
+  if ($GLOBALS['document_storage_method'] != 0) {
     // /documents/temp/ folder is required for CouchDB
-    if(!is_dir($GLOBALS['OE_SITE_DIR'] . '/documents/temp/')){
+    if (!is_dir($GLOBALS['OE_SITE_DIR'] . '/documents/temp/')) {
       $directory_created = mkdir($GLOBALS['OE_SITE_DIR'] . '/documents/temp/',0777,true);      
-      if(!$directory_created){
-	echo htmlspecialchars( xl("Failed to create temporary folder. CouchDB will not work."),ENT_NOQUOTES);
+      if (!$directory_created) {
+        echo htmlspecialchars(xl("Failed to create temporary folder. CouchDB will not work."),ENT_NOQUOTES);
       }
     }
-        $couch = new CouchDB();
-    if(!$couch->check_connection()) {
+    $couch = new CouchDB();
+    if (!$couch->check_connection()) {
       echo "<script type='text/javascript'>alert('".addslashes(xl("CouchDB Connection Failed."))."');</script>";
       return;
     }
-    if($GLOBALS['couchdb_host'] || $GLOBALS['couchdb_port'] || $GLOBALS['couchdb_dbase']){
+    if ($GLOBALS['couchdb_host'] || $GLOBALS['couchdb_port'] || $GLOBALS['couchdb_dbase']) {
       $couch->createDB($GLOBALS['couchdb_dbase']);
       $couch->createView($GLOBALS['couchdb_dbase']);
     }
@@ -54,10 +57,10 @@ function checkCreateCDB(){
  * @author EMR Direct
  */
 function updateBackgroundService($name,$active,$interval) {
-   //order important here: next_run change dependent on _old_ value of execute_interval so it comes first
-   $sql = 'UPDATE background_services SET active=?, '
-	. 'next_run = next_run + INTERVAL (? - execute_interval) MINUTE, execute_interval=? WHERE name=?';
-   return sqlStatement($sql,array($active,$interval,$interval,$name));
+  //order important here: next_run change dependent on _old_ value of execute_interval so it comes first
+  $sql = 'UPDATE background_services SET active=?, ' .
+    'next_run = next_run + INTERVAL (? - execute_interval) MINUTE, execute_interval=? WHERE name=?';
+  return sqlStatement($sql,array($active,$interval,$interval,$name));
 }
 
 /**
@@ -73,7 +76,7 @@ function updateBackgroundService($name,$active,$interval) {
  * copied to a temp variable before the while($globalsrow...) loop.
  * @author EMR Direct
  */
-function checkBackgroundServices(){
+function checkBackgroundServices() {
   //load up any necessary globals
   $bgservices = sqlStatement("SELECT gl_name, gl_index, gl_value FROM globals WHERE gl_name IN
   ('phimail_enable','phimail_interval')");
@@ -86,6 +89,35 @@ function checkBackgroundServices(){
    $phimail_interval = max(0,(int)$GLOBALS['phimail_interval']);
    updateBackgroundService('phimail',$phimail_active,$phimail_interval);
 }
+
+// Update an item in the globals table in a way that does not create gobs of log entries.
+function updateGlobalsItem($name, $index, $value) {
+  $row = sqlQuery("SELECT gl_value FROM globals WHERE gl_name = ? and gl_index = ?",
+    array($name, $index));
+  if (isset($row['gl_value'])) {
+    if ($row['gl_value'] != $value) {
+      sqlStatement("UPDATE globals SET gl_value = ? WHERE gl_name = ? and gl_index = ?",
+        array($value, $name, $index));
+    }
+  }
+  else {
+    sqlStatement("INSERT INTO globals SET gl_name = ?, gl_index = ?, gl_value = ?",
+      array($name, $index, $value));
+  }
+}
+
+// Compute a current checksum of the globals table.
+//
+function calcChecksum() {
+  $row = sqlQuery("SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
+    "gl_name, gl_index, gl_value" .
+    "))) AS checksum FROM globals");
+  return (0 + $row['checksum']);
+}
+
+$alertmsg = '';
+
+$current_checksum = calcChecksum();
 ?>
 
 <html>
@@ -175,58 +207,57 @@ if ($_POST['form_download']) {
 // If we are saving main globals.
 //
 if ($_POST['form_save'] && $_GET['mode'] != "user") {
-
-  $i = 0;
-  foreach ($GLOBALS_METADATA as $grpname => $grparr) {
-    foreach ($grparr as $fldid => $fldarr) {
-      list($fldname, $fldtype, $flddef, $flddesc) = $fldarr;
-	  if($fldtype == 'pwd'){
-	  $pass = sqlQuery("SELECT gl_value FROM globals WHERE gl_name = '$fldid'");
-	  $fldvalueold = $pass['gl_value'];
-	  }
-      sqlStatement("DELETE FROM globals WHERE gl_name = '$fldid'");
-
-      if (substr($fldtype, 0, 2) == 'm_') {
-        if (isset($_POST["form_$i"])) {
-          $fldindex = 0;
-          foreach ($_POST["form_$i"] as $fldvalue) {
-            $fldvalue = formDataCore($fldvalue, true);
-            sqlStatement("INSERT INTO globals ( gl_name, gl_index, gl_value ) " .
-              "VALUES ( '$fldid', '$fldindex', '$fldvalue' )");
-            ++$fldindex;
+  if ($_POST['form_checksum'] != $current_checksum) {
+    $alertmsg = xl('Save rejected because someone else has changed global settings. Please try again.');
+  }
+  else {
+    $i = 0;
+    foreach ($GLOBALS_METADATA as $grpname => $grparr) {
+      foreach ($grparr as $fldid => $fldarr) {
+        list($fldname, $fldtype, $flddef, $flddesc) = $fldarr;
+        if($fldtype == 'pwd') {
+          $pass = sqlQuery("SELECT gl_value FROM globals WHERE gl_name = '$fldid'");
+          $fldvalueold = $pass['gl_value'];
+        }
+        if (substr($fldtype, 0, 2) == 'm_') {
+          // This applies to a multi-select list such as type m_lang.
+          if (isset($_POST["form_$i"])) {
+            $fldindex = 0;
+            foreach ($_POST["form_$i"] as $fldvalue) {
+              updateGlobalsItem($fldid, $fldindex, $fldvalue);
+              ++$fldindex;
+            }
           }
         }
-      }
-      else {
-        if (isset($_POST["form_$i"])) {
-          $fldvalue = formData("form_$i", "P", true);
-        }
         else {
-          $fldvalue = "";
+          if (isset($_POST["form_$i"])) {
+            $fldvalue = $_POST["form_$i"];
+          }
+          else {
+            $fldvalue = "";
+          }
+          if ($fldtype == 'pwd') {
+            $fldvalue = $fldvalue ? SHA1($fldvalue) : $fldvalueold;
+          }
+          updateGlobalsItem($fldid, 0, $fldvalue);
         }
-        if($fldtype=='pwd')
-          $fldvalue = $fldvalue ? SHA1($fldvalue) : $fldvalueold;
-		  if(fldvalue){
-		  sqlStatement("INSERT INTO globals ( gl_name, gl_index, gl_value ) " .
-          "VALUES ( '$fldid', '0', '$fldvalue' )");
-		  }
+        ++$i;
       }
-
-      ++$i;
     }
+    checkCreateCDB();
+    checkBackgroundServices();
+    echo "<script type='text/javascript'>";
+    echo "parent.left_nav.location.reload();";
+    echo "parent.Title.location.reload();";
+    echo "if(self.name=='RTop'){";
+    echo "parent.RBot.location.reload();";
+    echo "}else{";
+    echo "parent.RTop.location.reload();";
+    echo "}";
+    echo "self.location.href='edit_globals.php?unique=yes';";
+    echo "</script>";
+    $current_checksum = calcChecksum();
   }
-  checkCreateCDB();
-  checkBackgroundServices();
-  echo "<script type='text/javascript'>";
-  echo "parent.left_nav.location.reload();";
-  echo "parent.Title.location.reload();";
-  echo "if(self.name=='RTop'){";
-  echo "parent.RBot.location.reload();";
-  echo "}else{";
-  echo "parent.RTop.location.reload();";
-  echo "}";
-  echo "self.location.href='edit_globals.php?unique=yes';";
-  echo "</script>";
 }
 ?>
 
@@ -332,7 +363,7 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
     // Most parameters will have a single value, but some will be arrays.
     // Here we cater to both possibilities.
     $glres = sqlStatement("SELECT gl_index, gl_value FROM globals WHERE " .
-      "gl_name = '$fldid' ORDER BY gl_index");
+      "gl_name = ? ORDER BY gl_index", array($fldid));
     $glarr = array();
     while ($glrow = sqlFetchArray($glres)) $glarr[] = $glrow;
 
@@ -388,7 +419,7 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
         $globalTitle = $globalValue;
       }
       echo "  <input type='text' name='form_$i' id='form_$i' " .
-        "size='6' maxlength='15' value='$fldvalue' />\n";
+        "size='6' maxlength='15' value='" . attr($fldvalue) . "' />\n";
     }
 
     else if ($fldtype == 'text') {
@@ -396,7 +427,7 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
         $globalTitle = $globalValue;
       }
       echo "  <input type='text' name='form_$i' id='form_$i' " .
-        "size='50' maxlength='255' value='$fldvalue' />\n";
+        "size='50' maxlength='255' value='" . attr($fldvalue) . "' />\n";
     }
     else if ($fldtype == 'pwd') {
 	  if ($_GET['mode'] == "user") {
@@ -411,7 +442,7 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
         $globalTitle = $globalValue;
       }
       echo "  <input type='password' name='form_$i' " .
-        "size='50' maxlength='255' value='$fldvalue' />\n";
+        "size='50' maxlength='255' value='" . attr($fldvalue) . "' />\n";
     }
 
     else if ($fldtype == 'lang') {
@@ -431,7 +462,7 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
       $res = sqlStatement("SELECT * FROM lang_languages  ORDER BY lang_description");
       echo "  <select multiple name='form_{$i}[]' id='form_{$i}[]' size='3'>\n";
       while ($row = sqlFetchArray($res)) {
-        echo "   <option value='" . $row['lang_description'] . "'";
+        echo "   <option value='" . attr($row['lang_description']) . "'";
         foreach ($glarr as $glrow) {
           if ($glrow['gl_value'] == $row['lang_description']) {
             echo " selected";
@@ -439,7 +470,7 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
           }
         }
         echo ">";
-        echo xl($row['lang_description']);
+        echo xlt($row['lang_description']);
         echo "</option>\n";
       }
       echo "  </select>\n";
@@ -461,10 +492,10 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
           if (!preg_match("/^style_.*\.css$/", $tfname) ||
             $tfname == 'style_blue.css' || $tfname == 'style_pdf.css')
             continue;
-          echo "<option value='$tfname'";
+          echo "<option value='" . attr($tfname) . "'";
           if ($tfname == $fldvalue) echo " selected";
           echo ">";
-          echo $tfname;
+          echo text($tfname);
           echo "</option>\n";
         }
         closedir($dh);
@@ -516,6 +547,7 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
 
 <p>
  <input type='submit' name='form_save' value='<?php echo xla('Save'); ?>' />
+ <input type='hidden' name='form_checksum' value='<?php echo $current_checksum; ?>' />
 </p>
 </center>
 
@@ -544,9 +576,13 @@ $(document).ready(function(){
     <?php } ?>
   <?php } ?>
 
+<?php
+if ($alertmsg) {
+  echo "  alert('" . addslashes($alertmsg) . "');\n";
+}
+?>    
 });
 
 </script>
 
 </html>
-
