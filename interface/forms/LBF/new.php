@@ -90,11 +90,15 @@ function end_group() {
 $formname = isset($_GET['formname']) ? $_GET['formname'] : '';
 $formid = 0 + (isset($_GET['id']) ? $_GET['id'] : '');
 
-// Get title and number of history columns for this form.
-$tmp = sqlQuery("SELECT title, option_value FROM list_options WHERE " .
+// Get some info about this form.
+$tmp = sqlQuery("SELECT title, option_value, notes FROM list_options WHERE " .
   "list_id = 'lbfnames' AND option_id = ?", array($formname) );
 $formtitle = $tmp['title'];
 $formhistory = 0 + $tmp['option_value'];
+// Notes can be used to specify number of columns in the form.
+if (ctype_digit($tmp['notes']) && $tmp['notes'] > 0 && $tmp['notes'] < 13) {
+  $CPR = intval($tmp['notes']);
+}
 
 if (empty($is_lbf)) {
   $fname = $GLOBALS['OE_SITE_DIR'] . "/LBF/$formname.plugin.php";
@@ -511,7 +515,7 @@ function validate(f) {
       echo ($frow['uor'] == 2) ? "required" : "bold";
       if ($graphable) echo " graph";
       echo "'";
-      if ($cell_count == 2) echo " style='padding-left:10pt'";
+      if ($cell_count > 0) echo " style='padding-left:10pt'";
       // This ID is used by skip conditions and also show_graph().
       echo " id='label_id_" . attr($field_id) . "'";
       echo ">";

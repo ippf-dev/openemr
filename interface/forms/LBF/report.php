@@ -14,7 +14,17 @@ include_once($GLOBALS["srcdir"] . "/api.inc");
 // interface/patient_file/encounter/forms.php.
 //
 function lbf_report($pid, $encounter, $cols, $id, $formname) {
+  global $CPR;
   require_once($GLOBALS["srcdir"] . "/options.inc.php");
+  // $CPR is defined in options.inc.php and we reset it here to respect the option for
+  // specifying it in the form's list item.
+  $CPR = 4;
+  $tmp = sqlQuery("SELECT notes FROM list_options WHERE " .
+    "list_id = 'lbfnames' AND option_id = ?", array($formname) );
+  if (ctype_digit($tmp['notes']) && $tmp['notes'] > 0 && $tmp['notes'] < 13) {
+    $CPR = intval($tmp['notes']);
+  }
+  //
   $arr = array();
   $shrow = getHistoryData($pid);
   $fres = sqlStatement("SELECT * FROM layout_options " .

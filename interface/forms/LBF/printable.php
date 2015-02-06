@@ -22,9 +22,13 @@ $CPR = 4; // cells per row
 // The form name is passed to us as a GET parameter.
 $formname = isset($_GET['formname']) ? $_GET['formname'] : '';
 
-$tmp = sqlQuery("SELECT title FROM list_options WHERE " .
+$tmp = sqlQuery("SELECT title, notes FROM list_options WHERE " .
   "list_id = 'lbfnames' AND option_id = ? LIMIT 1", array($formname) );
 $formtitle = $tmp['title'];
+// Notes can be used to specify number of columns in the form.
+if (ctype_digit($tmp['notes']) && $tmp['notes'] > 0 && $tmp['notes'] < 13) {
+  $CPR = intval($tmp['notes']);
+}
 
 $fres = sqlStatement("SELECT * FROM layout_options " .
   "WHERE form_id = ? AND uor > 0 " .
@@ -168,7 +172,7 @@ while ($frow = sqlFetchArray($fres)) {
     end_cell();
     echo "<td colspan='" . attr($titlecols) . "' width='10%'";
     echo ($frow['uor'] == 2) ? " class='required'" : " class='bold'";
-    if ($cell_count == 2) echo " style='padding-left:10pt'";
+    if ($cell_count > 0) echo " style='padding-left:10pt'";
     echo ">";
     $cell_count += $titlecols;
   }
