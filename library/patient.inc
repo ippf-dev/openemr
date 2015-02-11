@@ -1728,9 +1728,9 @@ function get_patient_balance($pid, $with_insurance=false) {
 function get_patient_balance_excluding($pid, $excluded = -1) {
   
     $brow = sqlQuery("SELECT SUM(fee) AS amount FROM billing WHERE " .
-      "pid = '$pid' AND encounter != '$excluded' AND activity = 1");
+      "pid = '$pid' AND encounter != 0 AND encounter != '$excluded' AND activity = 1");
     $srow = sqlQuery("SELECT SUM(fee) AS amount FROM drug_sales WHERE " .
-      "pid = '$pid' AND encounter != '$excluded'");
+      "pid = '$pid' AND encounter != 0 AND encounter != '$excluded'");
     $drow = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
       "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
       "pid = '$pid' AND encounter != '$excluded'");
