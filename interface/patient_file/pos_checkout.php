@@ -2080,7 +2080,8 @@ else if (!empty($GLOBALS['gbl_mask_invoice_number'])) {
   opener.parent.left_nav.dlgopen(loc, '_blank', width, height);
   window.close();
 <?php } else { ?>
-  parent.left_nav.dlgopen(loc, '_blank', width, height);
+  var tmp = parent.left_nav ? parent.left_nav : parent.parent.left_nav;
+  tmp.dlgopen(loc, '_blank', width, height);
 <?php } ?>
  }
 
