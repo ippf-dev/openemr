@@ -72,9 +72,15 @@ function recordPayment($encdate, $patient_id, $encounter_id, $rowmethod,
   // Ensure a unique row for each invoice reference number.
   $key3 = $invoice_refno;
 
-  // Extract only the first word as the payment method because any
-  // following text will be some petty detail like a check number.
-  $rowmethod = substr($rowmethod, 0, strcspn($rowmethod, ' /'));
+  // Look for the longest match of a pay method with the start of $rowmethod.
+  // Any trailing text is ignored as it would be some further detail like a check number.
+  $tmpmethod = '';
+  foreach ($metharray as $tmp => $dummy) {
+    if (strpos($rowmethod, $tmp) === 0 && strlen($tmp) > strlen($tmpmethod)) {
+      $tmpmethod = $tmp;
+    }
+  }
+  if ($tmpmethod !== '') $rowmethod = $tmpmethod;
 
   // Unexpected method is translated to Unassigned.
   if (empty($rowmethod) || ($rowmethod !== '%void%' && !isset($metharray[$rowmethod]))) {
