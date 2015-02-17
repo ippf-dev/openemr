@@ -164,9 +164,8 @@ if (empty($SBCODES)) {
                 "d.drug_id = dt.drug_id AND d.active = 1 " .
                 "ORDER BY d.name, dt.selector, dt.drug_id");
         while ($trow = sqlFetchArray($tres)) {
-            $tmp = $trow['selector'];
-            if ($trow['name'] !== $trow['selector'])
-                $tmp .= ' ' . $trow['name'];
+            $tmp = $trow['name'];
+            if ($trow['name'] !== $trow['selector']) $tmp .= ' / ' . $trow['selector'];
             $prodcode = empty($trow['ndc_number']) ? ('(' . $trow['drug_id'] . ')') :
                     $trow['ndc_number'];
             $SBCODES[] = "$prodcode|$tmp";
