@@ -1,6 +1,6 @@
 <?php
 
-// Copyright (C) 2007-2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2007-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // 2012 - Refactored extensively to allow for creating multiple feesheets on demand
 // uses a session array of PIDS by Medical Information Integration, LLC - mi-squared.com
@@ -17,6 +17,7 @@ require_once("$srcdir/billing.inc");
 require_once("$srcdir/classes/Address.class.php");
 require_once("$srcdir/classes/InsuranceCompany.class.php");
 require_once("$srcdir/formatting.inc.php");
+require_once("../../custom/code_types.inc.php");
 
 function genColumn($ix) {
     global $html;
@@ -151,6 +152,11 @@ if (empty($SBCODES)) {
                 "WHERE superbill = '" . $prow['option_id'] . "' AND active = 1 " .
                 "ORDER BY code_text");
         while ($row = sqlFetchArray($res)) {
+            foreach ($code_types as $key => $value) {
+              if ($value['id'] == $row['code_type'] && !empty($value['nofs'])) {
+                continue 2; // skips this code
+              }
+            }
             $SBCODES[] = $row['code'] . '|' . $row['code_text'];
         }
     }
@@ -161,7 +167,7 @@ if (empty($SBCODES)) {
         $tres = sqlStatement("SELECT " .
                 "dt.drug_id, dt.selector, d.name, d.ndc_number " .
                 "FROM drug_templates AS dt, drugs AS d WHERE " .
-                "d.drug_id = dt.drug_id AND d.active = 1 " .
+                "d.drug_id = dt.drug_id AND d.active = 1 AND d.consumable = 0 " .
                 "ORDER BY d.name, dt.selector, dt.drug_id");
         while ($trow = sqlFetchArray($tres)) {
             $tmp = $trow['name'];
