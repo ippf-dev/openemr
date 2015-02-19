@@ -84,8 +84,18 @@ else if (isset($_GET['mode']) && $_GET['mode'] == "loadcalendar") {
 }
 else if ($GLOBALS['concurrent_layout']) {
   // new layout
-  if ($GLOBALS['default_top_pane']) {
-    $frame1url=attr($GLOBALS['default_top_pane']);
+  if (!empty($_POST['authUser'])) {
+    // globals.php did not merge in user settings because the session was cleared upon login,
+    // so do that for the one that matters here.
+    $tmp = sqlQuery("SELECT us.setting_value FROM users, user_settings AS us WHERE " .
+      "users.username = ? AND us.setting_user = users.id AND us.setting_label = ?",
+      array($_POST['authUser'], 'global:default_top_pane'));
+    if (!empty($tmp['setting_value'])) {
+      $GLOBALS['default_top_pane'] = $tmp['setting_value'];
+    }
+  }
+  if (!empty($GLOBALS['default_top_pane'])) {
+    $frame1url = attr($GLOBALS['default_top_pane']);
   } else {
     $frame1url = "main_info.php";
   }
