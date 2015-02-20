@@ -6,7 +6,7 @@ include_once("{$GLOBALS['srcdir']}/billing.inc");
 include_once("{$GLOBALS['srcdir']}/formdata.inc.php");
 
 $GLOBALS['form_exit_url'] = $GLOBALS['concurrent_layout'] ?
-	"$rootdir/patient_file/encounter/encounter_top.php" :
+	"$rootdir/patient_file/encounter/forms.php" :
 	"$rootdir/patient_file/encounter/patient_encounter.php";
 
 function formHeader ($title = "My Form")

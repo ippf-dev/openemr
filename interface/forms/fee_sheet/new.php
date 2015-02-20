@@ -626,8 +626,6 @@ $ndc_uom_choices = array(
 // $FEE_SHEET_COLUMNS should be defined in codes.php.
 if (empty($FEE_SHEET_COLUMNS)) $FEE_SHEET_COLUMNS = 2;
 
-$returnurl = $GLOBALS['concurrent_layout'] ? 'encounter_top.php' : 'patient_encounter.php';
-
 // Update price level in patient demographics.
 if (!empty($_POST['pricelevel'])) {
   sqlStatement("UPDATE patient_data SET pricelevel = ? WHERE pid = ?", array($_POST['pricelevel'],$pid) );
@@ -702,7 +700,7 @@ if (isset($_POST['form_checksum'])) {
 }
 
 // If Save or Save-and-Close was clicked, save the new and modified billing
-// lines; then if no error, redirect to $returnurl.
+// lines; then if no error, redirect to $GLOBALS['form_exit_url'].
 //
 if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
   $main_provid = 0 + $_POST['ProviderID'];
@@ -1876,7 +1874,7 @@ value='<?php echo xla('Refresh');?>'>
 <input type='hidden' name='form_alertmsg' value='<?php echo attr($alertmsg); ?>' />
 
 <input type='button' value='<?php echo xla('Cancel');?>'
- onclick="top.restoreSession();location='<?php echo "$rootdir/patient_file/encounter/$returnurl" ?>'" />
+ onclick="top.restoreSession();location='<?php echo $GLOBALS['form_exit_url']; ?>'" />
 
 <?php if ($code_types['UCSMC']) { ?>
 <p style='font-family:sans-serif;font-size:8pt;color:#666666;'>

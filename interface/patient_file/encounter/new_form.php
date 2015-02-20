@@ -278,12 +278,12 @@ if($StringEcho){
 }
 ?>
 <script>
-    function gotoFee_sheet()
-    {
-        var istop = parent.window.name == 'RTop';
-        parent.parent.left_nav.forceSpec(istop, !istop);        
-        openNewForm('<?php echo $GLOBALS['webroot'];?>/interface/patient_file/encounter/load_form.php?formname=fee_sheet');
-    }
+function gotoFee_sheet() {
+  for (var p = parent; p && p != p.parent && p != 'RTop' && p != 'RBot'; p = p.parent);
+  var istop = p.window.name == 'RTop';
+  p.parent.left_nav.forceSpec(istop, !istop);        
+  openNewForm('<?php echo $GLOBALS['webroot'];?>/interface/patient_file/encounter/load_form.php?formname=fee_sheet');
+}
 </script>
 <table cellspacing="0" cellpadding="0" align="center">
   <tr>
