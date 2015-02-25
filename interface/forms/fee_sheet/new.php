@@ -1866,6 +1866,10 @@ if (true) {
 <input type='submit' name='bn_refresh' onclick='return this.clicked = true;' 
 value='<?php echo xla('Refresh');?>'>
 &nbsp;
+<?php } else { // encounter is billed ?>
+<input type='button' value='<?php echo xla('Show Receipt'); ?>'
+ onclick="top.restoreSession();location='../../patient_file/pos_checkout.php?framed=1<?php echo "&ptid=$pid&enc=$encounter"; ?>'" />
+&nbsp;
 <?php } ?>
 <input type='hidden' name='form_has_charges' value='<?php echo $hasCharges ? 1 : 0; ?>' />
 <input type='hidden' name='form_checksum' value='<?php echo $current_checksum; ?>' />
@@ -1875,13 +1879,6 @@ value='<?php echo xla('Refresh');?>'>
 
 <input type='button' value='<?php echo xla('Cancel');?>'
  onclick="top.restoreSession();location='<?php echo $GLOBALS['form_exit_url']; ?>'" />
-
-<?php if ($code_types['UCSMC']) { ?>
-<p style='font-family:sans-serif;font-size:8pt;color:#666666;'>
-&nbsp;<br>
-<?php echo xlt('UCSMC codes provided by the University of Calgary Sports Medicine Centre');?>
-</p>
-<?php } ?>
 
 </center>
 
