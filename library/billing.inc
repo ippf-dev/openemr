@@ -271,4 +271,92 @@ function getPatientCopay($patient_id, $encounter) {
         $Copay=$rowMoneyGot['PatientPay'];
         return $Copay*-1;
 }
+
+// Get the "next invoice reference number" from this user's pool of reference numbers.
+//
+function getInvoiceRefNumber() {
+  $trow = sqlQuery("SELECT lo.notes " .
+    "FROM users AS u, list_options AS lo " .
+    "WHERE u.username = '" . $_SESSION['authUser'] . "' AND " .
+    "lo.list_id = 'irnpool' AND lo.option_id = u.irnpool LIMIT 1");
+  return empty($trow['notes']) ? '' : $trow['notes'];
+}
+
+// Increment the "next invoice reference number" of this user's pool.
+// This identifies the "digits" portion of that number and adds 1 to it.
+// If it contains more than one string of digits, the last is used.
+//
+function updateInvoiceRefNumber() {
+  $irnumber = getInvoiceRefNumber();
+  // Here "?" specifies a minimal match, to get the most digits possible:
+  if (preg_match('/^(.*?)(\d+)(\D*)$/', $irnumber, $matches)) {
+    $newdigs = sprintf('%0' . strlen($matches[2]) . 'd', $matches[2] + 1);
+    $newnumber = add_escape_custom($matches[1] . $newdigs . $matches[3]);
+    sqlStatement("UPDATE users AS u, list_options AS lo " .
+      "SET lo.notes = '$newnumber' WHERE " .
+      "u.username = '" . $_SESSION['authUser'] . "' AND " .
+      "lo.list_id = 'irnpool' AND lo.option_id = u.irnpool");
+  }
+  return $irnumber;
+}
+
+// Common function for voiding a receipt or checkout.
+//
+function doVoid($patient_id, $encounter_id, $purge=false) {
+  $what_voided = $purge ? 'checkout' : 'receipt';
+  $date_original = '';
+  $adjustments = 0;
+  $payments = 0;
+  $row = sqlQuery("SELECT post_time, SUM(pay_amount) AS payments, " .
+    "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
+    "pid = '$patient_id' AND encounter = '$encounter_id' " .
+    "GROUP BY post_time ORDER BY post_time DESC LIMIT 1");
+  if (!empty($row['post_time'])) {
+    $date_original = $row['post_time'];
+    $adjustments = $row['adjustments'];
+    $payments = $row['payments'];
+  }
+  // Get old invoice reference number.
+  $encrow = sqlQuery("SELECT invoice_refno FROM form_encounter WHERE " .
+    "pid = '$patient_id' AND encounter = '$encounter_id' LIMIT 1");
+  $old_invoice_refno = $encrow['invoice_refno'];
+  //
+  $usingirnpools = getInvoiceRefNumber();
+  // If not (undoing a checkout or using IRN pools), nothing is done.
+  if ($purge || $usingirnpools) {
+    sqlStatement("INSERT INTO voids SET " .
+      "patient_id = '" . add_escape_custom($patient_id) . "', " .
+      "encounter_id = '" . add_escape_custom($encounter_id) . "', " .
+      "what_voided = '$what_voided', " .
+      ($date_original ?  "date_original = '$date_original', " : "") .
+      "date_voided = NOW(), " .
+      "user_id = '" . add_escape_custom($_SESSION['authUserID']) . "', " .
+      "amount1 = '" . $row['adjustments'] . "', " .
+      "amount2 = '" . $row['payments'] . "', " .
+      "other_info = '" . add_escape_custom($old_invoice_refno) . "'");
+  }
+  if ($purge) {
+    // Purge means delete adjustments and payments from the last checkout
+    // and re-open the visit.
+    if ($date_original) {
+      sqlStatement("DELETE FROM ar_activity WHERE " .
+        "pid = '$patient_id' AND encounter = '$encounter_id' AND " .
+        "post_time = '$date_original'");
+    }
+    sqlStatement("UPDATE billing SET billed = 0, bill_date = NULL WHERE " .
+      "pid = '$patient_id' AND encounter = '$encounter_id' AND activity = 1");
+    sqlStatement("update drug_sales SET billed = 0 WHERE " .
+      "pid = '$patient_id' AND encounter = '$encounter_id'");
+    sqlStatement("UPDATE form_encounter SET last_level_billed = 0, " .
+      "last_level_closed = 0, stmt_count = 0, last_stmt_date = NULL " .
+      "WHERE pid = '$patient_id' AND encounter = '$encounter_id'");
+  }
+  else if ($usingirnpools) {
+    // Non-purge means just assign a new invoice reference number.
+    $new_invoice_refno = add_escape_custom(updateInvoiceRefNumber());
+    sqlStatement("UPDATE form_encounter " .
+      "SET invoice_refno = '$new_invoice_refno' " .
+      "WHERE pid = '$patient_id' AND encounter = '$encounter_id'");
+  }
+}
 ?>

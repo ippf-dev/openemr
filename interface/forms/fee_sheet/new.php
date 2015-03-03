@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2005-2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2005-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -642,10 +642,13 @@ $visit_date = substr($visit_row['date'], 0, 10);
 // that most contraceptive services and products should match up on the fee sheet.
 $match_services_to_products = $GLOBALS['ippf_specific'] &&
   !empty($visit_row['extra_validation']);
+
 $current_checksum = visitChecksum($pid, $encounter);
+// It's important to look for a checksum mismatch even if we're just refreshing
+// the display, otherwise the error goes undetected on a refresh-then-save.
 if (isset($_POST['form_checksum'])) {
   if ($_POST['form_checksum'] != $current_checksum) {
-    $alertmsg = xl('Save rejected because someone else has changed this visit. Please cancel this page and try again.');
+    $alertmsg = xl('Someone else has just changed this visit. Please cancel this page and try again.');
   }
 }
 
@@ -687,15 +690,6 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
     $drow = sqlQuery("SELECT name FROM drugs WHERE drug_id = '$insufficient'");
     $alertmsg = xl('Insufficient inventory for product') . ' "' . $drow['name'] . '".';
     if ($expiredlots) $alertmsg .= " " . xl('Check expiration dates.');
-  }
-}
-
-$current_checksum = visitChecksum($pid, $encounter);
-// It's important to look for a checksum mismatch even if we're just refreshing
-// the display, otherwise the error goes undetected on a refresh-then-save.
-if (isset($_POST['form_checksum'])) {
-  if ($_POST['form_checksum'] != $current_checksum) {
-    $alertmsg = xl('Someone else has just changed this visit. Please cancel this page and try again.');
   }
 }
 
@@ -776,8 +770,8 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
 
     $ndc_info = '';
     if ($iter['ndcnum']) {
-    $ndc_info = 'N4' . trim($iter['ndcnum']) . '   ' . $iter['ndcuom'] .
-      trim($iter['ndcqty']);
+      $ndc_info = 'N4' . trim($iter['ndcnum']) . '   ' . $iter['ndcuom'] .
+        trim($iter['ndcqty']);
     }
 
     // If the item is already in the database...
@@ -962,60 +956,71 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
     unset($_POST['bill']);
     unset($_POST['prod']);
   }
-  else {
-  // If appropriate, update the status of the related appointment to
-  // "In exam room".
-  updateAppointmentStatus($pid, $visit_date, '<');
+  else { // not running as ajax
+    // If appropriate, update the status of the related appointment to
+    // "In exam room".
+    updateAppointmentStatus($pid, $visit_date, '<');
 
-  // More Family Planning stuff.
-  if (isset($_POST['ippfconmeth'])) {
-    $ippfconmeth = $_POST['ippfconmeth'];      
-    $csrow = sqlQuery("SELECT f.form_id, ld.field_value FROM forms AS f " .
-      "LEFT JOIN lbf_data AS ld ON ld.form_id = f.form_id AND ld.field_id = 'newmethod' " .
-      "WHERE " .
-      "f.pid = '$pid' AND f.encounter = '$encounter' AND " .
-      "f.formdir = 'LBFccicon' AND f.deleted = 0 " .
-      "ORDER BY f.form_id DESC LIMIT 1");
+    // More Family Planning stuff.
+    if (isset($_POST['ippfconmeth'])) {
+      $ippfconmeth = $_POST['ippfconmeth'];      
+      $csrow = sqlQuery("SELECT f.form_id, ld.field_value FROM forms AS f " .
+        "LEFT JOIN lbf_data AS ld ON ld.form_id = f.form_id AND ld.field_id = 'newmethod' " .
+        "WHERE " .
+        "f.pid = '$pid' AND f.encounter = '$encounter' AND " .
+        "f.formdir = 'LBFccicon' AND f.deleted = 0 " .
+        "ORDER BY f.form_id DESC LIMIT 1");
       $ippfconmeth = $_POST['ippfconmeth'];
       if (isset($_POST['newmauser'])) {
-      $newmauser   = $_POST['newmauser'];
-      // pastmodern is 0 iff new to modern contraception
-      $pastmodern = $newmauser == '2' ? 0 : 1;
-      if ($newmauser == '2') $newmauser = '1';      
-      // Add contraception form but only if it does not already exist
-      // (if it does, must be 2 users working on the visit concurrently).
-      if (empty($csrow)) {
-        $newid = insert_lbf_item(0, 'newmauser', $newmauser);
-        insert_lbf_item($newid, 'newmethod', "IPPFCM:$ippfconmeth");
-        insert_lbf_item($newid, 'pastmodern', $pastmodern);
-        // Do we care about a service-specific provider here?
-        insert_lbf_item($newid, 'provider', $main_provid);
-        addForm($encounter, 'Contraception', $newid, 'LBFccicon', $pid, $userauthorized);
+        $newmauser   = $_POST['newmauser'];
+        // pastmodern is 0 iff new to modern contraception
+        $pastmodern = $newmauser == '2' ? 0 : 1;
+        if ($newmauser == '2') $newmauser = '1';      
+        // Add contraception form but only if it does not already exist
+        // (if it does, must be 2 users working on the visit concurrently).
+        if (empty($csrow)) {
+          $newid = insert_lbf_item(0, 'newmauser', $newmauser);
+          insert_lbf_item($newid, 'newmethod', "IPPFCM:$ippfconmeth");
+          insert_lbf_item($newid, 'pastmodern', $pastmodern);
+          // Do we care about a service-specific provider here?
+          insert_lbf_item($newid, 'provider', $main_provid);
+          addForm($encounter, 'Contraception', $newid, 'LBFccicon', $pid, $userauthorized);
+        }
+      }
+      else if (empty($csrow) || $csrow['field_value'] != "IPPFCM:$ippfconmeth") {
+        // Contraceptive method does not match what is in an existing Contraception
+        // form for this visit, or there is no such form.  Open the form.
+        formJump("{$GLOBALS['rootdir']}/patient_file/encounter/view_form.php" .
+          "?formname=LBFccicon&id=" . (empty($csrow) ? 0 : $csrow['form_id']));
+        formFooter();
+        exit;
       }
     }
-    else if (empty($csrow) || $csrow['field_value'] != "IPPFCM:$ippfconmeth") {
-      // Contraceptive method does not match what is in an existing Contraception
-      // form for this visit, or there is no such form.  Open the form.
-      formJump("{$GLOBALS['rootdir']}/patient_file/encounter/view_form.php" .
-        "?formname=LBFccicon&id=" . (empty($csrow) ? 0 : $csrow['form_id']));
-      formFooter();
-      exit;
-    }
-  }
 
-  if ($rapid_data_entry || ($_POST['bn_save_close'] && $_POST['form_has_charges'])) {
-    // In rapid data entry mode or if "Save and Checkout" was clicked,
-    // we go directly to the Checkout page.
-    formJump("{$GLOBALS['rootdir']}/patient_file/pos_checkout.php?framed=1&rde=$rapid_data_entry");
-  }
-  else {
-    // Otherwise return to the normal encounter summary frameset.
-    formHeader("Redirecting....");
-    formJump();
-  }
-  formFooter();
-  exit;
-}
+    if ($rapid_data_entry || ($_POST['bn_save_close'] && $_POST['form_has_charges'])) {
+      // In rapid data entry mode or if "Save and Checkout" was clicked,
+      // we go directly to the Checkout page.
+      formJump("{$GLOBALS['rootdir']}/patient_file/pos_checkout.php?framed=1" .
+        "&ptid=$pid&enid=$encounter&rde=$rapid_data_entry");
+    }
+    else {
+      // Otherwise return to the normal encounter summary frameset.
+      formHeader("Redirecting....");
+      formJump();
+    }
+    formFooter();
+    exit;
+  } // end not running as ajax
+} // end save or save-and-close
+
+// Handle reopen request.  In that case no other changes will be saved.
+// If there was a checkout this will undo it.
+if (!$alertmsg && $_POST['bn_reopen']) {
+  doVoid($pid, $encounter, true);
+  $current_checksum = visitChecksum($pid, $encounter);
+  // Remove the line items so they are refreshed from the database on redisplay.
+  unset($_POST['bill']);
+  unset($_POST['prod']);
 }
 
 // Get some information about the patient.
@@ -1089,10 +1094,30 @@ function copayselect() {
 }
 
 function validate(f) {
- var refreshing = f.bn_refresh.clicked ? true : false;
- var searching  = f.bn_search.clicked  ? true : false;
- f.bn_refresh.clicked = false;
- f.bn_search.clicked = false;
+ if (f.bn_reopen) {
+  var reopening = f.bn_reopen.clicked;
+  var voiding = reopening && f.bn_reopen.clicked == 2;
+  f.bn_reopen.clicked = false;
+  if (reopening) {
+   if (voiding) {
+    if (!confirm('<?php echo xls('Re-opening this visit will cause a void. Payment information will need to be re-entered. Do you want to proceed?'); ?>')) {
+     return false;
+    }
+   }
+   top.restoreSession();
+   return true;
+  }
+ }
+ var refreshing = false;
+ if (f.bn_refresh) {
+  refreshing = f.bn_refresh.clicked ? true : false;
+  f.bn_refresh.clicked = false;
+ }
+ var searching = false;
+ if (f.bn_search) {
+  searching = f.bn_search.clicked ? true : false;
+  f.bn_search.clicked  = false;
+ }
  var max_contra_cyp = 0;
  var max_contra_code = '';
  // Loop thru the services.
@@ -1267,23 +1292,26 @@ function setJustify(seljust) {
  theopts[j++] = new Option('Clear','',false,false);
 }
 
+// Determine if there are any charges in this visit.
+function hasCharges() {
+ var f = document.forms[0];
+ for (var i = 0; i < f.elements.length; ++i) {
+  var elem = f.elements[i];
+  if (elem.name.indexOf('[price]') > 0) {
+   var fee = Number(elem.value);
+   if (!isNaN(fee) && fee != 0) return true;
+  }
+ }
+ return false;
+}
+
 // Function to check if there are any charges in the form, and to enable
 // or disable the Save and Close button accordingly.
 //
 function setSaveAndClose() {
  var f = document.forms[0];
  if (!f.bn_save_close) return;
- var hascharges = false;
- for (var i = 0; i < f.elements.length; ++i) {
-  var elem = f.elements[i];
-  if (elem.name.indexOf('[price]') > 0) {
-   var fee = Number(elem.value);
-   // alert('Fee is "' + fee + '"'); // debugging
-   if (!isNaN(fee) && fee != 0) hascharges = true;
-  }
- }
- // f.bn_save_close.disabled = hascharges;
- if (hascharges) {
+ if (hasCharges()) {
   f.form_has_charges.value = '1';
   f.bn_save_close.value = '<?php echo xl('Save and Checkout'); ?>';
  }
@@ -1851,29 +1879,36 @@ if (true) {
 
 &nbsp; &nbsp; &nbsp;
 
-<?php if (!$isBilled) { ?>
+<?php if (!$isBilled) { // visit is not yet billed ?>
 <input type='submit' name='bn_save' value='<?php echo xla('Save');?>' 
 <?php if ($rapid_data_entry) echo " style='background-color:#cc0000';color:#ffffff'"; ?>
 />
-<?php if ($GLOBALS['ippf_specific']) { ?>
-<?php if ($hasCharges) { ?>
-<input type='submit' name='bn_save_close' value='<?php xl('Save and Checkout','e');?>' />
-<?php } else { ?>
-<input type='submit' name='bn_save_close' value='<?php xl('Save and Close','e');?>' />
+<?php if ($GLOBALS['ippf_specific']) { // start ippf-only stuff ?>
+<?php if ($hasCharges) { // unbilled with charges ?>
+<input type='submit' name='bn_save_close' value='<?php echo xla('Save and Checkout'); ?>' />
+<?php } else { // unbilled with no charges ?>
+<input type='submit' name='bn_save_close' value='<?php echo xla('Save and Close'); ?>' />
 <?php } // end no charges ?>
 &nbsp;
-<?php } ?>
+<?php } // end ippf-only ?>
 <input type='submit' name='bn_refresh' onclick='return this.clicked = true;' 
 value='<?php echo xla('Refresh');?>'>
 &nbsp;
-<?php } else { // encounter is billed ?>
+<?php } else { // visit is billed ?>
+<?php if ($hasCharges) { // billed with charges ?>
 <input type='button' value='<?php echo xla('Show Receipt'); ?>'
  onclick="top.restoreSession();location='../../patient_file/pos_checkout.php?framed=1<?php echo "&ptid=$pid&enc=$encounter"; ?>'" />
 &nbsp;
-<?php } ?>
+<input type='submit' name='bn_reopen' onclick='return this.clicked = 2;'
+ value='<?php echo xla('Void Checkout and Re-Open'); ?>' />
+&nbsp;
+<?php } else { ?>
+<input type='submit' name='bn_reopen' onclick='return this.clicked = true;'
+ value='<?php echo xla('Re-Open Visit'); ?>' />
+&nbsp;
+<?php } // end billed without charges ?>
+<?php } // end billed ?>
 <input type='hidden' name='form_has_charges' value='<?php echo $hasCharges ? 1 : 0; ?>' />
-<input type='hidden' name='form_checksum' value='<?php echo $current_checksum; ?>' />
-
 <input type='hidden' name='form_checksum' value='<?php echo $current_checksum; ?>' />
 <input type='hidden' name='form_alertmsg' value='<?php echo attr($alertmsg); ?>' />
 
