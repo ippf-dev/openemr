@@ -110,10 +110,10 @@
     }
     function position_right_side()
     {
-        var appointment=group_right_widget("<?php echo xl("Appointments");?>");
-        var reminders_heading=find_widget_right("<?php echo xl("Clinical Reminders"); ?>");
+        var reminders_heading = find_widget_right("<?php echo xls("Clinical Reminders"); ?>");
+        if (reminders_heading.length == 0) return;
+        var appointment = group_right_widget("<?php echo xls("Appointments"); ?>");
         reminders_heading.before(appointment);
-
     }
     function style_billing(elem)
     {
