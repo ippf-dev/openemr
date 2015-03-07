@@ -203,14 +203,14 @@ function authorized_clicked() {
 
 <FORM NAME="user_form" METHOD="POST" ACTION="usergroup_admin.php" target="_parent" onsubmit='return top.restoreSession()'>
 
-<input type=hidden name="get_admin_id" value="<?php echo $GLOBALS['Emergency_Login_email']; ?>" />
-<input type=hidden name="admin_id"     value="<?php echo $GLOBALS['Emergency_Login_email_id']; ?>" />
+<input type=hidden name="get_admin_id" value="<?php echo attr($GLOBALS['Emergency_Login_email']); ?>" />
+<input type=hidden name="admin_id"     value="<?php echo attr($GLOBALS['Emergency_Login_email_id']); ?>" />
 <input type=hidden name="check_acl"    value="" />
 
 <?php if ($user_id) { ?>
-<input type=hidden name="pwd_expires"  value="<?php echo $GLOBALS['password_expiration_days']; ?>" />
-<input type=hidden name="pre_active"   value="<?php echo userAtt("active"); ?>" />
-<input type=hidden name="exp_date"     value="<?php echo userAtt("pwd_expiration_date"); ?>" />
+<input type=hidden name="pwd_expires"  value="<?php echo attr($GLOBALS['password_expiration_days']); ?>" />
+<input type=hidden name="pre_active"   value="<?php echo attr(userAtt("active")); ?>" />
+<input type=hidden name="exp_date"     value="<?php echo attr(userAtt("pwd_expiration_date")); ?>" />
 <?php } ?>
 
 <?php
@@ -514,7 +514,7 @@ foreach (array(3 => xl('Outlook'), 1 => xl('Original'), 2 => xl('Fancy')) as $ke
 <INPUT TYPE="HIDDEN" NAME="id" VALUE="<?php echo $user_id; ?>" />
 <INPUT TYPE="HIDDEN" NAME="mode" VALUE="<?php echo $user_id ? 'update' : 'new_user'; ?>" />
 <INPUT TYPE="HIDDEN" NAME="privatemode" VALUE="user_admin" />
-<INPUT TYPE="HIDDEN" NAME="secure_pwd" VALUE="<?php echo $GLOBALS['secure_password']; ?>" />
+<INPUT TYPE="HIDDEN" NAME="secure_pwd" VALUE="<?php echo attr($GLOBALS['secure_password']); ?>" />
 
 </FORM>
 
