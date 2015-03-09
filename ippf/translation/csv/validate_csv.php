@@ -115,9 +115,17 @@ if(count($file_contents)===0)
             <span>Empty Definitions:</span><span data-bind="text:empty()"></span>
         </div>
         <div>
-            <span>Changed Definitions:</span><span data-bind="text:changed().length"></span>
-            <div data-bind="html: changed_html()"></div>
-        </div>
+            <div>Created Definitions:</span><span data-bind="text:created().length"></div>
+            <div>Updated Definitions:</span><span data-bind="text:updated().length"></div>
+            <h3>Created Definitions List</h3>
+            <div data-bind="foreach: created">
+                <div data-bind="text:$data"></div>
+            </div>
+            <h3>Updated Definitions List</h3>
+            <div data-bind="foreach: updated">
+                <div data-bind="text:$data"></div>
+            </div>
+        </div>    
     </div>
     <!-- /ko -->
     <!-- ko if: mode()=='committed' -->
@@ -130,8 +138,16 @@ if(count($file_contents)===0)
             <span>Empty Definitions:</span><span data-bind="text:empty()"></span>
         </div>
         <div>
-            <span>Changed Definitions:</span><span data-bind="text:changed().length"></span>
-            <div data-bind="html: changed_html()"></div>
+            <div>Created Definitions:</span><span data-bind="text:created().length"></div>
+            <div>Updated Definitions:</span><span data-bind="text:updated().length"></div>
+            <h3>Created Definitions List</h3>
+            <div data-bind="foreach: created">
+                <div data-bind="text:$data"></div>
+            </div>
+            <h3>Updated Definitions List</h3>
+            <div data-bind="foreach: updated">
+                <div data-bind="text:$data"></div>
+            </div>
         </div>
     </div>
     <!-- /ko -->
@@ -167,7 +183,9 @@ if(count($file_contents)===0)
                         changed: ko.observableArray(),
                         unchanged: ko.observable(0),
                         empty: ko.observable(0),
-                        changed_html:ko.observable()
+                        changed_html:ko.observable(),
+                        updated: ko.observableArray(),
+                        created: ko.observableArray()
                     },
             loading: ko.observable(false),
             display_contents: ko.observableArray(),
@@ -176,7 +194,9 @@ if(count($file_contents)===0)
                             changed: ko.observableArray(),
                             unchanged: ko.observable(0),
                             empty: ko.observable(0),
-                            changed_html:ko.observable()
+                            changed_html:ko.observable(),
+                            updated: ko.observableArray(),
+                            created: ko.observableArray()
                         },     
             processingStatus: ko.observable("Please wait")
             },
@@ -232,6 +252,10 @@ if(count($file_contents)===0)
             vm_file_display.filedata.preview_data.changed.removeAll();
             vm_file_display.filedata.preview_data.changed(data.changed);
             vm_file_display.filedata.preview_data.changed_html(data.html_changes);   
+            vm_file_display.filedata.preview_data.updated.removeAll();
+            vm_file_display.filedata.preview_data.updated(data.updated);
+            vm_file_display.filedata.preview_data.created.removeAll();
+            vm_file_display.filedata.preview_data.created(data.created);
         }
         ,"json"
         );
@@ -257,6 +281,10 @@ if(count($file_contents)===0)
                 vm_file_display.filedata.review_data.changed.removeAll();
                 vm_file_display.filedata.review_data.changed(data.changed);                
                 vm_file_display.filedata.review_data.changed_html(data.html_changes);                
+                vm_file_display.filedata.review_data.updated.removeAll();
+                vm_file_display.filedata.review_data.updated(data.updated);
+                vm_file_display.filedata.review_data.created.removeAll();
+                vm_file_display.filedata.review_data.created(data.created);
                 
             }
             ,"json"

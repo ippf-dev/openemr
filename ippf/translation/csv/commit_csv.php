@@ -53,6 +53,8 @@ $translations=json_decode($_REQUEST['translations']);
 $unchanged=0;
 $empty=0;
 $changed=array();
+$created=array();
+$updated=array();
 foreach($translations as $translation)
 {
     $result=verify_translation($translation[0],$translation[1],$lang_id,true,"",false,$preview);
@@ -63,7 +65,14 @@ foreach($translations as $translation)
             if($result)
             {
                 array_push($changed,$result);
-
+                if(strstr($result,"Update From:")!==false)
+                {
+                    array_push($updated,$result);
+                } 
+                else if(strstr($result,"Create:")!==false)
+                {
+                    array_push($created,$result);                  
+                }             
             }
         }
         else {
@@ -79,6 +88,8 @@ $retval=array();
 $retval['changed']=$changed;
 $retval['unchanged']=$unchanged;
 $retval['empty']=$empty;
+$retval['updated']=$updated;
+$retval['created']=$created;
 $changes_html="";
 foreach($changed as $change)
 {
