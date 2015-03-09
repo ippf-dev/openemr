@@ -45,7 +45,6 @@ function add_event_status_title(&$event, &$title)
 {
      if ($event['apptstatus'] != '-' && $event['apptstatus_title'])
          $title .= " (" . attr($event['apptstatus_title']) . ")" . "\n";
-         
-    error_log($title);     
+    // error_log($title);     // Disabled 2015-03-09 by Rod.
 }
 [-/php-]
