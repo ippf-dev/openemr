@@ -88,6 +88,14 @@ function getAge($dob, $asof='') {
   return $age;
 }
 
+// Log a message that is easy for the Re-Opened Visits Report to interpret.
+//
+function logFSMessage($action) {
+  global $pid, $encounter;
+  newEvent('fee-sheet', $_SESSION['authUser'], $_SESSION['authProvider'], 1,
+    $action, $pid, $encounter);
+}
+
 // Compute a current checksum of Fee Sheet data from the database.
 //
 function visitChecksum($pid, $encounter) {
@@ -626,9 +634,14 @@ $ndc_uom_choices = array(
 // $FEE_SHEET_COLUMNS should be defined in codes.php.
 if (empty($FEE_SHEET_COLUMNS)) $FEE_SHEET_COLUMNS = 2;
 
-// Update price level in patient demographics.
+// Update price level in patient demographics if it's changed.
 if (!empty($_POST['pricelevel'])) {
-  sqlStatement("UPDATE patient_data SET pricelevel = ? WHERE pid = ?", array($_POST['pricelevel'],$pid) );
+  $tmp = sqlQuery("SELECT pricelevel FROM patient_data WHERE pid = ?", array($pid));
+  if (isset($tmp['pricelevel']) && $tmp['pricelevel'] != $_POST['pricelevel']) {
+    logFSMessage(xl('Price level changed'));
+    sqlStatement("UPDATE patient_data SET pricelevel = ? WHERE pid = ?",
+      array($_POST['pricelevel'], $pid));
+  }
 }
 
 // Get some info about this visit.
@@ -777,21 +790,38 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
     // If the item is already in the database...
     if ($id) {
       if ($del) {
+        logFSMessage(xl('Service deleted'));
         deleteBilling($id);
       }
       else {
-        // authorizeBilling($id, $auth);
-        sqlQuery("UPDATE billing SET code = ?, " .
-          "units = ?, fee = ?, modifier = ?, " .
-          "authorized = ?, provider_id = ?, " .
-          "ndc_info = ?, justify = ?, notecodes = ? " .
-          "WHERE " .
-          "id = ? AND billed = 0 AND activity = 1", array($code,$units,$fee,$modifier,$auth,$provid,$ndc_info,$justify,$notecodes,$id) );
+        $tmp = sqlQuery("SELECT * FROM billing WHERE id = ? AND billed = 0 AND activity = 1",
+          array($id));
+        if (!empty($tmp)) {
+          foreach (array(
+            'code'        => $code,
+            'units'       => $units,
+            'fee'         => $fee,
+            'modifier'    => $modifier,
+            'authorized'  => $auth,
+            'provider_id' => $provid,
+            'ndc_info'    => $ndc_info,
+            'justify'     => $justify,
+            'notecodes'   => $notecodes,
+          ) AS $key => $value) {
+            if ($tmp[$key] != $value) {
+              if ('fee'         == $key) logFSMessage(xl('Price changed'));
+              if ('units'       == $key) logFSMessage(xl('Quantity changed'));
+              if ('provider_id' == $key) logFSMessage(xl('Service provider changed'));
+              sqlStatement("UPDATE billing SET `$key` = ? WHERE id = ?", array($value, $id));
+            }
+          }
+        }
       }
     }
 
     // Otherwise it's a new item...
     else if (! $del) {
+      logFSMessage(xl('Service added'));
       $code_text = lookup_code_descriptions($code_type.":".$code);
       addBilling($encounter, $code_type, $code, $code_text, $pid, $auth,
         $provid, $modifier, $units, $fee, $ndc_info, $justify, 0, $notecodes);
@@ -820,54 +850,64 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
     $del       = $iter['del'];
     $rxid      = 0;
     $warehouse_id = empty($iter['warehouse']) ? '' : $iter['warehouse'];
+    $somechange = false;
     
     // If the item is already in the database...
     if ($sale_id) {
-      $tmprow = sqlQuery("SELECT prescription_id FROM drug_sales WHERE " .
-        "sale_id = '$sale_id'");
+      $tmprow = sqlQuery("SELECT prescription_id, quantity, inventory_id, fee, sale_date " .
+        "FROM drug_sales WHERE sale_id = '$sale_id'");
       $rxid = 0 + $tmprow['prescription_id'];        
       if ($del) {
-        // Zero out this sale and reverse its inventory update.  We bring in
-        // drug_sales twice so that the original quantity can be referenced
-        // unambiguously.
-        sqlStatement("UPDATE drug_sales AS dsr, drug_sales AS ds, " .
-          "drug_inventory AS di " .
-          "SET di.on_hand = di.on_hand + dsr.quantity, " .
-          "ds.quantity = 0, ds.fee = 0 WHERE " .
-          "dsr.sale_id = ? AND ds.sale_id = dsr.sale_id AND " .
-          "di.inventory_id = ds.inventory_id", array($sale_id) );
-        // And delete the sale for good measure.
-        sqlStatement("DELETE FROM drug_sales WHERE sale_id = ?", array($sale_id) );
+        if (!empty($tmprow)) {
+          // Delete this sale and reverse its inventory update.
+          logFSMessage(xl('Product deleted'));
+          sqlStatement("DELETE FROM drug_sales WHERE sale_id = ?", array($sale_id));
+          sqlStatement("UPDATE drug_inventory SET on_hand = on_hand - ? WHERE inventory_id = ?",
+            array($tmprow['quantity'], $tmprow['inventory_id']));
+        }
         if ($rxid) {
-          sqlStatement("DELETE FROM prescriptions WHERE id = ?",array($rxid));
+          sqlStatement("DELETE FROM prescriptions WHERE id = ?", array($rxid));
         }        
       }
       else {
         // Modify the sale and adjust inventory accordingly.
-        $query = "UPDATE drug_sales AS dsr, drug_sales AS ds, " .
-          "drug_inventory AS di " .
-          "SET di.on_hand = di.on_hand + dsr.quantity - " . add_escape_custom($units) . ", " .
-          "ds.quantity = ?, ds.fee = ?, " .
-          "ds.sale_date = ? WHERE " .
-          "dsr.sale_id = ? AND ds.sale_id = dsr.sale_id AND " .
-          "di.inventory_id = ds.inventory_id";
-        sqlStatement($query, array($units,$fee,$visit_date,$sale_id) );
+        if (!empty($tmprow)) {
+          foreach (array(
+            'quantity'    => $units,
+            'fee'         => $fee,
+            'sale_date'   => $visit_date,
+          ) AS $key => $value) {
+            if ($tmprow[$key] != $value) {
+              $somechange = true;
+              if ('fee'      == $key) logFSMessage(xl('Price changed'));
+              if ('quantity' == $key) logFSMessage(xl('Quantity changed'));
+              sqlStatement("UPDATE drug_sales SET `$key` = ? WHERE sale_id = ?",
+                array($value, $sale_id));
+              if ($key == 'quantity') {
+                sqlStatement("UPDATE drug_inventory SET on_hand = on_hand + ? WHERE inventory_id = ?",
+                  array($units - $tmprow['quantity'], $tmprow['inventory_id']));
+              }
+            }
+          }
+        }
         // Delete Rx if $rxid and flag not set.
         if ($GLOBALS['gbl_auto_create_rx'] && $rxid && empty($iter['rx'])) {
-          sqlStatement("DELETE FROM prescriptions WHERE id = ?",array($rxid));
+          sqlStatement("DELETE FROM prescriptions WHERE id = ?", array($rxid));
         }        
       }
     }
 
     // Otherwise it's a new item...
     else if (! $del) {
+      $somechange = true;
+      logFSMessage(xl('Product added'));
       $sale_id = sellDrug($drug_id, $units, $fee, $pid, $encounter, 0,
         $visit_date, '', $warehouse_id);
       if (!$sale_id) die(xlt("Insufficient inventory for product ID") . " \"" . text($drug_id) . "\".");
     }
 
     // If a prescription applies, create or update it.
-    if (!empty($iter['rx']) && !$del) {
+    if (!empty($iter['rx']) && !$del && $somechange) {
       // If an active rx already exists for this drug and date we will
       // replace it, otherwise we'll make a new one.
       if (empty($rxid)) $rxid = '';
@@ -901,23 +941,32 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
         //
         $rxobj->persist();
         // Set drug_sales.prescription_id to $rxobj->get_id().
+        $oldrxid = $rxid;
         $rxid = 0 + $rxobj->get_id();
-        sqlStatement("UPDATE drug_sales SET prescription_id = '$rxid' WHERE " .
-          "sale_id = '$sale_id'");
+        if ($rxid != $oldrxid) {
+          sqlStatement("UPDATE drug_sales SET prescription_id = '$rxid' WHERE " .
+            "sale_id = '$sale_id'");
+        }
       }
     }
     
   } // end for
 
-  // Set the main/default service provider in the new-encounter form.
-  /*******************************************************************
-  sqlStatement("UPDATE forms, users SET forms.user = users.username WHERE " .
-    "forms.pid = '$pid' AND forms.encounter = '$encounter' AND " .
-    "forms.formdir = 'newpatient' AND users.id = '$provid'");
-  *******************************************************************/
-  sqlStatement("UPDATE form_encounter SET provider_id = ?, " .
-    "supervisor_id = ?  WHERE " .
-    "pid = ? AND encounter = ?", array($main_provid,$main_supid,$pid,$encounter) );
+  // Set default and/or supervising provider for the encounter.
+  $tmp = sqlQuery("SELECT provider_id, supervisor_id " .
+    "FROM form_encounter WHERE pid = ? AND encounter = ?", array($pid, $encounter));
+  if (!empty($tmp)) {
+    foreach (array(
+      'provider_id'   => $main_provid,
+      'supervisor_id' => $main_supid,
+    ) AS $key => $value) {
+      if ($tmp[$key] != $value) {
+        if ('provider_id' == $key) logFSMessage(xl('Default provider changed'));
+        sqlStatement("UPDATE form_encounter SET `$key` = ? WHERE pid = ? AND encounter = ?",
+          array($value, $pid, $encounter));
+      }
+    }
+  }
 
   // Save-and-Close is currently specific to Family Planning but might be more
   // generally useful.  It provides the ability to mark an encounter as billed
