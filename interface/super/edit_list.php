@@ -190,7 +190,7 @@ if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
         for ($lino = 1; isset($opt["$lino"]['id']); ++$lino) {
           $iter = $opt["$lino"];
           $value = empty($iter['value']) ? 0 : (trim($iter['value']) + 0);
-          $id = formTrim($iter['id']);
+          $id = strip_escape_custom(trim($iter['id']));
           if (strlen($id) == 0) continue;
           // Special processing for the immunizations list
           // Map the entered cvx codes into the immunizations table cvx_code
@@ -225,7 +225,8 @@ if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
               }
             }
             if ($sets) {
-              sqlStatement("UPDATE list_options SET $sets WHERE list_id = '$list_id' AND option_id = '$id'");
+              sqlStatement("UPDATE list_options SET $sets WHERE list_id = '" .
+                add_escape_custom($list_id) . "' AND option_id = '" . add_escape_custom($id) . "'");
             }
             // Delete $larray entries for table rows that match up with form rows.
             // Whatever remains will be the table rows that should be deleted from the database.
@@ -237,16 +238,20 @@ if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
               if ($sets) $sets .= ", ";
               $sets .= "`$key` = '" . add_escape_custom($val) . "'";
             }
-            sqlStatement("INSERT INTO list_options SET `list_id` = '$list_id', `option_id` = '$id', $sets");
+            sqlStatement("INSERT INTO list_options SET `list_id` = '" .
+              add_escape_custom($list_id) . "', `option_id` = '" . add_escape_custom($id) .
+              "', $sets");
           }
           $last_list_item_id = $id;
         }
         // Delete any list items from the database that are not in the form.
         foreach ($larray as $id => $dummy) {
-          sqlStatement("DELETE FROM list_options WHERE list_id = '$list_id' AND option_id = '$id'");
+          sqlStatement("DELETE FROM list_options WHERE list_id = '" .
+              add_escape_custom($list_id) . "' AND option_id = '" . add_escape_custom($id) .
+              "'");
         }
     }
-    newEvent("edit_list", $_SESSION['authUser'], $_SESSION['authProvider'], "List = $list_id");    
+    newEvent("edit_list", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "List = $list_id");    
 }
 else if ($_POST['formaction']=='addlist') {
     // make a new list ID from the new list name
@@ -266,14 +271,14 @@ else if ($_POST['formaction']=='addlist') {
                 "'".($row['maxseq']+1)."',".
                 "'1', '0')"
                 );
-    newEvent("add_list", $_SESSION['authUser'], $_SESSION['authProvider'], "List = $newlistID");    
+    newEvent("add_list", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "List = $newlistID");    
 }
 else if ($_POST['formaction']=='deletelist') {
     // delete the lists options
     sqlStatement("DELETE FROM list_options WHERE list_id = '".$_POST['list_id']."'");
     // delete the list from the master list-of-lists
     sqlStatement("DELETE FROM list_options WHERE list_id = 'lists' and option_id='".$_POST['list_id']."'");
-    newEvent("delete_list", $_SESSION['authUser'], $_SESSION['authProvider'], "List = " . $_POST['list_id']);    
+    newEvent("delete_list", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "List = " . $_POST['list_id']);    
 }
 
 if (!empty($_POST['formaction'])) {
@@ -870,8 +875,12 @@ else {
     "ORDER BY IF(LENGTH(ld.definition),ld.definition,lo.title), lo.seq");
 }
 
+$lastkey = '';
 while ($row = sqlFetchArray($res)) {
   $key = $row['option_id'];
+  // The left joins could produce duplicate rows, so skip those.
+  if ($key === $lastkey) continue;
+  $lastkey = $key;
   echo "<option value='$key'";
   if ($key == $list_id) echo " selected";
   echo ">" . $row['title'] . "</option>\n";
