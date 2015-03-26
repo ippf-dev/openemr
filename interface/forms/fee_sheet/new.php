@@ -682,12 +682,26 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
     if ($del) continue;
     // If the item is already in the database...
     if ($sale_id) {
-      $query = "SELECT (di.on_hand + ds.quantity - $units) AS new_on_hand " .
-        "FROM drug_sales AS ds, drug_inventory AS di WHERE " .
-        "ds.sale_id = '$sale_id' AND di.inventory_id = ds.inventory_id";
+      $query = "SELECT ds.quantity, ds.inventory_id, di.on_hand, di.warehouse_id " .
+        "FROM drug_sales AS ds " .
+        "LEFT JOIN drug_inventory AS di ON di.inventory_id = ds.inventory_id " .
+        "WHERE ds.sale_id = '$sale_id'";
       $dirow = sqlQuery($query);
-      if ($dirow['new_on_hand'] < 0) {
-        $insufficient = $drug_id;
+      // There's no inventory ID when this is a non-dispensible product (i.e. no inventory).
+      if (!empty($dirow['inventory_id'])) {
+        if ($warehouse_id && $warehouse_id != $dirow['warehouse_id']) {
+          // Changing warehouse so check inventory in the new warehouse.
+          // Nothing is updated by this call.
+          if (!sellDrug($drug_id, $units, 0, $pid, $encounter, 0,
+            $visit_date, '', $warehouse_id, true, $expiredlots)) {
+            $insufficient = $drug_id;
+          }
+        }
+        else {
+          if (($dirow['on_hand'] + $dirow['quantity'] - $units) < 0) {
+            $insufficient = $drug_id;
+          }
+        }
       }
     }
     // Otherwise it's a new item...
@@ -851,19 +865,24 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
     $rxid      = 0;
     $warehouse_id = empty($iter['warehouse']) ? '' : $iter['warehouse'];
     $somechange = false;
-    
+
     // If the item is already in the database...
     if ($sale_id) {
-      $tmprow = sqlQuery("SELECT prescription_id, quantity, inventory_id, fee, sale_date " .
-        "FROM drug_sales WHERE sale_id = '$sale_id'");
+      $tmprow = sqlQuery("SELECT ds.prescription_id, ds.quantity, ds.inventory_id, ds.fee, " .
+        "ds.sale_date, di.warehouse_id " .
+        "FROM drug_sales AS ds " .
+        "LEFT JOIN drug_inventory AS di ON di.inventory_id = ds.inventory_id " .
+        "WHERE ds.sale_id = '$sale_id'");
       $rxid = 0 + $tmprow['prescription_id'];        
       if ($del) {
         if (!empty($tmprow)) {
           // Delete this sale and reverse its inventory update.
           logFSMessage(xl('Product deleted'));
           sqlStatement("DELETE FROM drug_sales WHERE sale_id = ?", array($sale_id));
-          sqlStatement("UPDATE drug_inventory SET on_hand = on_hand - ? WHERE inventory_id = ?",
-            array($tmprow['quantity'], $tmprow['inventory_id']));
+          if (!empty($tmprow['inventory_id'])) {
+            sqlStatement("UPDATE drug_inventory SET on_hand = on_hand + ? WHERE inventory_id = ?",
+              array($tmprow['quantity'], $tmprow['inventory_id']));
+          }
         }
         if ($rxid) {
           sqlStatement("DELETE FROM prescriptions WHERE id = ?", array($rxid));
@@ -883,15 +902,26 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
               if ('quantity' == $key) logFSMessage(xl('Quantity changed'));
               sqlStatement("UPDATE drug_sales SET `$key` = ? WHERE sale_id = ?",
                 array($value, $sale_id));
-              if ($key == 'quantity') {
-                sqlStatement("UPDATE drug_inventory SET on_hand = on_hand + ? WHERE inventory_id = ?",
+              if ($key == 'quantity' && $tmprow['inventory_id']) {
+                sqlStatement("UPDATE drug_inventory SET on_hand = on_hand - ? WHERE inventory_id = ?",
                   array($units - $tmprow['quantity'], $tmprow['inventory_id']));
               }
             }
           }
+          if ($tmprow['inventory_id'] && $warehouse_id && $warehouse_id != $tmprow['warehouse_id']) {
+            // Changing warehouse.  Requires deleting and re-adding the sale.
+            // Not setting $somechange because this alone does not affect a prescription.
+            logFSMessage(xl('Warehouse changed'));
+            sqlStatement("DELETE FROM drug_sales WHERE sale_id = ?", array($sale_id));
+            sqlStatement("UPDATE drug_inventory SET on_hand = on_hand + ? WHERE inventory_id = ?",
+              array($units, $tmprow['inventory_id']));
+            $sale_id = sellDrug($drug_id, $units, $fee, $pid, $encounter,
+              (empty($iter['rx']) ? 0 : $rxid), $visit_date, '', $warehouse_id);
+          }
         }
         // Delete Rx if $rxid and flag not set.
         if ($GLOBALS['gbl_auto_create_rx'] && $rxid && empty($iter['rx'])) {
+          sqlStatement("UPDATE drug_sales SET prescription_id = 0 WHERE sale_id = '$sale_id'");
           sqlStatement("DELETE FROM prescriptions WHERE id = ?", array($rxid));
         }        
       }
@@ -907,7 +937,7 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
     }
 
     // If a prescription applies, create or update it.
-    if (!empty($iter['rx']) && !$del && $somechange) {
+    if (!empty($iter['rx']) && !$del && ($somechange || empty($rxid))) {
       // If an active rx already exists for this drug and date we will
       // replace it, otherwise we'll make a new one.
       if (empty($rxid)) $rxid = '';
