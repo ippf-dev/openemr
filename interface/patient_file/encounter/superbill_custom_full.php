@@ -591,7 +591,7 @@ generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'sup
 $pres = sqlStatement("SELECT lo.option_id, lo.title, p.pr_price " .
   "FROM list_options AS lo LEFT OUTER JOIN prices AS p ON " .
   "p.pr_id = ? AND p.pr_selector = '' AND p.pr_level = lo.option_id " .
-  "WHERE list_id = 'pricelevel' ORDER BY lo.seq", array($code_id) );
+  "WHERE list_id = 'pricelevel' ORDER BY lo.seq, lo.title", array($code_id) );
 for ($i = 0; $prow = sqlFetchArray($pres); ++$i) {
   if ($i) echo "&nbsp;&nbsp;";
   echo text(xl_list_label($prow['title'])) . " ";
