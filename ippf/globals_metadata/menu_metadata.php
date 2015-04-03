@@ -71,6 +71,13 @@
       xl('For IPPF Belize and maybe others')
     ),
 
+    'gbl_menu_ive_clients' => array(
+      xl('IVE Client List'),
+      'bool',                           // data type
+      '0',                              // default
+      xl('Client List of IVE Activity')
+    ),
+
     'gbl_menu_shifts' => array(
       xl('Shifts Reporting'),
       'bool', // data type
