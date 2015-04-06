@@ -25,6 +25,7 @@ $ORDERHASH = array(
   'cdate'  => 'l.date, fe.date, pd.pubpid, l.user, f.name, l.comments, v.void_id, l.id',
 );
 
+$form_use_edate  = empty($_POST['form_use_edate']) ? 0 : 1;
 $form_from_date  = fixDate($_POST['form_from_date'], date('Y-01-01'));
 $form_to_date    = fixDate($_POST['form_to_date']  , date('Y-m-d'));
 
@@ -121,6 +122,11 @@ echo "   </select>\n";
  <tr>
   <td align='left'>
 
+   <select name='form_use_edate'>
+    <option value='0'><?php echo xlt('Change Date'); ?></option>
+    <option value='1'<?php if ($form_use_edate) echo ' selected' ?>><?php echo xlt('Visit Date'); ?></option>
+   </select>
+
    &nbsp;<?php xl('From','e'); ?>:
    <input type='text' name='form_from_date' id='form_from_date'
     size='10' value='<?php echo $form_from_date ?>'
@@ -196,9 +202,16 @@ echo "   </select>\n";
   </td>
 
  </tr>
-<?
+<?php
 if (!empty($_POST['form_orderby'])) {
-  $where = "l.date >= ? AND l.date <= ? AND l.event = 'fee-sheet'";
+  $where = "l.event = 'fee-sheet' AND ";
+
+  if ($form_use_edate) {
+    $where .= "fe.date >= ? AND fe.date <= ?";
+  }
+  else {
+    $where .= "l.date >= ? AND l.date <= ?";
+  }
   $sqlargs = array("$form_from_date 00:00:00", "$form_to_date 23:59:59");
 
   if ($form_facility) {
