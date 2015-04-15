@@ -315,11 +315,43 @@ if ($_POST['form_save_pr'] || $_REQUEST['receipt']) {
 
 <p><h2><?php xl('Receipt for Payment','e'); ?></h2>
 
+<!--
 <p><?php echo htmlspecialchars($frow['name']) ?>
 <br><?php echo htmlspecialchars($frow['street']) ?>
 <br><?php echo htmlspecialchars($frow['city'] . ', ' . $frow['state']) . ' ' .
     $frow['postal_code'] ?>
 <br><?php echo htmlspecialchars($frow['phone']) ?>
+-->
+
+<table width='95%'>
+ <tr>
+  <td width='25%' align='left' valign='top'>
+<?php
+  // TBD: Maybe make a global for this file name.
+  $ma_logo_path = "sites/" . $_SESSION['site_id'] . "/images/ma_logo.png";
+  if (is_file("$webserver_root/$ma_logo_path")) {
+    echo "<img src='$web_root/$ma_logo_path' />";
+  }
+  else {
+    echo "&nbsp;";
+  }
+?>
+  </td>
+  <td width='50%' align='center' valign='top'>
+   <b><?php echo text($frow['name']); ?>
+   <br><?php echo text($frow['street']); ?>
+   <br><?php
+  echo text($frow['city']) . ", ";
+  echo text($frow['state']) . " ";
+  echo text($frow['postal_code']); ?>
+   <br><?php echo text($frow['phone']); ?>
+  </td>
+  <td width='25%' align='right' valign='top'>
+   <!-- This space available. -->
+   &nbsp;
+  </td>
+ </tr>
+</table>
 
 <p>
 <table border='0' cellspacing='8'>
