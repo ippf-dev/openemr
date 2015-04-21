@@ -204,6 +204,15 @@ if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
           if ($list_id == 'lbfnames' && substr($id,0,3) != 'LBF') {
             $id = "LBF$id";
           }
+
+          // For the flow board.
+          if ($list_id == 'apptstat') {
+            $notes = strip_escape_custom($iter['apptstat_color']) .'|'. strip_escape_custom($iter['apptstat_timealert']);
+          }
+          else {
+            $notes = strip_escape_custom($iter['notes']);
+          }
+
           // Put the table keys and values into an array to simplify things.
           // Force numeric values to strings so that !== will work as desired.
           $lrow = array();
@@ -212,9 +221,11 @@ if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
           $lrow['is_default'  ] = strval(0 + strip_escape_custom($iter['default']));
           $lrow['option_value'] = strval($value);
           $lrow['mapping'     ] = strip_escape_custom($iter['mapping']);
-          $lrow['notes'       ] = strip_escape_custom($iter['notes'  ]);
+          $lrow['notes'       ] = $notes;
           $lrow['codes'       ] = strip_escape_custom($iter['codes'  ]);
           $lrow['activity'    ] = strip_escape_custom($iter['activity']);
+          $lrow['toggle_setting_1'] = strip_escape_custom($iter['toggle_setting_1']);
+          $lrow['toggle_setting_2'] = strip_escape_custom($iter['toggle_setting_2']);
           $sets = '';
           if (isset($larray[$id])) {
             // If the list item was already in the database, update or ignore it as appropriate.
@@ -330,12 +341,14 @@ function getCodeDescriptions($codes) {
 
 // Write one option line to the form.
 //
-function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping='', $notes='', $codes='', $active='1') {
+function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping='', $notes='', $codes='', $active='1', $tog1='', $tog2='') {
   global $opt_line_no, $list_id;
   ++$opt_line_no;
   $bgcolor = "#" . (($opt_line_no & 1) ? "ddddff" : "ffdddd");
   $checked = $default ? " checked" : "";
   $checked_active = $active ? " checked" : "";
+  $checked_tog1 = $tog1 ? " checked" : "";
+  $checked_tog2 = $tog2 ? " checked" : "";  
 
   echo " <tr bgcolor='$bgcolor'>\n";
 
@@ -441,7 +454,17 @@ function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping=''
             "' size='12' maxlength='31' class='optin' />";
     echo "</td>\n";
   }
-
+else if($list_id == 'apptstat') {
+    list($apptstat_color, $apptstat_timealert) = explode("|", $notes);
+    echo "  <td align='center' class='optcell'>";
+    echo "<input type='text' class='color' name='opt[$opt_line_no][apptstat_color]' value='" .
+        htmlspecialchars($apptstat_color, ENT_QUOTES) . "' size='6' maxlength='6' class='optin' />";
+    echo "</td>\n";
+    echo "  <td align='center' class='optcell'>";
+    echo "<input type='text' name='opt[$opt_line_no][apptstat_timealert]' value='" .
+        htmlspecialchars($apptstat_timealert, ENT_QUOTES) . "' size='2' maxlength='2' class='optin' />";
+    echo "</td>\n";
+} else {
   echo "  <td align='center' class='optcell'>";
   echo "<input type='text' name='opt[$opt_line_no][notes]' value='" .
       htmlspecialchars($notes, ENT_QUOTES) . "' size='25' maxlength='255' class='optin' ";
@@ -450,13 +473,22 @@ function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping=''
   }
   echo "/>";
   echo "</td>\n";
-
+}
+if($list_id == 'apptstat') {
+  echo "  <td align='center' class='optcell'>";
+  echo "<input type='checkbox' name='opt[$opt_line_no][toggle_setting_1]' value='1' " .
+    "onclick='defClicked($opt_line_no)' class='optin'$checked_tog1 />";
+  echo "</td>\n";
+  echo "  <td align='center' class='optcell'>";
+  echo "<input type='checkbox' name='opt[$opt_line_no][toggle_setting_2]' value='1' " .
+    "onclick='defClicked($opt_line_no)' class='optin'$checked_tog2 />";
+  echo "</td>\n";
+}
   echo "  <td align='center' class='optcell'>";
   echo "<input type='text' name='opt[$opt_line_no][codes]' title='" .
       xla('Clinical Term Code(s)') ."' value='" .
       htmlspecialchars($codes, ENT_QUOTES) . "' onclick='select_clin_term_code(this)' size='25' maxlength='255' class='optin' />";
   echo "</td>\n";
-
   echo " </tr>\n";
 }
 
@@ -655,6 +687,7 @@ a, a:visited, a:hover { color:#0000cc; }
 </style>
 
 <script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/js/jscolor/jscolor.js"></script>
 
 <script language="JavaScript">
 
@@ -975,6 +1008,16 @@ while ($row = sqlFetchArray($res)) {
   <td><b><?php xl('Clinical Term','e'); ?></b></td>
   <td><b><?php xl('Medical Problem'     ,'e'); ?></b></td>
   <td><b><?php xl('External'    ,'e'); ?></b></td>
+<?php } else if ($list_id == 'apptstat') { ?> 
+  <td><b><?php  xl('ID'       ,'e'); ?></b></td>
+  <td><b><?php xl('Title'     ,'e'); ?></b></td>   
+  <td><b><?php xl('Order'     ,'e'); ?></b></td>
+  <td><b><?php xl('Default'   ,'e'); ?></b></td>
+  <td><b><?php xl('Color'     ,'e'); ?></b></td> 
+  <td><b><?php xl('Alert Time','e'); ?></b></td> 
+  <td><b><?php xl('Check In'  ,'e');?>&nbsp;&nbsp;&nbsp;&nbsp;</b></td>
+  <td><b><?php xl('Check Out' ,'e'); ?></b></td>
+  <td><b><?php xl('Code(s)'   ,'e');?></b></td>
 <?php } else if ($list_id == 'issue_types') { ?>
   <td><b><?php echo xlt('OpenEMR Application Category'); ?></b></td>
   <td><b><?php echo xlt('Active'); ?></b></td>
@@ -999,7 +1042,7 @@ while ($row = sqlFetchArray($res)) {
   <td><b><?php echo xlt('Force Show'); ?></b></td>
 <?php } else { ?>
   <td title=<?php xl('Click to edit','e','\'','\''); ?>><b><?php  xl('ID','e'); ?></b></td>
-  <td><b><?php xl('Title'  ,'e'); ?></b></td>	
+  <td><b><?php xl('Title'  ,'e'); ?></b></td>   
   <?php //show translation column if not english and the translation lists flag is set 
   if ($GLOBALS['translate_lists'] && $_SESSION['language_choice'] > 1) {
     echo "<td><b>".xl('Translation')."</b><span class='help' title='".xl('The translated Title that will appear in current language')."'> (?)</span></td>";    
@@ -1075,7 +1118,7 @@ if ($list_id) {
     while ($row = sqlFetchArray($res)) {
       writeOptionLine($row['option_id'], $row['title'], $row['seq'],
         $row['is_default'], $row['option_value'], $row['mapping'],
-        $row['notes'],$row['codes'],$row['activity']);
+        $row['notes'],$row['codes'],$row['activity'],$row['toggle_setting_1'],$row['toggle_setting_2']);
     }
     for ($i = 0; $i < 3; ++$i) {
       writeOptionLine('', '', '', '', 0);
