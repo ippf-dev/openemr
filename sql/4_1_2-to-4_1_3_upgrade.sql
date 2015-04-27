@@ -192,3 +192,7 @@ INSERT INTO `globals` (gl_name, gl_index, gl_value) VALUES ('gbl_visit_voucher_n
 #IfNotRow globals gl_name gbl_visit_shift
 INSERT INTO `globals` (gl_name, gl_index, gl_value) VALUES ('gbl_visit_shift', 0, '1');
 #EndIf
+
+#IfNotIndex drug_sales sale_date
+CREATE INDEX `sale_date` ON `drug_sales` (`sale_date`);
+#EndIf

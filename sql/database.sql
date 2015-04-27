@@ -804,7 +804,8 @@ CREATE TABLE `drug_sales` (
   `xfer_inventory_id` int(11) NOT NULL DEFAULT 0,
   `distributor_id` bigint(20) NOT NULL DEFAULT 0 COMMENT 'references users.id',
   `notes` varchar(255) NOT NULL DEFAULT '',
-  PRIMARY KEY  (`sale_id`)
+  PRIMARY KEY  (`sale_id`),
+  KEY `sale_date` (`sale_date`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
