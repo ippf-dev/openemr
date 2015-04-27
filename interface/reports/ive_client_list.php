@@ -316,7 +316,6 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo "  <td class='detail'>" . display_html($gestlmp   ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($gesteco   ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivemethod ) . "</td>\n";
-      echo "  <td class='detail'>" . display_html($name      ) . "</td>\n";
       echo " </tr>\n";
     } // end not export
   } // end reporting loop
