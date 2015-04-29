@@ -32,7 +32,7 @@ function xl($constant,$mode='r',$prepend='',$append='') {
     // second, attempt translation
     $sql="SELECT * FROM lang_definitions JOIN lang_constants ON " .
       "lang_definitions.cons_id = lang_constants.cons_id WHERE " .
-      "lang_id=? AND constant_name = ? LIMIT 1";
+      "lang_id=? AND BINARY constant_name = ? LIMIT 1";
     $res = sqlStatementNoLog($sql,array($lang_id,$constant));
     $row = SqlFetchArray($res);
     $string = $row['definition'];
