@@ -196,3 +196,8 @@ INSERT INTO `globals` (gl_name, gl_index, gl_value) VALUES ('gbl_visit_shift', 0
 #IfNotIndex drug_sales sale_date
 CREATE INDEX `sale_date` ON `drug_sales` (`sale_date`);
 #EndIf
+
+#IfMissingColumn users_facility warehouse_id
+ALTER TABLE `users_facility` ADD COLUMN `warehouse_id` varchar(31) NOT NULL default '';
+ALTER TABLE `users_facility` DROP PRIMARY KEY, ADD PRIMARY KEY (`tablename`,`table_id`,`facility_id`,`warehouse_id`);
+#EndIf

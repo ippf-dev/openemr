@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -20,6 +20,7 @@ require_once("../globals.php");
 require_once("$srcdir/patient.inc");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/formatting.inc.php");
+require_once("../drugs/drugs.inc.php");
 
 // For each sorting option, specify the ORDER BY argument.
 //
@@ -70,6 +71,9 @@ function thisLineItem($row, $xfer=false) {
   }
   else if (!empty($row['xfer_inventory_id']) || $xfer) {
     $ttype = xl('Transfer');
+  }
+  else if ($row['trans_type'] == 7) {
+    $ttype = xl('Consumption');
   }
   else if ($row['trans_type'] != 5) {
     $ttype = xl('Purchase/Receipt');
@@ -151,7 +155,16 @@ function thisLineItem($row, $xfer=false) {
 
 } // end function
 
-if (! acl_check('acct', 'rep')) die(htmlspecialchars(xl("Unauthorized access."), ENT_NOQUOTES));
+// Check permission for this report.
+$auth_drug_reports = $GLOBALS['inhouse_pharmacy'] && (
+  acl_check('admin'    , 'drugs'    ) ||
+  acl_check('inventory', 'reporting'));
+if (!$auth_drug_reports) {
+  die(xl("Unauthorized access."));
+}
+
+// Note if user is restricted to any facilities and/or warehouses.
+$is_user_restricted = isUserRestricted();
 
 // this is "" or "submit" or "export".
 $form_action = $_POST['form_action'];
@@ -268,6 +281,7 @@ else {
   echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
   while ($frow = sqlFetchArray($fres)) {
     $facid = $frow['id'];
+    if ($is_user_restricted && !isFacilityAllowed($facid)) continue;
     echo "    <option value='$facid'";
     if ($facid == $form_facility) echo " selected";
     echo ">" . $frow['name'] . "</option>\n";
@@ -287,6 +301,7 @@ foreach (array(
   '1' => xl('Sale'),
   // '6' => xl('Distribution'),
   '4' => xl('Transfer'),
+  '7' => xl('Consumption'),
   '5' => xl('Adjustment'),
 ) as $key => $value)
 {
@@ -406,8 +421,8 @@ if ($form_action) { // if submit or export
     "s.billed, s.notes, s.distributor_id, s.xfer_inventory_id, s.trans_type, " .
     "p.fname AS pfname, p.mname AS pmname, p.lname AS plname, " .
     "d.name, fe.date, fe.invoice_refno, " .
-    "di.lot_number, di.inventory_id AS di_inventory_id, " .
-    "lo.title AS warehouse " .
+    "di.lot_number, di.warehouse_id, di.inventory_id AS di_inventory_id, " .
+    "lo.title AS warehouse, lo.option_value AS facid " .
     "FROM drug_sales AS s " .
     "JOIN drugs AS d ON d.drug_id = s.drug_id " .
     "LEFT JOIN patient_data AS p ON p.pid = s.pid " .
@@ -425,6 +440,9 @@ if ($form_action) { // if submit or export
   else if ($form_trans_type == 5) { // adjustment
     $query .= "AND s.pid = 0 AND s.xfer_inventory_id = 0 AND s.trans_type = 5 ";
   }
+  else if ($form_trans_type == 7) { // consumption
+    $query .= "AND s.pid = 0 AND s.xfer_inventory_id = 0 AND s.trans_type = 7 ";
+  }
   else if ($form_trans_type == 1) { // sale
     $query .= "AND s.pid != 0 ";
   }
@@ -435,6 +453,10 @@ if ($form_action) { // if submit or export
 
   $res = sqlStatement($query, array($from_date, $to_date));
   while ($row = sqlFetchArray($res)) {
+    // Skip this row if user is disallowed from its warehouse.
+    if ($is_user_restricted && !isWarehouseAllowed($row['facid'], $row['warehouse_id'])) {
+      continue;
+    }
     thisLineItem($row);
   }
 

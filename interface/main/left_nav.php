@@ -1,6 +1,6 @@
 <?php
 use ESign\Api;
-/* Copyright (C) 2006-2012 Rod Roark <rod@sunsetsystems.com>
+/* Copyright (C) 2006-2015 Rod Roark <rod@sunsetsystems.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -152,15 +152,30 @@ use ESign\Api;
  }
 
  $esignApi = new Api();
- // This section decides which navigation items will not appear.
 
+$auth_drug_management = $GLOBALS['inhouse_pharmacy'] && (
+  acl_check('admin'    , 'drugs'      ) ||
+  acl_check('inventory', 'lots'       ) ||
+  acl_check('inventory', 'purchases'  ) ||
+  acl_check('inventory', 'transfers'  ) ||
+  acl_check('inventory', 'adjustments') ||
+  acl_check('inventory', 'consumption') ||
+  acl_check('inventory', 'destruction') ||
+  acl_check('inventory', 'sales'      ) ||
+  acl_check('inventory', 'reporting'  ));
+
+$auth_drug_reports = $GLOBALS['inhouse_pharmacy'] && (
+  acl_check('admin'    , 'drugs'      ) ||
+  acl_check('inventory', 'reporting'  ));
+
+ // This section decides which navigation items will not appear.
  $disallowed = array();
  $disallowed['edi'] = !($GLOBALS['enable_edihistory_in_left_menu'] || acl_check('acct', 'eob'));
  $disallowed['adm'] = !(acl_check('admin', 'calendar') ||
   acl_check('admin', 'database') || acl_check('admin', 'forms') ||
   acl_check('admin', 'practice') || acl_check('admin', 'users') ||
   acl_check('admin', 'acl')      || acl_check('admin', 'super') ||
-  acl_check('admin', 'superbill') || acl_check('admin', 'drugs'));
+  acl_check('admin', 'superbill') || $auth_drug_management);
 
  $disallowed['bil'] = !(acl_check('acct', 'rep') || acl_check('acct', 'eob') ||
   acl_check('acct', 'bill'));
@@ -1128,8 +1143,8 @@ if ($GLOBALS['athletic_team']) {
       <li><a class="collapsed_lv2"><span><?php xl('General','e') ?></span></a>
         <ul>
           <?php genPopLink(xl('Services'),'services_by_category.php'); ?>
-          <?php if ($GLOBALS['inhouse_pharmacy']) genPopLink(xl('Inventory'),'inventory_list.php'); ?>
-          <?php if ($GLOBALS['inhouse_pharmacy']) genPopLink(xl('Destroyed'),'destroyed_drugs_report.php'); ?>
+          <?php if ($auth_drug_management) genPopLink(xl('Inventory'),'inventory_list.php'); ?>
+          <?php if ($auth_drug_reports   ) genPopLink(xl('Destroyed'),'destroyed_drugs_report.php'); ?>
         </ul>
       </li>
     </ul>
@@ -1143,7 +1158,7 @@ if ($GLOBALS['athletic_team']) {
     </ul>
   </li> 
   <?php } ?>
-  <?php if ($GLOBALS['inhouse_pharmacy'] && acl_check('admin', 'drugs')) genMiscLink('RTop','adm','0',xl('Inventory'),'drugs/drug_inventory.php'); ?>
+  <?php if ($auth_drug_management) genMiscLink('RTop','adm','0',xl('Inventory'),'drugs/drug_inventory.php'); ?>
   <li><a class="collapsed" id="admimg" ><span><?php xl('Administration','e') ?></span></a>
     <ul>
       <?php if (acl_check('admin', 'super'    )) genMiscLink('RTop','adm','0',xl('Globals'),'super/edit_globals.php'); ?>
@@ -1270,7 +1285,7 @@ if (!empty($reg)) {
   </li>
   <?php } ?>
   <?php // if ($GLOBALS['inhouse_pharmacy'] && acl_check('admin', 'drugs')) genMiscLink('RTop','adm','0',xl('Inventory'),'drugs/drug_inventory.php'); ?>
-<?php if ($GLOBALS['inhouse_pharmacy'] && acl_check('admin', 'drugs')) { ?>
+<?php if ($auth_drug_management) { ?>
   <li><a class="collapsed" id="invimg" ><span><?php xl('Inventory','e') ?></span></a>
     <ul>
       <?php genMiscLink('RTop','adm','0',xl('Management'),'drugs/drug_inventory.php'); ?>
@@ -1407,7 +1422,7 @@ if (!empty($reg)) {
         </ul>
       </li>
 <?php } ?>
-<?php if ($GLOBALS['inhouse_pharmacy']) { ?>
+<?php if ($auth_drug_reports) { ?>
       <li><a class="collapsed_lv2"><span><?php xl('Inventory','e') ?></span></a>
         <ul>
           <?php genMiscLink('RTop','rep','0',xl('List'),'reports/inventory_list.php'); ?>

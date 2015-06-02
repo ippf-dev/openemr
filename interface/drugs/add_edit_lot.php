@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -91,9 +91,21 @@ $drug_id = $_REQUEST['drug'] + 0;
 $lot_id  = $_REQUEST['lot'] + 0;
 $info_msg = "";
 
-$form_trans_type = isset($_POST['form_trans_type']) ? $_POST['form_trans_type'] : '0';
+$form_trans_type = intval(isset($_POST['form_trans_type']) ? $_POST['form_trans_type'] : '0');
 
-if (!acl_check('admin', 'drugs')) die(xlt('Not authorized'));
+// Check authorizations.
+$auth_admin = acl_check('admin', 'drugs');
+$auth_lots  = $auth_admin               ||
+  acl_check('inventory', 'lots'       ) ||
+  acl_check('inventory', 'purchases'  ) ||
+  acl_check('inventory', 'transfers'  ) ||
+  acl_check('inventory', 'adjustments') ||
+  acl_check('inventory', 'consumption') ||
+  acl_check('inventory', 'destruction');
+if (!$auth_lots) die(xlt('Not authorized'));
+// Note if user is restricted to any facilities and/or warehouses.
+$is_user_restricted = isUserRestricted();
+
 if (!$drug_id) die(xlt('Drug ID missing!'));
 ?>
 <html>
@@ -185,6 +197,10 @@ td { font-size:10pt; }
     showCost = false;
     showSourceLot = false;
   }
+  else if (type == '7') { // consumption
+    showCost      = false;
+    showSourceLot = false;
+  }
   else {
     showQuantity  = false;
     showSaleDate  = false;
@@ -213,7 +229,7 @@ if ($lot_id) {
 
 // If we are saving, then save and close the window.
 //
-if ($_POST['form_save'] || $_POST['form_delete']) {
+if ($_POST['form_save']) {
 
   $form_quantity = $_POST['form_quantity'] + 0;
   $form_cost = sprintf('%0.2f', $_POST['form_cost']);
@@ -227,26 +243,41 @@ if ($_POST['form_save'] || $_POST['form_delete']) {
   $form_distributor_id = $_POST['form_distributor_id'] + 0;
   $form_expiration = $_POST['form_expiration'];
 
+  if ($form_trans_type < 0 || $form_trans_type > 7) die(text('Internal error!'));
+
+  if (!$auth_admin && (
+    $form_trans_type == 2 && !acl_check('inventory', 'purchases'  ) ||
+    $form_trans_type == 3 && !acl_check('inventory', 'purchases'  ) ||
+    $form_trans_type == 4 && !acl_check('inventory', 'transfers'  ) ||
+    $form_trans_type == 5 && !acl_check('inventory', 'adjustments') ||
+    $form_trans_type == 7 && !acl_check('inventory', 'consumption')
+  )) {
+    die(xlt('Not authorized'));
+  }
+
   // Some fixups depending on transaction type.
-  if ($form_trans_type == '3') { // return
+  if ($form_trans_type == 3) { // return
     $form_quantity = 0 - $form_quantity;
     $form_cost = 0 - $form_cost;
   }
-  else if ($form_trans_type == '5') { // adjustment
+  else if ($form_trans_type == 5) { // adjustment
     $form_cost = 0;
   }
-  else if ($form_trans_type == '0') { // no transaction
+  else if ($form_trans_type == 7) { // consumption
+    $form_cost = 0;
+  }
+  else if ($form_trans_type == 0) { // no transaction
     $form_quantity = 0;
     $form_cost = 0;
   }
-  else if ($form_trans_type == '6') { // distribution
+  else if ($form_trans_type == 6) { // distribution
     $form_quantity = 0 - $form_quantity;
     $form_cost = 0 - $form_cost;
   }
-  if ($form_trans_type != '4') { // not transfer
+  if ($form_trans_type != 4) { // not transfer
     $form_source_lot = 0;
   }
-  if ($form_trans_type != '6') { // not distribution
+  if ($form_trans_type != 6) { // not distribution
     $form_distributor_id = '0';
   }
 
@@ -443,10 +474,22 @@ foreach (array(
   // '6' => xl('Distribution'),
   '4' => xl('Transfer'),
   '5' => xl('Adjustment'),
+  '7' => xl('Consumption'),
 ) as $key => $value)
 {
   echo "<option value='" . attr($key) . "'";
-  if ($key == $form_trans_type) echo " selected";
+  if (!$auth_admin && (
+    $key == 2 && !acl_check('inventory', 'purchases'  ) ||
+    $key == 3 && !acl_check('inventory', 'purchases'  ) ||
+    $key == 4 && !acl_check('inventory', 'transfers'  ) ||
+    $key == 5 && !acl_check('inventory', 'adjustments') ||
+    $key == 7 && !acl_check('inventory', 'consumption')
+  )) {
+    echo " disabled";
+  }
+  else {
+    if ($key == $form_trans_type) echo " selected";
+  }
   echo ">" . text($value) . "</option>\n";
 }
 ?>
@@ -531,7 +574,7 @@ while ($lrow = sqlFetchArray($lres)) {
 <p>
 <input type='submit' name='form_save' value='<?php echo xla('Save'); ?>' />
 
-<?php if ($lot_id) { ?>
+<?php if ($lot_id && ($auth_admin || acl_check('inventory', 'destruction'))) { ?>
 &nbsp;
 <input type='button' value='<?php echo xla('Destroy...'); ?>'
  onclick="window.location.href='destroy_lot.php?drug=<?php echo attr($drug_id) ?>&lot=<?php echo attr($lot_id) ?>'" />

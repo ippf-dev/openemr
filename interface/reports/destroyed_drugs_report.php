@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006, 2010 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2015 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -21,6 +21,17 @@ $ORDERHASH = array(
   'wh'   => 'warehouse, i.destroy_date, d.name, i.drug_id, i.lot_number',
   'date' => 'i.destroy_date, d.name, i.drug_id, i.lot_number',
 );
+
+// Check permission for this report.
+$auth_drug_reports = $GLOBALS['inhouse_pharmacy'] && (
+  acl_check('admin'    , 'drugs'      ) ||
+  acl_check('inventory', 'reporting'  ));
+if (!$auth_drug_reports) {
+  die(xl("Unauthorized access."));
+}
+
+// Note if user is restricted to any facilities and/or warehouses.
+$is_user_restricted = isUserRestricted();
 
 $form_from_date  = fixDate($_POST['form_from_date'], date('Y-01-01'));
 $form_to_date    = fixDate($_POST['form_to_date']  , date('Y-m-d'));
@@ -79,6 +90,7 @@ echo "   <select name='form_facility'>\n";
 echo "    <option value=''>-- " . xlt('All Facilities') . " --</option>\n";
 while ($frow = sqlFetchArray($fres)) {
   $facid = $frow['id'];
+  if ($is_user_restricted && !isFacilityAllowed($facid)) continue;
   echo "    <option value='$facid'";
   if ($facid == $form_facility) echo " selected";
   echo ">" . $frow['name'] . "</option>\n";
@@ -168,6 +180,7 @@ echo "   </select>&nbsp;\n";
 
   $query = "SELECT i.inventory_id, i.lot_number, i.on_hand, i.drug_id, " .
    "i.destroy_date, i.destroy_method, i.destroy_witness, i.destroy_notes, " .
+   "i.warehouse_id, lo.option_value AS facid, " .
    "d.name, d.ndc_number, lo.title AS warehouse, f.name AS facility " .
    "FROM drug_inventory AS i " .
    "LEFT JOIN drugs AS d ON d.drug_id = i.drug_id " .
@@ -183,6 +196,10 @@ echo "   </select>&nbsp;\n";
   $last_drug_id = 0;
   $encount = 0;
   while ($row = sqlFetchArray($res)) {
+    // Skip this row if user is disallowed from its warehouse.
+    if ($is_user_restricted && !isWarehouseAllowed($row['facid'], $row['warehouse_id'])) {
+      continue;
+    }
    $drug_name       = text($row['name']);
    $ndc_number      = text($row['ndc_number']);
    if ($row['drug_id'] == $last_drug_id) {

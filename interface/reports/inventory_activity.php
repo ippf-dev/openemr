@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -21,6 +21,7 @@ require_once("$srcdir/patient.inc");
 require_once("$srcdir/sql-ledger.inc");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/formatting.inc.php");
+require_once("../drugs/drugs.inc.php");
 
 function display_desc($desc) {
   if (preg_match('/^\S*?:(.+)$/', $desc, $matches)) {
@@ -71,7 +72,7 @@ function getEndInventory($product_id = 0, $warehouse_id = '~') {
     "( di.destroy_date IS NULL OR di.destroy_date > '$form_to_date' ) " .
     "$prodcond $whidcond $faccond");
 
-  // Get sum of sales/adjustments/purchases after the report end date.
+  // Get sum of sales/adjustments/consumptions/purchases after the report end date.
   $sarow = sqlQuery("SELECT sum(ds.quantity) AS quantity " .
     "FROM drug_sales AS ds, drug_inventory AS di " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
@@ -128,12 +129,13 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
             echo '"'  . display_desc($warehouse) . '"';
             echo ',"' . display_desc($product)   . '"';
           }
-          echo ',"' . ($secei - $secqtys[0] - $secqtys[1] - $secqtys[2] - $secqtys[3] - $secqtys[4]) . '"'; // start inventory
+          echo ',"' . ($secei - $secqtys[0] - $secqtys[1] - $secqtys[2] - $secqtys[3] - $secqtys[4] - $secqtys[5]) . '"'; // start inventory
           echo ',"' . $secqtys[0] . '"'; // sales
           // echo ',"' . $secqtys[1] . '"'; // distributions
           echo ',"' . $secqtys[2] . '"'; // purchases
           echo ',"' . $secqtys[3] . '"'; // transfers
           echo ',"' . $secqtys[4] . '"'; // adjustments
+          echo ',"' . $secqtys[5] . '"'; // consumptions
           echo ',"' . $secei      . '"'; // end inventory
           echo "\n";
         }
@@ -158,7 +160,7 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
   </td>
 <?php } ?>
   <td class="detail" align="right">
-   <?php echo $secei - $secqtys[0] - $secqtys[1] - $secqtys[2] - $secqtys[3] - $secqtys[4]; ?>
+   <?php echo $secei - $secqtys[0] - $secqtys[1] - $secqtys[2] - $secqtys[3] - $secqtys[4] - $secqtys[5]; ?>
   </td>
   <td class="detail" align="right">
    <?php echo $secqtys[0]; ?>
@@ -178,13 +180,16 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
    <?php echo $secqtys[4]; ?>
   </td>
   <td class="detail" align="right">
+   <?php echo $secqtys[5]; ?>
+  </td>
+  <td class="detail" align="right">
    <?php echo $secei; ?>
   </td>
  </tr>
 <?php
       } // End not csv export
     }
-    $secqtys = array(0, 0, 0, 0, 0);
+    $secqtys = array(0, 0, 0, 0, 0, 0);
     if ($product_first ) {
       $whleft = $warehouse = $rowwh;
       $last_warehouse_id = $warehouse_id;
@@ -235,13 +240,16 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
    <?php echo $priqtys[4]; ?>
   </td>
   <td class="dehead" align="right">
+   <?php echo $priqtys[5]; ?>
+  </td>
+  <td class="dehead" align="right">
    <?php echo $priei; ?>
   </td>
  </tr>
 <?php
       } // End not csv export
     }
-    $priqtys = array(0, 0, 0, 0, 0);
+    $priqtys = array(0, 0, 0, 0, 0, 0);
     if ($product_first) {
       $prodleft = $product = $rowprod;
       $last_product_id = $product_id;
@@ -252,7 +260,7 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
   }
 
   // Detail line.
-  if ($_POST['form_details'] && $product_id && ($qtys[0] + $qtys[1] + $qtys[2] + $qtys[3] + $qtys[4])) {
+  if ($_POST['form_details'] && $product_id && ($qtys[0] + $qtys[1] + $qtys[2] + $qtys[3] + $qtys[4] + $qtys[5])) {
     if ($_POST['form_csvexport']) {
       if ($product_first) {
         echo '"'  . display_desc($product )  . '"';
@@ -268,6 +276,7 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
       echo ',"' . $qtys[2]             . '"'; // purchases
       echo ',"' . $qtys[3]             . '"'; // transfers
       echo ',"' . $qtys[4]             . '"'; // adjustments
+      echo ',"' . $qtys[5]             . '"'; // consumptions
       echo "\n";
     }
     else {
@@ -320,6 +329,9 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
   <td class="detail" align="right">
    <?php echo $qtys[4]; ?>
   </td>
+  <td class="detail" align="right">
+   <?php echo $qtys[5]; ?>
+  </td>
   <td class="detail">
    &nbsp;
   </td>
@@ -327,14 +339,23 @@ function thisLineItem($product_id, $warehouse_id, $patient_id, $encounter_id,
 <?php
     } // End not csv export
   } // end details
-  for ($i = 0; $i < 5; ++$i) {
+  for ($i = 0; $i < 6; ++$i) {
     $secqtys[$i]   += $qtys[$i];
     $priqtys[$i]   += $qtys[$i];
     $grandqtys[$i] += $qtys[$i];
   }
 } // end function
 
-if (! acl_check('acct', 'rep')) die(xl("Unauthorized access."));
+// Check permission for this report.
+$auth_drug_reports = $GLOBALS['inhouse_pharmacy'] && (
+  acl_check('admin'    , 'drugs'      ) ||
+  acl_check('inventory', 'reporting'  ));
+if (!$auth_drug_reports) {
+  die(xl("Unauthorized access."));
+}
+
+// Note if user is restricted to any facilities and/or warehouses.
+$is_user_restricted = isUserRestricted();
 
 $form_from_date = fixDate($_POST['form_from_date'], date('Y-m-d'));
 $form_to_date   = fixDate($_POST['form_to_date']  , date('Y-m-d'));
@@ -362,7 +383,8 @@ if ($_POST['form_csvexport']) {
     // echo '"' . xl('Distributions') . '",';
     echo '"' . xl('Receipts'    ) . '",';
     echo '"' . xl('Transfers'   ) . '",';
-    echo '"' . xl('Adjustments' ) . '"' . "\n";
+    echo '"' . xl('Adjustments' ) . '",';
+    echo '"' . xl('Consumptions') . '"' . "\n";
   }
   else {
     echo '"' . xl('Opening Balance') . '",';
@@ -371,6 +393,7 @@ if ($_POST['form_csvexport']) {
     echo '"' . xl('Receipts'       ) . '",';
     echo '"' . xl('Transfers'      ) . '",';
     echo '"' . xl('Adjustments'    ) . '",';
+    echo '"' . xl('Consumptions'   ) . '",';
     echo '"' . xl('Closing Balance') . '"' . "\n";
   }
 } // end export
@@ -421,6 +444,7 @@ echo "   <select name='form_facility'>\n";
 echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
 while ($frow = sqlFetchArray($fres)) {
   $facid = $frow['id'];
+  if ($is_user_restricted && !isFacilityAllowed($facid)) continue;
   echo "    <option value='$facid'";
   if ($facid == $form_facility) echo " selected";
   echo ">" . $frow['name'] . "\n";
@@ -533,6 +557,9 @@ echo "   </select>&nbsp;\n";
    <?php xl('Adjustments','e'); ?>
   </td>
   <td class="dehead" align="right" width="8%">
+   <?php echo xlt('Consumptions'); ?>
+  </td>
+  <td class="dehead" align="right" width="8%">
    <?php xl('Closing Balance','e'); ?>
   </td>
  </tr>
@@ -547,9 +574,9 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   $prodleft  = "";
   $warehouse = "";
   $whleft    = "";
-  $grandqtys = array(0, 0, 0, 0, 0);
-  $priqtys   = array(0, 0, 0, 0, 0);
-  $secqtys   = array(0, 0, 0, 0, 0);
+  $grandqtys = array(0, 0, 0, 0, 0, 0);
+  $priqtys   = array(0, 0, 0, 0, 0, 0);
+  $secqtys   = array(0, 0, 0, 0, 0, 0);
   $last_inventory_id = 0;
 
   /*******************************************************************
@@ -563,7 +590,8 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "WHERE s.sale_date >= '$from_date' AND s.sale_date <= '$to_date'";
   *******************************************************************/
   $query = "SELECT s.sale_id, s.sale_date, s.quantity, s.fee, s.pid, s.encounter, " .
-    "s.xfer_inventory_id, s.distributor_id, s.trans_type, d.name, lo.title, " .
+    "s.xfer_inventory_id, s.distributor_id, s.trans_type, d.name, " .
+    "lo.title, lo.option_value AS facid, " .
     "di.drug_id, di.warehouse_id, di.inventory_id, di.destroy_date, di.on_hand, " .
     "fe.invoice_refno " .
     "FROM drug_inventory AS di " .
@@ -598,6 +626,11 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   $res = sqlStatement($query);
   while ($row = sqlFetchArray($res)) {
 
+    // Skip this row if user is disallowed from its warehouse.
+    if ($is_user_restricted && !isWarehouseAllowed($row['facid'], $row['warehouse_id'])) {
+      continue;
+    }
+
     // If new lot and it was destroyed during the reporting period,
     // generate a pseudo-adjustment for that.
     if ($row['inventory_id'] != $last_inventory_id) {
@@ -607,12 +640,12 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
       {
         thisLineItem($row['drug_id'], $row['warehouse_id'], 0,
           0, $row['name'], $row['title'], $row['destroy_date'],
-          array(0, 0, 0, 0, 0 - $row['on_hand']),
+          array(0, 0, 0, 0, 0 - $row['on_hand'], 0),
           xl('Destroyed'));
       }
     }
 
-    $qtys = array(0, 0, 0, 0, 0);
+    $qtys = array(0, 0, 0, 0, 0, 0);
     if ($row['sale_id']) {
       if ($row['xfer_inventory_id']) {
         // A transfer sale item will appear twice, once with each lot.
@@ -627,10 +660,12 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
       else if ($row['distributor_id'])
         $qtys[1] = 0 - $row['quantity'];
       ***************************************************************/
-      else if ($row['trans_type'] != 5)
+      else if ($row['trans_type'] != 5 && $row['trans_type'] != 7)
         $qtys[2] = 0 - $row['quantity']; // purchase or return
-      else
+      else if ($row['trans_type'] == 5)
         $qtys[4] = 0 - $row['quantity']; // adjustment
+      else
+        $qtys[5] = 0 - $row['quantity']; // consumption
     }
 
     thisLineItem($row['drug_id'], $row['warehouse_id'], $row['pid'] + 0,
@@ -639,7 +674,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   }
 
   // Generate totals for last product and warehouse.
-  thisLineItem(0, '~', 0, 0, '', '', '0000-00-00', array(0, 0, 0, 0, 0));
+  thisLineItem(0, '~', 0, 0, '', '', '0000-00-00', array(0, 0, 0, 0, 0, 0));
 
   // Grand totals line.
   if (!$_POST['form_csvexport']) {
@@ -650,7 +685,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
    <?php xl('Grand Total','e'); ?>
   </td>
   <td class="dehead" align="right">
-   <?php echo $grei - $grandqtys[0] - $grandqtys[1] - $grandqtys[2] - $grandqtys[3] - $grandqtys[4]; ?>
+   <?php echo $grei - $grandqtys[0] - $grandqtys[1] - $grandqtys[2] - $grandqtys[3] - $grandqtys[4] - $grandqtys[5]; ?>
   </td>
   <td class="dehead" align="right">
    <?php echo $grandqtys[0]; ?>
@@ -668,6 +703,9 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   </td>
   <td class="dehead" align="right">
    <?php echo $grandqtys[4]; ?>
+  </td>
+  <td class="dehead" align="right">
+   <?php echo $grandqtys[5]; ?>
   </td>
   <td class="dehead" align="right">
    <?php echo $grei; ?>

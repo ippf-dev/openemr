@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -217,5 +217,46 @@ function sellDrug($drug_id, $quantity, $fee, $patient_id=0, $encounter_id=0,
   // and it serves only to indicate that everything worked.  Otherwise there
   // can be only one inserted row and this is its ID.
   return $sale_id;
+}
+
+// Determine if facility and warehouse restrictions are applicable for this user.
+function isUserRestricted($userid=0) {
+  if (!$userid) $userid = $_SESSION['authId'];
+  $countrow = sqlQuery("SELECT count(*) AS count FROM users_facility WHERE " .
+    "tablename = 'users' AND table_id = ?", array($userid));
+  return !empty($countrow['count']);
+}
+
+// Check if the user has access to the given facility.
+// Do not call this if user is not restricted!
+function isFacilityAllowed($facid, $userid=0) {
+  if (!$userid) $userid = $_SESSION['authId'];
+  $countrow = sqlQuery("SELECT count(*) AS count FROM users_facility WHERE " .
+    "tablename = 'users' AND table_id = ? AND facility_id = ?",
+    array($userid, $facid));
+  if (empty($countrow['count'])) {
+    $countrow = sqlQuery("SELECT count(*) AS count FROM users WHERE " .
+      "id = ? AND facility_id = ?",
+      array($userid, $facid));
+    return !empty($countrow['count']);
+  }
+  return true;
+}
+
+// Check if the user has access to the given warehouse within the given facility.
+// Do not call this if user is not restricted!
+function isWarehouseAllowed($facid, $whid, $userid=0) {
+  if (!$userid) $userid = $_SESSION['authId'];
+  $countrow = sqlQuery("SELECT count(*) AS count FROM users_facility WHERE " .
+    "tablename = 'users' AND table_id = ? AND facility_id = ? AND " .
+    "(warehouse_id = ? OR warehouse_id = '')",
+    array($userid, $facid, $whid));
+  if (empty($countrow['count'])) {
+    $countrow = sqlQuery("SELECT count(*) AS count FROM users WHERE " .
+      "id = ? AND default_warehouse = ?",
+      array($userid, $whid));
+    return !empty($countrow['count']);
+  }
+  return true;
 }
 ?>

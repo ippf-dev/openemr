@@ -217,47 +217,102 @@ for($i = 0; $i < $bg_count; $i++) {
 
 <input type="hidden" name="user_type" value="<?php echo $bg_name; ?>" />
 
-<TABLE border="0" cellpadding="0" cellspacing="0">
+<TABLE border="0" cellpadding="2" cellspacing="0">
 
+ <!-- username, new password -->
  <TR>
-  <TD style="width:180px;"><span class=text><?php xl('Username','e'); ?>: </span></TD>
-  <TD style="width:270px;"><input type=entry name=username style="width:150px;" value="<?php echo $iter["username"]; ?>" disabled /></td>
-  <TD style="width:200px;"><span class=text><?php xl('Your Password','e'); ?>: </span></TD>
-  <TD class='text' style="width:280px;"><input type='password' name='adminPass' style="width:150px;" value="" autocomplete='off' /><font class="mandatory">*</font></TD>
+  <TD style="width:200px;"><span class=text><?php xl('Username','e'); ?>: </span></TD>
+  <TD style="width:280px;"><input type=entry name=username style="width:150px;" value="<?php echo $iter["username"]; ?>" disabled /></td>
+  <TD style="width:200px;"><span class=text><?php xl('New Password','e'); ?>: </span></TD>
+  <TD class='text' style="width:280px;"> <input type=text name=clearPass style="width:150px;" value="" /><font class="mandatory">&nbsp;*</font></td>
  </TR>
 
+ <!-- checkboxes, admin password -->
  <TR>
-  <TD style="width:180px;"><span class=text></span></TD>
-  <TD style="width:270px;"></td>
-  <TD style="width:200px;"><span class=text><?php xl('User\'s New Password','e'); ?>: </span></TD>
-  <TD class='text' style="width:280px;"> <input type=text name=clearPass style="width:150px;" value="" /><font class="mandatory">*</font></td>
- </TR>
-
- <TR height="30" style="valign:middle;">
-  <td><span class="text">&nbsp;</span></td>
-  <td>&nbsp;</td>
-  <td colspan="2">
-   <span class="text"><?php xl('Provider','e'); ?>:
-   <input type="checkbox" name="authorized" onclick="authorized_clicked()"<?php if ($iter["authorized"]) echo " checked"; ?> />
-   &nbsp;&nbsp;<span class='text'><?php xl('Calendar','e'); ?>:
-   <input type="checkbox" name="calendar"<?php
+  <td class='text' colspan="2" nowrap>
+   <span class="text"><?php echo xlt('Provider'); ?>:<input type="checkbox" name="authorized"
+   onclick="authorized_clicked()"<?php if ($iter["authorized"]) echo " checked"; ?> />
+   <span class='text'><?php echo xlt('Calendar'); ?>:<input type="checkbox" name="calendar"<?php
     if ($iter["calendar"]) echo " checked";
     if (!$iter["authorized"]) echo " disabled"; ?> />
-   &nbsp;&nbsp;<span class='text'><?php xl('Active','e'); ?>:
-   <input type="checkbox" name="active"<?php if ($iter["active"]) echo " checked"; ?> />
-  </TD>
+   <span class='text'><?php xl('Active','e'); ?>:<input type="checkbox" name="active"<?php
+    if ($iter["active"]) echo " checked"; ?> />
+  </td>
+  <td class='text'><?php xl('Your Password','e'); ?>: </td>
+  <td class='text'><input type='password' name='adminPass' style="width:150px;" value="" autocomplete='off' /><font class="mandatory">&nbsp;*</font></td>
  </TR>
 
+ <!-- first name, middle name -->
  <TR>
-  <TD><span class="text"><?php xl('First Name','e'); ?>: </span></TD>
-  <TD><input type="entry" name="fname" id="fname" style="width:150px;" value="<?php echo $iter["fname"]; ?>" /><span class="mandatory">&nbsp;*</span></td>
-  <td><span class="text"><?php xl('Middle Name','e'); ?>: </span></TD>
-  <td><input type="entry" name="mname" style="width:150px;" value="<?php echo $iter["mname"]; ?>" /></td>
+  <td class="text"><?php xl('First Name','e'); ?>: </td>
+  <td class='text'><input type="entry" name="fname" id="fname" style="width:150px;" value="<?php echo $iter["fname"]; ?>" /><span class="mandatory">&nbsp;*</span></td>
+  <td class="text"><?php xl('Middle Name','e'); ?>: </td>
+  <td class='text'><input type="entry" name="mname" style="width:150px;" value="<?php echo $iter["mname"]; ?>" /></td>
  </TR>
 
+ <!-- last name; invoice refno pool optional -->
  <TR>
   <td><span class="text"><?php xl('Last Name','e'); ?>: </span></td>
   <td><input type="entry" name="lname" id="lname" style="width:150px;" value="<?php echo $iter["lname"]; ?>" /><span class="mandatory">&nbsp;*</span></td>
+<?php if ($GLOBALS['inhouse_pharmacy']) { ?>
+  <td class="text"><?php xl('Invoice Refno Pool','e'); ?>: </td>
+  <td class='text'>
+<?php
+  echo generate_select_list('irnpool', 'irnpool', $iter['irnpool'],
+    xl('Invoice reference number pool, if used'));
+?>
+  </td>
+<?php } else { ?>
+  <td class="text" colspan="2">&nbsp;</td>
+<?php } ?>
+ </tr>
+
+<!-- facility and warehouse restrictions, optional -->
+<?php if ($GLOBALS['restrict_user_facility']) { ?>
+ <tr title="<?php echo xla('If nothing is selected here then all are permitted.'); ?>">
+  <td><span class="text"><?php echo $GLOBALS['inhouse_pharmacy'] ?
+    xlt('Facility and warehouse permissions') : xlt('Facility permissions'); ?>:</td>
+  <td colspan="3">
+   <select name="schedule_facility[]" multiple style="width:490px;">
+<?php
+  $userFacilities = getUserFacilities($_GET['id']);
+  $ufid = array();
+  foreach ($userFacilities as $uf) $ufid[] = $uf['id'];
+  $fres = sqlStatement("select * from facility where service_location != 0 order by name");
+  if ($fres) {
+    while($frow = sqlFetchArray($fres)) {
+      // Get the warehouses that are linked to this user and facility.
+      $whids = getUserFacWH($_GET['id'], $frow['id']);
+      // Generate an option for just the facility with no warehouse restriction.
+      echo "    <option";
+      // if (empty($whids) && (in_array($frow['id'], $ufid) || $frow['id'] == $iter['facility_id'])) {
+      if (empty($whids) && in_array($frow['id'], $ufid)) {
+        echo ' selected';
+      }
+      echo " value='" . $frow['id'] . "'>" . text($frow['name']) . "</option>\n";
+      // Then generate an option for each of the facility's warehouses.
+      // Does not apply if the site does not use inventory.
+      if ($GLOBALS['inhouse_pharmacy']) {
+        $lres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
+          "list_id = ? AND option_value = ? ORDER BY seq, title",
+          array('warehouse', $frow['id']));
+        while ($lrow = sqlFetchArray($lres)) {
+          echo "    <option";
+          if (in_array($lrow['option_id'], $whids)) echo ' selected';
+          echo " value='" . $frow['id'] . "/" . attr($lrow['option_id']) . "'>&nbsp;&nbsp;&nbsp;" .
+            text(xl_list_label($lrow['title'])) . "</option>\n";
+        }
+      }
+    }
+  }
+?>
+   </select>
+  </td>
+ </tr>
+<?php } ?>
+
+<!-- default facility; warehouse optional -->
+ <tr>
   <td><span class="text"><?php xl('Default Facility','e'); ?>: </span></td>
   <td>
    <select name="facility_id" style="width:150px;" >
@@ -274,33 +329,19 @@ if ($fres) {
 ?>
    </select>
   </td>
- </tr>
-
-<?php if ($GLOBALS['restrict_user_facility']) { ?>
- <tr>
-  <td colspan="2">&nbsp;</td>
-  <td><span class="text"><?php xl('Schedule Facilities:', 'e');?></td>
-  <td>
-   <select name="schedule_facility[]" multiple style="width:150px;" >
+<?php if ($GLOBALS['inhouse_pharmacy']) { ?>
+  <td class="text"><?php xl('Default Warehouse','e'); ?>: </td>
+  <td class='text'>
 <?php
-  $userFacilities = getUserFacilities($_GET['id']);
-  $ufid = array();
-  foreach ($userFacilities as $uf) $ufid[] = $uf['id'];
-  $fres = sqlStatement("select * from facility where service_location != 0 order by name");
-  if ($fres) {
-    while($frow = sqlFetchArray($fres)):
+  echo generate_select_list('default_warehouse', 'warehouse', $iter['default_warehouse'], '');
 ?>
-    <option <?php echo in_array($frow['id'], $ufid) || $frow['id'] == $iter['facility_id'] ? "selected" : null ?>
-     value="<?php echo $frow['id'] ?>"><?php echo htmlspecialchars($frow['name']) ?></option>
-<?php
-    endwhile;
-  }
-?>
-   </select>
   </td>
- </tr>
+<?php } else { ?>
+  <td class="text" colspan="2">&nbsp;</td>
 <?php } ?>
+ </tr>
 
+ <!-- tax id, drug id -->
  <TR>
   <TD><span class="text"><?php xl('Federal Tax ID','e'); ?>: </span></TD>
   <TD><input type="text" name="taxid" style="width:150px;"  value="<?php echo $iter["federaltaxid"]?>" /></td>
@@ -308,6 +349,7 @@ if ($fres) {
   <TD><input type="text" name="drugid" style="width:150px;"  value="<?php echo $iter["federaldrugid"]?>" /></td>
  </TR>
 
+ <!-- upin, see auth -->
  <tr>
   <td><span class="text"><?php xl('UPIN','e'); ?>: </span></td>
   <td><input type="text" name="upin" style="width:150px;" value="<?php echo $iter["upin"]?>" /></td>
@@ -325,6 +367,7 @@ foreach (array(1 => xl('None'), 2 => xl('Only Mine'), 3 => xl('All')) as $key =>
   </td>
  </tr>
 
+ <!-- npi, job description -->
  <tr>
   <td><span class="text"><?php xl('NPI','e'); ?>: </span></td>
   <td><input type="text" name="npi" style="width:150px;"  value="<?php echo $iter["npi"]?>" /></td>
@@ -333,13 +376,14 @@ foreach (array(1 => xl('None'), 2 => xl('Only Mine'), 3 => xl('All')) as $key =>
  </tr>
 
 <?php if (!empty($GLOBALS['ssi']['rh'])) { ?>
+ <!-- relay health id, optional -->
  <tr>
   <td><span class="text"><?php xl('Relay Health ID', 'e'); ?>: </span></td>
   <td><input type="password" name="ssi_relayhealth" style="width:150px;"  value="<?php echo $iter["ssi_relayhealth"]; ?>" /></td>
  </tr>
 <?php } ?>
 
-<!-- (CHEMED) Calendar UI preference -->
+<!-- taxonomy, calendar ui -->
  <tr>
   <td><span class="text"><?php xl('Taxonomy','e'); ?>: </span></td>
   <td><input type="text" name="taxonomy" style="width:150px;"  value="<?php echo $iter["taxonomy"]?>" /></td>
@@ -356,8 +400,8 @@ foreach (array(3 => xl('Outlook'), 1 => xl('Original'), 2 => xl('Fancy')) as $ke
    </select>
   </td>
  </tr>
-<!-- END (CHEMED) Calendar UI preference -->
 
+ <!-- state license, newcrop role -->
  <tr>
   <td><span class="text"><?php xl('State License Number','e'); ?>: </span></td>
   <td><input type="text" name="state_license_number" style="width:150px;"  value="<?php echo $iter["state_license_number"]?>" /></td>
@@ -367,26 +411,9 @@ foreach (array(3 => xl('Outlook'), 1 => xl('Original'), 2 => xl('Fancy')) as $ke
   </td>
  </tr>
 
-<?php if ($GLOBALS['inhouse_pharmacy']) { ?>
- <tr>
-  <td class="text"><?php xl('Default Warehouse','e'); ?>: </td>
-  <td class='text'>
-<?php
-  echo generate_select_list('default_warehouse', 'warehouse', $iter['default_warehouse'], '');
-?>
-  </td>
-  <td class="text"><?php xl('Invoice Refno Pool','e'); ?>: </td>
-  <td class='text'>
-<?php
-  echo generate_select_list('irnpool', 'irnpool', $iter['irnpool'],
-    xl('Invoice reference number pool, if used'));
-?>
-  </td>
- </tr>
-<?php } ?>
-
 <?php if (isset($phpgacl_location) && acl_check('admin', 'acl')) { ?>
- <!-- Collect the access control group of user -->
+
+ <!-- access control group, additional info, optional but not really -->
  <tr>
   <td class='text'><?php xl('Access Control','e'); ?>:</td>
   <td>
@@ -421,9 +448,9 @@ foreach (array(3 => xl('Outlook'), 1 => xl('Original'), 2 => xl('Fancy')) as $ke
    <div class="redtext" id="error_message">&nbsp;</div>
   </td>
  </tr>
-<?php
- }
-?>
+
+<?php } ?>
+
 </table>
 
 <INPUT TYPE="HIDDEN" NAME="id" VALUE="<?php echo $_GET["id"]; ?>" />

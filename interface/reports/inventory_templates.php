@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2012 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2012-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -12,9 +12,13 @@ require_once("$srcdir/options.inc.php");
 require_once("$include_root/drugs/drugs.inc.php");
 require_once("$srcdir/formatting.inc.php");
 
-// Check authorization.
-$thisauth = acl_check('admin', 'drugs');
-if (!$thisauth) die(xl('Not authorized'));
+// Check permission for this report.
+$auth_drug_reports = $GLOBALS['inhouse_pharmacy'] && (
+  acl_check('admin'    , 'drugs'      ) ||
+  acl_check('inventory', 'reporting'  ));
+if (!$auth_drug_reports) {
+  die(xl("Unauthorized access."));
+}
 
 $form_inactive = empty($_REQUEST['form_inactive']) ? 0 : 1;
 

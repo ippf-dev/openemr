@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006-2014 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2015 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -16,9 +16,21 @@
  require_once("$srcdir/formatting.inc.php");
  require_once("$srcdir/htmlspecialchars.inc.php");
 
- // Check authorization.
- $thisauth = acl_check('admin', 'drugs');
- if (!$thisauth) die(xlt('Not authorized'));
+// Check authorizations.
+$auth_admin = acl_check('admin', 'drugs');
+$auth_lots  = $auth_admin               ||
+  acl_check('inventory', 'lots'       ) ||
+  acl_check('inventory', 'purchases'  ) ||
+  acl_check('inventory', 'transfers'  ) ||
+  acl_check('inventory', 'adjustments') ||
+  acl_check('inventory', 'consumption') ||
+  acl_check('inventory', 'destruction');
+$auth_anything = $auth_lots             ||
+  acl_check('inventory', 'sales'      ) ||
+  acl_check('inventory', 'reporting'  );
+if (!$auth_anything) die(xlt('Not authorized'));
+// Note if user is restricted to any facilities and/or warehouses.
+$is_user_restricted = isUserRestricted();
 
 // For each sorting option, specify the ORDER BY argument.
 //
@@ -56,8 +68,8 @@ $dion = $form_show_empty ? "" : "AND di.on_hand != 0";
 
  // get drugs
  $res = sqlStatement("SELECT d.*, " .
-  "di.inventory_id, di.lot_number, di.expiration, di.manufacturer, " .
-  "di.on_hand, lo.title, lo.option_value AS facid, f.name AS facname " .
+  "di.inventory_id, di.lot_number, di.expiration, di.manufacturer, di.on_hand, " .
+  "di.warehouse_id, lo.title, lo.option_value AS facid, f.name AS facname " .
   "FROM drugs AS d " .
   "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
   "AND di.destroy_date IS NULL $dion " .
@@ -145,6 +157,7 @@ function facchanged() {
   echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
   while ($frow = sqlFetchArray($fres)) {
     $facid = $frow['id'];
+    if ($is_user_restricted && !isFacilityAllowed($facid)) continue;
     echo "    <option value='$facid'";
     if ($facid == $form_facility) echo " selected";
     echo ">" . $frow['name'] . "\n";
@@ -157,9 +170,12 @@ function facchanged() {
   $lres = sqlStatement("SELECT * FROM list_options " .
     "WHERE list_id = 'warehouse' ORDER BY seq, title");
   while ($lrow = sqlFetchArray($lres)) {
-    echo "    <option value='" . $lrow['option_id'] . "/" . $lrow['option_value'] . "'";
-    echo " id='fac" . $lrow['option_value'] . "'";
-    if (strlen($form_warehouse)  > 0 && $lrow['option_id'] == $form_warehouse) {
+    $whid  = $lrow['option_id'];
+    $facid = $lrow['option_value'];
+    if ($is_user_restricted && !isWarehouseAllowed($facid, $whid)) continue;
+    echo "    <option value='$whid/$facid'";
+    echo " id='fac$facid'";
+    if (strlen($form_warehouse)  > 0 && $whid == $form_warehouse) {
       echo " selected";
     }
     echo ">" . xl_list_label($lrow['title']) . "</option>\n";
@@ -243,29 +259,37 @@ function facchanged() {
  $encount = 0;
  $today = date('Y-m-d'); 
  while ($row = sqlFetchArray($res)) {
+  if ($is_user_restricted && !isWarehouseAllowed($row['facid'], $row['warehouse_id'])) {
+    continue;
+  }
   if ($lastid != $row['drug_id']) {
    ++$encount;
    $bgcolor = "#" . (($encount & 1) ? "ddddff" : "ffdddd");
    $lastid = $row['drug_id'];
    echo " <tr class='detail' bgcolor='$bgcolor'>\n";
-   echo "  <td onclick='dodclick(".attr($lastid).")'>" .
-    "<a href='' onclick='return false'>" .
-    text($row['name']) . "</a></td>\n";
+   if ($auth_admin) {
+    echo "  <td onclick='dodclick(".attr($lastid).")'>" .
+     "<a href='' onclick='return false'>" .
+     text($row['name']) . "</a></td>\n";
+   }
+   else {
+    echo "  <td>" . text($row['name']) . "</td>\n";
+   }
    echo "  <td>" . ($row['active'] ? xlt('Yes') : xlt('No')) . "</td>\n";
    echo "  <td>" . text($row['ndc_number']) . "</td>\n";
    echo "  <td>" . 
-	generate_display_field(array('data_type'=>'1','list_id'=>'drug_form'), $row['form']) .
-	"</td>\n";
+	 generate_display_field(array('data_type'=>'1','list_id'=>'drug_form'), $row['form']) .
+	 "</td>\n";
    echo "  <td>" . text($row['size']) . "</td>\n";
    echo "  <td>" .
-	generate_display_field(array('data_type'=>'1','list_id'=>'drug_units'), $row['unit']) .
-	"</td>\n";
-   if ($row['dispensable']) {
+	 generate_display_field(array('data_type'=>'1','list_id'=>'drug_units'), $row['unit']) .
+	 "</td>\n";
+   if ($auth_lots && $row['dispensable']) {
     echo "  <td onclick='doiclick($lastid,0)' title='" . xla('Add new lot and transaction') . "'>" .
      "<a href='' onclick='return false'>" . xlt('New') . "</a></td>\n";
    }
    else {
-    echo "  <td title='" . xlt('Inventory not enabled for this product') . "'>&nbsp;</td>\n";
+    echo "  <td title='" . xlt('Not applicable') . "'>&nbsp;</td>\n";
    }
   } else {
    echo " <tr class='detail' bgcolor='$bgcolor'>\n";
@@ -274,8 +298,13 @@ function facchanged() {
   if (!empty($row['inventory_id'])) {
    $lot_number = htmlspecialchars($row['lot_number']);
    $expired = !empty($row['expiration']) && strcmp($row['expiration'], $today) <= 0;      
-   echo "  <td onclick='doiclick(" . attr($lastid) . "," . attr($row['inventory_id']) . ")'>" .
-    "<a href='' onclick='return false'>" . text($row['lot_number']) . "</a></td>\n";
+   if ($auth_lots) {
+    echo "  <td onclick='doiclick(" . attr($lastid) . "," . attr($row['inventory_id']) . ")'>" .
+     "<a href='' onclick='return false'>" . text($row['lot_number']) . "</a></td>\n";
+   }
+   else {
+    echo "  <td>" . text($row['lot_number']) . "</td>\n";
+   }
    echo "  <td>" . ($row['facid'] ? text($row['facname']) : ('(' . xlt('Unassigned') . ')')) . "</td>\n";   
    echo "  <td>" . text($row['title']) . "</td>\n";
    echo "  <td>" . text($row['on_hand']) . "</td>\n";

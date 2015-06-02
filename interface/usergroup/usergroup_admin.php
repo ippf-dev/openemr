@@ -101,18 +101,69 @@ if (isset($_POST["privatemode"]) && $_POST["privatemode"] =="user_admin") {
               sqlStatement("UPDATE users, facility SET users.facility = facility.name WHERE facility.id = '$tqvar' AND users.id = {$_POST["id"]}");
               //END (CHEMED)
       }
-      if ($GLOBALS['restrict_user_facility'] && $_POST["schedule_facility"]) {
-          sqlStatement("delete from users_facility
-            where tablename='users'
-            and table_id={$_POST["id"]}
-            and facility_id not in (" . implode(",", $_POST['schedule_facility']) . ")");
-          foreach($_POST["schedule_facility"] as $tqvar) {
-          sqlStatement("replace into users_facility set
-                facility_id = '$tqvar',
-                tablename='users',
-                table_id = {$_POST["id"]}");
+
+      if ($GLOBALS['restrict_user_facility']) {
+        if (empty($_POST["schedule_facility"])) $_POST["schedule_facility"] = array();
+        /**************************************************************
+        $deffacid = $_POST["facility_id"];
+        **************************************************************/
+        $tmpres = sqlStatement("SELECT * FROM users_facility WHERE " .
+          "tablename = ? AND table_id = ?",
+          array('users', $_POST["id"]));
+        // $olduf will become an array of entries to delete.
+        $olduf = array();
+        while ($tmprow = sqlFetchArray($tmpres)) {
+          $olduf[$tmprow['facility_id'] . '/' . $tmprow['warehouse_id']] = true;
+        }
+        // Now process the selection of facilities and warehouses.
+        foreach($_POST["schedule_facility"] as $tqvar) {
+          if (($i = strpos($tqvar, '/')) !== false) {
+            $facid = substr($tqvar, 0, $i);
+            $whid = substr($tqvar, $i + 1);
+            // If there was also a facility-only selection for this warehouse then remove it.
+            if (isset($olduf["$facid/"])) $olduf["$facid/"] = true;
+          }
+          else {
+            $facid = $tqvar;
+            $whid = '';
+          }
+          if (!isset($olduf["$facid/$whid"])) {
+            sqlStatement("INSERT INTO users_facility SET tablename = ?, table_id = ?, " .
+              "facility_id = ?, warehouse_id = ?",
+              array('users', $_POST["id"], $facid, $whid));
+          }
+          $olduf["$facid/$whid"] = false;
+          if ($facid == $deffacid) $deffacid = 0;
+        }
+        /**************************************************************
+        // Force the default facility to be included if not already represented.
+        if ($deffacid) {
+          if (!isset($olduf["$deffacid/"])) {
+            sqlStatement("INSERT INTO users_facility SET tablename = ?, table_id = ?, " .
+              "facility_id = ?, warehouse_id = ?",
+              array('users', $_POST["id"], $deffacid, ''));
+          }
+          $olduf["$deffacid/"] = false;
+        }
+        **************************************************************/
+        // Now delete whatever is left over for this user.
+        foreach ($olduf as $key => $value) {
+          if ($value && ($i = strpos($key, '/')) !== false) {
+            $facid = substr($key, 0, $i);
+            $whid = substr($key, $i + 1);
+            sqlStatement("DELETE FROM users_facility WHERE " .
+              // The following screws up by matching all warehouse_id values when it's
+              // an empty string. This needs debugging in sql.inc.
+              /********************************************************
+              "tablename = ? AND table_id = ? AND facility_id = ? AND warehouse_id = ?",
+              array('users', $_POST["id"], $facid, $whid));
+              ********************************************************/
+              "tablename = 'users' AND table_id = " . $_POST["id"] .
+              " AND facility_id = '$facid' AND warehouse_id = '$whid'");
+          }
         }
       }
+
       if ($_POST["fname"]) {
               $tqvar = formData('fname','P');
               sqlStatement("update users set fname='$tqvar' where id={$_POST["id"]}");

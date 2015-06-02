@@ -85,9 +85,12 @@
 *     ACL/Group  clin  view   "Clinicians"   (filler aco)
 *     ACL/Group  front view   "Front Office" (filler aco)
 *     ACL/Group  back  view   "Accounting"   (filler aco)
+*   4.1.3
+*     Added Section "inventory" (Inventory)
+*       Added 8 ACOs to this section.
 * </pre>
 *
-* Copyright (C) 2012 Brady Miller <brady@sparmy.com>
+* Copyright (C) 2012-2015 Brady Miller <brady@sparmy.com>
 *
 * LICENSE: This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -362,35 +365,53 @@ if ($acl_version < $upgrade_acl) {
   $acl_version = $upgrade_acl;
 }
 
-/* This is a template for a new revision, when needed
 // Upgrade for acl_version 3
 $upgrade_acl = 3;
 if ($acl_version < $upgrade_acl) {
   echo "<B>UPGRADING ACCESS CONTROLS TO VERSION ".$upgrade_acl.":</B></BR>";
 
   //Collect the ACL ID numbers.
-  echo "<B>Checking to ensure all the proper ACL(access control list) are present:</B></BR>";
-
+  echo "<B>Checking to ensure all the proper ACL (access control lists) are present:</B></BR>";
+  
   //Add new object Sections
   echo "<BR/><B>Adding new object sections</B><BR/>";
+  //Add 'Inventory' object section (added in 4.1.3)
+  addObjectSectionAcl('inventory', 'Inventory');
 
   //Add new Objects
   echo "<BR/><B>Adding new objects</B><BR/>";
+  //Add 'Lots' inventory object (added in 4.1.3)
+  addObjectAcl('inventory', 'Inventory', 'lots', 'Lots');
+  //Add 'Sales' inventory object (added in 4.1.3)
+  addObjectAcl('inventory', 'Inventory', 'sales', 'Sales');
+  //Add 'Purchases' inventory object (added in 4.1.3)
+  addObjectAcl('inventory', 'Inventory', 'purchases', 'Purchases');
+  //Add 'Transfers' inventory object (added in 4.1.3)
+  addObjectAcl('inventory', 'Inventory', 'transfers', 'Transfers');
+  //Add 'Adjustments' inventory object (added in 4.1.3)
+  addObjectAcl('inventory', 'Inventory', 'adjustments', 'Adjustments');
+  //Add 'Consumption' inventory object (added in 4.1.3)
+  addObjectAcl('inventory', 'Inventory', 'consumption', 'Consumption');
+  //Add 'Destruction' inventory object (added in 4.1.3)
+  addObjectAcl('inventory', 'Inventory', 'destruction', 'Destruction');
+  //Add 'Reporting' inventory object (added in 4.1.3)
+  addObjectAcl('inventory', 'Inventory', 'reporting', 'Reporting');
 
   //Update already existing Objects
   echo "<BR/><B>Upgrading objects</B><BR/>";
+  //Rename "Pharmacy Dispensary" to "Inventory Administration".
+  editObjectAcl('admin', 'Administration', 'drugs', 'Inventory Administration', 10);
 
   //Add new ACLs here (will return the ACL ID of newly created or already existant ACL)
   // (will also place in the appropriate group and CREATE a new group if needed)
-  echo "<BR/><B>Adding ACLs(Access Control Lists) and groups</B><BR/>";
+  echo "<BR/><B>Adding ACLs (Access Control Lists) and groups</B><BR/>";
 
   //Update the ACLs
-  echo "<BR/><B>Updating the ACLs(Access Control Lists)</B><BR/>";
+  echo "<BR/><B>Updating the ACLs (Access Control Lists)</B><BR/>";
 
   //DONE with upgrading to this version
   $acl_version = $upgrade_acl;
 }
-*/
 
 /* This is a template for a new revision, when needed
 // Upgrade for acl_version 4

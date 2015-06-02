@@ -111,7 +111,19 @@
   //
   // Section "patientportal" (Patient Portal):
   //   portal     Patient Portal
-  
+  //
+  // Section "inventory" (Inventory):
+  //   lots         Lots
+  //   sales        Sales
+  //   purchases    Purchases
+  //   transfers    Transfers
+  //   adjustments  Adjustments
+  //   consumption  Consumption
+  //   destruction  Destruction
+  //   reporting    Reporting
+  // Note admin/drugs permission is required to create products;
+  // we also allow that to substitute for all inventory permissions.
+
   if (isset ($phpgacl_location)) {
     $GLOBALS['phpgacl_location_global'] = $phpgacl_location;
     require_once("$phpgacl_location/gacl.class.php");

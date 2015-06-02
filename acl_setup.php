@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2005-2006 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2005-2015 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -59,10 +59,12 @@
      // xl('Sensitivities')
  $gacl->add_object_section('Placeholder'   , 'placeholder'  , 10, 0, 'ACO');
      // xl('Placeholder')
- $gacl->add_object_section('Nation Notes'   , 'nationnotes'  , 10, 0, 'ACO');
+ $gacl->add_object_section('Nation Notes'  , 'nationnotes'  , 10, 0, 'ACO');
      // xl('Nation Notes')
- $gacl->add_object_section('Patient Portal','patientportal'  , 10, 0, 'ACO');
+ $gacl->add_object_section('Patient Portal','patientportal' , 10, 0, 'ACO');
      // xl('Patient Portal')
+ $gacl->add_object_section('Inventory'     ,'inventory'     , 10, 0, 'ACO');
+     // xl('Inventory')
  // Create Accounting ACOs.
  //
  $gacl->add_object('acct', 'Billing (write optional)'           , 'bill' , 10, 0, 'ACO');
@@ -96,8 +98,8 @@
      // xl('Batch Communication Tool')
  $gacl->add_object('admin', 'Language Interface Tool'         , 'language' , 10, 0, 'ACO');
      // xl('Language Interface Tool')
- $gacl->add_object('admin', 'Pharmacy Dispensary'             , 'drugs'    , 10, 0, 'ACO');
-     // xl('Pharmacy Dispensary')
+ $gacl->add_object('admin', 'Inventory Administration'        , 'drugs'    , 10, 0, 'ACO');
+     // xl('Inventory Administration')
  $gacl->add_object('admin', 'ACL Administration'              , 'acl'      , 10, 0, 'ACO');
      // xl('ACL Administration')
 
@@ -171,6 +173,25 @@
  //
  $gacl->add_object('nationnotes', 'Nation Notes Configure', 'nn_configure', 10, 0, 'ACO');
      // xl('Nation Notes Configure')
+
+ // Create ACOs for Inventory.
+ //
+ $gacl->add_object('inventory', 'Lots'       , 'lots'       , 10, 0, 'ACO');
+     // xl('Lots')
+ $gacl->add_object('inventory', 'Sales'      , 'sales'      , 20, 0, 'ACO');
+     // xl('Sales')
+ $gacl->add_object('inventory', 'Purchases'  , 'purchases'  , 30, 0, 'ACO');
+     // xl('Purchases')
+ $gacl->add_object('inventory', 'Transfers'  , 'transfers'  , 40, 0, 'ACO');
+     // xl('Transfers')
+ $gacl->add_object('inventory', 'Adjustments', 'adjustments', 50, 0, 'ACO');
+     // xl('Adjustments')
+ $gacl->add_object('inventory', 'Consumption', 'consumption', 60, 0, 'ACO');
+     // xl('Consumption')
+ $gacl->add_object('inventory', 'Destruction', 'destruction', 70, 0, 'ACO');
+     // xl('Destruction')
+ $gacl->add_object('inventory', 'Reporting'  , 'reporting'  , 80, 0, 'ACO');
+     // xl('Reporting')
 
  // Create ARO groups.
  //
@@ -373,7 +394,7 @@ $breakglass  = $gacl->add_group('breakglass' , 'Emergency Login'    , $users, 'A
  $gacl->add_acl(
   array(
    'acct'=>array('bill', 'disc', 'eob', 'rep', 'rep_a'),
-   'admin'=>array('practice', 'superbill'),
+   'admin'=>array('practice', 'superbill', 'drugs'),
    'encounters'=>array('auth_a', 'coding_a', 'date_a'),
    'patients'=>array('appt', 'demo')
   ),
