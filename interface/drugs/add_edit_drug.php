@@ -159,6 +159,13 @@ function validate(f) {
    return false;
   }
  }
+ var deleting = f.form_delete.clicked ? true : false;
+ f.form_delete.clicked = false;
+ if (deleting) {
+  if (!confirm('<?php echo xls('This will permanently delete all lots of this product. Related reports will be incomplete or incorrect. Are you sure?'); ?>')) {
+   return false;
+  }
+ }
  top.restoreSession();
  return true;
 }
@@ -577,7 +584,8 @@ else {
 
 <?php if (acl_check('admin', 'super')) { ?>
 &nbsp;
-<input type='submit' name='form_delete' value='<?php echo xla('Delete'); ?>' style='color:red' />
+<input type='submit' name='form_delete' value='<?php echo xla('Delete'); ?>'
+ onclick='return this.clicked = true;' style='color:red' />
 <?php } ?>
 
 &nbsp;

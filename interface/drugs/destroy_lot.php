@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006, 2015 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -45,7 +45,17 @@ td { font-size:10pt; }
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
 
 <script language="JavaScript">
+
  var mypcc = '<?php  echo $GLOBALS['phone_country_code'] ?>';
+
+function validate(f) {
+  if (!confirm('<?php echo xls('Really destroy this lot?'); ?>')) {
+    return false;
+  }
+  top.restoreSession();
+  return true;
+}
+
 </script>
 
 </head>
@@ -76,7 +86,8 @@ td { font-size:10pt; }
   "AND inventory_id = ?", array($drug_id,$lot_id));
 ?>
 
-<form method='post' name='theform' action='destroy_lot.php?drug=<?php echo attr($drug_id) ?>&lot=<?php echo attr($lot_id) ?>'>
+<form method='post' name='theform' onsubmit='return validate(this);'
+ action='destroy_lot.php?drug=<?php echo attr($drug_id) ?>&lot=<?php echo attr($lot_id) ?>'>
 <center>
 
 <table border='0' width='100%'>

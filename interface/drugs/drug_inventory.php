@@ -105,7 +105,7 @@ function refreshme() {
 
 // Process click on drug title.
 function dodclick(id) {
- dlgopen('add_edit_drug.php?drug=' + id, '_blank', 725, 475);
+ dlgopen('add_edit_drug.php?drug=' + id, '_blank', 900, 600);
 }
 
 // Process click on drug QOO or lot.

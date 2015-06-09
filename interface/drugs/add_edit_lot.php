@@ -36,7 +36,7 @@ function checkWarehouseUsed($warehouse_id) {
 // For these purposes the "unassigned" option is considered a warehouse.
 //
 function genWarehouseList($tag_name, $currvalue, $title, $class='') {
-  global $drug_id;
+  global $drug_id, $is_user_restricted;
 
   $drow = sqlQuery("SELECT allow_multiple FROM drugs WHERE drug_id = ?", array($drug_id));
   $allow_multiple = $drow['allow_multiple'];
@@ -59,7 +59,10 @@ function genWarehouseList($tag_name, $currvalue, $title, $class='') {
   while ($lrow = sqlFetchArray($lres)) {
     $whid = $lrow['option_id'];
     $facid = 0 + $lrow['option_value'];
-    if ($whid != $currvalue && !$allow_multiple && checkWarehouseUsed($whid)) continue;
+    if ($whid != $currvalue) {
+      if (!$allow_multiple && checkWarehouseUsed($whid)) continue;
+      if ($is_user_restricted && !isWarehouseAllowed($facid, $whid)) continue;
+    }
     // Value identifies both warehouse and facility to support validation.
     echo "<option value='$whid|$facid'";
     if ((strlen($currvalue) == 0 && $lrow['is_default']) ||
@@ -69,7 +72,6 @@ function genWarehouseList($tag_name, $currvalue, $title, $class='') {
       $got_selected = TRUE;
     }
     echo ">" . text($lrow['title']) . "</option>\n";
-
     ++$count;
   }
 
@@ -131,10 +133,15 @@ td { font-size:10pt; }
  function validate() {
   var f = document.forms[0];
 
-  // Transaction date validation. Must not be later than today or before 2000.
   if (f.form_trans_type.value > '0') {
+   // Transaction date validation. Must not be later than today or before 2000.
    if (f.form_sale_date.value > '<?php echo date('Y-m-d') ?>' || f.form_sale_date.value < '2000-01-01') {
     alert('<?php echo xls('Transaction date must not be in the future or before 2000'); ?>');
+    return false;
+   }
+   // Transaction with zero quantity makes no sense.
+   if (!parseInt(f.form_quantity.value)) {
+    alert('<?php echo xls('A quantity is required'); ?>');
     return false;
    }
   }
@@ -146,22 +153,36 @@ td { font-size:10pt; }
   var lotfrom = parseInt(a[0]);
   if (a.length > 1) facfrom = parseInt(a[1]);
   a = f.form_warehouse_id.value.split('|', 2);
+  whid = a[0];
   if (a.length > 1) facto = parseInt(a[1]);
 
   if (lotfrom == '0' && f.form_lot_number.value.search(/\S/) < 0) {
-   alert('<?php xl('A lot number is required','e'); ?>');
+   alert('<?php echo xls('A lot number is required'); ?>');
    return false;
   }
+
+  // Require warehouse selection.
+  if (whid == '') {
+   alert('<?php echo xls('A warehouse is required'); ?>');
+   return false;
+  }
+
   /*******************************************************************
   if (f.form_trans_type.value == '6' && f.form_distributor_id.value == '') {
-   alert('<?php xl('A distributor is required','e'); ?>');
+   alert('<?php echo xls('A distributor is required'); ?>');
    return false;
   }
   *******************************************************************/
 
+  // Require comments for adjustment transactions.
+  if (f.form_trans_type.value == '5' && f.form_notes.value.search(/\S/) < 0) {
+   alert('<?php echo xls('Comments are required for adjustments'); ?>');
+   return false;
+  }
+
   // Check the case of a transfer between different facilities.
   if (f.form_trans_type.value == '4' && facto != facfrom) {
-   if (!confirm('<?php echo xl('Warning: Source and target facilities differ. Continue anyway?'); ?>'))
+   if (!confirm('<?php echo xls('Warning: Source and target facilities differ. Continue anyway?'); ?>'))
     return false;
   }
 
@@ -177,7 +198,7 @@ td { font-size:10pt; }
   var showCost      = true;
   var showSourceLot = true;
   var showNotes     = true;
-  var showDistributor = false;
+  // var showDistributor = false;
   if (type == '2') { // purchase
     showSourceLot = false;
   }
@@ -240,7 +261,8 @@ if ($_POST['form_save']) {
 
   list($form_warehouse_id) = explode('|', $_POST['form_warehouse_id']);
   
-  $form_distributor_id = $_POST['form_distributor_id'] + 0;
+  // $form_distributor_id = $_POST['form_distributor_id'] + 0;
+
   $form_expiration = $_POST['form_expiration'];
 
   if ($form_trans_type < 0 || $form_trans_type > 7) die(text('Internal error!'));
@@ -270,16 +292,20 @@ if ($_POST['form_save']) {
     $form_quantity = 0;
     $form_cost = 0;
   }
+  /********************************************************************
   else if ($form_trans_type == 6) { // distribution
     $form_quantity = 0 - $form_quantity;
     $form_cost = 0 - $form_cost;
   }
+  ********************************************************************/
   if ($form_trans_type != 4) { // not transfer
     $form_source_lot = 0;
   }
+  /********************************************************************
   if ($form_trans_type != 6) { // not distribution
     $form_distributor_id = '0';
   }
+  ********************************************************************/
 
   // If a transfer, make sure there is sufficient quantity in the source lot.
   if ($_POST['form_save'] && $form_source_lot && $form_quantity) {
@@ -324,6 +350,7 @@ if ($_POST['form_save']) {
           ("expiration = '" . add_escape_custom($form_expiration) . "'") : "expiration IS NULL";
         $crow = sqlQuery("SELECT count(*) AS count from drug_inventory " .
           "WHERE lot_number = '" . formData('form_lot_number') . "' " .
+          "AND drug_id = '"      . $drug_id                    . "' " .
           "AND warehouse_id = '" . $form_warehouse_id          . "' " .
           "AND $exptest " .
           "AND destroy_date IS NULL");
@@ -363,7 +390,7 @@ if ($_POST['form_save']) {
         "'" . add_escape_custom(0 - $form_quantity)  . "', " .
         "'" . add_escape_custom(0 - $form_cost)      . "', " .
         "'" . add_escape_custom($form_source_lot) . "', " .
-        "'" . add_escape_custom($form_distributor_id) . "', " .
+        "'0', " .
         "'" . add_escape_custom($form_notes) ."', " .
         "'" . add_escape_custom($form_trans_type)."' )");
 
@@ -497,6 +524,7 @@ foreach (array(
   </td>
  </tr>
 
+<?php /* ?>
  <tr id='row_distributor'>
   <td valign='top' nowrap><b><?php echo xlt('Distributor'); ?>:</b></td>
   <td>
@@ -508,6 +536,7 @@ generate_form_field(array('data_type' => 14, 'field_id' => 'distributor_id',
 ?>
   </td>
  </tr>
+<>php */ ?>
 
  <tr id='row_sale_date'>
   <td valign='top' nowrap><b><?php echo xlt('Date'); ?>:</b></td>
