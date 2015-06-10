@@ -29,6 +29,8 @@ $ORDERHASH = array(
   'tran' => 's.trans_type, s.sale_date, s.sale_id',
   'prod' => 'd.name, s.sale_date, s.sale_id',
   'wh'   => 'warehouse, s.sale_date, s.sale_id',
+  'lot'  => 'di.lot_number, d.name, s.sale_date, s.sale_id',
+  'invoice' => '(isnull(fe.invoice_refno) OR fe.invoice_refno=""), fe.invoice_refno, s.pid, s.encounter'
   // 'who'  => 'plname, pfname, pmname, s.sale_date, s.sale_id',
 );
 
@@ -383,7 +385,10 @@ foreach (array(
    <?php echo xlt('Product'); ?> </a>
   </td>
   <td class="dehead">
+   <a href="#" onclick="return dosort('lot')"
+   <?php if ($form_orderby == "lot") echo " style=\"color:#00cc00\""; ?>>
    <?php echo xlt('Lot'); ?>
+   </a>
   </td>
   <td class="dehead">
    <a href="#" onclick="return dosort('wh')"
@@ -391,7 +396,9 @@ foreach (array(
    <?php echo xlt('Warehouse'); ?> </a>
   </td>
   <td class="dehead">
-   <?php echo xlt('Invoice'); ?>
+   <a href="#" onclick="return dosort('invoice')"
+   <?php if ($form_orderby == "invoice") echo " style=\"color:#00cc00\""; ?>>
+   <?php echo xlt('Invoice'); ?> </a>
   </td>
   <td class="dehead" align="right">
    <?php echo xlt('Qty'); ?>
