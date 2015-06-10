@@ -84,6 +84,12 @@
       '0', // default
       xl('For IPPF Argentina and maybe others')
     ),
+    'gbl_menu_service_and_client_volume' => array(
+      xl('Service and Client Volume Report'),
+      'bool', // data type
+      '1', // default
+      xl('Service and client volume report')
+    ),
   );
 
 ?>

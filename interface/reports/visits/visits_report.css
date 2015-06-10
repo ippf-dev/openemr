@@ -1,0 +1,100 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/* 
+    Created on : May 18, 2015, 1:05:13 PM
+    Author     : yehster
+*/
+
+ body       { font-family:sans-serif; font-size:10pt; font-weight:normal }
+ .dehead    { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:bold }
+ .detail    { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:normal }
+
+ table.parameters td{
+     min-width: 20em;
+     width: 33%;
+     vertical-align: top;
+ }
+ 
+ .label{
+     font-weight: bold;
+ }
+ 
+ table.results
+ {
+     border-spacing: 0px;
+     border-collapse: collapse;
+ }
+ table.results th
+ {
+     font-weight: bold;
+     text-align: center;
+     padding: 0.2em;
+ }
+
+ table.results tr
+ {
+     padding: 0px;
+     margin: 0px;
+ }
+ 
+table.results tr > td
+{
+    border: 1px solid black;
+}
+ 
+table.results tr > td[type='value']
+{
+
+    text-align: center;
+}
+
+table.results tr > td[type='placeholder']
+{
+    text-align: center;
+}
+
+
+
+table.results tbody > tr > td[type='tag'],
+table.results tbody > tr > td[type='provider'],
+table.results tbody > tr > td[type='clinic']
+{
+    padding-left: 1em;
+    padding-right: 0.2em;
+    font-weight:bold;
+    text-align: left;
+}
+
+table.results tbody > tr > td[trend='decline']
+{
+    color: red;
+}
+
+table.results tbody > tr[content='services_per_client'],
+table.results tbody > tr[content='services_per_visit']
+{
+    background-color: lightgoldenrodyellow;
+}
+
+table.results tbody > tr[content='service']
+{
+    background-color:lightcyan;
+}
+
+#results-spacer
+{
+    height:1em;
+}
+
+
+@media print 
+{
+    img.datePicker, #filters, #execute
+    {
+        display:none;
+    }
+   
+}
