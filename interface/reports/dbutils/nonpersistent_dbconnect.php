@@ -1,10 +1,14 @@
 <?php
+// Copyright (C) 2015 Kevin Yeh <kevin.y@integralemr.com>
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 3
+// of the License, or (at your option) any later version.
 
-/* 
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+// This module establishes a non-persistent connection to the OpenEMR database, useful when using temporary tables
+
+
 
 $database = NewADOConnection("mysql_log"); // Use the subclassed driver which logs execute events
 // Below clientFlags flag is telling the mysql connection to allow local_infile setting,
@@ -16,3 +20,5 @@ $database->clientFlags = 128;
 $database->Connect($host.":".$port, $login, $pass, $dbase);
 $GLOBALS['adodb']['db'] = $database;
 $GLOBALS['dbh'] = $database->_connectionID;
+
+$database->Execute("SET NAMES 'utf8'");

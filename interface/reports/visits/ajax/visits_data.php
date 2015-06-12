@@ -1,10 +1,12 @@
 <?php
 
-/* 
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+// Copyright (C) 2015 Kevin Yeh <kevin.y@integralemr.com>
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 3
+// of the License, or (at your option) any later version.
+
 require_once("../../../globals.php");
 ini_set('display_errors',1);
 require_once("$webserver_root/interface/reports/dbutils/nonpersistent_dbconnect.php");
@@ -96,3 +98,5 @@ echo json_encode(query_visits($parameters->{'from'}
                               ,$facility_filters
                               ,$providers_filters
                               ,$category_filter));
+                              
+$database->Close();
