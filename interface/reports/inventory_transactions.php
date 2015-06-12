@@ -144,17 +144,6 @@ function thisLineItem($row, $xfer=false) {
   $grandtotal   += $row['fee'];
   $grandqty     -= $row['quantity'];
 
-  // In the special case of a transfer, generate a second line item for
-  // the source lot.
-  if (!empty($row['xfer_inventory_id'])) {
-    $row['xfer_inventory_id'] = 0;
-    $row['lot_number'] = $row['lot_number_2'];
-    $row['warehouse'] = $row['warehouse_2'];
-    $row['quantity'] = 0 - $row['quantity'];
-    $row['fee'] = 0 - $row['fee'];
-    thisLineItem($row, true);
-  }
-
 } // end function
 
 // Check permission for this report.
