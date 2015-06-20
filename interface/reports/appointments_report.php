@@ -9,6 +9,10 @@
 // This report shows upcoming appointments with filtering and
 // sorting by patient, practitioner, appointment type, and date.
 // 2012-01-01 - Added display of home and cell phone and fixed header
+// 2015-06-19 - brought up to security standards terry@lillysystems.com
+
+$fake_register_globals=false;
+$sanitize_all_escapes=true;
 
 require_once("../globals.php");
 require_once("../../library/patient.inc");
@@ -60,7 +64,7 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
 
 <link rel="stylesheet" href="<?php echo $css_header;?>" type="text/css">
 
-<title><?php xl('Appointments Report','e'); ?></title>
+<title><?php echo xlt('Appointments Report'); ?></title>
 
 <script type="text/javascript" src="../../library/overlib_mini.js"></script>
 <script type="text/javascript" src="../../library/textformat.js"></script>
@@ -121,12 +125,12 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
 <div id="overDiv"
 	style="position: absolute; visibility: hidden; z-index: 1000;"></div>
 
-<span class='title'><?php xl('Report','e'); ?> - <?php xl('Appointments','e'); ?></span>
+<span class='title'><?php echo xlt('Report'); ?> - <?php echo xlt('Appointments'); ?></span>
 
-<div id="report_parameters_daterange"><?php echo date("d F Y", strtotime($from_date)) ." &nbsp; to &nbsp; ". date("d F Y", strtotime($to_date)); ?>
+<div id="report_parameters_daterange"><?php echo date("d F Y", strtotime($from_date)) ." &nbsp; to &nbsp; ". date("d F Y", strtotime($to_date)); #sets date range for calendars ?>
 </div>
 
-<form method='post' name='theform' id='theform' action='appointments_report.php'>
+<form method='post' name='theform' id='theform' action='appointments_report.php' onsubmit='return top.restoreSession()'>
 
 <div id="report_parameters">
 
@@ -138,22 +142,23 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
 		<table class='text'>
 
 			<tr>
-				<td class='label'><?php xl('Facility','e'); ?>:</td>
-				<td><?php dropdown_facility(strip_escape_custom($facility), 'form_facility'); ?>
+				<td class='label'><?php echo xlt('Facility'); ?>:</td>
+				<td><?php dropdown_facility($facility , 'form_facility'); ?>
 				</td>
-				<td class='label'><?php xl('Provider','e'); ?>:</td>
+				<td class='label'><?php echo xlt('Provider'); ?>:</td>
 				<td><?php
 				// Build a drop-down list of providers.
 				$query = "SELECT id, lname, fname FROM users WHERE ".
 				  " active=1 AND authorized = 1 $provider_facility_filter ORDER BY lname, fname"; //(CHEMED) facility filter
 				$ures = sqlStatement($query);
 				echo "   <select name='form_provider'>\n";
-				echo "    <option value=''>-- " . xl('All') . " --\n";
+				echo "    <option value=''>-- " . xlt('All') . " --\n";
+
 				while ($urow = sqlFetchArray($ures)) {
 					$provid = $urow['id'];
-					echo "    <option value='$provid'";
+					echo "    <option value='" . attr($provid) . "'";
 					if ($provid == $_POST['form_provider']) echo " selected";
-					echo ">" . $urow['lname'] . ", " . $urow['fname'] . "\n";
+					echo ">" . text($urow['lname']) . ", " . text($urow['fname']) . "\n";
 				}
 				echo "   </select>\n";
 				?></td>
@@ -186,28 +191,28 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
 			</tr>
 
 			<tr>
-				<td class='label'><?php xl('From','e'); ?>:</td>
+				<td class='label'><?php echo xlt('From'); ?>:</td>
 				<td><input type='text' name='form_from_date' id="form_from_date"
-					size='10' value='<?php echo $from_date ?>'
+					size='10' value='<?php echo attr($from_date) ?>'
 					onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'
 					title='yyyy-mm-dd'> <img src='../pic/show_calendar.gif'
 					align='absbottom' width='24' height='22' id='img_from_date'
 					border='0' alt='[?]' style='cursor: pointer'
-					title='<?php xl('Click here to choose a date','e'); ?>'></td>
-				<td class='label'><?php xl('To','e'); ?>:</td>
+					title='<?php echo xlt('Click here to choose a date'); ?>'></td>
+				<td class='label'><?php echo xlt('To'); ?>:</td>
 				<td><input type='text' name='form_to_date' id="form_to_date"
-					size='10' value='<?php echo $to_date ?>'
+					size='10' value='<?php echo attr($to_date) ?>'
 					onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'
 					title='yyyy-mm-dd'> <img src='../pic/show_calendar.gif'
 					align='absbottom' width='24' height='22' id='img_to_date'
 					border='0' alt='[?]' style='cursor: pointer'
-					title='<?php xl('Click here to choose a date','e'); ?>'></td>
+					title='<?php echo xlt('Click here to choose a date'); ?>'></td>
 			</tr>
 
 			<tr>
-				<td class='label'><?php xl('Status','e'); ?>:</td>
+				<td class='label'><?php echo xlt('Status'); # status code drop down creation ?>:</td>
 				<td><?php generate_form_field(array('data_type'=>1,'field_id'=>'apptstatus','list_id'=>'apptstat','empty_title'=>'All'),$_POST['form_apptstatus']);?></td>
-				<td><?php echo xlt('Category')?></td>
+				<td><?php echo xlt('Category') #category drop down creation ?>:</td>
 				<td>
                                     <select id="form_apptcat" name="form_apptcat">
                                         <?php
@@ -228,8 +233,8 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
 			</tr>
 
 			<tr>
-				<td colspan="2"><input type="checkbox" name="with_out_provider" id="with_out_provider" <?php if($chk_with_out_provider) echo "checked";?>>&nbsp;<?php xl('Without Provider','e'); ?></td>
-				<td colspan="2"><input type="checkbox" name="with_out_facility" id="with_out_facility" <?php if($chk_with_out_facility) echo "checked";?>>&nbsp;<?php xl('Without Facility','e'); ?></td>
+				<td colspan="2"><input type="checkbox" name="with_out_provider" id="with_out_provider" <?php if($chk_with_out_provider) echo "checked";?>>&nbsp;<?php echo xlt('Without Provider'); ?></td>
+				<td colspan="2"><input type="checkbox" name="with_out_facility" id="with_out_facility" <?php if($chk_with_out_facility) echo "checked";?>>&nbsp;<?php echo xlt('Without Facility'); ?></td>
 			</tr>
 
 		</table>
@@ -243,16 +248,16 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
 				<td>
 				<div style='margin-left: 15px'>
                                 <a href='#' class='css_button' onclick='$("#form_refresh").attr("value","true"); $("#theform").submit();'>
-				<span> <?php xl('Submit','e'); ?> </span> </a> 
+				<span> <?php echo xlt('Submit'); ?> </span> </a> 
                                 <?php if ($_POST['form_refresh'] || $_POST['form_orderby'] ) { ?>
 				<a href='#' class='css_button' onclick='window.print()'> 
-                                    <span> <?php xl('Print','e'); ?> </span> </a> 
-                                <a href='#' class='css_button' onclick='window.open("../patient_file/printed_fee_sheet.php?fill=2","_blank")'> 
-                                    <span> <?php xl('Superbills','e'); ?> </span> </a> 
+                                    <span> <?php echo xlt('Print'); ?> </span> </a> 
+                                <a href='#' class='css_button' onclick='window.open("../patient_file/printed_fee_sheet.php?fill=2","_blank")' onsubmit='return top.restoreSession()'> 
+                                    <span> <?php echo xlt('Superbills'); ?> </span> </a> 
                                 <?php } ?></div>
 				</td>
 			</tr>
-                        <tr>&nbsp;&nbsp;<?php xl('Most column headers can be clicked to change sort order','e') ?></tr>
+                        <tr>&nbsp;&nbsp;<?php echo xlt('Most column headers can be clicked to change sort order') ?></tr>
 		</table>
 		</td>
 	</tr>
@@ -267,35 +272,35 @@ if ($_POST['form_refresh'] || $_POST['form_orderby']) {
 
 	<thead>
 		<th><a href="nojs.php" onclick="return dosort('doctor')"
-	<?php if ($form_orderby == "doctor") echo " style=\"color:#00cc00\"" ?>><?php  xl('Provider','e'); ?>
+	<?php if ($form_orderby == "doctor") echo " style=\"color:#00cc00\"" ?>><?php  echo xlt('Provider'); ?>
 		</a></th>
 
 		<th><a href="nojs.php" onclick="return dosort('date')"
-	<?php if ($form_orderby == "date") echo " style=\"color:#00cc00\"" ?>><?php  xl('Date','e'); ?></a>
+	<?php if ($form_orderby == "date") echo " style=\"color:#00cc00\"" ?>><?php echo xlt('Date'); ?></a>
 		</th>
 
 		<th><a href="nojs.php" onclick="return dosort('time')"
-	<?php if ($form_orderby == "time") echo " style=\"color:#00cc00\"" ?>><?php  xl('Time','e'); ?></a>
+	<?php if ($form_orderby == "time") echo " style=\"color:#00cc00\"" ?>><?php  echo xlt('Time'); ?></a>
 		</th>
 
 		<th><a href="nojs.php" onclick="return dosort('patient')"
-	<?php if ($form_orderby == "patient") echo " style=\"color:#00cc00\"" ?>><?php  xl('Patient','e'); ?></a>
+	<?php if ($form_orderby == "patient") echo " style=\"color:#00cc00\"" ?>><?php  echo xlt('Patient'); ?></a>
 		</th>
 
 		<th><a href="nojs.php" onclick="return dosort('pubpid')"
-	<?php if ($form_orderby == "pubpid") echo " style=\"color:#00cc00\"" ?>><?php  xl('ID','e'); ?></a>
+	<?php if ($form_orderby == "pubpid") echo " style=\"color:#00cc00\"" ?>><?php  echo xlt('ID'); ?></a>
 		</th>
 
-         	<th><?php xl('Home','e'); //Sorting by phone# not really useful ?></th>
+         	<th><?php echo xlt('Home'); //Sorting by phone# not really useful ?></th>
 
-                <th><?php xl('Cell','e'); //Sorting by phone# not really useful ?></th>
+                <th><?php echo xlt('Cell'); //Sorting by phone# not really useful ?></th>
                 
 		<th><a href="nojs.php" onclick="return dosort('type')"
-	<?php if ($form_orderby == "type") echo " style=\"color:#00cc00\"" ?>><?php  xl('Type','e'); ?></a>
+	<?php if ($form_orderby == "type") echo " style=\"color:#00cc00\"" ?>><?php  echo xlt('Type'); ?></a>
 		</th>
 		
 		<th><a href="nojs.php" onclick="return dosort('status')"
-			<?php if ($form_orderby == "status") echo " style=\"color:#00cc00\"" ?>><?php  xl('Status','e'); ?></a>
+			<?php if ($form_orderby == "status") echo " style=\"color:#00cc00\"" ?>><?php  echo xlt('Status'); ?></a>
 		</th>
 
 		<th><a href="nojs.php" onclick="return dosort('user')"
@@ -371,25 +376,25 @@ if ($_POST['form_refresh'] || $_POST['form_orderby']) {
 		?>
 
 	<tr bgcolor='<?php echo $bgcolor ?>'>
-		<td class="detail">&nbsp;<?php echo ($docname == $lastdocname) ? "" : $docname ?>
+		<td class="detail">&nbsp;<?php echo ($docname == $lastdocname) ? "" : text($docname) ?>
 		</td>
 
 		<td class="detail"><?php echo oeFormatShortDate($appointment['pc_eventDate']) ?>
 		</td>
 
-		<td class="detail"><?php echo oeFormatTime($appointment['pc_startTime']) ?>
+		<td class="detail"><?php echo text(oeFormatTime($appointment['pc_startTime'])) ?>
 		</td>
 
-		<td class="detail">&nbsp;<?php echo $appointment['fname'] . " " . $appointment['lname'] ?>
+		<td class="detail">&nbsp;<?php echo text($appointment['fname'] . " " . $appointment['lname']) ?>
 		</td>
 
-		<td class="detail">&nbsp;<?php echo $appointment['pubpid'] ?></td>
+		<td class="detail">&nbsp;<?php echo text($appointment['pubpid']) ?></td>
 
-        <td class="detail">&nbsp;<?php echo $appointment['phone_home'] ?></td>
+        <td class="detail">&nbsp;<?php echo text($appointment['phone_home']) ?></td>
 
-        <td class="detail">&nbsp;<?php echo $appointment['phone_cell'] ?></td>
+        <td class="detail">&nbsp;<?php echo text($appointment['phone_cell']) ?></td>
 
-		<td class="detail">&nbsp;<?php echo xl_appt_category($appointment['pc_catname']) ?></td>
+		<td class="detail">&nbsp;<?php echo text(xl_appt_category($appointment['pc_catname'])) ?></td>
 		
 		<td class="detail">&nbsp;
 			<?php
@@ -413,17 +418,17 @@ if ($_POST['form_refresh'] || $_POST['form_orderby']) {
         $_SESSION['pidList'] = $pid_list;
 	?>
 	<tr>
-		<td colspan="10" align="left"><?php  xl('Total number of appointments','e'); ?>:&nbsp;<?php echo $totalAppontments;?></td>
+		<td colspan="10" align="left"><?php echo xlt('Total number of appointments'); ?>:&nbsp;<?php echo text($totalAppontments);?></td>
 	</tr>
 	</tbody>
 </table>
 </div>
 <!-- end of search results --> <?php } else { ?>
-<div class='text'><?php echo xl('Please input search criteria above, and click Submit to view results.', 'e' ); ?>
+<div class='text'><?php echo xlt('Please input search criteria above, and click Submit to view results.'); ?>
 </div>
 	<?php } ?> <input type="hidden" name="form_orderby"
-	value="<?php echo $form_orderby ?>" /> <input type="hidden"
-	name="patient" value="<?php echo $patient ?>" /> <input type='hidden'
+	value="<?php echo attr($form_orderby) ?>" /> <input type="hidden"
+	name="patient" value="<?php echo attr($patient) ?>" /> <input type='hidden'
 	name='form_refresh' id='form_refresh' value='' /></form>
 
 <script type="text/javascript">
