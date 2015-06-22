@@ -1339,8 +1339,12 @@ if (!empty($reg)) {
       <?php if (acl_check('admin', 'super'    ) && $GLOBALS['enable_cdr']) genMiscLink('RTop','adm','0',xl('Patient Reminders'),'patient_file/reminder/patient_reminders.php?mode=admin&patient_id='); ?>
       <?php if ( ($GLOBALS['include_de_identification']) && (acl_check('admin', 'super'    )) ) genMiscLink('RTop','adm','0',xl('De Identification'),'de_identification_forms/de_identification_screen1.php'); ?>
           <?php if ( ($GLOBALS['include_de_identification']) && (acl_check('admin', 'super'    )) ) genMiscLink('RTop','adm','0',xl('Re Identification'),'de_identification_forms/re_identification_input_screen.php'); ?>
-      <?php if (acl_check('admin', 'super') && (!empty($GLOBALS['code_types']['IPPF']) || !empty($GLOBALS['code_types']['IPPF2']))) 
-              genMiscLink('RTop','adm','0',xl('Export'),'main/ippf_export.php'); ?>
+      <?php
+        if (acl_check('admin', 'super') && (!empty($GLOBALS['code_types']['IPPF']) || !empty($GLOBALS['code_types']['IPPF2']))) {
+          genMiscLink('RTop','adm','0',xl('Legacy Export'),'main/ippf_export.php');
+          genMiscLink('RTop','adm','0',xl('Export for DHIS2'),'reports/ippf_dhis2_export.php');
+        }
+      ?>
       <li><a class="collapsed_lv2"><span><?php xl('Other','e') ?></span></a>
         <ul>
           <?php if (acl_check('admin', 'language')) genMiscLink('RTop','adm','0',xl('Language'),'language/language.php'); ?>
