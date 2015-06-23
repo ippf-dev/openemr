@@ -107,7 +107,6 @@ function setup_periods_data($dimensions)
                                                   COL_NUMBER_SERVICES=>"int",
                                                   COL_DAILY_CLIENTS=>"float",
                                                   COL_DAILY_SERVICES=>"float",
-                                                  COL_DAILY_SERVICES_CLIENT=>"float",
                                                   COL_SERVICES_VISIT=>"float"));
     create_temporary_table(TMP_PERIODS_DATA,$columns);
     
@@ -334,7 +333,6 @@ function update_averages()
     $update_query=  " UPDATE ". TMP_PERIODS_DATA
                     ." SET " . COL_DAILY_CLIENTS . " = " . "ROUND(".COL_NUMBER_CLIENTS . "/" . COL_ACTIVE_DAYS . ",1)"
                     . ", " . COL_DAILY_SERVICES . " = " . "ROUND(". COL_NUMBER_SERVICES . "/" . COL_ACTIVE_DAYS. ",1)"
-                    . ", " . COL_DAILY_SERVICES_CLIENT . " = " . "ROUND(".COL_NUMBER_SERVICES . "/" . COL_NUMBER_CLIENTS. ",1)"
                     . ", " . COL_SERVICES_VISIT . " = " . "ROUND(".COL_NUMBER_SERVICES . "/" . COL_NUMBER_VISITS. ",1)";
     
     sqlStatement($update_query);

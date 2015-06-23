@@ -34,10 +34,6 @@ function value_tag_to_descriptions(tag)
     {
         return '<?php echo xlt('Average Services (Daily)'); ?>';
     }
-    else if(tag==='services_per_client')
-    {
-        return '<?php echo xlt('Average Services/Client'); ?>';
-    }
     else if(tag==='services_per_visit')
     {
         return '<?php echo xlt('Average Services/Visit'); ?>';        

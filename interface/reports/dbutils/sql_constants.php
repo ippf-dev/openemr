@@ -45,7 +45,6 @@ define("COL_SUPERBILL","superbill");
 define("COL_NUMBER_SERVICES","number_services");
 define("COL_DAILY_CLIENTS","daily_clients");
 define("COL_DAILY_SERVICES","daily_services");
-define("COL_DAILY_SERVICES_CLIENT","services_per_client");
 define("COL_SERVICES_VISIT","services_per_visit");
 define("COL_PROVIDER_NAME","provider_name");
 define("COL_FNAME","fname");
