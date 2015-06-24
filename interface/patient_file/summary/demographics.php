@@ -1002,7 +1002,7 @@ expand_collapse_widget($widgetTitle, $widgetLabel, $widgetButtonLabel,
      <td width='650px'>
 <?php // vitals expand collapse widget
     $vitals_form_id = $gfrow['option_id'];
-    $widgetTitle = $gfrow['title'];
+    $widgetTitle = xl($gfrow['title']);
     $widgetLabel = $vitals_form_id;
     $widgetButtonLabel = xl("Trend");
     $widgetButtonLink = "../encounter/trend_form.php?formname=$vitals_form_id";
