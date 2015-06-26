@@ -36,6 +36,7 @@ if($new_database_setup) {
     $patches = array(
         '3_2_0-to-3_3_0_upgrade.sql',
         'ippf_merge_changes.sql',
+        'ippf2_categories.sql',
     );
 }
 else {
@@ -49,6 +50,7 @@ else {
         '3_2_0-to-3_3_0_upgrade.sql',
         'ippf_merge_changes.sql',
         'ippf_3_3_0-to-4_1_3_upgrade.sql',
+        'ippf2_categories.sql',
     ); 
 }
 
