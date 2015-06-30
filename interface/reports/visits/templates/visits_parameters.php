@@ -27,10 +27,12 @@
                     <div> <input type="radio" name="providersMode" value="summary" data-bind="checked: providers_mode"/><?php echo xlt("All Providers - Summary"); ?></div>
                     <div> <input type="radio" name="providersMode" value="details" data-bind="checked: providers_mode"/><?php echo xlt("Provider Details - Select multiple providers:"); ?></div>
                     <div data-bind="foreach: providers, visible:providers_details()">
-                        <div>
-                            <input type="checkbox" data-bind="checked: selected"/>
-                            <span data-bind="text: provider_display_name($data)"></span>
-                        </div>
+                        <!--ko if: active!=0 -->
+                            <div>
+                                <input type="checkbox" data-bind="checked: selected"/>
+                                <span data-bind="text: provider_display_name($data)"></span>
+                            </div>
+                        <!-- /ko -->
                     </div>
                 </td>
                 <td>

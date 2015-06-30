@@ -53,7 +53,10 @@ table.results tr > td[type='placeholder']
     text-align: center;
 }
 
-
+.inactive
+{
+    display: none;
+}
 
 table.results tbody > tr > td[type='tag'],
 table.results tbody > tr > td[type='provider'],
