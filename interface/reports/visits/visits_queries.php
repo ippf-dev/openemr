@@ -331,7 +331,7 @@ function aggregate_categories($dimension_columns)
 function update_averages()
 {
     $update_query=  " UPDATE ". TMP_PERIODS_DATA
-                    ." SET " . COL_DAILY_CLIENTS . " = " . "ROUND(".COL_NUMBER_CLIENTS . "/" . COL_ACTIVE_DAYS . ",1)"
+                    ." SET " . COL_DAILY_CLIENTS . " = " . "ROUND(".COL_NUMBER_VISITS . "/" . COL_ACTIVE_DAYS . ",1)"
                     . ", " . COL_DAILY_SERVICES . " = " . "ROUND(". COL_NUMBER_SERVICES . "/" . COL_ACTIVE_DAYS. ",1)"
                     . ", " . COL_SERVICES_VISIT . " = " . "ROUND(".COL_NUMBER_SERVICES . "/" . COL_NUMBER_VISITS. ",1)";
     

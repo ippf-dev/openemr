@@ -34,8 +34,8 @@ function get_clinic_list()
 function get_provider_list()
 {
     $retval=array();
-    array_push($retval,array("id"=>"ALL","lname"=>xl("--All Providers--"),"fname"=>""));
-    $query_providers="select id,fname,lname from users where authorized!=0 and active!=0 order by CONCAT(ifnull(lname,CONCAT(lname,',')),fname) asc";
+    array_push($retval,array("id"=>"ALL","lname"=>xl("--All Providers--"),"fname"=>"","active"=>1));
+    $query_providers="select id,fname,lname,active from users where authorized!=0 order by CONCAT(ifnull(lname,CONCAT(lname,',')),fname) asc";
     $res=  sqlStatement($query_providers);
     while($row=sqlFetchArray($res))
     {
