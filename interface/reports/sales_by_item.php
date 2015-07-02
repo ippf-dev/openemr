@@ -273,12 +273,15 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code, $rowcat,
   global $producttotal, $prodadjtotal, $prodpaytotal, $productqty;
   global $cattotal, $catadjtotal, $catpaytotal, $catqty;
   global $grandtotal, $grandadjtotal, $grandpaytotal, $grandqty;
-  global $aTaxNames;
+  global $aTaxNames, $overpayments;
 
   $invnumber = $irnumber ? $irnumber : "$patient_id.$encounter_id";
   $rowamount = sprintf('%01.2f', $amount);
 
+  $tmp = $overpayments;
   $invno = ensureLineAmounts($patient_id, $encounter_id);
+  $overpaid = $overpayments == $tmp ? '' : '* ';
+
   $codekey = $code_type . ':' . $code;
   $rowadj = $aItems[$invno][$codekey][1];
   $rowpay = $aItems[$invno][$codekey][2];
@@ -319,10 +322,10 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code, $rowcat,
       echo '"' . oeFormatShortDate(display_desc($transdate)) . '",';
       echo '"' . display_desc($invnumber) . '",';
       echo '"' . display_desc($qty      ) . '",';
-      echo '"'; bucks($rowamount); echo '", ';
-      echo '"'; bucks($rowadj);    echo '", ';
+      echo '"'; bucks($rowamount); echo '",';
+      echo '"'; bucks($rowadj);    echo '",';
       for ($i = 0; $i < count($aTaxNames); ++$i) {
-        echo '"'; bucks($aItems[$invno][$codekey][3 + $i]); echo '", ';
+        echo '"'; bucks($aItems[$invno][$codekey][3 + $i]); echo '",';
       }
       echo '"'; bucks($rowpay);    echo '"';
       echo "\n";
@@ -360,7 +363,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code, $rowcat,
       }
 ?>
   <td class="detail" align="right">
-   <?php bucks($rowpay); ?>
+   <?php echo $overpaid; bucks($rowpay); ?>
   </td>
  </tr>
 <?php
