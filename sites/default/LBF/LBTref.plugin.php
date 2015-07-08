@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009, 2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -13,7 +13,7 @@
 // section of the page.  This in turn defines desired javaScript
 // functions.
 //
-function REF_javascript() {
+function LBTref_javascript() {
   // This JavaScript function is to reload the "Refer To" options when
   // the "External Referral" selection changes.
   echo "// onChange handler for form_refer_external.
@@ -69,7 +69,7 @@ function external_changed(ischange) {
 // The purpose of this function is to create JavaScript that is run
 // once when the page is loaded.
 //
-function REF_javascript_onload() {
+function LBTref_javascript_onload() {
   echo "
 external_changed(false);
 var f = document.forms[0];

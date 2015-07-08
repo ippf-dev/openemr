@@ -365,8 +365,8 @@ function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping=''
   // Tax rates, form names, contraceptive methods, adjustment reasons and facilities
   // have an additional attribute.
   //
-  if ($list_id == 'taxrate' || $list_id == 'lbfnames') {
-    echo " <td align='center' class='optcell'>";
+  if ($list_id == 'taxrate' || $list_id == 'contrameth' || $list_id == 'lbfnames' || $list_id == 'transactions') {
+    echo "  <td align='center' class='optcell'>";
     echo "<input type='text' name='opt[$opt_line_no][value]' value='" .
         htmlspecialchars($value, ENT_QUOTES) . "' size='8' maxlength='15' class='optin' />";
     echo "</td>\n";
@@ -961,7 +961,7 @@ while ($row = sqlFetchArray($res)) {
   <td><b><?php xl('After Taxes','e'); ?></b></td>
 <?php } else if ($list_id == 'warehouse') { ?>
   <td><b><?php xl('Facility','e'); ?></b></td>
-<?php } else if ($list_id == 'lbfnames') { ?>
+<?php } else if ($list_id == 'lbfnames' || $list_id == 'transactions') { ?>
   <td title='<?php xl('Number of past history columns','e'); ?>'><b><?php xl('Repeats','e'); ?></b></td>
 <?php } else if ($list_id == 'abook_type') { ?>
   <td><b><?php xl('Type','e'); ?></b></td>

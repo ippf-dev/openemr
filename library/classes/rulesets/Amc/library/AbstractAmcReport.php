@@ -165,7 +165,7 @@ abstract class AbstractAmcReport implements RsReportIF
             case "transitions-out":
                 $sql = "SELECT * " .
                        "FROM `transactions` " .
-                       "WHERE `title` = 'Referral' " .
+                       "WHERE `title` = 'LBTref' " .
                        "AND `pid` = ? " .
                        "AND `date` >= ? AND `date` <= ?";
                 array_push($sqlBindArray, $patient->id, $begin, $end);
