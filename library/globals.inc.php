@@ -1438,6 +1438,13 @@ $GLOBALS_METADATA = array(
       xl('The payments posted cannot go below this date.This ensures that after taking the final report nobody post for previous dates.')
     ),
 
+    'gbl_expired_lot_warning_days' => array(
+      xl('Expired Lot Warning Days'),
+      'text',                           // data type
+      30,                               // default
+      xl('A warning first appears in the Inventory List report when a lot expires in this many days.')
+    ),
+
     'enable_hylafax' => array(
       xl('Enable Hylafax Support'),
       'bool',                           // data type

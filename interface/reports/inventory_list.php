@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2008-2014 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2008-2015 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -79,6 +79,7 @@ function checkReorder($drug_id, $min, $warehouse='') {
 
 function write_report_line(&$row) {
   global $form_details, $wrl_last_drug_id, $warnings, $encount, $fwcond, $form_days;
+  global $gbl_expired_lot_warning_days;
 
   $emptyvalue = empty($_POST['form_csvexport']) ? '&nbsp;' : '';
   $drug_id = 0 + $row['drug_id'];
@@ -194,6 +195,8 @@ function write_report_line(&$row) {
   }
   // Get all lots that we want to issue warnings about.  These are lots
   // expired, soon to expire, or with insufficient quantity for selling.
+  $gbl_expired_lot_warning_days = empty($gbl_expired_lot_warning_days) ? 0 : intval($gbl_expired_lot_warning_days);
+  if ($gbl_expired_lot_warning_days <= 0) $gbl_expired_lot_warning_days = 30;
   $ires = sqlStatement("SELECT di.* " .
     "FROM drug_inventory AS di " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
@@ -203,7 +206,7 @@ function write_report_line(&$row) {
     "di.on_hand > 0 AND " .
     "di.destroy_date IS NULL AND ( " .
     "di.on_hand < '$min_sale' OR " .
-    "di.expiration IS NOT NULL AND di.expiration < DATE_ADD(NOW(), INTERVAL 30 DAY) " .
+    "di.expiration IS NOT NULL AND di.expiration < DATE_ADD(NOW(), INTERVAL $gbl_expired_lot_warning_days DAY) " .
     ") $extracond ORDER BY di.lot_number");
   // Generate warnings associated with individual lots.
   while ($irow = sqlFetchArray($ires)) {
@@ -216,7 +219,7 @@ function write_report_line(&$row) {
       if ($expdays <= 0) {
         addWarning(xl('Lot') . " '$lotno' " . xl('has expired'));
       }
-      else if ($expdays <= 30) {
+      else if ($expdays <= $gbl_expired_lot_warning_days) {
         addWarning(xl('Lot') . " '$lotno' " . xl('expires in') . " $expdays " . xl('days'));
       }
     }
