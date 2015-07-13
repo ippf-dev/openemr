@@ -1,4 +1,25 @@
 <?php
+/**
+ * This script delete an Encounter form.
+ *
+ * Copyright (C) 2015 Roberto Vasquez <robertogagliotta@gmail.com>
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  Roberto Vasquez <robertogagliotta@gmail.com>
+ * @link    http://www.open-emr.org
+ */
+
 include_once("../../globals.php");
 
 // allow a custom 'delete' form
@@ -19,15 +40,16 @@ $returnurl = $GLOBALS['concurrent_layout'] ? 'forms.php' : 'patient_encounter.ph
 if ($_POST['confirm']) {
     if ($_POST['id'] != "*" && $_POST['id'] != '') {
       // set the deleted flag of the indicated form
-      $sql = "update forms set deleted=1 where id=".$_POST['id'];
-      sqlInsert($sql);
+      $sql = "update forms set deleted = 1 where id = ?";
+      sqlInsert($sql, array($_POST['id']));
       // Delete the visit's "source=visit" attributes that are not used by any other form.
       sqlStatement("DELETE FROM shared_attributes WHERE " .
-        "pid = '$pid' AND encounter = '$encounter' AND field_id NOT IN (" .
+        "pid = ? AND encounter = ? AND field_id NOT IN (" .
         "SELECT lo.field_id FROM forms AS f, layout_options AS lo WHERE " .
-        "f.pid = '$pid' AND f.encounter = '$encounter' AND f.formdir LIKE 'LBF%' AND " .
+        "f.pid = ? AND f.encounter = ? AND f.formdir LIKE 'LBF%' AND " .
         "f.deleted = 0 AND " .
-        "lo.form_id = f.formdir AND lo.source = 'E' AND lo.uor > 0)");
+        "lo.form_id = f.formdir AND lo.source = 'E' AND lo.uor > 0)",
+        array($pid, $encounter, $pid, $encounter));
     }
     // log the event   
     newEvent("delete", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "Form ".$_POST['formname']." deleted from Encounter ".$_POST['encounter']);
