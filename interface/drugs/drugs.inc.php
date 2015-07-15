@@ -200,9 +200,20 @@ function sellDrug($drug_id, $quantity, $fee, $patient_id=0, $encounter_id=0,
       "WHERE inventory_id = ?", array($thisqty,$inventory_id));
     $sale_id = sqlInsert("INSERT INTO drug_sales ( " .
       "drug_id, inventory_id, prescription_id, pid, encounter, user, sale_date, quantity, fee ) " . 
-      "VALUES (?,?,?,?,?,?,?,?,?)", array($drug_id,$inventory_id,$prescription_id,$patient_id,$encounter_id,$user,$sale_date,$thisqty,$thisfee));
+      "VALUES (?,?,?,?,?,?,?,?,?)",
+      array($drug_id, $inventory_id, $prescription_id, $patient_id, $encounter_id, $user,
+      $sale_date, $thisqty, $thisfee));
+
+    // If this sale exhausted the lot then auto-destroy it if that is wanted.
+    if ($row['on_hand'] == $thisqty && !empty($GLOBALS['gbl_auto_destroy_lots'])) {
+      sqlStatement("UPDATE drug_inventory SET " .
+        "destroy_date = ?, destroy_method = ?, destroy_witness = ?, destroy_notes = ? "  .
+        "WHERE drug_id = ? AND inventory_id = ?",
+        array($sale_date, xl('Automatic from sale'), $user, "sale_id = $sale_id",
+        $drug_id, $inventory_id));
+    }
   }
-  
+
   /*******************************************************************
   // If appropriate, generate email to notify that re-order is due.
   if (($total_on_hand - $quantity) <= $rowdrug['reorder_point']) {

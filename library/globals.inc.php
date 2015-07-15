@@ -1438,6 +1438,13 @@ $GLOBALS_METADATA = array(
       xl('The payments posted cannot go below this date.This ensures that after taking the final report nobody post for previous dates.')
     ),
 
+    'gbl_auto_destroy_lots' => array(
+      xl('Automatically Destroy Lots'),
+      'bool',                           // data type
+      '0',                              // default
+      xl('When a sale exhausts lot QOH, automatically mark the lot as destroyed.')
+    ),
+
     'gbl_expired_lot_warning_days' => array(
       xl('Expired Lot Warning Days'),
       'text',                           // data type
