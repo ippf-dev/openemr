@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2008-2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2008-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -17,10 +17,10 @@ include_once("../../custom/code_types.inc.php");
 
 $alertmsg = '';
 
-
 // Might want something different here.
 //
 if (! acl_check('acct', 'rep')) die("Unauthorized access.");
+
 /**
  * 
  * @param type $post_variable
@@ -49,8 +49,6 @@ function validate_age_filter($post_variable)
 }
 
 /**
- * 
- * 
  * @global type $age_maximum
  * @global type $age_minimum
  * @param type $encdate  the field to compare the DOB to in order to determine the age at the time for the given record (typically fe.date)
@@ -74,6 +72,7 @@ function sql_age_filter($encdate)
     
     return $retval;
 }
+
 $report_type = empty($_GET['t']) ? 'i' : $_GET['t'];
 
 $from_date     = fixDate($_POST['form_from_date']);
@@ -385,6 +384,7 @@ function getContraceptiveMethod($code) {
     $key = xl('Awareness-Based');
   }
   *******************************************************************/
+
   $row = sqlQuery("SELECT c.code_text, lo.title FROM codes AS c " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'contrameth' AND " .
     "lo.option_id = c.code_text_short " .
@@ -605,7 +605,6 @@ function getGcacClientStatus($row) {
 
 $age2G_column_count=2*3+2; // Three columns for each age group (M,F,T) + 2 columns for M/F total
 $age9G_column_count=9*3+2; // Three columns for each age group (M,F,T) + 2 columns for M/F total
-
 
 // For a given clinic (or '' for clinic totals) this sets up the empty
 // accumulators for each needed period and for the total of all periods.
@@ -1900,6 +1899,7 @@ if ($_POST['form_submit']) {
      if (in_array($form_by, array('6', '7', '104', '105'))) {
      ****************************************************************/
 
+      /****************************************************************
       // This enumerates instances of "contraception starting" for the MA.  Note that a
       // client could be counted twice, once for nonsurgical and once for surgical.
       // Note also that we filter based on start date which is the same as encounter
@@ -1916,43 +1916,40 @@ if ($_POST['form_submit']) {
       if ($form_facility) {
         $query .= "AND fe.facility_id = '$form_facility' ";
       }
-
-      /***************************************************************
-      if ($form_content == 3) {
-        // Content type 3, IPPF new acceptors
-        $query .=
-          "LEFT JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' " .
-          "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'newmauser' " .
-          "JOIN patient_data AS pd ON pd.pid = f.pid $sexcond " .
-          "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND " .
-          "d1.field_value LIKE '12%' OR (d2.field_value IS NOT NULL AND d2.field_value = '1') ";
-      }
-      else {
-        // Content type 6, acceptors new to modern contraception
-        $query .=
-          "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' AND d1.field_value != '' " .
-          "JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'pastmodern' AND d2.field_value = '0' " .
-          "JOIN patient_data AS pd ON pd.pid = f.pid $sexcond " .
-          "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 ";
-      }
-      ***************************************************************/
-
       // Content type 6, acceptors new to modern contraception
       $query .=
         "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' AND d1.field_value != '' " .
         "JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'pastmodern' AND d2.field_value = '0' " .
         "JOIN patient_data AS pd ON pd.pid = f.pid $sexcond " . sql_age_filter("fe.date") .
         "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 ";
-
       $query .=
         "ORDER BY fe.pid, encdate DESC, fe.encounter DESC, f.form_id";
+      ****************************************************************/
+
+      // This enumerates instances of "contraception starting" for the MA.
+      // The fetch loop will do most of the filtering of what we don't want.
+      //
+      $query = "SELECT " .
+        "d1.field_value AS ippfconmeth, " .
+        "fe.pid, fe.encounter, fe.date AS encdate, fe.date AS contrastart, fe.facility_id, " .
+        "f.user AS provider, " .
+        "pd.regdate, pd.sex, pd.DOB, pd.lname, pd.fname, pd.mname, " .
+        "pd.referral_source$pd_fields " .
+        "FROM forms AS f " .
+        "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter AND " .
+        "fe.date IS NOT NULL AND fe.date <= '$to_date' " .
+        "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' AND d1.field_value != '' " .
+        "JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'pastmodern' AND d2.field_value = '0' " .
+        "JOIN patient_data AS pd ON pd.pid = f.pid $sexcond " .
+        "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 " .
+        "ORDER BY fe.pid, fe.encounter, f.form_id";
 
       $res = sqlStatement($query);
       $lastpid = 0;
       $lastyear = '0000';
       //
       while ($row = sqlFetchArray($res)) {
-        $contrastart = $row['contrastart'];
+        $contrastart = substr($row['contrastart'], 0, 10);
         $thispid     = $row['pid'];
         $thisenc     = $row['encounter'];
         $thisyear    = substr($contrastart, 0, 4);
@@ -1969,11 +1966,27 @@ if ($_POST['form_submit']) {
         if ($thispid == $lastpid && ($thisyear == $lastyear || $form_content != 3)) {
         *************************************************************/
 
-        // Make sure "acceptors new to modern contraception" happen only once
-        // regardless of the year.  Note we are sorting by descending date within
-        // pid, so only the last occurrence per client will be reported.
+        // Make sure "acceptor new to modern contraception" happens only once per client
+        // regardless of the year.  Note we are sorting by ascending date within pid,
+        // so only the first occurrence per client will be counted.
         if ($thispid == $lastpid) {
           continue;
+        }
+        // Skip if not in report date range.
+        if ($contrastart < $from_date) {
+          continue;
+        }
+        // Skip if facility filter (if used) is not satisfied.
+        if ($form_facility && $row['facility_id'] != $form_facility) {
+          continue;
+        }
+        // Skip if age filters are not satisfied.
+        $age = getAge($row['DOB'], $contrastart);
+        if (!is_null($age_minimum)) {
+          if ($age < $age_minimum) continue;
+        }
+        if (!is_null($age_maximum)) {
+          if ($age > $age_maximum) continue;
         }
 
         $lastpid = $thispid;
