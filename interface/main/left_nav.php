@@ -1371,7 +1371,6 @@ if (!empty($reg)) {
           <?php if (acl_check('patients', 'med')) genMiscLink('RTop','rep','0',xl('Clinical'),'reports/clinical_reports.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Referrals'),'reports/referrals_report.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Immunization Registry'),'reports/immunization_report.php'); ?>
-          <?php if ($GLOBALS['gbl_menu_shifts']) genPopLink(xl('Shifts Report'),'shifts_report.php'); ?>
         </ul>
       </li>
       <li><a class="collapsed_lv2"><span><?php xl('Clinic','e') ?></span></a>
@@ -1388,18 +1387,17 @@ if (!empty($reg)) {
           <?php if (!$GLOBALS['disable_calendar']) genMiscLink('RTop','rep','0',xl('Appointments'),'reports/appointments_report.php'); ?>
           <?php  genMiscLink('RTop','rep','0',xl('Encounters'),'reports/encounters_report.php'); ?>
           <?php if (!$GLOBALS['disable_calendar']) genMiscLink('RTop','rep','0',xl('Appt-Enc'),'reports/appt_encounter_report.php'); ?>
-<?php if (empty($GLOBALS['code_types']['IPPF']) && empty($GLOBALS['code_types']['IPPF2'])) { ?>
-          <?php genMiscLink('RTop','rep','0',xl('Superbill'),'reports/custom_report_range.php'); ?>
-<?php } ?>
-	  <?php  genMiscLink('RTop','rep','0',xl('Eligibility'),'reports/edi_270.php'); ?>
-	  <?php  genMiscLink('RTop','rep','0',xl('Eligibility Response'),'reports/edi_271.php'); ?>
-	  
-
+          <?php if (empty($GLOBALS['code_types']['IPPF']) && empty($GLOBALS['code_types']['IPPF2'])) {
+            genMiscLink('RTop','rep','0',xl('Superbill'),'reports/custom_report_range.php');
+          } ?>
+          <?php genMiscLink('RTop','rep','0',xl('Eligibility'),'reports/edi_270.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Eligibility Response'),'reports/edi_271.php'); ?>
           <?php if (!$GLOBALS['disable_chart_tracker']) genMiscLink('RTop','rep','0',xl('Chart Activity'),'reports/chart_location_activity.php'); ?>
           <?php if (!$GLOBALS['disable_chart_tracker']) genMiscLink('RTop','rep','0',xl('Charts Out'),'reports/charts_checked_out.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Services'), 'reports/services_by_category.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Re-Opened Visits'), 'reports/reopened_visits_report.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Syndromic Surveillance'),'reports/non_reported.php'); ?>
+          <?php if ($GLOBALS['gbl_menu_shifts']) genPopLink(xl('Shifts Report'),'shifts_report.php'); ?>
         </ul>
       </li>
 <?php if (acl_check('acct', 'rep_a')) { ?>
@@ -1414,11 +1412,9 @@ if (!empty($reg)) {
           <?php genMiscLink('RTop','rep','0',xl('Collections'), 'reports/collections_report.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Financial Summary by Service Code'),'reports/svc_code_financial_report.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Acct Export'),'reports/export_accounting_transactions.php'); ?>
-
-        <?php if ($GLOBALS['gbl_menu_projects']) {
-                genMiscLink('RTop','rep','0',xl('Projects'),'reports/restricted_projects_report.php');
-            }
-        ?>
+          <?php if ($GLOBALS['gbl_menu_projects']) {
+            genMiscLink('RTop','rep','0',xl('Projects'),'reports/restricted_projects_report.php');
+          } ?>
         </ul>
       </li>
 <?php } ?>
