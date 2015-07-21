@@ -197,7 +197,7 @@ function set_active_days()
    sqlStatement($update_active_days);
 }
 
-function update_services($dimensions,$categorize)
+function update_services($dimensions)
 {
     // Create billing temp table
     $columns=array_merge($dimensions,array(
@@ -205,14 +205,13 @@ function update_services($dimensions,$categorize)
         COL_CODE_TYPE=>"VARCHAR(15)",
         COL_ENC_ID=>"int",
         COL_PID=>"int",
-        COL_ENC_DATE=>"date"
+        COL_ENC_DATE=>"date",
+        COL_EXCLUDE=>"BIT"
     ));
-    if($categorize)
-    {
-        $columns[COL_CODE_TYPE_ID]="int";
-        $columns[COL_RELATED_CODE]="varchar(255)";
-        $columns[COL_CATEGORY]="varchar(255)";
-    }
+
+    $columns[COL_CODE_TYPE_ID]="int";
+    $columns[COL_RELATED_CODE]="varchar(255)";
+    $columns[COL_CATEGORY]="varchar(255)";
     
     // Subset of columns only needed to insert billing data into TMP_BILLING_DATA
     $insert_columns=array_merge(
@@ -254,41 +253,44 @@ function update_services($dimensions,$categorize)
             . " AND ".TMP_ENCOUNTERS.".".COL_PID . " = " . TBL_BILLING.".".COL_PID;
     sqlStatement($populate_billing_data);
     
-    if($categorize)
-    {
-        // convert the character based code type to the numeric id
-        $update_code_type_id= " UPDATE ".TMP_BILLING_DATA . "," . TBL_CODE_TYPES 
-                . " SET ".TMP_BILLING_DATA.".".COL_CODE_TYPE_ID." = ". TBL_CODE_TYPES.".".COL_CT_ID
-                . " WHERE ".TMP_BILLING_DATA.".".COL_CODE_TYPE." = ". TBL_CODE_TYPES.".".COL_CT_KEY;
+    // convert the character based code type to the numeric id
+    $update_code_type_id= " UPDATE ".TMP_BILLING_DATA . "," . TBL_CODE_TYPES 
+            . " SET ".TMP_BILLING_DATA.".".COL_CODE_TYPE_ID." = ". TBL_CODE_TYPES.".".COL_CT_ID
+            . " WHERE ".TMP_BILLING_DATA.".".COL_CODE_TYPE." = ". TBL_CODE_TYPES.".".COL_CT_KEY;
 
-        sqlStatement($update_code_type_id);
+    sqlStatement($update_code_type_id);
 
-        // Find the IPPF2 code
-        $update_related_codes = " UPDATE ". TMP_BILLING_DATA 
-                . " INNER JOIN ". TBL_CODES
-                . " ON " . TMP_BILLING_DATA.".".COL_CODE . " = " . TBL_CODES.".".COL_CODE
-                . " AND " . TMP_BILLING_DATA.".".COL_CODE_TYPE_ID . " = " . TBL_CODES.".".COL_CODE_TYPE
-                . " SET " . TMP_BILLING_DATA.".".COL_RELATED_CODE. " = " . TBL_CODES.".".COL_RELATED_CODE;
-        
-        
-        sqlStatement($update_related_codes);
-        
-        // Strip IPPF2 Code from related codes
-        
-        $update_IPPF2 = " UPDATE ". TMP_BILLING_DATA
-                . " SET ". COL_RELATED_CODE . "=" 
-                . " SUBSTRING_INDEX(SUBSTRING_INDEX(" . COL_RELATED_CODE . "," ."'IPPF2:',-1),';',1)"; 
-        
-        sqlStatement($update_IPPF2);
-        
-        $update_IPPF2_category = " UPDATE " . TMP_BILLING_DATA
-                . " INNER JOIN " . TBL_IPPF2_CATEGORIES 
-                . " ON " .  TMP_BILLING_DATA.".". COL_RELATED_CODE ." LIKE " 
-                . " CONCAT(".TBL_IPPF2_CATEGORIES . ".". COL_CATEGORY_HEADER .  ",'%')"
-                . " SET " . TMP_BILLING_DATA . ". ". COL_CATEGORY . "=" . TBL_IPPF2_CATEGORIES . "." . COL_CATEGORY_NAME;
+    // Find the IPPF2 code
+    $update_related_codes = " UPDATE ". TMP_BILLING_DATA 
+            . " INNER JOIN ". TBL_CODES
+            . " ON " . TMP_BILLING_DATA.".".COL_CODE . " = " . TBL_CODES.".".COL_CODE
+            . " AND " . TMP_BILLING_DATA.".".COL_CODE_TYPE_ID . " = " . TBL_CODES.".".COL_CODE_TYPE
+            . " SET " . TMP_BILLING_DATA.".".COL_RELATED_CODE. " = " . TBL_CODES.".".COL_RELATED_CODE;
 
-        sqlStatement($update_IPPF2_category);
-    }
+
+    sqlStatement($update_related_codes);
+
+    // Strip IPPF2 Code from related codes
+
+    $update_IPPF2 = " UPDATE ". TMP_BILLING_DATA
+            . " SET ". COL_RELATED_CODE . "=" 
+            . " SUBSTRING_INDEX(SUBSTRING_INDEX(" . COL_RELATED_CODE . "," ."'IPPF2:',-1),';',1)"; 
+
+    sqlStatement($update_IPPF2);
+
+    $update_IPPF2_category = " UPDATE " . TMP_BILLING_DATA
+            . " INNER JOIN " . TBL_IPPF2_CATEGORIES 
+            . " ON " .  TMP_BILLING_DATA.".". COL_RELATED_CODE ." LIKE " 
+            . " CONCAT(".TBL_IPPF2_CATEGORIES . ".". COL_CATEGORY_HEADER .  ",'%')"
+            . " SET " . TMP_BILLING_DATA . ". ". COL_CATEGORY . "=" . TBL_IPPF2_CATEGORIES . "." . COL_CATEGORY_NAME
+            . ",". TMP_BILLING_DATA . ". ". COL_EXCLUDE . "=" . TBL_IPPF2_CATEGORIES . "." . COL_EXCLUDE ;
+
+    sqlStatement($update_IPPF2_category);
+
+    $remove_administrative_services = " DELETE FROM " . TMP_BILLING_DATA
+            . " " . " WHERE ". COL_EXCLUDE;
+
+    sqlStatement($remove_administrative_services);
 }
 
 function aggregate_categories($dimension_columns)
@@ -341,7 +343,7 @@ function update_averages()
 function build_category_list($filters=null)
 {
     $parameters=array();
-    $select_categories_query = " SELECT ". COL_CATEGORY_NAME . " FROM " . TBL_IPPF2_CATEGORIES;
+    $select_categories_query = " SELECT ". COL_CATEGORY_NAME . " FROM " . TBL_IPPF2_CATEGORIES . " WHERE NOT " . COL_EXCLUDE ;
     
     if($filters!==null)
     {
@@ -360,7 +362,7 @@ function build_category_list($filters=null)
                 $first=false;
             }
             $in.=")";
-            $select_categories_query .= " WHERE " . COL_CATEGORY_NAME . " IN " . $in;
+            $select_categories_query .= " AND " . COL_CATEGORY_NAME . " IN " . $in;
         }
     }
     $select_categories_query .= " ORDER BY " . COL_CATEGORY_HEADER . " ASC";
@@ -449,7 +451,7 @@ function query_visits($enc_from,$enc_to,$period_size,$categorize,$facility_filte
     setup_periods_data($dimensions);
     
     // join with billing to find services
-    update_services($dimensions,$categorize);
+    update_services($dimensions);
 
     
     if($categorize)

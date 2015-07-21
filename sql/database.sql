@@ -5897,20 +5897,21 @@ CREATE TABLE `shared_attributes` (
 
 CREATE TABLE `ippf2_categories` (
   `category_header` varchar(3) DEFAULT NULL,
-  `category_name` varchar(255) DEFAULT NULL
+  `category_name` varchar(255) DEFAULT NULL,
+  `exclude` BIT NOT NULL DEFAULT b'0'
 ) ENGINE=MyISAM ;
-INSERT INTO `ippf2_categories` VALUES ('1','CONTRACEPTIVE SERVICES')
-                                     ,('211','SRH - ABORTION')
-                                     ,('212','SRH - HIV AND AIDS')
-                                     ,('213','SRH - STI/RTI')
-                                     ,('214','SRH - GYNECOLOGY')
-                                     ,('215','SRH - OBSTETRIC  ')
-                                     ,('216','SRH - UROLOGY')
-                                     ,('217','SRH - SUBFERTILITY')
-                                     ,('218','SRH - SPECIALISED SRH SERVICES')
-                                     ,('219','SRH - PEDIATRICS')
-                                     ,('220','SRH - OTHER')
-                                     ,('4','NON-CLINICAL - ADMINISTRATION')
-                                     ,('31','NON-SRH - MEDICAL');
+INSERT INTO `ippf2_categories` VALUES ('1','CONTRACEPTIVE SERVICES',b'0')
+                                     ,('211','SRH - ABORTION',b'0')
+                                     ,('212','SRH - HIV AND AIDS',b'0')
+                                     ,('213','SRH - STI/RTI',b'0')
+                                     ,('214','SRH - GYNECOLOGY',b'0')
+                                     ,('215','SRH - OBSTETRIC',b'0')
+                                     ,('216','SRH - UROLOGY',b'0')
+                                     ,('217','SRH - SUBFERTILITY',b'0')
+                                     ,('218','SRH - SPECIALISED SRH SERVICES',b'0')
+                                     ,('219','SRH - PEDIATRICS',b'0')
+                                     ,('220','SRH - OTHER',b'0')
+                                     ,('4','NON-CLINICAL - ADMINISTRATION',b'1')
+                                     ,('31','NON-SRH - MEDICAL',b'0');
 
 -- --------------------------------------------------------

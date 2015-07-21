@@ -8,6 +8,7 @@
 // of the License, or (at your option) any later version.
 
 require_once("../../globals.php");
+require_once("../dbutils/sql_constants.php");
 ini_set('display_errors',1);
 
 
@@ -49,11 +50,11 @@ function get_service_categories_list()
 {
     $retval=array();
     array_push($retval,xl("--All Service Categories--"));
-    $query_service_categories="select category_name FROM ippf2_categories order by category_header";
+    $query_service_categories="select category_name FROM ippf2_categories  WHERE NOT exclude order by category_header";
     $res=  sqlStatement($query_service_categories);
     while($row=sqlFetchArray($res))
     {
-        array_push($retval,$row['category_name']);
+        array_push($retval,$row['category_name']);        
     }
     return $retval;
     

@@ -212,7 +212,7 @@ INSERT INTO `ippf2_categories` VALUES ('1','CONTRACEPTIVE SERVICES')
                                      ,('212','SRH - HIV AND AIDS')
                                      ,('213','SRH - STI/RTI')
                                      ,('214','SRH - GYNECOLOGY')
-                                     ,('215','SRH - OBSTETRIC  ')
+                                     ,('215','SRH - OBSTETRIC')
                                      ,('216','SRH - UROLOGY')
                                      ,('217','SRH - SUBFERTILITY')
                                      ,('218','SRH - SPECIALISED SRH SERVICES')
@@ -221,4 +221,11 @@ INSERT INTO `ippf2_categories` VALUES ('1','CONTRACEPTIVE SERVICES')
                                      ,('4','NON-CLINICAL - ADMINISTRATION')
                                      ,('31','NON-SRH - MEDICAL');
 
+#EndIf
+
+
+#IfMissingColumn ippf2_categories exclude
+ALTER TABLE `ippf2_categories`	ADD COLUMN `exclude` BIT NOT NULL DEFAULT b'0';
+
+UPDATE `ippf2_categories` set `exclude`=b'1' WHERE `category_header`='4';
 #EndIf
