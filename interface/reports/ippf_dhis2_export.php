@@ -270,7 +270,7 @@ if (!empty($_POST['form_submit'])) {
         "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'pastmodern' " .
         "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = '$row_pid' AND " .
         "(d1.field_value LIKE 'IPPFCM:%' AND (d2.field_value IS NULL OR d2.field_value = '0')) " .
-        "ORDER BY contrastart DESC LIMIT 1";
+        "ORDER BY contrastart LIMIT 1";
       $contradate_row = sqlQuery($query);
       $new_acceptor_date = substr($contradate_row['contrastart'], 0, 10);
 
