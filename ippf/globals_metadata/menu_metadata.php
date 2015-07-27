@@ -18,7 +18,7 @@
     'gbl_menu_stats_gcac' => array(
       xl('GCAC Statistics Reporting'),
       'bool',                           // data type
-      '1',                              // default
+      '0',                              // default
       xl('GCAC statistical reports.')
     ),
 
@@ -39,21 +39,21 @@
     'gbl_menu_stats_daily' => array(
       xl('Daily Statistics Reporting'),
       'bool',                           // data type
-      '1',                              // default
+      '0',                              // default
       xl('Daily statistical reports.')
     ),
 
     'gbl_menu_stats_c3' => array(
       xl('C3 Statistics Reporting'),
       'bool',                           // data type
-      '1',                              // default
+      '0',                              // default
       xl('C3 statistical reports.')
     ),
 
     'gbl_menu_stats_cc' => array(
       xl('Cervical Cancer Reporting'),
       'bool',                           // data type
-      '1',                              // default
+      '0',                              // default
       xl('Cervical cancer statistical reports.')
     ),
 

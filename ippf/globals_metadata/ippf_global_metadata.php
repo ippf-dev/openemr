@@ -38,7 +38,7 @@ update_global_metadata('Appearance','patient_search_results_sort',
             '0' => xl('Alphabetical'),
             '1' => xl('Open visits then alphabetical'),
             ),
-        '0',                              // default
+        '1',                              // default
         'Type of columns displayed for patient search results'
         ,'patient_search_results_style' // Place after
         );

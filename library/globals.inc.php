@@ -622,7 +622,7 @@ $GLOBALS_METADATA = array(
     'gbl_visit_shift' => array(
       xl('Display Shift for Encounters'),
       'bool',                           // data type
-      '1',                              // default = true
+      '0',                              // default = true
       xl('A shift may be specified for each visit.')
     ),
 
