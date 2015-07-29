@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2012-2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2012-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -15,6 +15,7 @@ require_once("$srcdir/formatting.inc.php");
 
 $insarray = array();
 $patients = array();
+$encounters_done = array();
 
 // Sort type affects which keys are used in the 1st and 2nd array level.
 // $insarray keys   1st      2nd      3rd
@@ -177,9 +178,49 @@ function echoSort($sortid) {
   echo " style=\"color:$color;cursor:pointer;cursor:hand\"";
 }
 
+// Get charges associated with a specified visit.
+//
+function getCharges($pid, $encounter) {
+  global $form_facility, $form_cashier, $encounters_done;
+
+  if (!empty($encounters_done[$encounter])) return;
+  $encounters_done[$encounter] = true;
+
+  // Get charges for services and taxes for the specified date range or visit.
+  $query = "SELECT b.fee, b.pid, b.encounter, b.code_type, b.code, b.code_text, " .
+    "fe.date, fe.facility_id, fe.invoice_refno, u.username " .
+    "FROM billing AS b " .
+    "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter " .
+    "LEFT JOIN users AS u ON u.id = b.user " .
+    "WHERE b.activity = 1 AND b.fee != 0 AND b.code_type != 'COPAY'";
+  $query .= " AND b.pid = '$pid' AND b.encounter = '$encounter'";
+  $query .= " ORDER BY fe.date, b.pid, b.encounter, fe.id";
+  $res = sqlStatement($query);
+  while ($row = sqlFetchArray($res)) {
+    recordPayment(substr($row['date'], 0, 10), $row['pid'], $row['encounter'],
+      '', $row['fee'], 0, 0, $row['username'], $row['invoice_refno'],
+      $row['code_type'], $row['code'], $row['code_text']);
+  }
+
+  // Get product sales.
+  $query = "SELECT s.fee, s.pid, s.encounter, s.user AS username, " .
+    "fe.date, fe.facility_id, fe.invoice_refno " .
+    "FROM drug_sales AS s " .
+    "JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter " .
+    "LEFT JOIN users AS u ON u.username = s.user " .
+    "WHERE s.pid != 0 AND s.fee != 0";
+  $query .= " AND s.pid = '$pid' AND s.encounter = '$encounter'";
+  $query .= " ORDER BY fe.date, s.pid, s.encounter, fe.id";
+  $res = sqlStatement($query);
+  while ($row = sqlFetchArray($res)) {
+    recordPayment(substr($row['date'], 0, 10), $row['pid'], $row['encounter'],
+      '', $row['fee'], 0, 0, $row['username'], $row['invoice_refno']);
+  }
+}
+
 if (! acl_check('acct', 'rep')) die(xl("Unauthorized access."));
 
-$form_use_edate = $_POST['form_use_edate'];
+$form_date_type = empty($_POST['form_date_type']) ? 0 : intval($_POST['form_date_type']);
 $form_from_date = fixDate($_POST['form_from_date'], date('Y-m-d'));
 $form_to_date   = fixDate($_POST['form_to_date']  , date('Y-m-d'));
 $form_facility  = $_POST['form_facility'];
@@ -289,9 +330,9 @@ echo "   </select>\n";
 
  <tr>
   <td align='center'>
-   <select name='form_use_edate'>
-    <option value='0'><?php xl('Payment Date','e'); ?></option>
-    <option value='1'<?php if ($form_use_edate) echo ' selected' ?>><?php xl('Invoice Date','e'); ?></option>
+   <select name='form_date_type'>
+    <option value='0'<?php if ($form_date_type == 0) echo ' selected' ?>><?php echo xlt('Payment Date'); ?></option>
+    <option value='1'<?php if ($form_date_type == 1) echo ' selected' ?>><?php echo xlt('Invoice Date'); ?></option>
    </select>
    &nbsp;<?xl('From:','e')?>
    <input type='text' name='form_from_date' id="form_from_date" size='10' value='<?php echo $form_from_date ?>'
@@ -331,62 +372,7 @@ if (isset($_POST['form_orderby'])) {
   $grandchgtotal  = 0;
   $grandadjtotal  = 0;
 
-  // Get service charges, taxes and co-pays using the encounter date as the pay date.
-  // Co-pays will always be considered patient payments.
-  //
-  $query = "SELECT b.fee, b.pid, b.encounter, b.code_type, b.code, b.code_text, " .
-    "fe.date, fe.facility_id, fe.invoice_refno, u.username " .
-    "FROM billing AS b " .
-    "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter " .
-    "LEFT JOIN users AS u ON u.id = b.user " .
-    "WHERE b.activity = 1 AND b.fee != 0 AND " .
-    "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
-  // If a facility was specified.
-  if ($form_facility) $query .= " AND fe.facility_id = '$form_facility'";
-  // If a cashier was specified.
-  if ($form_cashier) $query .= " AND b.user = '$form_cashier'";
-  //
-  $query .= " ORDER BY fe.date, b.pid, b.encounter, fe.id";
-  //
-  $res = sqlStatement($query);
-  while ($row = sqlFetchArray($res)) {
-    if ($row['code_type'] == 'COPAY') {
-      $rowmethod = trim($row['code_text']);
-      recordPayment(substr($row['date'], 0, 10), $row['pid'], $row['encounter'],
-        $rowmethod, 0, 0 - $row['fee'], 0, $row['username'], $row['invoice_refno']);
-    }
-    else {
-      // Record a charge or tax. Note these will only be the charges from the report period.
-      recordPayment(substr($row['date'], 0, 10), $row['pid'], $row['encounter'],
-        '', $row['fee'], 0, 0, $row['username'], $row['invoice_refno'],
-        $row['code_type'], $row['code'], $row['code_text']);
-    }
-  }
-
-  // Get product sales.  These are deemed to have occurred on the encounter date.
-  //
-  $query = "SELECT s.fee, s.pid, s.encounter, s.user AS username, " .
-    "fe.date, fe.facility_id, fe.invoice_refno " .
-    "FROM drug_sales AS s " .
-    "JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter " .
-    "LEFT JOIN users AS u ON u.username = s.user " .
-    "WHERE s.pid != 0 AND s.fee != 0 AND " .
-    "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
-  // If a facility was specified.
-  if ($form_facility) $query .= " AND fe.facility_id = '$form_facility'";
-  // If a cashier was specified.
-  if ($form_cashier) $query .= " AND u.id = '$form_cashier'";
-  //
-  $query .= " ORDER BY fe.date, s.pid, s.encounter, fe.id";
-  //
-  $res = sqlStatement($query);
-  while ($row = sqlFetchArray($res)) {
-    // Record a charge. Note these will only be the charges from the report period.
-    recordPayment(substr($row['date'], 0, 10), $row['pid'], $row['encounter'],
-      '', $row['fee'], 0, 0, $row['username'], $row['invoice_refno']);
-  }
-
-  // Get all other payments and adjustments in the date range, corresponding
+  // Get payments and adjustments in the date range, corresponding
   // payers and check reference data, and the encounter dates separately.
   //
   $query = "SELECT a.pid, a.encounter, a.pay_amount, " .
@@ -399,9 +385,12 @@ if (isset($_POST['form_orderby'])) {
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id " .
     "LEFT JOIN users AS u ON u.id = a.post_user " .
     "WHERE ( a.pay_amount != 0 OR a.adj_amount != 0 )";
-  if ($form_use_edate) {
+  if ($form_date_type == 1) { // Invoice Date specified
+    // Getting all payments/adjustments for encounters in the date range.
     $query .= " AND fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
-  } else {
+  }
+  else {
+    // Getting all payments/adjustments in the date range.
     $query .= " AND ( ( s.deposit_date IS NOT NULL AND " .
       "s.deposit_date >= '$from_date' AND s.deposit_date <= '$to_date' ) OR " .
       "( s.deposit_date IS NULL AND a.post_date IS NOT NULL AND " .
@@ -417,6 +406,7 @@ if (isset($_POST['form_orderby'])) {
   if ($form_cashier) $query .= " AND a.post_user = '$form_cashier'";
   //
   $query .= " ORDER BY fe.date, a.pid, a.encounter, fe.id";
+  // echo "<!-- $query -->\n"; // debugging
   //
   $res = sqlStatement($query);
   while ($row = sqlFetchArray($res)) {
@@ -429,6 +419,31 @@ if (isset($_POST['form_orderby'])) {
     }
     recordPayment($encdate, $row['pid'], $row['encounter'], $rowmethod, 0,
       $row['pay_amount'], $row['adj_amount'], $row['username'], $row['invoice_refno']);
+    getCharges($row['pid'], $row['encounter']);
+  }
+
+  // Get co-pays for the specified date range. Pay date and encounter date are the same for these.
+  // Co-pays will always be considered patient payments.
+  $query = "SELECT b.fee, b.pid, b.encounter, b.code_type, b.code, b.code_text, " .
+    "fe.date, fe.facility_id, fe.invoice_refno, u.username " .
+    "FROM billing AS b " .
+    "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter " .
+    "LEFT JOIN users AS u ON u.id = b.user " .
+    "WHERE b.activity = 1 AND b.fee != 0 AND b.code_type = 'COPAY'" .
+    " AND fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
+  if ($form_facility) { $query .=
+    " AND fe.facility_id = '$form_facility'";
+  }
+  if ($form_cashier) { $query .=
+    " AND b.user = '$form_cashier'";
+  }
+  $query .= " ORDER BY fe.date, b.pid, b.encounter, fe.id";
+  $res = sqlStatement($query);
+  while ($row = sqlFetchArray($res)) {
+    $rowmethod = trim($row['code_text']);
+    recordPayment(substr($row['date'], 0, 10), $row['pid'], $row['encounter'],
+      $rowmethod, 0, 0 - $row['fee'], 0, $row['username'], $row['invoice_refno']);
+    getCharges($row['pid'], $row['encounter']);
   }
 
   // Get voids.
@@ -439,7 +454,7 @@ if (isset($_POST['form_orderby'])) {
     "JOIN form_encounter AS fe ON fe.pid = v.patient_id AND fe.encounter = v.encounter_id " .
     "LEFT JOIN users AS u ON u.id = v.user_id " .
     "WHERE v.amount2 != 0";
-  if ($form_use_edate) {
+  if ($form_date_type == 1) {
     $query .= " AND fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
   } else {
     // The Payment Date option is taken to mean void date for voids.
@@ -457,6 +472,9 @@ if (isset($_POST['form_orderby'])) {
     $encdate = substr($row['date'], 0, 10);
     recordPayment($encdate, $row['patient_id'], $row['encounter_id'], '%void%', 0,
       $row['amount2'], 0, $row['username'], $row['other_info']);
+    // Do not show charges just for a void, it will be confusing when there is a
+    // separate line for the new invoice reference number that shows just charges.
+    // getCharges($row['patient_id'], $row['encounter_id']);
   }
 
   // Sort tax names by name while preserving their keys.
