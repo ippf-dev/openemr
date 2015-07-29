@@ -250,7 +250,8 @@ function update_services($dimensions)
             . " SELECT ".implode($select_columns_encounters, ",")
             . " FROM " . TMP_ENCOUNTERS.",".TBL_BILLING
             . " WHERE " . TMP_ENCOUNTERS.".".COL_ENC_ID."=".TBL_BILLING.".".COL_ENCOUNTER
-            . " AND ".TMP_ENCOUNTERS.".".COL_PID . " = " . TBL_BILLING.".".COL_PID;
+            . " AND ".TMP_ENCOUNTERS.".".COL_PID . " = " . TBL_BILLING.".".COL_PID
+            . " AND " .TBL_BILLING.".".COL_ACTIVITY."=1";
     sqlStatement($populate_billing_data);
     
     // convert the character based code type to the numeric id

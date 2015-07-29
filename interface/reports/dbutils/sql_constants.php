@@ -52,3 +52,4 @@ define("COL_LNAME","lname");
 define("COL_CATEGORY_HEADER","category_header");
 define("COL_CATEGORY_NAME","category_name");
 define("COL_EXCLUDE","exclude");
+define("COL_ACTIVITY","activity");
