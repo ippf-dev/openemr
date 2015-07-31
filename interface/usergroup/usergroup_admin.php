@@ -1,10 +1,14 @@
 <?php
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+
 require_once("../globals.php");
 require_once("../../library/acl.inc");
 require_once("$srcdir/sql.inc");
 require_once("$srcdir/auth.inc");
 require_once("$srcdir/formdata.inc.php");
-require_once(dirname(__FILE__) . "/../../library/classes/WSProvider.class.php");
 require_once ($GLOBALS['srcdir'] . "/classes/postmaster.php");
 
 $alertmsg = '';
@@ -21,6 +25,58 @@ function userCmp($a, $b) {
   if ($a['username'] < $b['username']) return -1;
   if ($a['username'] > $b['username']) return  1;
   return 0;
+}
+
+// Update the users_facility table for this user from the POST variables.
+//
+function setUserFacilities($user_id) {
+  if (empty($GLOBALS['restrict_user_facility'])) return;
+
+  if (empty($_POST["schedule_facility"])) $_POST["schedule_facility"] = array();
+  $tmpres = sqlStatement("SELECT * FROM users_facility WHERE " .
+    "tablename = ? AND table_id = ?",
+    array('users', $user_id));
+  // $olduf will become an array of entries to delete.
+  $olduf = array();
+  while ($tmprow = sqlFetchArray($tmpres)) {
+    $olduf[$tmprow['facility_id'] . '/' . $tmprow['warehouse_id']] = true;
+  }
+  // Now process the selection of facilities and warehouses.
+  foreach($_POST["schedule_facility"] as $tqvar) {
+    if (($i = strpos($tqvar, '/')) !== false) {
+      $facid = substr($tqvar, 0, $i);
+      $whid = substr($tqvar, $i + 1);
+      // If there was also a facility-only selection for this warehouse then remove it.
+      if (isset($olduf["$facid/"])) $olduf["$facid/"] = true;
+    }
+    else {
+      $facid = $tqvar;
+      $whid = '';
+    }
+    if (!isset($olduf["$facid/$whid"])) {
+      sqlStatement("INSERT INTO users_facility SET tablename = ?, table_id = ?, " .
+        "facility_id = ?, warehouse_id = ?",
+        array('users', $user_id, $facid, $whid));
+    }
+    $olduf["$facid/$whid"] = false;
+    if ($facid == $deffacid) $deffacid = 0;
+  }
+  // Now delete whatever is left over for this user.
+  foreach ($olduf as $key => $value) {
+    if ($value && ($i = strpos($key, '/')) !== false) {
+      $facid = substr($key, 0, $i);
+      $whid = substr($key, $i + 1);
+      sqlStatement("DELETE FROM users_facility WHERE " .
+        // The following screws up by matching all warehouse_id values when it's
+        // an empty string. This needs debugging in sql.inc.
+        /********************************************************
+        "tablename = ? AND table_id = ? AND facility_id = ? AND warehouse_id = ?",
+        array('users', $user_id, $facid, $whid));
+        ********************************************************/
+        "tablename = 'users' AND table_id = " . $user_id .
+        " AND facility_id = '$facid' AND warehouse_id = '$whid'");
+    }
+  }
 }
 
 $form_orderby = empty($_POST['form_orderby']) ? 'username' : $_POST['form_orderby'];
@@ -47,12 +103,13 @@ if(($_GET['access_group'][$i] == "Emergency Login") && ($_GET['active'] == 'on')
 }
 }
 }
+
 /* To refresh and save variables in mail frame */
 if (isset($_POST["privatemode"]) && $_POST["privatemode"] =="user_admin") {
     if ($_POST["mode"] == "update") {
-      if (isset($_POST["username"])) {
+      if (isset($_POST["rumple"])) {
         // $tqvar = addslashes(trim($_POST["username"]));
-        $tqvar = trim(formData('username','P'));
+        $tqvar = trim(formData('rumple','P'));
         $user_data = mysql_fetch_array(sqlStatement("select * from users where id={$_POST["id"]}"));
         sqlStatement("update users set username='$tqvar' where id={$_POST["id"]}");
         sqlStatement("update groups set user='$tqvar' where user='". $user_data["username"]  ."'");
@@ -102,67 +159,7 @@ if (isset($_POST["privatemode"]) && $_POST["privatemode"] =="user_admin") {
               //END (CHEMED)
       }
 
-      if ($GLOBALS['restrict_user_facility']) {
-        if (empty($_POST["schedule_facility"])) $_POST["schedule_facility"] = array();
-        /**************************************************************
-        $deffacid = $_POST["facility_id"];
-        **************************************************************/
-        $tmpres = sqlStatement("SELECT * FROM users_facility WHERE " .
-          "tablename = ? AND table_id = ?",
-          array('users', $_POST["id"]));
-        // $olduf will become an array of entries to delete.
-        $olduf = array();
-        while ($tmprow = sqlFetchArray($tmpres)) {
-          $olduf[$tmprow['facility_id'] . '/' . $tmprow['warehouse_id']] = true;
-        }
-        // Now process the selection of facilities and warehouses.
-        foreach($_POST["schedule_facility"] as $tqvar) {
-          if (($i = strpos($tqvar, '/')) !== false) {
-            $facid = substr($tqvar, 0, $i);
-            $whid = substr($tqvar, $i + 1);
-            // If there was also a facility-only selection for this warehouse then remove it.
-            if (isset($olduf["$facid/"])) $olduf["$facid/"] = true;
-          }
-          else {
-            $facid = $tqvar;
-            $whid = '';
-          }
-          if (!isset($olduf["$facid/$whid"])) {
-            sqlStatement("INSERT INTO users_facility SET tablename = ?, table_id = ?, " .
-              "facility_id = ?, warehouse_id = ?",
-              array('users', $_POST["id"], $facid, $whid));
-          }
-          $olduf["$facid/$whid"] = false;
-          if ($facid == $deffacid) $deffacid = 0;
-        }
-        /**************************************************************
-        // Force the default facility to be included if not already represented.
-        if ($deffacid) {
-          if (!isset($olduf["$deffacid/"])) {
-            sqlStatement("INSERT INTO users_facility SET tablename = ?, table_id = ?, " .
-              "facility_id = ?, warehouse_id = ?",
-              array('users', $_POST["id"], $deffacid, ''));
-          }
-          $olduf["$deffacid/"] = false;
-        }
-        **************************************************************/
-        // Now delete whatever is left over for this user.
-        foreach ($olduf as $key => $value) {
-          if ($value && ($i = strpos($key, '/')) !== false) {
-            $facid = substr($key, 0, $i);
-            $whid = substr($key, $i + 1);
-            sqlStatement("DELETE FROM users_facility WHERE " .
-              // The following screws up by matching all warehouse_id values when it's
-              // an empty string. This needs debugging in sql.inc.
-              /********************************************************
-              "tablename = ? AND table_id = ? AND facility_id = ? AND warehouse_id = ?",
-              array('users', $_POST["id"], $facid, $whid));
-              ********************************************************/
-              "tablename = 'users' AND table_id = " . $_POST["id"] .
-              " AND facility_id = '$facid' AND warehouse_id = '$whid'");
-          }
-        }
-      }
+      setUserFacilities($_POST["id"]);
 
       if ($_POST["fname"]) {
               $tqvar = formData('fname','P');
@@ -171,14 +168,14 @@ if (isset($_POST["privatemode"]) && $_POST["privatemode"] =="user_admin") {
 
       //(CHEMED) Calendar UI preference
       if ($_POST["cal_ui"]) {
-              $tqvar = formData('cal_ui','P');
-              sqlStatement("update users set cal_ui = '$tqvar' where id = {$_POST["id"]}");
+        $tqvar = formData('cal_ui','P');
+        sqlStatement("update users set cal_ui = '$tqvar' where id = {$_POST["id"]}");
 
-              // added by bgm to set this session variable if the current user has edited
-          //   their own settings
-          if ($_SESSION['authId'] == $_POST["id"]) {
-            $_SESSION['cal_ui'] = $tqvar;
-          }
+        // added by bgm to set this session variable if the current user has edited
+        //   their own settings
+        if ($_SESSION['authId'] == $_POST["id"]) {
+          $_SESSION['cal_ui'] = $tqvar;
+        }
       }
       //END (CHEMED) Calendar UI preference
 
@@ -194,10 +191,10 @@ if (isset($_POST["privatemode"]) && $_POST["privatemode"] =="user_admin") {
           "' WHERE id = '" . formData('id','P') . "'");
       }
 
-     if ($_POST["adminPass"] && $_POST["clearPass"]) { 
+     if ($_POST["adminPass"] && $_POST["stiltskin"]) { 
         require_once("$srcdir/authentication/password_change.php");
         $clearAdminPass=$_POST['adminPass'];
-        $clearUserPass=$_POST['clearPass'];
+        $clearUserPass=$_POST['stiltskin'];
         $password_err_msg="";
         $success=update_password($_SESSION['authId'],$_POST['id'],$clearAdminPass,$clearUserPass,$password_err_msg);
         if(!$success)
@@ -227,19 +224,19 @@ if (isset($_POST["privatemode"]) && $_POST["privatemode"] =="user_admin") {
          $show_message = 1;
         }
       }
-      if(($_POST['access_group'])){
-	for($i=0;$i<$bg_count;$i++){
-        if(($_POST['access_group'][$i] == "Emergency Login") && ($_POST['user_type']) == "" && ($_POST['check_acl'] == 1) && ($_POST['active']) != ""){
-         $set_active_msg=1;
+      if(($_POST['access_group'])) {
+        for($i=0;$i<$bg_count;$i++) {
+          if(($_POST['access_group'][$i] == "Emergency Login") && ($_POST['user_type']) == "" && ($_POST['check_acl'] == 1) && ($_POST['active']) != ""){
+            $set_active_msg=1;
+          }
         }
-      }
-    }	
+      }	
       if ($_POST["comments"]) {
         $tqvar = formData('comments','P');
         sqlStatement("update users set info = '$tqvar' where id = {$_POST["id"]}");
       }
-	$erxrole = formData('erxrole','P');
-	sqlStatement("update users set newcrop_user_role = '$erxrole' where id = {$_POST["id"]}");
+      $erxrole = formData('erxrole','P');
+      sqlStatement("update users set newcrop_user_role = '$erxrole' where id = {$_POST["id"]}");
 
       if (isset($phpgacl_location) && acl_check('admin', 'acl')) {
         // Set the access control group of user
@@ -247,9 +244,6 @@ if (isset($_POST["privatemode"]) && $_POST["privatemode"] =="user_admin") {
         set_user_aro($_POST['access_group'], $user_data["username"],
           formData('fname','P'), formData('mname','P'), formData('lname','P'));
       }
-
-      $ws = new WSProvider($_POST['id']);
-
     }
 }
 
@@ -262,90 +256,91 @@ if (isset($_POST["mode"])) {
     // $_POST["info"] = addslashes($_POST["info"]);
 
     $calvar = $_POST["calendar"] ? 1 : 0;
+    $actvar = $_POST["active"]   ? 1 : 0;
 
-    $res = sqlStatement("select distinct username from users where username != ''");
+    $res = sqlStatement("select username from users where username = '" . trim(formData('rumple')) . "'");
     $doit = true;
     while ($row = mysql_fetch_array($res)) {
-      if ($doit == true && $row['username'] == trim(formData('rumple'))) {
-        $doit = false;
+      $doit = false;
+    }
+
+    if ($doit) {
+      require_once("$srcdir/authentication/password_change.php");
+
+      //if password expiration option is enabled,  calculate the expiration date of the password
+      if($GLOBALS['password_expiration_days'] != 0){
+        $exp_days = $GLOBALS['password_expiration_days'];
+        $exp_date = date('Y-m-d', strtotime("+$exp_days days"));
       }
-    }
 
-    if ($doit == true) {
-    require_once("$srcdir/authentication/password_change.php");
-
-    //if password expiration option is enabled,  calculate the expiration date of the password
-    if($GLOBALS['password_expiration_days'] != 0){
-    $exp_days = $GLOBALS['password_expiration_days'];
-    $exp_date = date('Y-m-d', strtotime("+$exp_days days"));
-    }
-    
-    $insertUserSQL=            
+      $insertUserSQL=            
             "insert into users set " .
             "username = '"         . trim(formData('rumple'       )) .
             "', password = '"      . 'NoLongerUsed'                  .
             "', fname = '"         . trim(formData('fname'        )) .
             "', mname = '"         . trim(formData('mname'        )) .
             "', lname = '"         . trim(formData('lname'        )) .
-            "', federaltaxid = '"  . trim(formData('federaltaxid' )) .
-            "', state_license_number = '"  . trim(formData('state_license_number' )) .
+            "', federaltaxid = '"  . trim(formData('taxid'        )) .
+            "', state_license_number = '" . trim(formData('state_license_number' )) .
             "', newcrop_user_role = '"  . trim(formData('erxrole' )) .
             "', authorized = '"    . trim(formData('authorized'   )) .
-            "', info = '"          . trim(formData('info'         )) .
-            "', federaldrugid = '" . trim(formData('federaldrugid')) .
+            "', info = '"          . trim(formData('comments'     )) .
+            "', federaldrugid = '" . trim(formData('drugid'       )) .
             "', upin = '"          . trim(formData('upin'         )) .
             "', npi  = '"          . trim(formData('npi'          )).
             "', taxonomy = '"      . trim(formData('taxonomy'     )) .
             "', facility_id = '"   . trim(formData('facility_id'  )) .
-            "', specialty = '"     . trim(formData('specialty'    )) .
+            "', specialty = '"     . trim(formData('job'          )) .
             "', see_auth = '"      . trim(formData('see_auth'     )) .
             "', cal_ui = '"        . trim(formData('cal_ui'       )) .
             "', default_warehouse = '" . trim(formData('default_warehouse')) .
             "', irnpool = '"       . trim(formData('irnpool'      )) .
             "', calendar = '"      . $calvar                         .
+            "', active = '"        . $actvar                         .
             "', pwd_expiration_date = '" . trim("$exp_date") .
             "'";
     
-    $clearAdminPass=$_POST['adminPass'];
-    $clearUserPass=$_POST['stiltskin'];
-    $password_err_msg="";
-    $prov_id="";
-    $success = update_password($_SESSION['authId'], 0, $clearAdminPass, $clearUserPass,
-      $password_err_msg, true, $insertUserSQL, trim(formData('rumple')), $prov_id);
-    error_log($password_err_msg);
-    $alertmsg .=$password_err_msg;
-    if($success)
-    {
-      //set the facility name from the selected facility_id
-      sqlStatement("UPDATE users, facility SET users.facility = facility.name WHERE facility.id = '" . trim(formData('facility_id')) . "' AND users.username = '" . trim(formData('rumple')) . "'");
+      $clearAdminPass=$_POST['adminPass'];
+      $clearUserPass=$_POST['stiltskin'];
+      $password_err_msg="";
+      $prov_id="";
+      $success = update_password($_SESSION['authId'], 0, $clearAdminPass, $clearUserPass,
+        $password_err_msg, true, $insertUserSQL, trim(formData('rumple')), $prov_id);
+      error_log($password_err_msg);
+      $alertmsg .=$password_err_msg;
+      if($success)
+      {
+        //set the facility name from the selected facility_id
+        sqlStatement("UPDATE users, facility SET users.facility = facility.name WHERE facility.id = '" . trim(formData('facility_id')) . "' AND users.username = '" . trim(formData('rumple')) . "'");
 
-      sqlStatement("insert into groups set name = '" . trim(formData('groupname')) .
-        "', user = '" . trim(formData('rumple')) . "'");
+        $groupname = trim(formData('groupname'));
+        if (empty($groupname)) $groupname = 'Default';
+        sqlStatement("insert into groups set name = '" . $groupname .
+          "', user = '" . trim(formData('rumple')) . "'");
 
-      if (isset($phpgacl_location) && acl_check('admin', 'acl') && trim(formData('rumple'))) {
-        // Set the access control group of user
-        set_user_aro($_POST['access_group'], trim(formData('rumple')),
-          trim(formData('fname')), trim(formData('mname')), trim(formData('lname')));
+        if (isset($phpgacl_location) && acl_check('admin', 'acl') && trim(formData('rumple'))) {
+          // Set the access control group of user
+          set_user_aro($_POST['access_group'], trim(formData('rumple')),
+            trim(formData('fname')), trim(formData('mname')), trim(formData('lname')));
+        }
+
+        $tmp = sqlQuery("SELECT id FROM users WHERE username = '" . trim(formData('rumple')) . "'");
+        setUserFacilities($tmp['id']);
       }
-
-      $ws = new WSProvider($prov_id);
-        
-    }
-
-        
 
     } else {
       $alertmsg .= xl('User','','',' ') . trim(formData('rumple')) . xl('already exists.','',' ');
     }
-   if($_POST['access_group']){
-	 $bg_count=count($_POST['access_group']);
-         for($i=0;$i<$bg_count;$i++){
-          if($_POST['access_group'][$i] == "Emergency Login"){
-             $set_active_msg=1;
-           }
-	}
+    if($_POST['access_group']) {
+	    $bg_count=count($_POST['access_group']);
+      for($i=0;$i<$bg_count;$i++) {
+        if($_POST['access_group'][$i] == "Emergency Login") {
+          $set_active_msg=1;
+        }
       }
+    }
   }
+
   else if ($_POST["mode"] == "new_group") {
     $res = sqlStatement("select distinct name, user from groups");
     for ($iter = 0; $row = sqlFetchArray($res); $iter++)
