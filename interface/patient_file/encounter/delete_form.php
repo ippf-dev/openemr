@@ -86,7 +86,7 @@ foreach ($_GET as $key => $value) {
 <p>
 <?php
 $tmp = empty($_GET['formdesc']) ? $_GET['formname'] : $_GET['formdesc'];
-echo xls("You are about to delete the form") . " '$tmp' " . xls('from this visit.');
+echo xls("You are about to delete the form") . " '" . text($tmp) . "' " . xls('from this visit.');
 ?>
 </p>
 <input type="button" id="confirmbtn" name="confirmbtn" value="<?php echo xla('Yes, Delete this form'); ?>">
