@@ -2,6 +2,8 @@
 /**
  * Encounter list.
  *
+ * Copyright (C) 2015 Roberto Vasquez <robertogagliotta@gmail.com>
+ *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -15,6 +17,7 @@
  *
  * @package OpenEMR
  * @author  Brady Miller <brady@sparmy.com>
+ * @author  Roberto Vasquez <robertogagliotta@gmail.com>
  * @link    http://www.open-emr.org
  */
 
@@ -134,7 +137,7 @@ function generatePageElement($start,$pagesize,$billing,$issue,$text)
     {
         $start = 0;
     }
-    $url="encounters.php?"."pagestart=".$start."&"."pagesize=".$pagesize;
+    $url="encounters.php?"."pagestart=".attr($start)."&"."pagesize=".attr($pagesize);
     $url.="&billing=".$billing;
     $url.="&issue=".$issue;
 
@@ -483,7 +486,7 @@ else
 {
     $pagestart=0;
 }
-$getStringForPage="&pagesize=".$pagesize."&pagestart=".$pagestart;
+$getStringForPage="&pagesize=".attr($pagesize)."&pagestart=".attr($pagestart);
 
 ?>
 <?php if ($billing_view) { ?>
