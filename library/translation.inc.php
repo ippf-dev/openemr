@@ -30,14 +30,13 @@ function xl($constant,$mode='r',$prepend='',$append='') {
     $constant = preg_replace($patterns, $replace, $constant);
 
     // second, attempt translation
-    $sql="SELECT * FROM lang_definitions JOIN lang_constants ON " .
-      "lang_definitions.cons_id = lang_constants.cons_id WHERE " .
-      "lang_id=? AND BINARY constant_name = ? LIMIT 1";
-    $res = sqlStatementNoLog($sql,array($lang_id,$constant));
-    $row = SqlFetchArray($res);
-    $string = $row['definition'];
+    $sql = "SELECT ld.definition FROM lang_constants AS lc " .
+      "JOIN lang_definitions AS ld ON ld.lang_id = ? AND ld.cons_id = lc.cons_id " .
+      "WHERE lc.constant_name = ? LIMIT 1";
+    $res = sqlStatementNoLog($sql,array($lang_id, $constant));
+    while ($row = SqlFetchArray($res)) $string = $row['definition'];
     if ($string == '') { $string = "$constant"; }
-    
+
     // remove dangerous characters and remove comments
     $patterns = array ('/\n/','/\r/','/"/',"/'/",'/\{\{.*\}\}/');
     $replace = array (' ','','`','`','');

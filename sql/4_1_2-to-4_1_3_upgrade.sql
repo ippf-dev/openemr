@@ -229,3 +229,17 @@ ALTER TABLE `ippf2_categories`	ADD COLUMN `exclude` BIT NOT NULL DEFAULT b'0';
 
 UPDATE `ippf2_categories` set `exclude`=b'1' WHERE `category_header`='4';
 #EndIf
+
+#IfNotColumnType lang_constants constant_name mediumtext
+ALTER TABLE `lang_constants` DROP INDEX constant_name;
+ALTER TABLE `lang_constants` CHANGE `constant_name` `constant_name` mediumtext BINARY NOT NULL default '';
+CREATE INDEX `constant_name` ON `lang_constants` (`constant_name`(100));
+#EndIf
+
+#IfNotColumnType lang_custom constant_name mediumtext
+ALTER TABLE `lang_custom` CHANGE `constant_name` `constant_name` mediumtext BINARY NOT NULL default '';
+#EndIf
+
+#IfNotIndex lang_definitions cons_lang
+CREATE INDEX `cons_lang` ON `lang_definitions` (`cons_id`, `lang_id`);
+#EndIf
