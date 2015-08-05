@@ -86,8 +86,8 @@ function receiptDetailLine($code_type, $code, $description, $quantity, $charge, 
   // Use $lineid to match up (and delete) entries in $aInvTaxes with the line.
   // $lineid looks like: S:<billing.id> or P:<drug_sales.sale_id>.
   $totlinetax = 0;
+  $aTaxes = array();
   if ($lineid !== '') {
-    $aTaxes = array();
     foreach ($aInvTaxes as $taxid => $taxarr) {
       $aTaxes[$taxid] = 0;
       foreach ($taxarr as $taxlineid => $tax) {

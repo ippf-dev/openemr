@@ -530,7 +530,7 @@ for ($iter = 0; $row = sqlFetchArray($res); $iter++) {
   $acl_groups = '';
   if (isset($phpgacl_location)) {
     $username_acl_groups = acl_get_group_titles($row['username']);
-    foreach ($username_acl_groups AS $uagname) {
+    if (is_array($username_acl_groups)) foreach ($username_acl_groups AS $uagname) {
       if ($acl_groups !== '') $acl_groups .= '<br />';
       $acl_groups .= htmlspecialchars(xl_gacl_group($uagname));
     }

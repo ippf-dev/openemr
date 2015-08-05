@@ -219,7 +219,7 @@ if ($_POST['form_save'] && $_GET['mode'] != "user") {
           $pass = sqlQuery("SELECT gl_value FROM globals WHERE gl_name = '$fldid'");
           $fldvalueold = $pass['gl_value'];
         }
-        if (substr($fldtype, 0, 2) == 'm_') {
+        if (!is_array($fldtype) && substr($fldtype, 0, 2) == 'm_') {
           // This applies to a multi-select list such as type m_lang.
           if (isset($_POST["form_$i"])) {
             $fldindex = 0;

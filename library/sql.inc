@@ -69,6 +69,7 @@ class ADODB_mysql_log extends ADODB_mysql
         function _insertid()
         {
             $rs=$this->ExecuteNoLog("SELECT LAST_INSERT_ID()");
+            if ($rs === false) return false;
             $ret=reset($rs->fields);
             $rs->close();
             return $ret;
@@ -161,7 +162,7 @@ if (!$GLOBALS['dbh']) {
   if ($host == "localhost") {
     echo "Check that mysqld is running.<p>";
   } else {
-    echo "Check that you can ping the server '".text($host)."'.<p>";
+    echo "Check that you can ping the server '" . htmlspecialchars($host) . "'.<p>";
   }//if local
   HelpfulDie("Could not connect to server!", getSqlLastError("native_mysql"));
   exit;
@@ -546,19 +547,19 @@ function sqlNumRows($r)
 */
 function HelpfulDie ($statement, $sqlerr='')
 {
-  echo "<p><p><font color='red'>ERROR:</font> ".text($statement)."<p>";
+  echo "<p><p><font color='red'>ERROR:</font> " . htmlspecialchars($statement) . "<p>";
   $logMsg="SQL Error with statement:".$statement;
   if ($sqlerr) {
-    echo "Error: <font color='red'>".text($sqlerr)."</font><p>";
+    echo "Error: <font color='red'>" . htmlspecialchars($sqlerr) . "</font><p>";
     $logMsg.="--".$sqlerr;
   }//if error
   $backtrace=debug_backtrace();
   for($level=1;$level<count($backtrace);$level++)
   {
       $info=$backtrace[$level];
-      echo "<br>".text($info["file"]." at ".$info["line"].":".$info["function"]);
+      echo "<br>" . htmlspecialchars($info["file"] . " at " . $info["line"] . ":" . $info["function"]);
       if($level>1){
-          echo "(".text(implode(",",$info["args"])).")";
+          echo "(" . htmlspecialchars(implode(",", $info["args"])) . ")";
       }
   }
   $logMsg.="==>".$backtrace[1]["file"]." at ".$backtrace[1]["line"].":".$backtrace[1]["function"];

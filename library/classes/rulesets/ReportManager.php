@@ -29,7 +29,7 @@ class ReportManager
     {
         $ruleId = $rowRule['id'];
         $patientData = array();
-        foreach( $patients as $patient ) {
+        if (is_array($patients)) foreach( $patients as $patient ) {
             $patientData []= $patient['pid'];
         }
         

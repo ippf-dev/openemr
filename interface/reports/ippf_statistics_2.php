@@ -297,7 +297,7 @@ function genAnyCell($data, $align='left', $class='', $colspan=1, $forcetext=fals
       // point notation.  :)
       // if ($forcetext) echo '=';
       // The above freaked out LibreOffice when the field includes a comma. So now this:
-      if (preg_match('^[0-9]+$', $datum)) echo '=';
+      if (preg_match('/^[0-9]+$/', $datum)) echo '=';
       //
       echo '"' . $datum . '"';
       while ($colspan-- > 1) echo ',""';

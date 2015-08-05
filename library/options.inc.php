@@ -82,7 +82,7 @@ function optionalAge($frow, $date, &$asof, $description='') {
 
 // Function to generate a drop-list.
 //
-function generate_select_list($tag_name, $list_id, $currvalue, $title,
+function generate_select_list($tag_name, $list_id, $currvalue='', $title='',
   $empty_name=' ', $class='', $onchange='', $tag_id = '', $custom_attributes = null )
 {
   $s = '';
