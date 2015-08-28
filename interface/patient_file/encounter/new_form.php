@@ -20,14 +20,18 @@ function openNewForm(sel) {
  top.restoreSession();
 <?php if ($GLOBALS['concurrent_layout']) { ?>
   FormNameValueArray = sel.split('formname=');
-  if(FormNameValueArray[1] == 'newpatient')
-   {
-    parent.location.href = sel
-   }
-  else
-   {
-	parent.Forms.location.href = sel;
-   }
+  if (FormNameValueArray[1] == 'newpatient') {
+    parent.location.href = sel;
+  }
+  else if (parent.Forms && (parent.name == 'RTop' || parent.name == 'RBot')) {
+    parent.Forms.location.href = sel;
+  }
+  else if (window.Forms) {
+    window.Forms.location.href = sel;
+  }
+  else {
+    window.location.href = sel;
+  }
 <?php } else { ?>
   top.frames['Main'].location.href = sel;
 <?php } ?>
@@ -279,7 +283,7 @@ if($StringEcho){
 ?>
 <script>
 function gotoFee_sheet() {
-  for (var p = parent; p && p != p.parent && p != 'RTop' && p != 'RBot'; p = p.parent);
+  for (var p = window; p && p != p.parent && p.name != 'RTop' && p.name != 'RBot'; p = p.parent);
   var istop = p.window.name == 'RTop';
   p.parent.left_nav.forceSpec(istop, !istop);        
   openNewForm('<?php echo $GLOBALS['webroot'];?>/interface/patient_file/encounter/load_form.php?formname=fee_sheet');

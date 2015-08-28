@@ -1950,7 +1950,7 @@ if (true) {
     $val = $plrow['title'];
     echo "    <option value='" . attr($key) . "'";
     if ($key == $pricelevel) echo ' selected';
-    echo ">" . text($val) . "</option>\n";
+    echo ">" . text(xl_list_label($val)) . "</option>\n";
   }
   echo "   </select>\n";
 }

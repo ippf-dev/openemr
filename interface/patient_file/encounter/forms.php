@@ -368,7 +368,7 @@ if ( $esign->isButtonViewable() ) {
             echo "<a href=# class='css_button_small form-edit-button-locked' id='form-edit-button-".attr($formdir)."-".attr($iter['id'])."'><span>".xlt('Locked')."</span></a>";
         } else {
             echo "<a class='css_button_small form-edit-button' id='form-edit-button-".attr($formdir)."-".attr($iter['id'])."' target='".
-                    ($GLOBALS['concurrent_layout'] ? "_parent" : "Main") .
+                    ($GLOBALS['concurrent_layout'] ? "Forms" : "Main") .
                     "' href='$rootdir/patient_file/encounter/view_form.php?" .
                     "formname=" . attr($formdir) . "&id=" . attr($iter['form_id']) .
                     "' onclick='top.restoreSession()'>";
@@ -383,7 +383,7 @@ if ( $esign->isButtonViewable() ) {
             if ( $formdir != 'newpatient') {
                 // a link to delete the form from the encounter
                 echo "<a target='".
-                    ($GLOBALS['concurrent_layout'] ? "_parent" : "Main") .
+                    ($GLOBALS['concurrent_layout'] ? "Forms" : "Main") .
                     "' href='$rootdir/patient_file/encounter/delete_form.php?" .
                     "formname=" . $formdir .
                     "&id=" . $iter['id'] .

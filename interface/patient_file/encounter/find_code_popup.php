@@ -17,7 +17,7 @@ require_once($GLOBALS['fileroot'].'/custom/code_types.inc.php');
 
 $info_msg = "";
 $codetype = $_REQUEST['codetype'];
-if (isset($codetype)) {
+if (!empty($codetype)) {
 	$allowed_codes = split_csv_line($codetype);
 }
 
