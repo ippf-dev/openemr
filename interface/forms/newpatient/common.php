@@ -178,7 +178,7 @@ function cancelClicked() {
 <table width='96%'>
 
  <tr>
-  <td width='33%' nowrap class='bold'><?php echo xlt('Consultation Brief Description'); ?>:</td>
+  <td width='33%' nowrap class='bold'><?php echo xlt('Reason for Visit'); ?>:</td>
   <td width='34%' rowspan='2' align='center' valign='center' class='text'>
    <table>
 
