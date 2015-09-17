@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006-2014 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2015 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -273,7 +273,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     echo '"' . qescape($row['mname']) . '",';
     echo '"' . qescape($row['pubpid']) . '",';
     echo '"' . qescape($row['street']) . '",';
-    echo '"' . qescape($row['city']) . '",';
+    echo '"' . qescape(gen_specified_plaintext_field('DEM', 'city' , $row['city' ])) . '",';
     echo '"' . qescape(gen_specified_plaintext_field('DEM', 'state', $row['state'])) . '",';
     echo '"' . qescape($row['postal_code']) . '",';
     echo '"' . qescape($row['phone_home']) . '",';
@@ -295,7 +295,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
    <?php echo text($row['street']); ?>
   </td>
   <td>
-   <?php echo text($row['city']); ?>
+   <?php echo gen_specified_display_field('DEM', 'city', $row['city']); ?>
   </td>
   <td>
    <?php echo gen_specified_display_field('DEM', 'state', $row['state']); ?>
