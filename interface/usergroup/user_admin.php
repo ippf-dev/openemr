@@ -324,6 +324,36 @@ if ($user_id) {
 <?php } ?>
  </tr>
 
+<!-- default facility; warehouse optional -->
+ <tr>
+  <td><span class="text"><?php xl('Default Facility','e'); ?>: </span></td>
+  <td>
+   <select name="facility_id" style="width:150px;" >
+<?php
+$fres = sqlStatement("select * from facility where service_location != 0 order by name");
+if ($fres) {
+  for ($iter2 = 0; $frow = sqlFetchArray($fres); $iter2++) $result[$iter2] = $frow;
+  foreach($result as $iter2) {
+?>
+    <option value="<?php echo $iter2['id']; ?>" <?php if (userAtt('facility_id') == $iter2['id']) echo "selected"; ?>><?php echo htmlspecialchars($iter2['name']); ?></option>
+<?php
+  }
+}
+?>
+   </select>
+  </td>
+<?php if ($GLOBALS['inhouse_pharmacy']) { ?>
+  <td class="text"><?php xl('Default Warehouse','e'); ?>: </td>
+  <td class='text'>
+<?php
+  echo generate_select_list('default_warehouse', 'warehouse', userAtt('default_warehouse'), '');
+?>
+  </td>
+<?php } else { ?>
+  <td class="text" colspan="2">&nbsp;</td>
+<?php } ?>
+ </tr>
+
 <!-- facility and warehouse restrictions, optional -->
 <?php if ($GLOBALS['restrict_user_facility']) { ?>
  <tr title="<?php echo xla('If nothing is selected here then all are permitted.'); ?>">
@@ -367,36 +397,6 @@ if ($user_id) {
   </td>
  </tr>
 <?php } ?>
-
-<!-- default facility; warehouse optional -->
- <tr>
-  <td><span class="text"><?php xl('Default Facility','e'); ?>: </span></td>
-  <td>
-   <select name="facility_id" style="width:150px;" >
-<?php
-$fres = sqlStatement("select * from facility where service_location != 0 order by name");
-if ($fres) {
-  for ($iter2 = 0; $frow = sqlFetchArray($fres); $iter2++) $result[$iter2] = $frow;
-  foreach($result as $iter2) {
-?>
-    <option value="<?php echo $iter2['id']; ?>" <?php if (userAtt('facility_id') == $iter2['id']) echo "selected"; ?>><?php echo htmlspecialchars($iter2['name']); ?></option>
-<?php
-  }
-}
-?>
-   </select>
-  </td>
-<?php if ($GLOBALS['inhouse_pharmacy']) { ?>
-  <td class="text"><?php xl('Default Warehouse','e'); ?>: </td>
-  <td class='text'>
-<?php
-  echo generate_select_list('default_warehouse', 'warehouse', userAtt('default_warehouse'), '');
-?>
-  </td>
-<?php } else { ?>
-  <td class="text" colspan="2">&nbsp;</td>
-<?php } ?>
- </tr>
 
  <!-- tax id, drug id -->
  <TR>
