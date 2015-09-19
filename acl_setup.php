@@ -210,6 +210,9 @@
 $breakglass  = $gacl->add_group('breakglass' , 'Emergency Login'    , $users, 'ARO');
      // xl('Emergency Login')
 
+ $invclinic      = $gacl->add_group('invclinic'     , 'Inv Clinic'      , $users, 'ARO'); // xl('Inv Clinic')
+ $invclinicadmin = $gacl->add_group('invclinicadmin', 'Inv Clinic Admin', $users, 'ARO'); // xl('Inv Clinic Admin')
+ $inventoryadmin = $gacl->add_group('inventoryadmin', 'Inventory Admin' , $users, 'ARO'); // xl('Inventory Admin')
 
  // Create a Users section for the AROs (humans).
  //
@@ -420,6 +423,33 @@ $breakglass  = $gacl->add_group('breakglass' , 'Emergency Login'    , $users, 'A
   1, 1, 'write', 'Emergency Login user can do anything'
  );
      // xl('Emergency Login user can do anything')
+
+ // Set permissions for Inv Clinic.
+ //
+ $gacl->add_acl(array(
+   'inventory' => array('reporting'),
+  ),
+  NULL, array($invclinic), NULL, NULL, 1, 1, 'write',
+          'Things that Inv Clinic can read and modify'
+ ); // xl('Things that Inv Clinic can read and modify')
+
+ // Set permissions for Inv Clinic Admin.
+ //
+ $gacl->add_acl(array(
+   'inventory' => array('consumption', 'purchases', 'reporting', 'sales', 'transfers'),
+  ),
+  NULL, array($invclinicadmin), NULL, NULL, 1, 1, 'write',
+          'Things that Inv Clinic Admin can read and modify'
+ ); // xl('Things that Inv Clinic Admin can read and modify')
+
+ // Set permissions for Inventory Admin.
+ //
+ $gacl->add_acl(array(
+   'admin'=>array('drugs'),
+  ),
+  NULL, array($inventoryadmin), NULL, NULL, 1, 1, 'write',
+          'Things that Inventory Admin can read and modify'
+ ); // xl('Things that Inventory Admin can read and modify')
 
 ?>
 <html>

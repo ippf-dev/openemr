@@ -413,9 +413,35 @@ if ($acl_version < $upgrade_acl) {
   $acl_version = $upgrade_acl;
 }
 
-/* This is a template for a new revision, when needed
 // Upgrade for acl_version 4
 $upgrade_acl = 4;
+if ($acl_version < $upgrade_acl) {
+  echo "<B>UPGRADING ACCESS CONTROLS TO VERSION ".$upgrade_acl.":</B></BR>";
+
+  // Add new ACLs here (will return the ACL ID of newly created or already existant ACL)
+  // (will also place in the appropriate group and CREATE a new group if needed)
+  echo "<BR/><B>Adding ARO groups</B><BR/>";
+  $invclinic_write      = addNewACL('Inv Clinic'      , 'invclinic'     , 'write', 'Things that Inv Clinic can read and modify');
+  $invclinicadmin_write = addNewACL('Inv Clinic Admin', 'invclinicadmin', 'write', 'Things that Inv Clinic Admin can read and modify');
+  $inventoryadmin_write = addNewACL('Inventory Admin' , 'inventoryadmin', 'write', 'Things that Inventory Admin can read and modify');
+
+  // Update the ACLs
+  echo "<BR/><B>Updating the ACLs (Access Control Lists)</B><BR/>";
+  updateAcl($invclinic_write     , 'Inv Clinic'      , 'inventory', 'Inventory'     , 'reporting'  , 'Reporting'  , 'write');
+  updateAcl($invclinicadmin_write, 'Inv Clinic Admin', 'inventory', 'Inventory'     , 'consumption', 'Consumption', 'write');
+  updateAcl($invclinicadmin_write, 'Inv Clinic Admin', 'inventory', 'Inventory'     , 'purchases'  , 'Purchases'  , 'write');
+  updateAcl($invclinicadmin_write, 'Inv Clinic Admin', 'inventory', 'Inventory'     , 'reporting'  , 'Reporting'  , 'write');
+  updateAcl($invclinicadmin_write, 'Inv Clinic Admin', 'inventory', 'Inventory'     , 'sales'      , 'Sales'      , 'write');
+  updateAcl($invclinicadmin_write, 'Inv Clinic Admin', 'inventory', 'Inventory'     , 'transfers'  , 'Transfers'  , 'write');
+  updateAcl($inventoryadmin_write, 'Inventory Admin' , 'admin'    , 'Administration', 'drugs'      , 'Inventory Administration', 'write');
+
+  //DONE with upgrading to this version
+  $acl_version = $upgrade_acl;
+}
+
+/* This is a template for a new revision, when needed
+// Upgrade for acl_version 5
+$upgrade_acl = 5;
 if ($acl_version < $upgrade_acl) {
   echo "<B>UPGRADING ACCESS CONTROLS TO VERSION ".$upgrade_acl.":</B></BR>";
 
