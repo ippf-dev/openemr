@@ -2427,10 +2427,11 @@ function get_layout_form_value($frow) {
   //  the variable escaping method.
   global $sanitize_all_escapes;
 
-  $maxlength = $frow['max_length'];
+  $maxlength = $data_type == 4 ? 10 : $frow['max_length'];
   $data_type = $frow['data_type'];
   $field_id  = $frow['field_id'];
   $value  = '';
+
   if (isset($_POST["form_$field_id"])) {
     if ($data_type == 21) {
       // $_POST["form_$field_id"] is an array of checkboxes and its keys
@@ -2493,9 +2494,9 @@ function get_layout_form_value($frow) {
   }
 
   // Better to die than to silently truncate data!
-  if ($maxlength && $maxlength != 0 && strlen($value) > $maxlength)
+  if ($maxlength && $maxlength != 0 && strlen(trim($value)) > $maxlength)
     die(htmlspecialchars( xl('ERROR: Field') . " '$field_id' " . xl('is too long'), ENT_NOQUOTES) .
-    ":<br />&nbsp;<br />".htmlspecialchars( $value, ENT_NOQUOTES));
+    ":<br />&nbsp;<br />" . htmlspecialchars($value, ENT_NOQUOTES));
 
   // Make sure the return value is quote-safe.
   if ($sanitize_all_escapes) {
