@@ -1085,7 +1085,7 @@ function process_ippf_code($row, $code, $quantity=1) {
       '2112020201101', // Abortion - Consultation - Initial consultation - Harm reduction model
     ))) {
     *****************************************************************/
-    if (preg_match('/^211101/', $code)) { // all pre-abortion counseling
+    if (preg_match('/^2111010121/', $code)) { // pre-abortion counseling
       $key = getGcacClientStatus($row);
     } else {
       return;
