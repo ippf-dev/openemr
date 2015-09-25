@@ -20,77 +20,6 @@ if (!acl_check('admin', 'super')) die("Not authorized!");
 
 $alertmsg = '';
 
-/**********************************************************************
-
-//////////////////////////////////////////////////////////////////////
-//                            XML Stuff                             //
-//////////////////////////////////////////////////////////////////////
-
-$out = "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n";
-$indent = 0;
-
-// Add a string to output with some basic sanitizing.
-function Add($tag, $text) {
-  global $out, $indent;
-  $text = trim(str_replace(array("\r", "\n", "\t"), " ", $text));
-  $text = substr(htmlspecialchars($text, ENT_NOQUOTES), 0, 50);
-  if (true) {
-    if ($text === 'NULL') $text = '';
-    for ($i = 0; $i < $indent; ++$i) $out .= "\t";
-    $out .= "<$tag>$text</$tag>\n";
-  }
-}
-
-function AddIfPresent($tag, $text) {
-  if (isset($text) && $text !== '') Add($tag, $text);
-}
-
-function OpenTag($tag) {
-  global $out, $indent;
-  for ($i = 0; $i < $indent; ++$i) $out .= "\t";
-  ++$indent;
-  $out .= "<$tag>\n";
-}
-
-function CloseTag($tag) {
-  global $out, $indent;
-  --$indent;
-  for ($i = 0; $i < $indent; ++$i) $out .= "\t";
-  $out .= "</$tag>\n";
-}
-
-// Remove all non-digits from a string.
-function Digits($field) {
-  return preg_replace("/\D/", "", $field);
-}
-
-// Translate sex.
-function Sex($field) {
-  return mappedOption('sex', $field);
-}
-
-// Translate a date.
-function LWDate($field) {
-  return fixDate($field);
-}
-
-function xmlTime($str, $default='9999-12-31T23:59:59') {
-  if (empty($default)) $default = '1800-01-01T00:00:00';
-  if (strlen($str) < 10 || substr($str, 0, 4) == '0000')
-    $str = $default;
-  else if (strlen($str) > 10)
-    $str = substr($str, 0, 10) . 'T' . substr($str, 11);
-  else
-    $str .= 'T00:00:00';
-  // Per discussion with Daniel 2009-05-12, replace zero day or month with 01.
-  $str = preg_replace('/-00/', '-01', $str);
-  return $str;
-}
-
-//////////////////////////////////////////////////////////////////////
-
-**********************************************************************/
-
 // Utility function to get the value for a specified key from a string
 // whose format is key:value|key:value|...
 //
@@ -141,72 +70,153 @@ function mappedFieldOption($form_id, $field_id, $option_id) {
   return ($maparr[0] === '') ? $option_id : $maparr[0];
 }
 
-function exportEncounter($pid, $encounter, $date) {
-  // Starting a new visit (encounter).
-
-  // Dump products.
-  $query = "SELECT drug_id, quantity, fee FROM drug_sales WHERE " .
-    "pid = '$pid' AND encounter = '$encounter' " .
-    "ORDER BY drug_id, sale_id";
-  $pres = sqlStatement($query);
-  while ($prow = sqlFetchArray($pres)) {
-
-    /******************************************************************
-    OpenTag('IMS_eMRUpload_Service');
-    Add('IppfServiceProductId', $prow['drug_id']);
-    Add('Type'                , '1'); // 0=service, 1=product, 2=diagnosis, 3=referral
-    Add('IppfQuantity'        , $prow['quantity']);
-    Add('CurrID'              , "TBD"); // TBD: Currency e.g. USD
-    Add('Amount'              , $prow['fee']);
-    CloseTag('IMS_eMRUpload_Service');
-    ******************************************************************/
-
-  } // end while drug_sales row found
-
-  // Export referrals.  Match by date.  Export code type 3 and
-  // the Requested Service which should be an IPPF2 code.
-  // Ignore inbound referrals (refer_external = 3 and 4) because the
-  // services for those will appear in the tally sheet.
-  $query = "SELECT refer_related_code FROM transactions WHERE " .
-    "pid = '$pid' AND refer_date = '$date' AND " .
-    "refer_related_code != '' AND refer_external < 4 " .
-    "ORDER BY id";
-  $tres = sqlStatement($query);
-  while ($trow = sqlFetchArray($tres)) {
-    $relcodes = explode(';', $trow['refer_related_code']);
-    foreach ($relcodes as $codestring) {
-      if ($codestring === '') continue;
-      list($codetype, $code) = explode(':', $codestring);
-      if ($codetype == 'REF') {
-        // This is the expected case; a direct IPPF code is obsolete.
-        $rrow = sqlQuery("SELECT related_code FROM codes WHERE " .
-          "code_type = '16' AND code = '$code' AND active = 1 " .
-          "ORDER BY id LIMIT 1");
-        if (!empty($rrow['related_code'])) {
-          list($codetype, $code) = explode(':', $rrow['related_code']);
-        }
-      }
-      if ($codetype !== 'IPPF2') continue;
-
-      /****************************************************************
-      OpenTag('IMS_eMRUpload_Service');
-      Add('IppfServiceProductId', $code);
-      Add('Type'                , '3'); // 0=service, 1=product, 2=diagnosis, 3=referral
-      Add('IppfQuantity'        , '1');
-      Add('CurrID'              , "TBD"); // TBD: Currency e.g. USD
-      Add('Amount'              , '0');
-      CloseTag('IMS_eMRUpload_Service');
-      ****************************************************************/
-
-    } // end foreach
-  } // end referral
-}
-
 function recordStats($dataelement, $period, $orgunit, $categoryoptioncombo, $attributeoptioncombo) {
   global $outarr;
   $key = "$period|$orgunit|$dataelement|$categoryoptioncombo|$attributeoptioncombo";
   if (!isset($outarr[$key])) $outarr[$key] = 0;
   ++$outarr[$key];
+}
+
+// Get the specified patient's new acceptor date.
+//
+function getNewAcceptorDate($pid) {
+  $query = "SELECT " .
+    "fe.date AS contrastart, d1.field_value AS contrameth " .
+    "FROM forms AS f " .
+    "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
+    "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' " .
+    "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'pastmodern' " .
+    "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = ? AND " .
+    "(d1.field_value LIKE 'IPPFCM:%' AND (d2.field_value IS NULL OR d2.field_value = '0')) " .
+    "ORDER BY contrastart LIMIT 1";
+  $contradate_row = sqlQuery($query, array($pid));
+  return substr($contradate_row['contrastart'], 0, 10);
+}
+
+// Get the current contraceptive method. This is not necessarily the method
+// on the start date.
+//
+function getCurrentMethod($pid) {
+  $query = "SELECT " .
+    "fe.date AS contrastart, d1.field_value AS contrameth " .
+    "FROM forms AS f " .
+    "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
+    "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' " .
+    "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = ? " .
+    "ORDER BY contrastart DESC LIMIT 1";
+  $contrameth_row = sqlQuery($query, array($pid));
+  return empty($contrameth_row['contrameth']) ? '' : substr($contrameth_row['contrameth'], 7);
+}
+
+// Compute value to report for age and sex combination. Note age is relative to the visit.
+//
+function getCatCombo($sex, $dob, $asofdate) {
+  $age = getPatientAge($dob, str_replace('-', '', $asofdate));
+  if (empty($dob)) $age = 999;
+  $coc = '';
+  if      ($age <  6) $coc = $sex == 'M' ? 'FarKVV1ZD3V' : ($sex == 'F' ? 'tKsuEPYTRZL' : 'iRnq68mGW36');
+  else if ($age < 11) $coc = $sex == 'M' ? 'jX0XhbOJDBA' : ($sex == 'F' ? 'qNr2sWtzAIh' : 'M467KejTGpY');
+  else if ($age < 15) $coc = $sex == 'M' ? 'Wfhzt104TIg' : ($sex == 'F' ? 'vADYdyGrC50' : 'avlAHamZDo7');
+  else if ($age < 20) $coc = $sex == 'M' ? 'HCSWJmuqFN0' : ($sex == 'F' ? 'L7p7X2PoEtj' : 'xOPRWHn2tJj');
+  else if ($age < 25) $coc = $sex == 'M' ? 'ZbTOS44jDUw' : ($sex == 'F' ? 'rdZJ5c8QrIt' : 'R34h1nwqsfZ');
+  else if ($age < 30) $coc = $sex == 'M' ? 'fVc9DEUr2Lj' : ($sex == 'F' ? 'hD5yqrFNUBC' : 'rr7Sn5rZQy6');
+  else if ($age < 35) $coc = $sex == 'M' ? 'q1ZKPa39q8G' : ($sex == 'F' ? 'lh6ozNT9NTm' : 'FVsnXr9oMdu');
+  else if ($age < 40) $coc = $sex == 'M' ? 'ryK5rlxHTqj' : ($sex == 'F' ? 'QXagFrSmLeS' : 'NnRAdbtPH01');
+  else if ($age < 45) $coc = $sex == 'M' ? 'Sb8vSolIwNO' : ($sex == 'F' ? 'euO866oyyvR' : 'rpFcLQ4jcm3');
+  else if ($age < 50) $coc = $sex == 'M' ? 'e0wl11kYHkk' : ($sex == 'F' ? 'qmHvuvsUH65' : 'Ty35QB5scY9');
+  else                $coc = $sex == 'M' ? 'Qaly3cXcMTt' : ($sex == 'F' ? 'NZTCw0MlTnq' : 'mRMuOEwCUw1');
+  return $coc;
+}
+
+// Period calculation. There are 6 different formats depending on the date range.
+//
+function getPeriod($encounter_date) {
+  global $form_from_date, $form_to_date;
+  $from_date_arr  = getdate(strtotime($form_from_date));
+  $to_date_arr    = getdate(strtotime($form_to_date  ));
+  $to_date_p1_arr = getdate(strtotime($form_to_date  ) + 86400 + 3600); // day after to date
+  $period = substr($encounter_date, 0, 4);
+  if ($from_date_arr['year'] == $to_date_arr['year']) {
+    if (substr($form_from_date, 5, 5) == '01-01' && substr($form_to_date, 5, 5) == '12-31') {
+      // Period is year.
+    }
+    else if (substr($form_from_date, 5, 5) == '01-01' && substr($form_to_date, 5, 5) == '06-30') {
+      // Period is six-month.
+      $period .= 'S1';
+    }
+    else if (substr($form_from_date, 5, 5) == '07-01' && substr($form_to_date, 5, 5) == '12-31') {
+      $period .= 'S2';
+    }
+    else if (substr($form_from_date, 5, 5) == '01-01' && substr($form_to_date, 5, 5) == '03-31') {
+      // Period is first quarter.
+      $period .= 'Q1';
+    }
+    else if (substr($form_from_date, 5, 5) == '04-01' && substr($form_to_date, 5, 5) == '06-30') {
+      $period .= 'Q2';
+    }
+    else if (substr($form_from_date, 5, 5) == '07-01' && substr($form_to_date, 5, 5) == '09-30') {
+      $period .= 'Q3';
+    }
+    else if (substr($form_from_date, 5, 5) == '10-01' && substr($form_to_date, 5, 5) == '12-31') {
+      $period .= 'Q4';
+    }
+    else if (
+      $from_date_arr['mon'] == $to_date_arr['mon'] &&
+      $from_date_arr['mday'] == 1 &&
+      $to_date_p1_arr['mday'] == 1
+    ) {
+      // Period is month.
+      $period .= substr($encounter_date, 5, 2);
+    }
+    else if (
+      ($from_date_arr['yday'] % 7) == 0 &&
+      (
+        ($from_date_arr['yday'] + 6) == $to_date_arr['yday'] ||
+        (
+          substr($form_to_date, 5, 5) == '12-31' &&
+          ($to_date_arr['yday'] - $from_date_arr['yday']) < 7
+        )
+      )
+    ) {
+      // Period is week.
+      // Must be 7 days starting on the same day of week that January 1 started.
+      $period .= 'W' . intval($from_date_arr['yday'] / 7 + 1);
+    }
+    else {
+      // For everything else use the encounter date.
+      $period .= substr($encounter_date, 5, 2) . substr($encounter_date, 8, 2);
+    }
+  }
+  else {
+    $period .= substr($encounter_date, 5, 2) . substr($encounter_date, 8, 2);
+  }
+  return $period;
+}
+
+function getDataElement($prefix, $code, $country) {
+  $de = "$prefix-$code";
+  if (
+    $code == '1141130302102' ||
+    $code == '1141130302103' ||
+    $code == '1141130302104' ||
+    $code == '1141130302105' ||
+    $code == '1141130302106' ||
+    $code == '1142030302201' ||
+    $code == '1142030302202'
+  ) {
+    $country = strtolower(trim($country));
+    if (
+      $country == 'bangladesh' ||
+      $country == 'india'      ||
+      $country == 'nepal'
+    ) {
+      $de .= 'A';
+    }
+    else {
+      $de .= 'G';
+    }
+  }
+  return $de;
 }
 
 $outarr = array();
@@ -227,14 +237,8 @@ if (!empty($_POST['form_submit'])) {
 
   // This selects all encounters in the date range and (optionally) with the selected facilities.
   $query = "SELECT " .
-    "fe.pid, fe.encounter, fe.date, f.domain_identifier, " .
-    "p.regdate, p.date AS last_update, p.DOB, p.sex, " .
-    "p.city, p.state, p.occupation, p.status, p.ethnoracial, " .
-    "p.interpretter, p.monthly_income, p.referral_source, p.pricelevel, " .
-    "p.userlist1, p.userlist3, p.userlist4, p.userlist5, " .
-    "p.usertext11, p.usertext12, p.usertext13, p.usertext14, p.usertext15, " .
-    "p.usertext16, p.usertext17, p.usertext18, p.usertext19, p.usertext20, " .
-    "p.userlist2 AS education " .
+    "fe.pid, fe.encounter, fe.date, f.domain_identifier, f.country_code, " .
+    "p.regdate, p.date AS last_update, p.DOB, p.sex " .
     "FROM form_encounter AS fe " .
     "JOIN facility AS f ON f.id = fe.facility_id ";
   if ($form_sdp !== '') $query .=
@@ -258,69 +262,25 @@ if (!empty($_POST['form_submit'])) {
     $encounter_date = substr($row['date'], 0, 10);
 
     if ($row_pid != $last_pid) {
-      $education = mappedOption('userlist2', $row['education']);
       $sex = strtoupper(substr($row['sex'], 0, 1)); // F or M
-
-      // Get New Acceptor date, and also the method in case someone wants it later.
-      $query = "SELECT " .
-        "fe.date AS contrastart, d1.field_value AS contrameth " .
-        "FROM forms AS f " .
-        "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
-        "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' " .
-        "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'pastmodern' " .
-        "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = '$row_pid' AND " .
-        "(d1.field_value LIKE 'IPPFCM:%' AND (d2.field_value IS NULL OR d2.field_value = '0')) " .
-        "ORDER BY contrastart LIMIT 1";
-      $contradate_row = sqlQuery($query);
-      $new_acceptor_date = substr($contradate_row['contrastart'], 0, 10);
-
-      // Get the current contraceptive method. This is not necessarily the method
-      // on the start date.
-      $query = "SELECT " .
-        "fe.date AS contrastart, d1.field_value AS contrameth " .
-        "FROM forms AS f " .
-        "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
-        "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'newmethod' " .
-        "WHERE f.formdir = 'LBFccicon' AND f.deleted = 0 AND f.pid = '$last_pid' " .
-        "ORDER BY contrastart DESC LIMIT 1";
-      $contrameth_row = sqlQuery($query);
-      $methodid = empty($contrameth_row['contrameth']) ? '' : substr($contrameth_row['contrameth'], 7);
+      // Get New Acceptor date and current method.
+      $new_acceptor_date = getNewAcceptorDate($row_pid);
+      $methodid = getCurrentMethod($row_pid);
     }
 
-    $age = getPatientAge($row['DOB'], str_replace('-', '', $encounter_date));
-    if (empty($row['DOB'])) $age = 999;
-
-    // Compute value to report for age and sex combination. Note age is relative to the visit.
-    if ($sex == 'F') {
-      $categoryoptioncombo = $age < 25 ? 'EgcWdId977l' : 'EzKeiXz7heQ';
-    }
-    else if ($sex == 'M') {
-      $categoryoptioncombo = $age < 25 ? 'xCJzywucCyK' : 'RJRiYZUpekm';
-    }
-    else {
-      $categoryoptioncombo = $age < 25 ? 'Y2c16vWPBox' : 'CrE6h9KphAO';
-    }
-
-    // Set period to YYYY if this is one full calendar year, else YYYYMM.
-    $period = substr($encounter_date, 0, 4);
-    if (substr($form_from_date, 0, 4) != substr($form_to_date, 0, 4) ||
-      substr($form_from_date, 5, 5) != '01-01' ||
-      substr($form_to_date  , 5, 5) != '12-31'
-    ) {
-      $period .= substr($encounter_date, 5, 2);
-    }
+    // Category Option Combo and Period.
+    $coc = getCatCombo($sex, $row['DOB'], $encounter_date);
+    $period = getPeriod($encounter_date);
 
     // This queries the MA codes from which we'll get the related IPPF codes.
     $query = "SELECT b.code_type, b.code, b.code_text, b.units, b.fee, " .
       "b.justify, c.related_code " .
       "FROM billing AS b, codes AS c WHERE " .
       "b.pid = '$row_pid' AND b.encounter = '$row_encounter' AND " .
-      "b.activity = 1 AND " .
+      "b.activity = 1 AND b.code_type = 'MA' AND " .
       "c.code_type = '12' AND c.code = b.code AND c.modifier = b.modifier";
     $bres = sqlStatement($query);
-
     // echo "<!-- $query -->\n"; // debugging
-
     while ($brow = sqlFetchArray($bres)) {
       if (!empty($brow['related_code'])) {
         $relcodes = explode(';', $brow['related_code']);
@@ -328,13 +288,63 @@ if (!empty($_POST['form_submit'])) {
           if ($codestring === '') continue;
           list($codetype, $code) = explode(':', $codestring);
           if ($codetype !== 'IPPF2') continue;
+          $prefix = $new_acceptor_date == $encounter_date ? 'NEW' : 'SRV';
           recordStats(
-            ($new_acceptor_date == $encounter_date ? 'NEW-' : 'S-R-') . $code,
+            getDataElement($prefix, $code, $row['country_code']),
             $period,
             $row['domain_identifier'],    // org unit
-            $categoryoptioncombo,         // age and sex
-            'CrE6h9KphAO'                 // indicates service and not referral
+            $coc,                         // age and sex
+            'X66r2y4EuwS'
           );
+        }
+      }
+    }
+
+    // Similarly for products.
+    $query = "SELECT s.quantity, d.related_code " .
+      "FROM drug_sales AS s " .
+      "JOIN drugs AS d ON d.drug_id = s.drug_id " .
+      "WHERE s.pid = ? AND s.encounter = ? " .
+      "ORDER BY s.drug_id, s.sale_id";
+    $pres = sqlStatement($query, array($pid, $encounter));
+    while ($prow = sqlFetchArray($pres)) {
+      if (!empty($prow['related_code'])) {
+        $relcodes = explode(';', $prow['related_code']);
+        foreach ($relcodes as $codestring) {
+          if ($codestring === '') continue;
+          list($codetype, $code) = explode(':', $codestring);
+          if ($codetype !== 'IPPFCM') continue;
+          $delt = '';
+          if ('4360' == $code) $delt = 'IT101'; else // Oral contraceptives (Combined)
+          if ('4361' == $code) $delt = 'IT102'; else // Oral contraceptives (progestogen only)
+          if ('????' == $code) $delt = 'IT103'; else // Oral contraceptives (Unable to Categorise)
+          if ('4370' == $code) $delt = 'IT151'; else // Injectables (1 month)
+          if ('4380' == $code) $delt = 'IT152'; else // Injectables (2 month)
+          if ('4390' == $code) $delt = 'IT153'; else // Injectables (3 month)
+          if ('4400' == $code) $delt = 'IT201'; else // Implant (3 year)
+          if ('4410' == $code) $delt = 'IT202'; else // Implant (4 year)
+          if ('4420' == $code) $delt = 'IT203'; else // Implant (5 year)
+          if ('4540' == $code) $delt = 'IT251'; else // IUD (5 year)
+          if ('4550' == $code) $delt = 'IT255'; else // IUD (10 year)
+          if ('4430' == $code) $delt = 'IT301'; else // Patch
+          if ('4440' == $code) $delt = 'IT351'; else // Ring
+          if ('4470' == $code) $delt = 'IT401'; else // Diaphragm
+          if ('4480' == $code) $delt = 'IT451'; else // Cervical cap
+          if ('4490' == $code) $delt = 'IT501'; else // Spermicides
+          if ('4450' == $code) $delt = 'IT551'; else // Condoms (male)
+          if ('4460' == $code) $delt = 'IT552'; else // Condoms (female)
+          if ('4620' == $code) $delt = 'IT601'; else // EC (progestogen only pills)
+          if ('????' == $code) $delt = 'IT602'; else // EC (combined pills - Yuzpe)
+          if ('????' == $code) $delt = 'IT603';      // EC (10 year IUD)
+          if ($delt) {
+            recordStats(
+              $delt,
+              $period,
+              $row['domain_identifier'],    // org unit
+              $coc,                         // age and sex
+              'X66r2y4EuwS'
+            );
+          }
         }
       }
     }
@@ -342,15 +352,74 @@ if (!empty($_POST['form_submit'])) {
     $last_pid = $row_pid;
   }
 
+  // Now do all outbound external referrals in the date range.
+  $query = "SELECT t.pid, t.refer_date, t.refer_related_code, " .
+    "p.regdate, p.date AS last_update, p.DOB, p.sex " .
+    "FROM transactions AS t " .
+    "JOIN patient_data AS p ON p.pid = t.pid WHERE " .
+    "t.refer_date >= '$form_from_date' AND " .
+    "t.refer_date <= '$form_to_date' AND " .
+    "t.refer_related_code != '' AND t.refer_external = 2 " .
+    "ORDER BY t.pid, t.id";
+  $tres = sqlStatement($query);
+  $last_pid = 0;
+  while ($trow = sqlFetchArray($tres)) {
+    $row_pid = $trow['pid'];
+    $row_date = $trow['refer_date'];
+    $erow = sqlQuery("SELECT f.domain_identifier, f.country_code " .
+      "FROM form_encounter AS fe " .
+      "JOIN facility AS f ON f.id = fe.facility_id " .
+      "WHERE fe.pid = ? AND fe.date <= ? " .
+      "ORDER BY fe.date DESC, fe.encounter DESC LIMIT 1",
+      array($row_pid, "$row_date 23:59:59"));
+    $domain_identifier = empty($erow['domain_identifier']) ? '' : $erow['domain_identifier'];
+    $country = empty($erow['country_code']) ? '' : $erow['country_code'];
+
+    if ($form_sdp !== '' && $form_sdp != $domain_identifier) continue;
+
+    if ($row_pid != $last_pid) {
+      $sex = strtoupper(substr($trow['sex'], 0, 1)); // F or M
+      $new_acceptor_date = getNewAcceptorDate($row_pid);
+      $methodid = getCurrentMethod($row_pid);
+    }
+    $coc = getCatCombo($sex, $trow['DOB'], $row_date);
+    $period = getPeriod($row_date);
+
+    $relcodes = explode(';', $trow['refer_related_code']);
+    foreach ($relcodes as $codestring) {
+      if ($codestring === '') continue;
+      list($codetype, $code) = explode(':', $codestring);
+      if ($codetype == 'REF') {
+        // This is the expected case; a direct IPPF code is obsolete.
+        $rrow = sqlQuery("SELECT related_code FROM codes WHERE " .
+          "code_type = '16' AND code = '$code' AND active = 1 " .
+          "ORDER BY id LIMIT 1");
+        if (!empty($rrow['related_code'])) {
+          list($codetype, $code) = explode(':', $rrow['related_code']);
+        }
+      }
+      if ($codetype !== 'IPPF2') continue;
+      recordStats(
+        getDataElement('RFR', $code, $country),
+        $period,
+        $domain_identifier,           // org unit
+        $coc,                         // age and sex
+        'X66r2y4EuwS'
+      );
+    }
+
+    $last_pid = $row_pid;
+  } // end referral
+
   // Generate the output text.
   ksort($outarr);
   $out = '';
   foreach ($outarr as $key => $value) {
     list($period, $orgunit, $dataelement, $categoryoptioncombo, $attributeoptioncombo) =
       explode('|', $key);
-    $out .= "\"$dataelement\", \"$period\", \"$orgunit\", \"$categoryoptioncombo\", " .
-      "\"$attributeoptioncombo\", \"$value\", \"dummy\", \"" . date('Y-m-d') . "\", " .
-      "\"\", \"FALSE\"\n";
+    $out .= "$dataelement,$period,$orgunit,$categoryoptioncombo," .
+      "$attributeoptioncombo,$value,eIMS," . date('Y-m-d') . "," .
+      ", FALSE\n";
   }
 
   // This is the "filename" for the Content-Disposition header.
