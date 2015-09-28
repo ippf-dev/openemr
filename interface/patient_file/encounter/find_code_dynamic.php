@@ -54,6 +54,8 @@ $(document).ready(function() {
   // Vertical length options and their default
   "aLengthMenu": [ 10, 25, 50, 100 ],
   "iDisplayLength": 10,
+  // Specify a width for the first column.
+  "aoColumns": [{"sWidth":"10%"}, null],
   // This callback function passes the codetype on each call to the ajax handler
   "fnServerParams": function (aoData) {
     aoData.push({"name": "codetype", "value": document.forms[0].form_code_type.value});

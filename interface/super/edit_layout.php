@@ -65,7 +65,7 @@ $datatypes = array(
   "28" => xl("Lifestyle status"),
   "31" => xl("Static Text"),
   "32" => xl("Smoking Status"),
-  "33" => xl("Race and Ethnicity"),
+  "33" => xl("Race/Ethnicity"),
   "34" => xl("NationNotes"),
   "35" => xl("Facilities")
 );
@@ -421,7 +421,7 @@ function writeFieldLine($linedata) {
 
     echo "<input type='text' name='fld[$fld_line_no][seq]' id='fld[$fld_line_no][seq]' value='" .
       htmlspecialchars($linedata['seq'], ENT_QUOTES) . "' size='2' maxlength='3' " .
-      "class='optin' style='width:36pt' />";
+      "class='optin' style='width:32pt' />";
     echo "</td>\n";
 
     echo "  <td align='center' class='optcell' $lbfonly style='width:3%'>";
@@ -434,7 +434,7 @@ function writeFieldLine($linedata) {
     echo "</select>";
     echo "</td>\n";
 
-    echo "  <td align='left' class='optcell' style='width:10%'>";
+    echo "  <td align='left' class='optcell' style='width:15%'>";
     echo "<input type='text' name='fld[$fld_line_no][id]' value='" .
          htmlspecialchars($linedata['field_id'], ENT_QUOTES) . "' size='15' maxlength='63'
          class='optin noselect' style='width:100%' />";
@@ -446,7 +446,7 @@ function writeFieldLine($linedata) {
     */
     echo "</td>\n";
   
-    echo "  <td align='center' class='optcell' style='width:12%'>";
+    echo "  <td align='center' class='optcell' style='width:17%'>";
     echo "<input type='text' id='fld[$fld_line_no][title]' name='fld[$fld_line_no][title]' value='" .
          htmlspecialchars($linedata['title'], ENT_QUOTES) . "' size='15' maxlength='63' class='optin' style='width:100%' />";
     echo "</td>\n";
@@ -515,7 +515,7 @@ function writeFieldLine($linedata) {
       "title='" . xla('Maximum Size (entering 0 will allow any size)') . "' />";
     echo "</td>\n";
 
-    echo "  <td align='center' class='optcell' style='width:8%'>";
+    echo "  <td align='center' class='optcell' style='width:10%'>";
     if ($linedata['data_type'] ==  1 || $linedata['data_type'] == 21 ||
       $linedata['data_type'] == 22 || $linedata['data_type'] == 23 ||
       $linedata['data_type'] == 25 || $linedata['data_type'] == 26 ||
@@ -549,17 +549,17 @@ function writeFieldLine($linedata) {
     }
     echo "</td>\n";
 
-    echo "  <td align='center' class='optcell' style='width:4%'>";
+    echo "  <td align='center' class='optcell' style='width:2%'>";
     echo "<input type='text' name='fld[$fld_line_no][titlecols]' value='" .
-         htmlspecialchars($linedata['titlecols'], ENT_QUOTES) . "' size='3' maxlength='10' class='optin' style='width:100%' />";
+         htmlspecialchars($linedata['titlecols'], ENT_QUOTES) . "' size='1' maxlength='10' class='optin' style='width:100%' />";
     echo "</td>\n";
   
-    echo "  <td align='center' class='optcell' style='width:4%'>";
+    echo "  <td align='center' class='optcell' style='width:2%'>";
     echo "<input type='text' name='fld[$fld_line_no][datacols]' value='" .
          htmlspecialchars($linedata['datacols'], ENT_QUOTES) . "' size='3' maxlength='10' class='optin' style='width:100%' />";
     echo "</td>\n";
   
-    echo "  <td align='center' class='optcell' style='width:5%' title='" .
+    echo "  <td align='center' class='optcell' style='width:4%' title='" .
           "A = " . xla('Age') .
         ", B = " . xla('Gestational Age') .
         ", C = " . xla('Capitalize') .
@@ -604,7 +604,7 @@ function writeFieldLine($linedata) {
     *****************************************************************/
 
     if ($linedata['data_type'] == 31) {
-      echo "  <td align='center' class='optcell' style='width:24%'>";
+      echo "  <td align='center' class='optcell' style='width:16%'>";
       echo "<textarea name='fld[$fld_line_no][desc]' rows='3' cols='35' class='optin' style='width:100%'>" .
            $linedata['description'] . "</textarea>";
       echo "<input type='hidden' name='fld[$fld_line_no][default]' value='" .
@@ -612,7 +612,7 @@ function writeFieldLine($linedata) {
       echo "</td>\n";
     }
     else {
-      echo "  <td align='center' class='optcell' style='width:24%'>";
+      echo "  <td align='center' class='optcell' style='width:16%'>";
       echo "<input type='text' name='fld[$fld_line_no][desc]' value='" .
         htmlspecialchars($linedata['description'], ENT_QUOTES) .
         "' size='30' maxlength='63' class='optin' style='width:100%' />";
