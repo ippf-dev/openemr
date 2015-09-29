@@ -417,7 +417,7 @@ function writeFieldLine($linedata) {
     echo "<input type='checkbox' class='selectfield' ".
             "name='".$linedata['group_name']."~".$linedata['field_id']."' ".
             "id='".$linedata['group_name']."~".$linedata['field_id']."' ".
-            "title='".htmlspecialchars(xl('Select field', ENT_QUOTES))."'>";
+            "title='".htmlspecialchars(xl('Select field', ENT_QUOTES))."' />";
 
     echo "<input type='text' name='fld[$fld_line_no][seq]' id='fld[$fld_line_no][seq]' value='" .
       htmlspecialchars($linedata['seq'], ENT_QUOTES) . "' size='2' maxlength='3' " .
@@ -434,7 +434,7 @@ function writeFieldLine($linedata) {
     echo "</select>";
     echo "</td>\n";
 
-    echo "  <td align='left' class='optcell' style='width:15%'>";
+    echo "  <td align='left' class='optcell' style='width:12%'>";
     echo "<input type='text' name='fld[$fld_line_no][id]' value='" .
          htmlspecialchars($linedata['field_id'], ENT_QUOTES) . "' size='15' maxlength='63'
          class='optin noselect' style='width:100%' />";
@@ -446,7 +446,7 @@ function writeFieldLine($linedata) {
     */
     echo "</td>\n";
   
-    echo "  <td align='center' class='optcell' style='width:17%'>";
+    echo "  <td align='center' class='optcell' style='width:20%'>";
     echo "<input type='text' id='fld[$fld_line_no][title]' name='fld[$fld_line_no][title]' value='" .
          htmlspecialchars($linedata['title'], ENT_QUOTES) . "' size='15' maxlength='63' class='optin' style='width:100%' />";
     echo "</td>\n";
@@ -644,7 +644,7 @@ function writeFieldLine($linedata) {
     $extra_html .= "<div id='ext_$fld_line_no' " .
       "style='position:absolute;width:750px;border:1px solid black;" .
       "padding:2px;background-color:#cccccc;visibility:hidden;" .
-      "z-index:1000;left:-1000px;top:0px;font-size:9pt;'>\n" .
+      "z-index:1000;left:-1000px;top:0px;font-size:8pt;'>\n" .
       "<table width='100%'>\n" .
       " <tr>\n" .
       "  <th colspan='3' align='left' class='bold'>\"" . text($linedata['field_id']) . "\" " .
@@ -735,10 +735,11 @@ function writeFieldLine($linedata) {
 <title><?php  xl('Layout Editor','e'); ?></title>
 
 <style>
-tr.head   { font-size:10pt; background-color:#cccccc; }
-tr.detail { font-size:10pt; }
-td        { font-size:10pt; }
-input     { font-size:10pt; }
+tr.head   { font-size:8pt; background-color:#cccccc; }
+tr.detail { font-size:8pt; }
+td        { font-size:8pt; }
+input     { font-size:8pt; }
+select    { font-size:8pt; }
 a, a:visited, a:hover { color:#0000cc; }
 .optcell  { }
 .optin    { background: transparent; }
@@ -763,7 +764,7 @@ a, a:visited, a:hover { color:#0000cc; }
 .layouts_title { font-size: 110%; }
 .translation {
     color: green;
-    font-size:10pt;
+    font-size:8pt;
 }
 .highlight * {
     border: 2px solid blue;

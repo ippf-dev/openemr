@@ -243,3 +243,7 @@ ALTER TABLE `lang_custom` CHANGE `constant_name` `constant_name` mediumtext BINA
 #IfNotIndex lang_definitions cons_lang
 CREATE INDEX `cons_lang` ON `lang_definitions` (`cons_id`, `lang_id`);
 #EndIf
+
+#IfNotColumnType facility country_code varchar(30)
+ALTER TABLE `facility` CHANGE `country_code` `country_code` varchar(30) NOT NULL default '';
+#EndIf
