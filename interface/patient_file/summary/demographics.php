@@ -897,7 +897,7 @@ if ( $insurance_count > 0 ) {
 
 <?php
 // Notes expand collapse widget
-$widgetTitle = xl("Notes");
+$widgetTitle = xl("Messages");
 $widgetLabel = "pnotes";
 $widgetButtonLabel = xl("Edit");
 $widgetButtonLink = "pnotes_full.php?form_active=1";

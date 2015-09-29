@@ -91,12 +91,10 @@
     }
     function position_left_side()
     {
-        var demographics=find_widget("<?php echo xl("Demographics");?>");
-        var vitals=find_widget("<?php echo xl("Vitals");?>");
-
-        var contraception=find_widget("<?php echo xl("Contraception");?>");
-        demographics.after(vitals);
-        vitals.after(contraception);
+        // Move Messages and Disclosures to the bottom of their table.
+        var notes = find_widget("<?php echo xl("Messages"); ?>");
+        notes.parent().append(notes);
+        notes.parent().append(find_widget("<?php echo xl("Disclosures"); ?>"));
     }
     function group_right_widget(header)
     {
