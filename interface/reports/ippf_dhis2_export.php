@@ -418,8 +418,8 @@ if (!empty($_POST['form_submit'])) {
     list($period, $orgunit, $dataelement, $categoryoptioncombo, $attributeoptioncombo) =
       explode('|', $key);
     $out .= "$dataelement,$period,$orgunit,$categoryoptioncombo," .
-      "$attributeoptioncombo,$value,eIMS," . date('Y-m-d') . "," .
-      ", FALSE\n";
+      "$attributeoptioncombo,$value," . $_SESSION['authUser'] . "," .
+      date('Y-m-d') . ",,FALSE\n";
   }
 
   // This is the "filename" for the Content-Disposition header.
