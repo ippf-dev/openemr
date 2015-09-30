@@ -531,6 +531,13 @@ function warehouse_changed(sel) {
 <?php
   $shrow = getHistoryData($pid);
 
+  // Determine if this layout uses edit option "I" anywhere.
+  // If not we default to only the first group being initially open.
+  $tmprow = sqlQuery("SELECT form_id FROM layout_options " .
+    "WHERE form_id = ? AND uor > 0 AND edit_options LIKE '%I%' " .
+    "LIMIT 1", array($formname));
+  $some_group_is_open = !empty($tmprow['form_id']);
+
   $fres = sqlStatement("SELECT * FROM layout_options " .
     "WHERE form_id = ? AND uor > 0 " .
     "ORDER BY group_name, seq", array($formname) );
@@ -581,7 +588,7 @@ function warehouse_changed(sel) {
 
     $currvalue  = '';
 
-    if ($frow['edit_options'] == 'H') {
+    if (strpos($edit_options, 'H') !== FALSE) {
       // This data comes from static history
       if (isset($shrow[$field_id])) $currvalue = $shrow[$field_id];
     } else {
@@ -623,6 +630,11 @@ function warehouse_changed(sel) {
       $group_seq  = 'lbf' . substr($this_group, 0, 1);
       $group_name = substr($this_group, 1);
       $last_group = $this_group;
+
+      if ($some_group_is_open) {
+        // Must have edit option "I" in first item for its group to be initially open.
+        $display_style = strpos($edit_options, 'I') === FALSE ? 'none' : 'block';
+      }
 
       // If group name is blank, no checkbox or div.
       if (strlen($this_group) > 1) {
@@ -753,6 +765,8 @@ function warehouse_changed(sel) {
   }
 
   end_group();
+
+  $display_style = 'none';
 
   if (isset($LBF_SERVICES_SECTION)) {
 

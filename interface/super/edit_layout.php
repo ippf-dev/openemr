@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2014-2015 Rod Roark <rod@sunsetsystems.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -565,6 +565,7 @@ function writeFieldLine($linedata) {
         ", C = " . xla('Capitalize') .
         ", D = " . xla('Dup Check') .
         ", G = " . xla('Graphable') .
+        ", I = " . xla('Initially Open Group') .
         ", L = " . xla('Lab Order') .
         ", N = " . xla('New Patient Form') .
         ", O = " . xla('Order Processor') .
