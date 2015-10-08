@@ -230,6 +230,10 @@ ALTER TABLE `ippf2_categories`	ADD COLUMN `exclude` BIT NOT NULL DEFAULT b'0';
 UPDATE `ippf2_categories` set `exclude`=b'1' WHERE `category_header`='4';
 #EndIf
 
+#IfNotIndex lang_constants constant_name
+CREATE INDEX `constant_name` ON `lang_constants` (`constant_name`(100));
+#EndIf
+
 #IfNotColumnType lang_constants constant_name mediumtext
 ALTER TABLE `lang_constants` DROP INDEX constant_name;
 ALTER TABLE `lang_constants` CHANGE `constant_name` `constant_name` mediumtext BINARY NOT NULL default '';
@@ -246,4 +250,8 @@ CREATE INDEX `cons_lang` ON `lang_definitions` (`cons_id`, `lang_id`);
 
 #IfNotColumnType facility country_code varchar(30)
 ALTER TABLE `facility` CHANGE `country_code` `country_code` varchar(30) NOT NULL default '';
+#EndIf
+
+#IfNotColumnType layout_options group_name varchar(255)
+ALTER TABLE `layout_options` CHANGE `group_name` `group_name` varchar(255) NOT NULL default '';
 #EndIf

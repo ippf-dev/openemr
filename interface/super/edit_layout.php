@@ -18,6 +18,9 @@
  * @link    http://www.open-emr.org
  */
 
+$fake_register_globals = false;
+$sanitize_all_escapes  = true;
+
 require_once("../globals.php");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/log.inc");
@@ -83,6 +86,104 @@ function nextGroupOrder($order) {
   else if ($order == 'Z') $order = 'a';
   else $order = chr(ord($order) + 1);
   return $order;
+}
+
+// This returns HTML for a <select> that allows choice of a layout group name.
+// Included also are parent groups containing only sub-groups.  Groups are listed
+// in the same order as they appear in the layout.
+//
+function genGroupSelector($name, $layout_id, $default='') {
+  $res = sqlStatement("SELECT DISTINCT group_name FROM layout_options WHERE " .
+    "form_id = ? ORDER BY group_name", array($layout_id));
+  $s  = "<select name='" . xla($name) . "'>";
+  $s .= "<option value=''>" . xlt('None') . "</option>";
+  $arr = array();
+  while ($row = sqlFetchArray($res)) {
+    $gkey = '';
+    $gval = '';
+    $tmp = explode('|', $row['group_name']);
+    foreach ($tmp as $part) {
+      if ($gkey) {
+        $gkey .= '|';
+        $gval .= ' / ';
+      }
+      $gkey .= $part;
+      $gval .= substr($part, 1);
+      if (!isset($arr[$gkey])) {
+        $arr[$gkey] = 1;
+        $s .= "<option value='" . attr($gkey) . "'";
+        if ($gkey == $default) $s .= ' selected';
+        $s .= ">" . text($gval) . "</option>";
+      }
+    }
+  }
+  $s .= "</select>";
+  return $s;
+}
+
+// Compute a new group name that will become layout_options.group_name.
+// If there is a nonempty $parent then this and "|" will be prepended,
+// and the sequence prefix will be computed within the parent.
+// $parent is a string of zero or more names, each with a sequence prefix character
+// and separated by | characters.
+//
+function genGroupName($parent, $childname) {
+  global $layout_id;
+  if ($parent) $parent .= '|';
+  $results = sqlStatement("SELECT DISTINCT group_name " .
+    "FROM layout_options WHERE " .
+    "form_id = ? AND group_name LIKE ?",
+    array($layout_id, "$parent%"));
+  $maxnum = '1';
+  while ($result = sqlFetchArray($results)) {
+    $tmp = substr($result['group_name'], strlen($parent), 1);
+    if ($tmp >= $maxnum) $maxnum = nextGroupOrder($tmp);
+  }
+  return $parent . $maxnum . $childname;
+}
+
+// Renames a group from and to the specified names. This also works for groups
+// that have sub-groups, in which case only the appropriate parent portion of
+// the name is changed.
+//
+function fuzzyRename($from, $to) {
+  global $layout_id;
+  $from = rtrim($from, '|');
+  $to   = rtrim($to  , '|');
+  $query = "UPDATE layout_options SET group_name = concat(?, substr(group_name, ?)) " .
+    "WHERE form_id = ? AND (group_name = ? OR group_name LIKE ?)";
+  sqlStatement($query, array($to, strlen($from) + 1, $layout_id, $from, "$from|%"));
+}
+
+// Swaps the positions of two groups.  To the degree they have matching parents,
+// only the first differing child positions are swapped.
+//
+function swapGroups($name1, $name2) {
+  $i = 0;
+  while ($i < strlen($name1)) {
+    $j = strpos("$name1|", '|', $i);
+    if ($j > strlen($name2)) break;
+    if (substr($name2, 0, $j) != substr($name1, 0, $j)) break;
+    $i = $j + 1;
+  }
+  // At this point $i is the offset to the prefixes that we want to swap.
+  // Everything prior to that position corresponds to matching parent groups.
+  if ($i < strlen($name1) && $i < strlen($name2)) {
+    // $j1 and $j2 are lengths that include the fully qualified names to be swapped.
+    // They include '|' if those are parent segments.
+    $j1 = strpos($name1, '|', $i); $j1 = $j1 === FALSE ? strlen($name1) : ($j1 + 1);
+    $j2 = strpos($name2, '|', $i); $j2 = $j2 === FALSE ? strlen($name2) : ($j2 + 1);
+    $common = substr($name1, 0, $i);
+    $pfx1   = substr($name1, $i, 1);
+    $pfx2   = substr($name2, $i, 1);
+    $tail1  = substr($name1, $i + 1, $j1 - ($i + 1));
+    $tail2  = substr($name2, $i + 1, $j2 - ($i + 1));
+    $tmpname = $common . '#' . $tail2;
+    // To avoid any possible collision we use 3 renames.
+    fuzzyRename($common . $pfx1 . $tail1, $common . '#'   . $tail1);
+    fuzzyRename($common . $pfx2 . $tail2, $common . $pfx1 . $tail2);
+    fuzzyRename($common . '#'   . $tail1, $common . $pfx2 . $tail1);
+  }
 }
 
 // Check authorization.
@@ -234,18 +335,8 @@ else if ($_POST['formaction'] == "deletefields" && $layout_id) {
 }
 
 else if ($_POST['formaction'] == "addgroup" && $layout_id) {
-    // all group names are prefixed with a number indicating their display order
-    // this new group is prefixed with the net highest number given the
-    // layout_id
-    $results = sqlStatement("select distinct(group_name) as gname ".
-                        " from layout_options where ".
-                        " form_id = '".$_POST['layout_id']."'"
-                        );
-    $maxnum = '1';
-    while ($result = sqlFetchArray($results)) {
-      $tmp = substr($result['gname'], 0, 1);
-      if ($tmp >= $maxnum) $maxnum = nextGroupOrder($tmp);
-    }
+    // Generate new value for layout_items.group_name.
+    $newgroupid = genGroupName($_POST['newgroupparent'], $_POST['newgroupname']);
 
     $data_type = formTrim($_POST['gnewdatatype']);
     $max_length = $data_type == 3 ? 3 : 255;
@@ -260,7 +351,7 @@ else if ($_POST['formaction'] == "addgroup" && $layout_id) {
       ",'" . formTrim($_POST['gnewsource']      ) . "'" .
       ",'" . formTrim($_POST['gnewid']          ) . "'" .
       ",'" . formTrim($_POST['gnewtitle']       ) . "'" .
-      ",'" . formTrim($maxnum . $_POST['newgroupname']) . "'" .
+      ",'" . formTrim($newgroupid)                . "'" .
       ",'" . formTrim($_POST['gnewseq']         ) . "'" .
       ",'" . formTrim($_POST['gnewuor']         ) . "'" .
       ",'" . formTrim($_POST['gnewlengthWidth']      ) . "'" .
@@ -291,6 +382,7 @@ else if ($_POST['formaction'] == "addgroup" && $layout_id) {
     }
 }
 
+/**********************************************************************
 else if ($_POST['formaction'] == "deletegroup" && $layout_id) {
     // drop the fields from the related table (this is critical)
     if (substr($layout_id,0,3) != 'LBF' && $layout_id != "FACUSR") {
@@ -317,56 +409,54 @@ else if ($_POST['formaction'] == "deletegroup" && $layout_id) {
                 " AND group_name = '".$_POST['deletegroupname']."'"
                 );
 }
+**********************************************************************/
 
 else if ($_POST['formaction'] == "movegroup" && $layout_id) {
-  $results = sqlStatement("SELECT DISTINCT(group_name) AS gname " .
-    "FROM layout_options WHERE form_id = '$layout_id' " .
-    "ORDER BY gname");
-  $garray = array();
-  $i = 0;
-  while ($result = sqlFetchArray($results)) {
-    if ($result['gname'] == $_POST['movegroupname']) {
-      if ($_POST['movedirection'] == 'up') { // moving up
-        if ($i > 0) {
-          $garray[$i] = $garray[$i - 1];
-          $garray[$i - 1] = $result['gname'];
-          $i++;
-        }
-        else {
-          $garray[$i++] = $result['gname'];
-        }
-      }
-      else { // moving down
-        $garray[$i++] = '';
-        $garray[$i++] = $result['gname'];
+  $res = sqlStatement("SELECT DISTINCT group_name " .
+    "FROM layout_options WHERE form_id = ? ORDER BY group_name",
+    array($layout_id));
+  $row = sqlFetchArray($res);
+  $name1 = $row['group_name'];
+  while ($row = sqlFetchArray($res)) {
+    $name2 = $row['group_name'];
+    if ($_POST['movedirection'] == 'up') { // moving up
+      if ($name2 == $_POST['movegroupname']) {
+        swapGroups($name2, $name1);
+        break;
       }
     }
-    else if ($i > 1 && $garray[$i - 2] == '') {
-      $garray[$i - 2] = $result['gname'];
+    else { // moving down
+      if ($name1 == $_POST['movegroupname']) {
+        swapGroups($name1, $name2);
+        break;
+      }
     }
-    else {
-      $garray[$i++] = $result['gname'];
-    }
-  }
-  $nextord = '1';
-  foreach ($garray as $value) {
-    if ($value === '') continue;
-    $newname = $nextord . substr($value, 1);
-    sqlStatement("UPDATE layout_options SET " .
-      "group_name = '$newname' WHERE " .
-      "form_id = '$layout_id' AND " .
-      "group_name = '$value'");
-    $nextord = nextGroupOrder($nextord);
+    $name1 = $name2;
   }
 }
 
+// Renaming a group. This might include moving to a different parent group.
 else if ($_POST['formaction'] == "renamegroup" && $layout_id) {
-  $currpos = substr($_POST['renameoldgroupname'], 0, 1);
-  // update the database rows 
+  $newparent = $_POST['renamegroupparent'];
+  $oldname   = $_POST['renameoldgroupname'];
+  $i = strrpos($oldname, '|');
+  if ($i === false) $i = 0;
+  $oldparent = substr($oldname, 0, $i);
+  if ($newparent == $oldparent) {
+    // Same parent so preserve existing child prefix character.
+    $newname = $newparent;
+    if ($newname) $newname .= '|';
+    $newname .= substr($oldname, ($i ? ($i + 1) : 0), 1);
+    $newname .= $_POST['renamegroupname'];
+  }
+  else {
+    // Different parent, generate a new child prefix character.
+    $newname = genGroupName($newparent, $_POST['renamegroupname']);
+  }
   sqlStatement("UPDATE layout_options SET " .
-    "group_name = '" . $currpos . $_POST['renamegroupname'] . "' ".
-    "WHERE form_id = '$layout_id' AND ".
-    "group_name = '" . $_POST['renameoldgroupname'] . "'");
+    "group_name = ? " .
+    "WHERE form_id = ? AND group_name = ?",
+    array($newname, $layout_id, $oldname));
 }
 
 // Get the selected form's elements.
@@ -936,7 +1026,9 @@ function doNewLayout() {
 <input type="hidden" name="deletefieldid" id="deletefieldid" value="">
 <input type="hidden" name="deletefieldgroup" id="deletefieldgroup" value="">
 <!-- elements used to identify a group to delete -->
+<!--
 <input type="hidden" name="deletegroupname" id="deletegroupname" value="">
+-->
 <!-- elements used to change the group order -->
 <input type="hidden" name="movegroupname" id="movegroupname" value="">
 <input type="hidden" name="movedirection" id="movedirection" value="">
@@ -974,21 +1066,21 @@ while ($row = sqlFetchArray($res)) {
     if ($firstgroup == false) { echo "</tbody></table></div>\n"; }
     echo "<div id='".$row['group_name']."' class='group'>";
     echo "<div class='text bold layouts_title' style='position:relative; background-color: #eef'>";
-    // echo preg_replace("/^\d+/", "", $row['group_name']);
-    echo substr($row['group_name'], 1);
-    echo "&nbsp; ";
+    $gdispname = preg_replace("/[|]./", " / ", substr($row['group_name'], 1));
+    echo text($gdispname);
     // if not english and set to translate layout labels, then show the translation of group name
     if ($GLOBALS['translate_layout'] && $_SESSION['language_choice'] > 1) {
-      // echo "<span class='translation'>>>&nbsp; " . xl(preg_replace("/^\d+/", "", $row['group_name'])) . "</span>";
-      echo "<span class='translation'>>>&nbsp; " . xl(substr($row['group_name'], 1)) . "</span>";
+      echo "<span class='translation'&gt;&gt;&gt;&nbsp; " . xlt($gdispname) . "</span>";
       echo "&nbsp; ";	
     }
     echo "&nbsp; ";
     echo " <input type='button' class='addfield' id='addto~".$row['group_name']."' value='" . xl('Add Field') . "'/>";
     echo "&nbsp; &nbsp; ";
     echo " <input type='button' class='renamegroup' id='".$row['group_name']."' value='" . xl('Rename Group') . "'/>";
+    /******************************************************************
     echo "&nbsp; &nbsp; ";
     echo " <input type='button' class='deletegroup' id='".$row['group_name']."' value='" . xl('Delete Group') . "'/>";
+    ******************************************************************/
     echo "&nbsp; &nbsp; ";
     echo " <input type='button' class='movegroup' id='".$row['group_name']."~up' value='" . xl('Move Up') . "'/>";
     echo "&nbsp; &nbsp; ";
@@ -1054,18 +1146,28 @@ while ($row = sqlFetchArray($res)) {
 </form>
 
 <!-- template DIV that appears when user chooses to rename an existing group -->
-<div id="renamegroupdetail" style="border: 1px solid black; padding: 3px; display: none; visibility: hidden; background-color: lightgrey;">
-<input type="hidden" name="renameoldgroupname" id="renameoldgroupname" value="">
-<?php xl('Group Name','e'); ?>:	<input type="textbox" size="20" maxlength="30" name="renamegroupname" id="renamegroupname">
+<div id="renamegroupdetail"
+ style="border: 1px solid black; padding: 3px; display: none; visibility: hidden; background-color: lightgrey;">
+<input type="hidden" name="renameoldgroupname" id="renameoldgroupname" value="" />
+<?php echo xlt('Group Name'); ?>:
+<input type="textbox" size="20" maxlength="30" name="renamegroupname" id="renamegroupname" />
+&nbsp;&nbsp;
+<?php echo xlt('Parent'); ?>:
+<?php echo genGroupSelector('renamegroupparent', $layout_id); ?>
 <br>
-<input type="button" class="saverenamegroup" value=<?php xl('Rename Group','e','\'','\''); ?>>
-<input type="button" class="cancelrenamegroup" value=<?php xl('Cancel','e','\'','\''); ?>>
+<input type="button" class="saverenamegroup" value=<?php echo xla('Rename Group'); ?> />
+<input type="button" class="cancelrenamegroup" value=<?php echo xla('Cancel'); ?> />
 </div>
 
 <!-- template DIV that appears when user chooses to add a new group -->
-<div id="groupdetail" style="border: 1px solid black; padding: 3px; display: none; visibility: hidden; background-color: lightgrey;">
+<div id="groupdetail"
+ style="border: 1px solid black; padding: 3px; display: none; visibility: hidden; background-color: lightgrey;">
 <span class='bold'>
-<?php xl('Group Name','e'); ?>:	<input type="textbox" size="20" maxlength="30" name="newgroupname" id="newgroupname">
+<?php echo xlt('Group Name'); ?>:
+<input type="textbox" size="20" maxlength="30" name="newgroupname" id="newgroupname" />
+&nbsp;&nbsp;
+<?php echo xlt('Parent'); ?>:
+<?php echo genGroupSelector('newgroupparent', $layout_id); ?>
 <br>
 <table style="border-collapse: collapse; margin-top: 5px;">
 <thead>
@@ -1262,7 +1364,9 @@ $(document).ready(function(){
 
     $(".addgroup").click(function() { AddGroup(this); });
     $(".savenewgroup").click(function() { SaveNewGroup(this); });
+    /******************************************************************
     $(".deletegroup").click(function() { DeleteGroup(this); });
+    ******************************************************************/
     $(".cancelnewgroup").click(function() { CancelNewGroup(this); });
 
     $(".movegroup").click(function() { MoveGroup(this); });
@@ -1377,6 +1481,7 @@ $(document).ready(function(){
         $("#theform").submit();
     }
 
+    /******************************************************************
     // actually delete an entire group from the database
     var DeleteGroup = function(btnObj) {
         var parts = $(btnObj).attr("id");
@@ -1388,6 +1493,7 @@ $(document).ready(function(){
             $("#theform").submit();
         }
     };
+    ******************************************************************/
 
     // just hide the new field DIV
     var CancelNewGroup = function(btnObj) {
@@ -1396,6 +1502,7 @@ $(document).ready(function(){
         $('#groupdetail').css('display', 'none');
         // reset the new group values to a default
         $('#groupdetail > #newgroupname').val("");
+        $('#groupdetail > #newgroupparent').val("");
     };
 
     // display the 'new field' DIV
@@ -1417,8 +1524,13 @@ $(document).ready(function(){
         $('#renamegroupdetail').css('visibility', 'visible');
         $('#renamegroupdetail').css('display', 'block');
         $(btnObj).parent().append($("#renamegroupdetail"));
-        $('#renameoldgroupname').val($(btnObj).attr("id"));
-        $('#renamegroupname').val($(btnObj).attr("id").replace(/^\d+/, ""));
+        var oldname = $(btnObj).attr("id");
+        $('#renameoldgroupname').val(oldname);
+        var i = oldname.lastIndexOf('|');
+        $('#renamegroupname').val(oldname.substr(i + 2));
+        var oldparent = '';
+        if (i >= 0) oldparent = oldname.substr(0, i);
+        $('[name=renamegroupparent]').val(oldparent);
     }
 
     // save the new group to the form
@@ -1445,6 +1557,7 @@ $(document).ready(function(){
         // reset the rename group values to a default
         $('#renameoldgroupname').val("");
         $('#renamegroupname').val("");
+        $('#renamegroupparent').val("");
     };
 
     /****************************************************/

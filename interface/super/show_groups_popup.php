@@ -3,10 +3,11 @@
   * This popup is called when choosing a group into which to move fields
   */
 
+$fake_register_globals = false;
+$sanitize_all_escapes  = true;
+
 include_once("../globals.php");
-
 ?>
-
 <html>
 <head>
 <?php html_header_show();?>
@@ -49,14 +50,15 @@ li {
 <ul>
 <?php
 $res = sqlStatement("SELECT distinct(group_name) FROM layout_options WHERE " .
-                    "form_id = '".$_GET['layout_id']."' ORDER BY group_name");
+  "form_id = ? ORDER BY group_name", array($_GET['layout_id']));
 while ($row = sqlFetchArray($res)) {
-    $gname = preg_replace("/^\d+/", "", $row['group_name']);
+    $gname = preg_replace("/[|]./", " / ", substr($row['group_name'], 1));
     $xlgname = "";
     if ($GLOBALS['translate_layout'] && $_SESSION['language_choice'] > 1) {
-      $xlgname = "<span class='translation'>>>&nbsp; " . xl($gname) . "</span>";
+      $xlgname = "<span class='translation'&gt;&gt;&gt;&nbsp; " . xlt($gname) . "</span>";
     }
-    echo "<li id='".$row['group_name']."' class='oneresult'> $gname $xlgname </li>";
+    echo "<li id='" . attr($row['group_name']) . "' class='oneresult'> " .
+      text($gname) . " " . text($xlgname) . " </li>";
 }
 ?>
 </ul>
