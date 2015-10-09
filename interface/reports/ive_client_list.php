@@ -65,7 +65,12 @@ if ($_POST['form_csvexport']) {
   echo '"' . display_csv(xl('IVE Reason'          )) . '",';
   echo '"' . display_csv(xl('Gest Age from LMP'   )) . '",';
   echo '"' . display_csv(xl('Gest Age from ECO'   )) . '",';
-  echo '"' . display_csv(xl('IVE Procedure Type'  )) . '"' . "\n";
+  echo '"' . display_csv(xl('IVE Procedure Type'  )) . '",';
+  echo '"' . display_csv(xl('Causes of unwanted pregnancy')) . '",';
+  echo '"' . display_csv(xl('Support network'             )) . '",';
+  echo '"' . display_csv(xl('Women resolution about IVE'  )) . '",';
+  echo '"' . display_csv(xl('Law applicable'              )) . '"' . "\n";
+
 } // end export
 else {
 ?>
@@ -158,6 +163,10 @@ echo "   </select>&nbsp;\n";
   <td class="dehead"><?php echo xlt('Gest Age from LMP'   ); ?></td>
   <td class="dehead"><?php echo xlt('Gest Age from ECO'   ); ?></td>
   <td class="dehead"><?php echo xlt('IVE Procedure Type'  ); ?></td>
+  <td class="dehead"><?php echo xlt('Causes of unwanted pregnancy'); ?></td>
+  <td class="dehead"><?php echo xlt('Support network'             ); ?></td>
+  <td class="dehead"><?php echo xlt('Women resolution about IVE'  ); ?></td>
+  <td class="dehead"><?php echo xlt('Law applicable'              ); ?></td>
  </tr>
 
 <?php
@@ -175,6 +184,10 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     'IVE_method',
     'IVE_hosp_proc',
     'IVE_currmethFP',
+    'IVE_reasunwantedp',
+    'IVE_suppnet',
+    'IVE_womenres',
+    'IVE_lawf1',
   );
   $varr = array();
   // Note this gives us one row per IVE form instance.
@@ -267,7 +280,7 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     // Gestational ages.
     $gestlmp = empty($row['IVE_gestage_LMP']) ? '' : $row['IVE_gestage_LMP'];
     $gesteco = empty($row['IVE_gestage_ECO']) ? '' : $row['IVE_gestage_ECO'];
-    // IVE procedure type.
+    // IVE procedure type. Could be ambulatory or inpatient hospital.
     $ivemethod = '';
     if (!empty($row['IVE_hosp_proc'])) {
       $ivemethod = getListTitle('IVE_hosp_procedd', $row['IVE_hosp_proc']);
@@ -275,6 +288,14 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     else if (!empty($row['IVE_method'])) {
       $ivemethod = getListTitle('IVE_meth', $row['IVE_method']);
     }
+    // Causes of unwanted pregnancy
+    $ivecauses = empty($row['IVE_reasunwantedp']) ? '' : getListTitle('IVE_unw_preg', $row['IVE_reasunwantedp']);
+    // Support network
+    $ivesuppnet = empty($row['IVE_suppnet']) ? '' : getListTitle('IVE_support', $row['IVE_suppnet']);
+    // Women resolution about IVE
+    $ivewomres = empty($row['IVE_womenres']) ? '' : getListTitle('IVE_womres', $row['IVE_womenres']);
+    // Law applicable 
+    $ivelaw = empty($row['IVE_lawf1']) ? '' : getListTitle('IVE_law', $row['IVE_lawf1']);
 
     if ($_POST['form_csvexport']) {
       echo '"'  . display_csv($row['pubpid']) . '"';
@@ -293,7 +314,11 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo ',"' . display_csv($reason       ) . '"';
       echo ',"' . display_csv($gestlmp      ) . '"';
       echo ',"' . display_csv($gesteco      ) . '"';
-      echo ',"' . display_csv($ivemethod    ) . '"' . "\n";
+      echo ',"' . display_csv($ivemethod    ) . '"';
+      echo ',"' . display_csv($ivecauses    ) . '"';
+      echo ',"' . display_csv($ivesuppnet   ) . '"';
+      echo ',"' . display_csv($ivewomres    ) . '"';
+      echo ',"' . display_csv($ivelaw       ) . '"' . "\n";
     }
     else {
       ++$encount;
@@ -316,6 +341,10 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo "  <td class='detail'>" . display_html($gestlmp   ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($gesteco   ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivemethod ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($ivecauses ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($ivesuppnet) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($ivewomres ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($ivelaw    ) . "</td>\n";
       echo " </tr>\n";
     } // end not export
   } // end reporting loop
