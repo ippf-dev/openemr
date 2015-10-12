@@ -70,11 +70,12 @@ function mappedFieldOption($form_id, $field_id, $option_id) {
   return ($maparr[0] === '') ? $option_id : $maparr[0];
 }
 
-function recordStats($dataelement, $period, $orgunit, $categoryoptioncombo, $attributeoptioncombo) {
+function recordStats($dataelement, $period, $orgunit, $categoryoptioncombo, $attributeoptioncombo, $quantity=1) {
   global $outarr;
   $key = "$period|$orgunit|$dataelement|$categoryoptioncombo|$attributeoptioncombo";
   if (!isset($outarr[$key])) $outarr[$key] = 0;
-  ++$outarr[$key];
+  if (empty($quantity)) $quantity = 1;
+  $outarr[$key] += $quantity;
 }
 
 // Get the specified patient's new acceptor date.
@@ -306,7 +307,7 @@ if (!empty($_POST['form_submit'])) {
       "JOIN drugs AS d ON d.drug_id = s.drug_id " .
       "WHERE s.pid = ? AND s.encounter = ? " .
       "ORDER BY s.drug_id, s.sale_id";
-    $pres = sqlStatement($query, array($pid, $encounter));
+    $pres = sqlStatement($query, array($row_pid, $row_encounter));
     while ($prow = sqlFetchArray($pres)) {
       if (!empty($prow['related_code'])) {
         $relcodes = explode(';', $prow['related_code']);
@@ -342,7 +343,8 @@ if (!empty($_POST['form_submit'])) {
               $period,
               $row['domain_identifier'],    // org unit
               $coc,                         // age and sex
-              'X66r2y4EuwS'
+              'X66r2y4EuwS',
+              $prow['quantity']
             );
           }
         }
@@ -400,7 +402,7 @@ if (!empty($_POST['form_submit'])) {
       }
       if ($codetype !== 'IPPF2') continue;
       recordStats(
-        getDataElement('RFR', $code, $country),
+        getDataElement('REF', $code, $country),
         $period,
         $domain_identifier,           // org unit
         $coc,                         // age and sex
