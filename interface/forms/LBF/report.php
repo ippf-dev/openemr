@@ -21,8 +21,8 @@ function lbf_report($pid, $encounter, $cols, $id, $formname) {
   $CPR = 4;
   $tmp = sqlQuery("SELECT notes FROM list_options WHERE " .
     "list_id = 'lbfnames' AND option_id = ?", array($formname) );
-  if (ctype_digit($tmp['notes']) && $tmp['notes'] > 0 && $tmp['notes'] < 13) {
-    $CPR = intval($tmp['notes']);
+  if (preg_match('/columns=([0-9]+)/', $tmp['notes'], $matches)) {
+    if ($matches[1] > 0 && $matches[1] < 13) $CPR = intval($matches[1]);
   }
   //
   $arr = array();

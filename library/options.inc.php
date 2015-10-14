@@ -2099,13 +2099,8 @@ function display_layout_rows($formtype, $result1, $result2='') {
 	  echo "<tr>";
 	  if ($group_name) {
 		echo "<td class='groupname'>";
-		//echo "<td class='groupname' style='padding-right:5pt' valign='top'>";
-		//echo "<font color='#008800'>$group_name</font>";
-	
-		// Added 5-09 by BM - Translate label if applicable
-		echo htmlspecialchars(xl_layout_label($group_name),ENT_NOQUOTES);
-	  
-		$group_name = '';
+		echo text(xl_layout_label(preg_replace("/[|]./", " / ", $group_name)));
+    $group_name = '';
 	  } else {
 		//echo "<td class='' style='padding-right:5pt' valign='top'>";
 		echo "<td valign='top'>&nbsp;";

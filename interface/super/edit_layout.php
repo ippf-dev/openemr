@@ -664,6 +664,7 @@ function writeFieldLine($linedata) {
         ", T = " . xla('Description is default text') .
         ", U = " . xla('Capitalize all') .
         ", V = " . xla('Vendor') .
+        ", X = " . xla('Do Not Print') .
         ", 0 = " . xla('Read Only') .
         ", 1 = " . xla('Write Once') . 
         ", 2 = " . xla('Billing Code Descriptions') . 

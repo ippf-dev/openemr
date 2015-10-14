@@ -379,8 +379,20 @@ if ( $esign->isButtonViewable() ) {
             echo $esign->buttonHtml();
         }
 
+        if (substr($formdir, 0, 3) == 'LBF') {
+          // A link for a nice printout of the LBF
+          echo "<a target='_blank' " .
+            "href='$rootdir/forms/LBF/printable.php?"   .
+            "formname="   . urlencode($formdir)         .
+            "&formid="    . urlencode($iter['form_id']) .
+            "&visitid="   . urlencode($encounter)       .
+            "&patientid=" . urlencode($pid)             .
+            "' class='css_button_small' title='" . xl('Print this form') .
+            "' onclick='top.restoreSession()'><span>" . xlt('Print') . "</span></a>";
+        }
+
         if (acl_check('admin', 'super') ) {
-            if ( $formdir != 'newpatient') {
+            if ($formdir != 'newpatient') {
                 // a link to delete the form from the encounter
                 echo "<a target='".
                     ($GLOBALS['concurrent_layout'] ? "Forms" : "Main") .
