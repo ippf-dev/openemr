@@ -33,17 +33,18 @@ function getFormsByPid ($pid, $cols = "*")
 	return sqlQuery("select $cols from forms where pid ='$pid'");
 }
 
-function getFormByEncounter($pid,$encounter, $cols="form_id, form_name", $name="")
+function getFormByEncounter($pid,$encounter, $cols="form_id, form_name", $name="",
+  $orderby="FIND_IN_SET(formdir,'vitals') DESC, date DESC")
 {
  	$arraySqlBind = array();
-	$sql = "select $cols from forms where encounter = ? and pid=? ";
+	$sql = "select $cols from forms where encounter = ? and pid = ? ";
 	array_push($arraySqlBind,$encounter,$pid);
 	if(!empty($name)){
-		$sql .= "and form_name=? ";
+		$sql .= "and form_name = ? ";
 		array_push($arraySqlBind,$name);
 	}
-  // This puts vitals first in the list, and newpatient last:
-  $sql .= "ORDER BY FIND_IN_SET(formdir,'vitals') DESC, date DESC";
+  // Default $orderby puts vitals first in the list, and newpatient last:
+  $sql .= "ORDER BY $orderby";
 
 	$res = sqlStatement($sql,$arraySqlBind);
 

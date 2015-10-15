@@ -123,7 +123,7 @@ if (empty($is_lbf)) {
 
 // If Save was clicked, save the info.
 //
-if ($_POST['bn_save']) {
+if (!empty($_POST['bn_save']) || !empty($_POST['bn_save_print'])) {
   $newid = 0;
   if (!$formid) {
     // Creating a new form. Get the new form_id by inserting and deleting a dummy row.
@@ -221,6 +221,19 @@ if ($_POST['bn_save']) {
       if (call_user_func($formname . '_save_exit')) exit;
     }
     formHeader("Redirecting....");
+    // If Save and Print, write the JavaScript to open a window for printing.
+    if (!$formid) $formid = $newid;
+    if (!empty($_POST['bn_save_print'])) {
+      echo "<script language='Javascript'>\n"            .
+        "top.restoreSession();\n"                        .
+        "window.open('$rootdir/forms/LBF/printable.php?" .
+        "formname="   . urlencode($formname )            .
+        "&formid="    . urlencode($formid   )            .
+        "&visitid="   . urlencode($encounter)            .
+        "&patientid=" . urlencode($pid      )            .
+        "', '_blank');\n"                                .
+        "</script>\n";
+    }
     formJump();
     formFooter();
     exit;
@@ -1046,6 +1059,8 @@ function warehouse_changed(sel) {
   }
 ?>
 <input type='submit' name='bn_save' value='<?php echo xla('Save') ?>' />
+&nbsp;
+<input type='submit' name='bn_save_print' value='<?php echo xla('Save and Print') ?>' />
 <?php
 if (function_exists($formname . '_additional_buttons')) {
   // Allow the plug-in to insert more action buttons here.

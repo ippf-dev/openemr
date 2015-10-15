@@ -17,6 +17,20 @@ require_once("$srcdir/acl.inc");
 require_once("$srcdir/options.inc.php");
 require_once("$srcdir/patient.inc");
 
+if (preg_match('/services=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
+  // Note if this is defined then we will make a Services section on the page.
+  $LBF_SERVICES_SECTION = $matches[1];
+}
+if (preg_match('/products=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
+  // Note if this is defined then we will make a Products section on the page.
+  $LBF_PRODUCTS_SECTION = $matches[1];
+}
+
+if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION)) {
+  require_once("$srcdir/FeeSheetHtml.class.php");
+  $fs = new FeeSheetHtml($pid, $encounter);
+}
+
 // The form name is passed to us as a GET parameter.
 $formname = isset($_GET['formname']) ? $_GET['formname'] : '';
 
@@ -46,12 +60,28 @@ if ($PDF_OUTPUT) {
 
 $CPR = 4; // cells per row
 
+// Collect some top-level information about this layout.
 $tmp = sqlQuery("SELECT title, notes FROM list_options WHERE " .
   "list_id = 'lbfnames' AND option_id = ? LIMIT 1", array($formname) );
 $formtitle = $tmp['title'];
+
 // Notes can be used to specify number of columns in the form.
 if (preg_match('/columns=([0-9]+)/', $tmp['notes'], $matches)) {
   if ($matches[1] > 0 && $matches[1] < 13) $CPR = intval($matches[1]);
+}
+
+if (preg_match('/services=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
+  // Note if this is defined then we will make a Services section on the page.
+  $LBF_SERVICES_SECTION = $matches[1];
+}
+if (preg_match('/products=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
+  // Note if this is defined then we will make a Products section on the page.
+  $LBF_PRODUCTS_SECTION = $matches[1];
+}
+
+if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION)) {
+  require_once("$srcdir/FeeSheetHtml.class.php");
+  $fs = new FeeSheetHtml($pid, $encounter);
 }
 
 $fres = sqlStatement("SELECT * FROM layout_options " .
@@ -357,6 +387,42 @@ while (count($group_levels)) {
   echo "</div>\n";
   echo "</nobreak>\n";
 }
+
+if (isset($LBF_SERVICES_SECTION)) {
+  echo "<nobreak>\n";
+  echo "<p class='grpheader'>" . xlt('Services') . "</p>\n";
+  echo "<div class='section'>\n";
+  echo " <table border='0' cellpadding='0' style='width:'>\n";
+  // Generate a line for each service already in this FS.
+  $fs->loadServiceItems();
+  foreach ($fs->serviceitems as $lino => $li) {
+    echo "  <tr>\n";
+    echo "   <td class='text'>" . text($li['code']) . "&nbsp;</td>\n";
+    echo "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
+    echo "  </tr>\n";
+  }
+  echo " </table>\n";
+  echo "</div>\n";
+  echo "</nobreak>\n";
+} // End Services Section
+
+if (isset($LBF_PRODUCTS_SECTION)) {
+  echo "<nobreak>\n";
+  echo "<p class='grpheader'>" . xlt('Products') . "</p>\n";
+  echo "<div class='section'>\n";
+  echo " <table border='0' cellpadding='0' style='width:'>\n";
+  // Generate a line for each service already in this FS.
+  $fs->loadProductItems();
+  foreach ($fs->productitems as $lino => $li) {
+    echo "  <tr>\n";
+    echo "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
+    echo "   <td class='text' align='right'>" . text($li['units']) . "&nbsp;</td>\n";
+    echo "  </tr>\n";
+  }
+  echo " </table>\n";
+  echo "</div>\n";
+  echo "</nobreak>\n";
+} // End Products Section
 
 ?>
 

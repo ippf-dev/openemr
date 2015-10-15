@@ -141,13 +141,23 @@ function divtoggle(spanid, divid) {
         padding:8px;
     }
 
-    div.form_header_controls {
-        float:left;margin-bottom:2px;
-    }
-
     div.form_header {
         float:left;
+        min-width:300pt;
+    }
+
+    div.form_header_controls {
+        float:left;
+        margin-bottom:2px;
         margin-left:6px;
+    }
+
+    div.formname {
+        float:left;
+        min-width:120pt;
+        font-weight:bold;
+        padding:0px;
+        margin:0px;
     }
     
     .encounter-summary-container {
@@ -321,9 +331,12 @@ if ( $esign->isButtonViewable() ) {
 <br/>
 
 <?php
-  if ($result = getFormByEncounter($pid, $encounter, "id, date, form_id, form_name, formdir, user, deleted")) {
+  if ($result = getFormByEncounter($pid, $encounter,
+    "id, date, form_id, form_name, formdir, user, deleted",
+    "", "FIND_IN_SET(formdir,'newpatient'), form_name"))
+  {
     echo "<table width='100%' id='partable'>";
-	$divnos=1;
+    $divnos = 1;
     foreach ($result as $iter) {
         $formdir = $iter['formdir'];
 
@@ -349,8 +362,11 @@ if ( $esign->isButtonViewable() ) {
 	        echo '<tr title="' . xl('Edit form') . '" '.
        		      'id="'.$formdir.'~'.$iter['form_id'].'">';
         } else {
+            /**********************************************************
             echo '<tr title="' . xl('Edit form') . '" '.
                   'id="'.$formdir.'~'.$iter['form_id'].'" class="text onerow">';
+            **********************************************************/
+            echo '<tr id="' . $formdir . '~' . $iter['form_id'] . '" class="text onerow">';
         }
         $user = getNameFromUsername($iter['user']);
 
@@ -358,27 +374,44 @@ if ( $esign->isButtonViewable() ) {
 
         // Create the ESign instance for this form
         $esign = $esignApi->createFormESign( $iter['id'], $formdir, $encounter );
-        echo "<tr>";
+
+        // echo "<tr>"; // Removed as bug fix.
+
         echo "<td style='border-bottom:1px solid'>";
+
+        echo "<div class='form_header'>";
+        // Figure out the correct author (encounter authors are the '$providerNameRes', while other
+        // form authors are the '$user['fname'] . "  " . $user['lname']').
+        if ($formdir == 'newpatient') {
+          $form_author = $providerNameRes;
+        }
+        else {
+          $form_author = $user['fname'] . "  " . $user['lname'];
+        }
+        echo "<a href='#' onclick='divtoggle(\"spanid_$divnos\",\"divid_$divnos\");' class='small' id='aid_$divnos'>" .
+          "<div class='formname'>$form_name</div> " .
+          "by " . text($form_author) . " " .
+          "(<span id=spanid_$divnos class=\"indicator\">" . xl('Collapse') . "</span>)</a>";
+        echo "</div>";
+
         // a link to edit the form
         echo "<div class='form_header_controls'>";
-        
         // If the form is locked, it is no longer editable
         if ( $esign->isLocked() ) {
             echo "<a href=# class='css_button_small form-edit-button-locked' id='form-edit-button-".attr($formdir)."-".attr($iter['id'])."'><span>".xlt('Locked')."</span></a>";
         } else {
-            echo "<a class='css_button_small form-edit-button' id='form-edit-button-".attr($formdir)."-".attr($iter['id'])."' target='".
-                    ($GLOBALS['concurrent_layout'] ? "Forms" : "Main") .
-                    "' href='$rootdir/patient_file/encounter/view_form.php?" .
-                    "formname=" . attr($formdir) . "&id=" . attr($iter['form_id']) .
-                    "' onclick='top.restoreSession()'>";
+            echo "<a class='css_button_small form-edit-button' " .
+                    "id='form-edit-button-" . attr($formdir) . "-" . attr($iter['id']) . "' " .
+                    "target='" . ($GLOBALS['concurrent_layout'] ? "Forms" : "Main") . "' " .
+                    "href='$rootdir/patient_file/encounter/view_form.php?" .
+                    "formname=" . attr($formdir) . "&id=" . attr($iter['form_id']) . "' " .
+                    "title='" . xla('Edit this form') . "' " .
+                    "onclick='top.restoreSession()'>";
             echo "<span>" . xlt('Edit') . "</span></a>";
         }
-        
-        if ( $esign->isButtonViewable() ) {
+                if ( $esign->isButtonViewable() ) {
             echo $esign->buttonHtml();
         }
-
         if (substr($formdir, 0, 3) == 'LBF') {
           // A link for a nice printout of the LBF
           echo "<a target='_blank' " .
@@ -390,7 +423,6 @@ if ( $esign->isButtonViewable() ) {
             "' class='css_button_small' title='" . xl('Print this form') .
             "' onclick='top.restoreSession()'><span>" . xlt('Print') . "</span></a>";
         }
-
         if (acl_check('admin', 'super') ) {
             if ($formdir != 'newpatient') {
                 // a link to delete the form from the encounter
@@ -406,18 +438,7 @@ if ( $esign->isButtonViewable() ) {
                 ?><a href='javascript:;' class='css_button_small' style='color:gray'><span><?php xl('Delete','e'); ?></span></a><?php
             }
         }
-
-        echo "<div class='form_header'>";
-
-        // Figure out the correct author (encounter authors are the '$providerNameRes', while other
-        // form authors are the '$user['fname'] . "  " . $user['lname']').
-        if ($formdir == 'newpatient') {
-          $form_author = $providerNameRes;
-        }
-        else {
-          $form_author = $user['fname'] . "  " . $user['lname'];
-        }
-        echo "<a href='#' onclick='divtoggle(\"spanid_$divnos\",\"divid_$divnos\");' class='small' id='aid_$divnos'><b>$form_name</b> <span class='text'>by " . htmlspecialchars( $form_author ) . "</span> (<span id=spanid_$divnos class=\"indicator\">" . xl('Collapse') . "</span>)</a></div>";
+        echo "</div>\n"; // Added as bug fix.
 
         echo "</td>\n";
         echo "</tr>";
@@ -468,9 +489,11 @@ if ( $esign->isButtonViewable() ) {
 // jQuery stuff to make the page a little easier to use
 
 $(document).ready(function(){
+    /******************************************************************
     $(".onerow").mouseover(function() { $(this).toggleClass("highlight"); });
     $(".onerow").mouseout(function() { $(this).toggleClass("highlight"); });
     $(".onerow").click(function() { GotoForm(this); });
+    ******************************************************************/
 
     $("#prov_edu_res").click(function() {
         if ( $('#prov_edu_res').attr('checked') ) {
