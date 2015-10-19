@@ -103,22 +103,19 @@ $(document).ready( function() {
 </script>
 
 <script language="javascript">
-function expandcollapse(atr){
-	if(atr == "expand") {
-		for(i=1;i<15;i++){
-			var mydivid="divid_"+i;var myspanid="spanid_"+i;
-				var ele = document.getElementById(mydivid);	var text = document.getElementById(myspanid);
-				ele.style.display = "block";text.innerHTML = "<?php xl('Collapse','e'); ?>";
-		}
-  	}
-	else {
-		for(i=1;i<15;i++){
-			var mydivid="divid_"+i;var myspanid="spanid_"+i;
-				var ele = document.getElementById(mydivid);	var text = document.getElementById(myspanid);
-				ele.style.display = "none";	text.innerHTML = "<?php xl('Expand','e'); ?>";
-		}
-	}
-
+function expandcollapse(atr) {
+  for (var i = 1; i < 15; ++i) {
+    var mydivid="divid_" + i; var myspanid = "spanid_" + i;
+    var ele = document.getElementById(mydivid);
+    var text = document.getElementById(myspanid);
+    if (!ele) continue;
+    if (atr == "expand") {
+      ele.style.display = "block"; text.innerHTML = "<?php xl('Collapse','e'); ?>";
+    }
+    else {
+      ele.style.display = "none" ; text.innerHTML = "<?php xl('Expand'  ,'e'); ?>";
+    }
+  }
 }
 
 function divtoggle(spanid, divid) {

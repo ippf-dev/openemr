@@ -31,6 +31,7 @@ require_once("$srcdir/options.inc.php");
 require_once("$srcdir/patient.inc");
 require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/formatting.inc.php");
+require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 
 $CPR = 4; // cells per row
 
@@ -79,18 +80,6 @@ function end_row() {
   }
 }
 
-/**********************************************************************
-function end_group() {
-  global $last_group;
-  if (strlen($last_group) > 0) {
-    end_row();
-    echo " </table>\n";
-    // No div for an empty group name.
-    if (strlen($last_group) > 1) echo "</div>\n";
-  }
-}
-**********************************************************************/
-
 $formname = isset($_GET['formname']) ? $_GET['formname'] : '';
 $formid = 0 + (isset($_GET['id']) ? $_GET['id'] : '');
 
@@ -102,16 +91,20 @@ $formhistory = 0 + $tmp['option_value'];
 if (preg_match('/columns=([0-9]+)/', $tmp['notes'], $matches)) {
   if ($matches[1] > 0 && $matches[1] < 13) $CPR = intval($matches[1]);
 }
-if (preg_match('/services=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
+if (preg_match('/\\bservices=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
   // Note if this is defined then we will make a Services section on the page.
   $LBF_SERVICES_SECTION = $matches[1];
 }
-if (preg_match('/products=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
+if (preg_match('/\\bproducts=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
   // Note if this is defined then we will make a Products section on the page.
   $LBF_PRODUCTS_SECTION = $matches[1];
 }
+if (preg_match('/\\bdiags=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
+  // Note if this is defined then we will make a Diagnoses section on the page.
+  $LBF_DIAGS_SECTION = $matches[1];
+}
 
-if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION)) {
+if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION) || isset($LBF_DIAGS_SECTION)) {
   require_once("$srcdir/FeeSheetHtml.class.php");
   $fs = new FeeSheetHtml($pid, $encounter);
 }
@@ -443,6 +436,23 @@ function fs_append_product(code_type, code, desc, price, warehouses) {
   "</td>";
 }
 
+// Add a diagnosis line item.
+function fs_append_diag(code_type, code, desc) {
+ var telem = document.getElementById('fs_diags_table');
+ // Adding 1000 because form_fs_bill[] is shared with services and we want to avoid collisions.
+ var lino = telem.rows.length - 1 + 1000;
+ var trelem = telem.insertRow(telem.rows.length);
+ trelem.innerHTML =
+  "<td class='text'>" + code + "&nbsp;</td>" +
+  "<td class='text'>" + desc + "&nbsp;</td>" +
+  "<td class='text' align='right'>" +
+  "<input type='checkbox' name='form_fs_bill[" + lino + "][del]' value='1' />" +
+  "<input type='hidden' name='form_fs_bill[" + lino + "][code_type]' value='" + code_type + "' />" +
+  "<input type='hidden' name='form_fs_bill[" + lino + "][code]'      value='" + code      + "' />" +
+  "<input type='hidden' name='form_fs_bill[" + lino + "][price]'     value='" + 0         + "' />" +
+  "</td>";
+}
+
 // Respond to clicking a checkbox for adding (or removing) a specific service.
 function fs_service_clicked(cb) {
   var f = cb.form;
@@ -469,7 +479,7 @@ function fs_service_clicked(cb) {
     '&pricelevel=' + encodeURIComponent(f.form_fs_pricelevel.value));
 }
 
-// Respond to clicking a checkbox for adding (or removing) a specific service.
+// Respond to clicking a checkbox for adding (or removing) a specific product.
 function fs_product_clicked(cb) {
   var f = cb.form;
   // The checkbox value is a JSON array containing the product's code type, code and selector.
@@ -495,10 +505,38 @@ function fs_product_clicked(cb) {
     '&pricelevel=' + encodeURIComponent(f.form_fs_pricelevel.value));
 }
 
+// Respond to clicking a checkbox for adding (or removing) a specific diagnosis.
+function fs_diag_clicked(cb) {
+  var f = cb.form;
+  // The checkbox value is a JSON array containing the diagnosis's code type, code, description.
+  var a = JSON.parse(cb.value);
+  if (!cb.checked) {
+    // The checkbox was UNchecked.
+    // Find last row with a matching code_type and code and set its del flag.
+    var telem = document.getElementById('fs_diags_table');
+    var lino = telem.rows.length - 2 + 1000;
+    for (; lino >= 0; --lino) {
+      var pfx = "form_fs_bill[" + lino + "]";
+      if (f[pfx + "[code_type]"].value == a[0] && f[pfx + "[code]"].value == a[1]) {
+        f[pfx + "[del]"].checked = true;
+        break;
+      }
+    }
+    return;
+  }
+  $.getScript('<?php echo $GLOBALS['web_root'] ?>/library/ajax/code_attributes_ajax.php' +
+    '?codetype='   + encodeURIComponent(a[0]) +
+    '&code='       + encodeURIComponent(a[1]) +
+    '&pricelevel=' + encodeURIComponent(f.form_fs_pricelevel.value));
+}
+
 // This is called back by code_attributes_ajax.php to complete the appending of a line item.
 function code_attributes_handler(codetype, code, desc, price, warehouses) {
  if (codetype == 'PROD') {
   fs_append_product(codetype, code, desc, price, warehouses);
+ }
+ else if (codetype == 'ICD9' || codetype == 'ICD10') {
+  fs_append_diag(codetype, code, desc);
  }
  else {
   fs_append_service(codetype, code, desc, price);
@@ -889,6 +927,10 @@ function warehouse_changed(sel) {
 
   $display_style = 'none';
 
+  if (isset($LBF_SERVICES_SECTION) || isset($LBF_DIAGS_SECTION)) {
+    $fs->loadServiceItems();
+  }
+
   if (isset($LBF_SERVICES_SECTION)) {
 
     // Create the checkbox and div for the Services Section.
@@ -930,7 +972,7 @@ function warehouse_changed(sel) {
     // A row for Search, Main Provider, Price Level.
     $ctype = $GLOBALS['ippf_specific'] ? 'MA' : '';
     echo "<p class='bold'>";
-    echo "<input type='button' value='" . xla('Search Other Services') . "' onclick='sel_related(null,\"$ctype\")' />&nbsp;&nbsp;";
+    echo "<input type='button' value='" . xla('Search Services') . "' onclick='sel_related(null,\"$ctype\")' />&nbsp;&nbsp;";
     echo xlt('Main Provider') . ": ";
     echo $fs->genProviderSelect("form_fs_provid", ' ', $fs->provider_id);
     echo "\n";
@@ -944,8 +986,9 @@ function warehouse_changed(sel) {
     echo "  <td class='bold' align='right'>" . xlt('Price'   ) . "&nbsp;</td>\n";
     echo "  <td class='bold' align='right'>" . xlt('Delete'  ) . "</td>\n";
     echo " </tr>\n";
-    $fs->loadServiceItems();
     foreach ($fs->serviceitems as $lino => $li) {
+      // Skip diagnoses; those would be in the Diagnoses section below.
+      if ($code_types[$li['codetype']]['diag']) continue;
       echo " <tr>\n";
       echo "  <td class='text'>" . text($li['code']) . "&nbsp;</td>\n";
       echo "  <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
@@ -1009,7 +1052,7 @@ function warehouse_changed(sel) {
     // A row for Search
     $ctype = $GLOBALS['ippf_specific'] ? 'MA' : '';
     echo "<p class='bold'>";
-    echo "<input type='button' value='" . xla('Search Other Products') . "' onclick='sel_related(null,\"PROD\")' />&nbsp;&nbsp;";
+    echo "<input type='button' value='" . xla('Search Products') . "' onclick='sel_related(null,\"PROD\")' />&nbsp;&nbsp;";
     echo "</p>\n";
 
     // Generate a line for each product already in this FS.
@@ -1046,6 +1089,78 @@ function warehouse_changed(sel) {
     echo "</div>\n";
 
   } // End Products Section
+
+  if (isset($LBF_DIAGS_SECTION)) {
+
+    // Create the checkbox and div for the Diagnoses Section.
+    echo "<br /><span class='bold'><input type='checkbox' name='form_cb_fs_diags' value='1' " .
+      "onclick='return divclick(this, \"div_fs_diags\");'";
+    if ($display_style == 'block') echo " checked";
+    echo " /><b>" . xlt('Diagnoses') . "</b></span>\n";
+    echo "<div id='div_fs_diags' class='section' style='display:" . attr($display_style) . ";'>\n";
+    echo "<center>\n";
+    $display_style = 'none';
+
+    // If there is an associated list, generate a checkbox for each diagnosis in the list.
+    if ($LBF_DIAGS_SECTION) {
+      $lres = sqlStatement("SELECT * FROM list_options " .
+        "WHERE list_id = ? ORDER BY seq, title", array($LBF_DIAGS_SECTION));
+      echo "<table cellpadding='0' cellspacing='0' width='100%'>\n";
+      $cols = 3;
+      $tdpct = (int) (100 / $cols);
+      for ($count = 0; $lrow = sqlFetchArray($lres); ++$count) {
+        $codes = $lrow['codes'];
+        $codes_esc = htmlspecialchars($codes, ENT_QUOTES);
+        $cbval = $fs->genCodeSelectorValue($codes);
+        if ($count % $cols == 0) {
+          if ($count) echo " </tr>\n";
+          echo " <tr>\n";
+        }
+        echo "  <td width='$tdpct%'>";
+        echo "<input type='checkbox' id='form_fs_diags[$codes_esc]' " .
+          "onclick='fs_diag_clicked(this)' value='" . attr($cbval) . "'";
+        if ($fs->code_is_in_fee_sheet) echo " checked";
+        $title = empty($lrow['title']) ? $lrow['option_id'] : xl_list_label($lrow['title']);
+        echo " />" . htmlspecialchars($title, ENT_NOQUOTES);
+        echo "</td>\n";
+      }
+      if ($count) echo " </tr>\n";
+      echo "</table>\n";
+    }
+
+    // A row for Search.
+    $ctype = 'ICD9,ICD10';
+    echo "<p class='bold'>";
+    echo "<input type='button' value='" . xla('Search Diagnoses') . "' onclick='sel_related(null,\"$ctype\")' />";
+    echo "</p>\n";
+
+    // Generate a line for each diagnosis already in this FS.
+    echo "<table cellpadding='0' cellspacing='2' id='fs_diags_table'>\n";
+    echo " <tr>\n";
+    echo "  <td class='bold' colspan='2'>" . xlt('Diagnosis') . "&nbsp;</td>\n";
+    echo "  <td class='bold' align='right'>" . xlt('Delete'  ) . "</td>\n";
+    echo " </tr>\n";
+    foreach ($fs->serviceitems as $lino => $li) {
+      // Skip anything that is not a diagnosis; those are in the Services section above.
+      if (!$code_types[$li['codetype']]['diag']) continue;
+      echo " <tr>\n";
+      echo "  <td class='text'>" . text($li['code']) . "&nbsp;</td>\n";
+      echo "  <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
+      // The Diagnoses section shares the form_fs_bill array with the Services section.
+      echo "  <td class='text' align='right'>\n" .
+        "   <input type='checkbox' name='form_fs_bill[$lino][del]' " .
+        "value='1'" . ($li['del'] ? " checked" : "") . " />\n";
+      foreach ($li['hidden'] as $hname => $hvalue) {
+        echo "   <input type='hidden' name='form_fs_bill[$lino][$hname]' value='" . attr($hvalue) . "' />\n";
+      }
+      echo "  </td>\n";
+      echo " </tr>\n";
+    }
+    echo "</table>\n";
+    echo "</center>\n";
+    echo "</div>\n";
+
+  } // End Services Section
 
 ?>
 

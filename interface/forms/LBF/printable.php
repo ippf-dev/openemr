@@ -16,20 +16,7 @@ require_once("../../globals.php");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/options.inc.php");
 require_once("$srcdir/patient.inc");
-
-if (preg_match('/services=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
-  // Note if this is defined then we will make a Services section on the page.
-  $LBF_SERVICES_SECTION = $matches[1];
-}
-if (preg_match('/products=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
-  // Note if this is defined then we will make a Products section on the page.
-  $LBF_PRODUCTS_SECTION = $matches[1];
-}
-
-if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION)) {
-  require_once("$srcdir/FeeSheetHtml.class.php");
-  $fs = new FeeSheetHtml($pid, $encounter);
-}
+require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 
 // The form name is passed to us as a GET parameter.
 $formname = isset($_GET['formname']) ? $_GET['formname'] : '';
@@ -77,6 +64,10 @@ if (preg_match('/services=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
 if (preg_match('/products=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
   // Note if this is defined then we will make a Products section on the page.
   $LBF_PRODUCTS_SECTION = $matches[1];
+}
+if (preg_match('/\\bdiags=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
+  // Note if this is defined then we will make a Diagnoses section on the page.
+  $LBF_DIAGS_SECTION = $matches[1];
 }
 
 if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION)) {
@@ -388,14 +379,19 @@ while (count($group_levels)) {
   echo "</nobreak>\n";
 }
 
+if (isset($LBF_SERVICES_SECTION) || isset($LBF_DIAGS_SECTION)) {
+  $fs->loadServiceItems();
+}
+
 if (isset($LBF_SERVICES_SECTION)) {
   echo "<nobreak>\n";
   echo "<p class='grpheader'>" . xlt('Services') . "</p>\n";
   echo "<div class='section'>\n";
   echo " <table border='0' cellpadding='0' style='width:'>\n";
   // Generate a line for each service already in this FS.
-  $fs->loadServiceItems();
   foreach ($fs->serviceitems as $lino => $li) {
+    // Skip diagnoses; those would be in the Diagnoses section below.
+    if ($code_types[$li['codetype']]['diag']) continue;
     echo "  <tr>\n";
     echo "   <td class='text'>" . text($li['code']) . "&nbsp;</td>\n";
     echo "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
@@ -424,6 +420,25 @@ if (isset($LBF_PRODUCTS_SECTION)) {
   echo "</nobreak>\n";
 } // End Products Section
 
+if (isset($LBF_DIAGS_SECTION)) {
+  echo "<nobreak>\n";
+  echo "<p class='grpheader'>" . xlt('Diagnoses') . "</p>\n";
+  echo "<div class='section'>\n";
+  echo " <table border='0' cellpadding='0' style='width:'>\n";
+  // Generate a line for each service already in this FS.
+  foreach ($fs->serviceitems as $lino => $li) {
+    // Skip anything that is not a diagnosis; those are in the Services section above.
+    if (!$code_types[$li['codetype']]['diag']) continue;
+    echo "  <tr>\n";
+    echo "   <td class='text'>" . text($li['code']) . "&nbsp;</td>\n";
+    echo "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
+    echo "  </tr>\n";
+  }
+  echo " </table>\n";
+  echo "</div>\n";
+  echo "</nobreak>\n";
+} // End Services Section
+
 ?>
 
 </form>
@@ -431,7 +446,7 @@ if (isset($LBF_PRODUCTS_SECTION)) {
 if ($PDF_OUTPUT) {
   $content = getContent();
   $pdf->writeHTML($content, false);
-  $pdf->Output('form.pdf', 'D'); // D = Download, I = Inline
+  $pdf->Output('form.pdf', 'I'); // D = Download, I = Inline
 }
 else {
 ?>
