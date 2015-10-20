@@ -2857,3 +2857,10 @@ UPDATE codes SET related_code = 'IPPF:113172110;IPPF2:1132120000000' WHERE code_
 UPDATE codes SET related_code = 'IPPF:121181000;IPPF2:1141130000800' WHERE code_type = 32 AND code = '4560';
 UPDATE codes SET related_code = 'IPPF:122182000;IPPF2:1142030000800' WHERE code_type = 32 AND code = '4570';
 UPDATE codes SET related_code = 'IPPF:145212000;IPPF2:1151020000000' WHERE code_type = 32 AND code = '4620';
+
+#IfNotRow2D codes code_type 31 code 2135050505000
+INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2135050505000', '', 'STI/RTI - Investigation - Lab test - Human Papilloma virus (HPV)' );
+INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143230302501', '', 'Gynecology - Management - Surgical - cervical cancer related - Loop Electrosurgical Excision Procedure (LEEP)' );
+UPDATE codes SET code_text = 'Gynecology - Management - Surgical - Cervical Cancer Related - Cryosurgery'   WHERE code_type = '31' AND code = '2143230302401';
+UPDATE codes SET code_text = 'Gynecology - Management - Surgical - Cervical Cancer Related - Cauterization' WHERE code_type = '31' AND code = '2143230302402';
+#EndIf

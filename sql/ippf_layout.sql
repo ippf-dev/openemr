@@ -2174,6 +2174,7 @@ INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2134040
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2135050502000', '', 'STI/RTI - Investigation - Examination' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2135050503000', '', 'STI/RTI - Investigation - Lab test' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2135050504000', '', 'STI/RTI - Investigation - Sampling procedure' );
+INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2135050505000', '', 'STI/RTI - Investigation - Lab test - Human Papilloma virus (HPV)' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2135050000800', '', 'STI / RTI - Investigation - unable to categorise' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2141010111101', '', 'Gynecology - Counselling - Pre test - Cervical cancer' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2141010112101', '', 'Gynecology - Counselling - Post test - Cervical cancer' );
@@ -2186,8 +2187,9 @@ INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143130
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143130301202', '', 'Gynecology - Management - Medical - Erratic mensturation' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143130301999', '', 'Gynecology - Management - Medical - Other' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143130000800', '', 'Gynecology - Management - Medical - unable to categorise' );
-INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143230302401', '', 'Gynecology - Management - Surgical - Cryosurgery' );
-INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143230302402', '', 'Gynecology - Management - Surgical - Cauterisation' );
+INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143230302401', '', 'Gynecology - Management - Surgical - Cervical Cancer Related - Cryosurgery' );
+INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143230302402', '', 'Gynecology - Management - Surgical - Cervical Cancer Related - Cauterization' );
+INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143230302501', '', 'Gynecology - Management - Surgical - cervical cancer related - Loop Electrosurgical Excision Procedure (LEEP)' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143230302701', '', 'Gynecology - Management - Surgical - Breast cancer' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143230302306', '', 'Gynecology - Management - Surgical - Menstrual Regulation' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143230302999', '', 'Gynecology - Management - Surgical - other' );
@@ -2348,4 +2350,3 @@ UPDATE codes SET related_code = 'IPPF:113172110;IPPF2:1132120000000' WHERE code_
 UPDATE codes SET related_code = 'IPPF:121181000;IPPF2:1141130000800' WHERE code_type = 32 AND code = '4560';
 UPDATE codes SET related_code = 'IPPF:122182000;IPPF2:1142030000800' WHERE code_type = 32 AND code = '4570';
 UPDATE codes SET related_code = 'IPPF:145212000;IPPF2:1151020000000' WHERE code_type = 32 AND code = '4620';
-
