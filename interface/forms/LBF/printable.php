@@ -18,6 +18,9 @@ require_once("$srcdir/options.inc.php");
 require_once("$srcdir/patient.inc");
 require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 
+// Font size in points for table cell data.
+$FONTSIZE = 9;
+
 // The form name is passed to us as a GET parameter.
 $formname = isset($_GET['formname']) ? $_GET['formname'] : '';
 
@@ -57,11 +60,15 @@ if (preg_match('/columns=([0-9]+)/', $tmp['notes'], $matches)) {
   if ($matches[1] > 0 && $matches[1] < 13) $CPR = intval($matches[1]);
 }
 
-if (preg_match('/services=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
+if (preg_match('/size=([0-9]+)/', $tmp['notes'], $matches)) {
+  if ($matches[1] > 0 && $matches[1] < 19) $FONTSIZE = intval($matches[1]);
+}
+
+if (preg_match('/\\bservices=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
   // Note if this is defined then we will make a Services section on the page.
   $LBF_SERVICES_SECTION = $matches[1];
 }
-if (preg_match('/products=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
+if (preg_match('/\\bproducts=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
   // Note if this is defined then we will make a Products section on the page.
   $LBF_PRODUCTS_SECTION = $matches[1];
 }
@@ -91,13 +98,13 @@ $fres = sqlStatement("SELECT * FROM layout_options " .
 td {
  font-family: Arial;
  font-weight: normal;
- font-size: 9pt;
+ font-size: <?php echo $FONTSIZE; ?>pt;
 }
 <?php } else { ?>
 body, td {
  font-family: Arial, Helvetica, sans-serif;
  font-weight: normal;
- font-size: 9pt;
+ font-size: <?php echo $FONTSIZE; ?>pt;
 }
 body {
  padding: 5pt 5pt 5pt 5pt;
@@ -107,8 +114,8 @@ body {
 p.grpheader {
  font-family: Arial;
  font-weight: bold;
- font-size: 12pt;
- margin-bottom: 4pt;
+ font-size: <?php echo round($FONTSIZE * 1.33); ?>pt;
+ margin-bottom: <?php echo round($FONTSIZE * 0.44); ?>pt;
 }
 
 div.section {
@@ -123,14 +130,16 @@ div.section {
  border-width: 1px;
  border-color: #000000;
 <?php } ?>
- padding: 5pt;
+ padding: 2pt 5pt 5pt 5pt;
 }
 div.section table {
  width: 100%;
 }
 div.section td.stuff {
  vertical-align: bottom;
+<?php if ($isform) { ?>
  height: 16pt;
+<?php } ?>
 }
 
 td.lcols1 { width: 20%; }
@@ -142,13 +151,13 @@ td.dcols3 { width: 80%; }
 
 .mainhead {
  font-weight: bold;
- font-size: 14pt;
+ font-size: <?php echo round($FONTSIZE * 1.56); ?>pt;
  text-align: center;
 }
 
 .subhead {
  font-weight: bold;
- font-size: 8pt;
+ font-size: <?php echo round($FONTSIZE * 0.89); ?>pt;
 }
 
 .under {
@@ -165,20 +174,20 @@ td.dcols3 { width: 80%; }
  width: 35%;
  vertical-align: top;
  text-align: left;
- font-size: 14pt;
+ font-size: <?php echo round($FONTSIZE * 1.56); ?>pt;
  font-weight: bold;
 }
 .ftitlecell2 {
  width: 35%;
  vertical-align: top;
  text-align: right;
- font-size: 9pt;
+ font-size: <?php echo $FONTSIZE; ?>pt;
 }
 .ftitlecellm {
  width: 30%;
  vertical-align: top;
  text-align: center;
- font-size: 9pt;
+ font-size: <?php echo $FONTSIZE; ?>pt;
 }
 </style>
 
@@ -323,7 +332,8 @@ while ($frow = sqlFetchArray($fres)) {
   // Handle starting of a new row.
   if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0) {
     end_row();
-    echo "  <tr style='height:30pt'>";
+    // echo "  <tr style='height:30pt'>";
+    echo "  <tr>";
   }
 
   if ($item_count == 0 && $titlecols == 0) $titlecols = 1;
@@ -384,59 +394,68 @@ if (isset($LBF_SERVICES_SECTION) || isset($LBF_DIAGS_SECTION)) {
 }
 
 if (isset($LBF_SERVICES_SECTION)) {
-  echo "<nobreak>\n";
-  echo "<p class='grpheader'>" . xlt('Services') . "</p>\n";
-  echo "<div class='section'>\n";
-  echo " <table border='0' cellpadding='0' style='width:'>\n";
-  // Generate a line for each service already in this FS.
+  $s = '';
   foreach ($fs->serviceitems as $lino => $li) {
     // Skip diagnoses; those would be in the Diagnoses section below.
     if ($code_types[$li['codetype']]['diag']) continue;
-    echo "  <tr>\n";
-    echo "   <td class='text'>" . text($li['code']) . "&nbsp;</td>\n";
-    echo "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
-    echo "  </tr>\n";
+    $s .= "  <tr>\n";
+    $s .= "   <td class='text'>" . text($li['code']) . "&nbsp;</td>\n";
+    $s .= "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
+    $s .= "  </tr>\n";
   }
-  echo " </table>\n";
-  echo "</div>\n";
-  echo "</nobreak>\n";
+  if ($s) {
+    echo "<nobreak>\n";
+    echo "<p class='grpheader'>" . xlt('Services') . "</p>\n";
+    echo "<div class='section'>\n";
+    echo " <table border='0' cellpadding='0' style='width:'>\n";
+    echo $s;
+    echo " </table>\n";
+    echo "</div>\n";
+    echo "</nobreak>\n";
+  }
 } // End Services Section
 
 if (isset($LBF_PRODUCTS_SECTION)) {
-  echo "<nobreak>\n";
-  echo "<p class='grpheader'>" . xlt('Products') . "</p>\n";
-  echo "<div class='section'>\n";
-  echo " <table border='0' cellpadding='0' style='width:'>\n";
-  // Generate a line for each service already in this FS.
+  $s = '';
   $fs->loadProductItems();
   foreach ($fs->productitems as $lino => $li) {
-    echo "  <tr>\n";
-    echo "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
-    echo "   <td class='text' align='right'>" . text($li['units']) . "&nbsp;</td>\n";
-    echo "  </tr>\n";
+    $s .= "  <tr>\n";
+    $s .= "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
+    $s .= "   <td class='text' align='right'>" . text($li['units']) . "&nbsp;</td>\n";
+    $s .= "  </tr>\n";
   }
-  echo " </table>\n";
-  echo "</div>\n";
-  echo "</nobreak>\n";
+  if ($s) {
+    echo "<nobreak>\n";
+    echo "<p class='grpheader'>" . xlt('Products') . "</p>\n";
+    echo "<div class='section'>\n";
+    echo " <table border='0' cellpadding='0' style='width:'>\n";
+    echo $s;
+    echo " </table>\n";
+    echo "</div>\n";
+    echo "</nobreak>\n";
+  }
 } // End Products Section
 
 if (isset($LBF_DIAGS_SECTION)) {
-  echo "<nobreak>\n";
-  echo "<p class='grpheader'>" . xlt('Diagnoses') . "</p>\n";
-  echo "<div class='section'>\n";
-  echo " <table border='0' cellpadding='0' style='width:'>\n";
-  // Generate a line for each service already in this FS.
+  $s = '';
   foreach ($fs->serviceitems as $lino => $li) {
     // Skip anything that is not a diagnosis; those are in the Services section above.
     if (!$code_types[$li['codetype']]['diag']) continue;
-    echo "  <tr>\n";
-    echo "   <td class='text'>" . text($li['code']) . "&nbsp;</td>\n";
-    echo "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
-    echo "  </tr>\n";
+    $s .= "  <tr>\n";
+    $s .= "   <td class='text'>" . text($li['code']) . "&nbsp;</td>\n";
+    $s .= "   <td class='text'>" . text($li['code_text']) . "&nbsp;</td>\n";
+    $s .= "  </tr>\n";
   }
-  echo " </table>\n";
-  echo "</div>\n";
-  echo "</nobreak>\n";
+  if ($s) {
+    echo "<nobreak>\n";
+    echo "<p class='grpheader'>" . xlt('Diagnoses') . "</p>\n";
+    echo "<div class='section'>\n";
+    echo " <table border='0' cellpadding='0' style='width:'>\n";
+    echo $s;
+    echo " </table>\n";
+    echo "</div>\n";
+    echo "</nobreak>\n";
+  }
 } // End Services Section
 
 ?>
