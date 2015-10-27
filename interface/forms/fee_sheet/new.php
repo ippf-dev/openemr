@@ -37,6 +37,9 @@ $justifystyle = justifiers_are_used() ? "" : " style='display:none'";
 // This flag comes from the LBFmsivd form and perhaps later others.
 $rapid_data_entry = empty($_GET['rde']) ? 0 : 1;
 
+// This comes from the Add More Items button, or is preserved from its previous value.
+$add_more_items = (empty($_GET['addmore']) && empty($_POST['bn_addmore'])) ? 0 : 1;
+
 $alertmsg = '';
 
 // Get the user's default warehouse and an indicator if there's a choice of warehouses.
@@ -1192,6 +1195,10 @@ function validate(f) {
   refreshing = f.bn_refresh.clicked ? true : false;
   f.bn_refresh.clicked = false;
  }
+ if (f.bn_addmore) {
+  refreshing = refreshing || f.bn_addmore.clicked;
+  f.bn_addmore.clicked = false;
+ }
  var searching = false;
  if (f.bn_search) {
   searching = f.bn_search.clicked ? true : false;
@@ -1424,7 +1431,7 @@ function warehouse_changed(sel) {
 </head>
 
 <body class="body_top">
-<form method="post" action="<?php echo $rootdir; ?>/forms/fee_sheet/new.php?rde=<?php echo $rapid_data_entry; ?>"
+<form method="post" action="<?php echo $rootdir; ?>/forms/fee_sheet/new.php?<?php echo "rde=$rapid_data_entry&addmore=$add_more_items"; ?>"
  onsubmit="return validate(this)">
 <span class="title"><?php echo xlt('Fee Sheet'); ?></span><br>
 <input type='hidden' name='newcodes' value=''>
@@ -1432,9 +1439,11 @@ function warehouse_changed(sel) {
 <center>
 
 <?php
-$isBilled = isEncounterBilled($pid, $encounter);
+$isBilled = !$add_more_items && isEncounterBilled($pid, $encounter);
 if ($isBilled) {
-  echo "<p><font color='green'>" . xlt("This encounter has been billed. If you need to change it, it must be re-opened.") . "</font></p>\n";
+  echo "<p><font color='green'>" .
+    xlt("This encounter has been billed. To make changes, re-open it or select Add More Items.") .
+    "</font></p>\n";
 }
 else { // the encounter is not yet billed
 ?>
@@ -1644,7 +1653,8 @@ $required_code_count = 0;
 $bill_lino = 0;
 if ($billresult) {
   foreach ($billresult as $iter) {
-    if (!$ALLOW_COPAYS && $iter["code_type"] == 'COPAY') continue;      
+    if (!$ALLOW_COPAYS && $iter["code_type"] == 'COPAY') continue;
+    if ($iter["code_type"] == 'TAX') continue;
     ++$bill_lino;
     $bline = $_POST['bill']["$bill_lino"];
     $del = $bline['del']; // preserve Delete if checked
@@ -1986,6 +1996,9 @@ value='<?php echo xla('Refresh');?>'>
  value='<?php echo xla('Re-Open Visit'); ?>' />
 &nbsp;
 <?php } // end billed without charges ?>
+<input type='submit' name='bn_addmore' onclick='return this.clicked = true;'
+ value='<?php echo xla('Add More Items'); ?>' />
+&nbsp;
 <?php } // end billed ?>
 <input type='hidden' name='form_has_charges' value='<?php echo $hasCharges ? 1 : 0; ?>' />
 <input type='hidden' name='form_checksum' value='<?php echo $current_checksum; ?>' />

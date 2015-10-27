@@ -230,6 +230,10 @@ ALTER TABLE `ippf2_categories`	ADD COLUMN `exclude` BIT NOT NULL DEFAULT b'0';
 UPDATE `ippf2_categories` set `exclude`=b'1' WHERE `category_header`='4';
 #EndIf
 
+#IfIndex lang_constants cons_name
+ALTER TABLE `lang_constants` DROP INDEX cons_name;
+#EndIf
+
 #IfNotIndex lang_constants constant_name
 CREATE INDEX `constant_name` ON `lang_constants` (`constant_name`(100));
 #EndIf
@@ -254,4 +258,11 @@ ALTER TABLE `facility` CHANGE `country_code` `country_code` varchar(30) NOT NULL
 
 #IfNotColumnType layout_options group_name varchar(255)
 ALTER TABLE `layout_options` CHANGE `group_name` `group_name` varchar(255) NOT NULL default '';
+#EndIf
+
+#IfMissingColumn drug_sales bill_date
+ALTER TABLE `drug_sales` ADD COLUMN `bill_date` datetime default NULL;
+UPDATE drug_sales AS s, billing     AS b SET s.bill_date = b.bill_date WHERE s.billed = 1 AND s.bill_date IS NULL AND b.pid = s.pid AND b.encounter = s.encounter AND b.bill_date IS NOT NULL AND b.activity = 1;
+UPDATE drug_sales AS s, ar_activity AS a SET s.bill_date = a.post_time WHERE s.billed = 1 AND s.bill_date IS NULL AND a.pid = s.pid AND a.encounter = s.encounter;
+UPDATE drug_sales AS s SET s.bill_date = s.sale_date WHERE s.billed = 1 AND s.bill_date IS NULL;
 #EndIf

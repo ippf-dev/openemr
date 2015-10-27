@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -21,7 +21,7 @@ function getAdjustTitle($option) {
 
 // Store a receipt line item.
 //
-function receiptArrayDetailLine(&$aReceipt, $code_type, $code, $description, $quantity, $charge) {
+function receiptArrayDetailLine(&$aReceipt, $code_type, $code, $description, $quantity, $charge, $billtime='') {
   $adjust = 0;
   $adjreason = '';
 
@@ -37,6 +37,7 @@ function receiptArrayDetailLine(&$aReceipt, $code_type, $code, $description, $qu
       for ($i = 0; $i < count($aReceipt['_adjusts']); ++$i) {
         if ($aReceipt['_adjusts'][$i]['code_type'] == $code_type &&
           $aReceipt['_adjusts'][$i]['code'] == $code &&
+          $aReceipt['_adjusts'][$i]['post_time'] == $billtime &&
           $aReceipt['_adjusts'][$i]['adj_amount'] != 0)
         {
           $adjust += $aReceipt['_adjusts'][$i]['adj_amount'];
@@ -77,7 +78,7 @@ function receiptArrayDetailLine(&$aReceipt, $code_type, $code, $description, $qu
 
 // Store a receipt payment line.
 //
-function receiptArrayPaymentLine($paydate, $amount, $description='', $method='') {
+function receiptArrayPaymentLine(&$aReceipt, $paydate, $amount, $description='', $method='') {
   $amount = sprintf('%01.2f', $amount);
   $aReceipt['payments'][] = array(
     'date'        => $paydate,
@@ -91,7 +92,7 @@ function receiptArrayPaymentLine($paydate, $amount, $description='', $method='')
 // Generate a receipt data array from the last-billed invoice for this patient,
 // or from the specified encounter.
 //
-function generateReceiptArray($patient_id, $encounter=0) {
+function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
 
   // Get the most recent invoice data or that for the specified encounter.
   $query = "SELECT " .
@@ -123,8 +124,13 @@ function generateReceiptArray($patient_id, $encounter=0) {
   }
 
   // Get details for the visit's facility.
+  /********************************************************************
   $frow = sqlQuery("SELECT * FROM facility WHERE " .
     "id = '" . $ferow['facility_id'] . "'");
+  ********************************************************************/
+  // Get details for the visit's facility and organization facility.
+  $frow = getFacility($ferow['facility_id']);
+  $orgrow = getFacility(0);
 
   $patdata = getPatientData($patient_id, 'fname,mname,lname,pubpid,street,city,state,postal_code');
 
@@ -184,6 +190,9 @@ function generateReceiptArray($patient_id, $encounter=0) {
     'facility_state'    => $frow['state'],
     'facility_zip'      => $frow['postal_code'],
     'facility_phone'    => $frow['phone'],
+    'facility_fax'      => $frow['fax'],
+    'facility_url'      => empty($frow['website']) ? '' : $frow['website'],
+    'organization_name' => $orgrow['name'],
     'docname'           => $docname,
     'username'          => $username,
     'starting_balance'  => $head_begbal,
@@ -201,22 +210,26 @@ function generateReceiptArray($patient_id, $encounter=0) {
   // Create array aAdjusts from ar_activity rows for $inv_encounter.
   $aReceipt['_adjusts'] = array();
   $ares = sqlStatement("SELECT " .
-    "a.payer_type, a.adj_amount, a.memo, a.code_type, a.code, " .
+    "a.payer_type, a.adj_amount, a.memo, a.code_type, a.code, a.post_time, " .
     "s.session_id, s.reference, s.check_date " .
     "FROM ar_activity AS a " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
     "a.pid = '$patient_id' AND a.encounter = '$encounter' AND a.adj_amount != 0");
-  while ($arow = sqlFetchArray($ares)) $aReceipt['_adjusts'][] = $arow;
+  while ($arow = sqlFetchArray($ares)) {
+    if ($billtime && $arow['post_time'] != $billtime) continue;
+    $aReceipt['_adjusts'][] = $arow;
+  }
 
   // Product sales
   $inres = sqlStatement("SELECT s.sale_id, s.sale_date, s.fee, " .
-    "s.quantity, s.drug_id, d.name " .
+    "s.billed, s.bill_date, s.quantity, s.drug_id, d.name " .
     "FROM drug_sales AS s LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
     "WHERE s.pid = '$patient_id' AND s.encounter = '$encounter' " .
     "ORDER BY s.sale_id");
   while ($inrow = sqlFetchArray($inres)) {
+    if ($billtime && $inrow['bill_date'] != $billtime) continue;
     receiptArrayDetailLine($aReceipt, 'PROD', $inrow['drug_id'], $inrow['name'],
-      $inrow['quantity'], $inrow['fee']);
+      $inrow['quantity'], $inrow['fee'], $inrow['bill_date']);
   }
 
   // Service items.
@@ -225,13 +238,15 @@ function generateReceiptArray($patient_id, $encounter=0) {
     "code_type != 'COPAY' AND code_type != 'TAX' AND activity = 1 " .
     "ORDER BY id");
   while ($inrow = sqlFetchArray($inres)) {
+    if ($billtime && $inrow['bill_date'] != $billtime) continue;
     receiptArrayDetailLine($aReceipt, $inrow['code_type'], $inrow['code'],
-      $inrow['code_text'], $inrow['units'], $inrow['fee']);
+      $inrow['code_text'], $inrow['units'], $inrow['fee'], $inrow['bill_date']);
   }
 
   // Write any adjustments left in the aAdjusts array.
   foreach ($aReceipt['_adjusts'] as $arow) {
     if ($arow['adj_amount'] == 0) continue;
+    if ($billtime && $arow['post_time'] != $billtime) continue;
     // $payer = empty($arow['payer_type']) ? 'Pt' : ('Ins' . $arow['payer_type']);
     receiptArrayDetailLine($aReceipt, '', xl('Adjustment'),
       getAdjustTitle($arow['memo']), 1, 0 - $arow['adj_amount']);
@@ -243,6 +258,7 @@ function generateReceiptArray($patient_id, $encounter=0) {
     "code_type = 'TAX' AND activity = 1 " .
     "ORDER BY id");
   while ($inrow = sqlFetchArray($inres)) {
+    if ($billtime && $inrow['bill_date'] != $billtime) continue;
     receiptArrayDetailLine($aReceipt, $inrow['code_type'], $inrow['code'],
       $inrow['code_text'], 1, $inrow['fee']);
   }
@@ -250,11 +266,12 @@ function generateReceiptArray($patient_id, $encounter=0) {
   $payments = 0;
 
   // Get co-pays.
-  $inres = sqlStatement("SELECT fee, code_text FROM billing WHERE " .
+  $inres = sqlStatement("SELECT fee, code_text, bill_date FROM billing WHERE " .
     "pid = '$patient_id' AND encounter = '$encounter' AND " .
     "code_type = 'COPAY' AND activity = 1 AND fee != 0 " .
     "ORDER BY id");
   while ($inrow = sqlFetchArray($inres)) {
+    if ($billtime && $inrow['bill_date'] != $billtime) continue;
     $payments -= sprintf('%01.2f', $inrow['fee']);
     receiptArrayPaymentLine($aReceipt, $svcdate, 0 - $inrow['fee'],
       $inrow['code_text'], 'COPAY');
@@ -262,7 +279,7 @@ function generateReceiptArray($patient_id, $encounter=0) {
 
   // Get other payments.
   $inres = sqlStatement("SELECT " .
-    "a.code, a.modifier, a.memo, a.payer_type, a.adj_amount, a.pay_amount, " .
+    "a.code, a.modifier, a.memo, a.payer_type, a.adj_amount, a.pay_amount, a.post_time, " .
     "s.payer_id, s.reference, s.check_date, s.deposit_date " .
     "FROM ar_activity AS a " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
@@ -271,6 +288,7 @@ function generateReceiptArray($patient_id, $encounter=0) {
     "ORDER BY s.check_date, a.sequence_no");
   $payer = empty($inrow['payer_type']) ? 'Pt' : ('Ins' . $inrow['payer_type']);
   while ($inrow = sqlFetchArray($inres)) {
+    if ($billtime && $inrow['post_time'] != $billtime) continue;
     $payments += sprintf('%01.2f', $inrow['pay_amount']);
     receiptArrayPaymentLine($aReceipt, $svcdate, $inrow['pay_amount'],
       $payer . ' ' . $inrow['reference'], $inrow['memo']);

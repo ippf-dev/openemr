@@ -65,9 +65,13 @@ array(
     ),    
     
     'gbl_custom_receipt' => array(
-      xl('Use Custom Checkout Receipt'),
-      'bool',                           // data type
-      '0',                              // default = false
+      xl('Custom Checkout Receipt'),
+      array(
+        '0'                                => xl('None'),
+        'checkout_receipt_general.inc.php' => xl('Guyana'),
+        'checkout_receipt_panama.inc.php'  => xl('Panama'),
+      ),
+      '0',                              // default
       xl('Present an additional PDF custom receipt after checkout.')
     ),
     'gbl_ma_ippf_code_restriction' => array(
@@ -76,5 +80,5 @@ array(
       '0',                              // default = false
       xl('Disable the restriction of only one IPPF code per MA code in superbill')
     ),    
-    );
+);
 ?>

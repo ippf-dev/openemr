@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -153,9 +153,12 @@ function gcrLine(&$aReceipt, &$pdf, $code, $description, $quantity, $price, $tot
   ++$lino;
 }
 
-function generateCheckoutReceipt(&$aReceipt) {
+function generateCheckoutReceipt($patient_id, $encounter_id, $billtime='') {
   global $GCR_PAGE_WIDTH, $GCR_PAGE_HEIGHT, $GCR_LINE_HEIGHT;
   global $DETAIL_WIDTH_5, $DETAIL_POS_5;
+
+  // This receipt version covers the whole invoice and so ignores $billtime.
+  $aReceipt = generateReceiptArray($patient_id, $encounter_id, '');
 
   // $pdf = new TCPDF('P', 'pt', 'A4', true, 'UTF-8', false);
   $pdf = new TCPDF('L', 'pt', array($GCR_PAGE_WIDTH, $GCR_PAGE_HEIGHT), true, 'UTF-8', false);
