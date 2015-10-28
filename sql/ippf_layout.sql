@@ -2207,7 +2207,6 @@ INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2145050
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2145050503000', '', 'Gynecology - Investigation - Lab test' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2145050504000', '', 'Gynecology - Investigation - Sampling procedure' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2145050000800', '', 'Gynecology - Investigation - unable to categorise' );
-INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2150000000000', '', 'SRH non-CONTRACEPTION - OBSTETRIC SERVICES' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2151010131000', '', 'Obstetrics - Counselling - Ante natal' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2151010132000', '', 'Obstetrics - Counselling - Post natal' );
 INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2151010000800', '', 'Obstetrics - Counselling - unable to categorise' );

@@ -2864,3 +2864,7 @@ INSERT INTO codes ( code_type, code, modifier, code_text ) VALUES ( 31, '2143230
 UPDATE codes SET code_text = 'Gynecology - Management - Surgical - Cervical Cancer Related - Cryosurgery'   WHERE code_type = '31' AND code = '2143230302401';
 UPDATE codes SET code_text = 'Gynecology - Management - Surgical - Cervical Cancer Related - Cauterization' WHERE code_type = '31' AND code = '2143230302402';
 #EndIf
+
+#IfRow2D codes code_type 31 code 2150000000000
+DELETE FROM codes WHERE code_type = '31' AND code = '2150000000000';
+#EndIf
