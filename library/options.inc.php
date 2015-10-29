@@ -1046,6 +1046,7 @@ function generate_print_field($frow, $currvalue) {
   else if ($data_type == 4) {
     $age_asof_date = '';
     $agestr = optionalAge($frow, $currvalue, $age_asof_date, $description);
+    /******************************************************************
     if ($agestr) {
       echo "<table cellpadding='0' cellspacing='0'><tr><td class='text'>";
     }
@@ -1058,6 +1059,16 @@ function generate_print_field($frow, $currvalue) {
     // Optional display of age or gestational age.
     if ($agestr) {
       echo "</td></tr><tr><td class='text'>" . text($agestr) . "</td></tr></table>";
+    }
+    ******************************************************************/
+    if ($currvalue === '') {
+      echo '&nbsp;';
+    }
+    else {
+      echo text(oeFormatShortDate($currvalue));
+      if ($agestr) {
+        echo "&nbsp;(" . text($agestr) . ")";
+      }
     }
   }
 
@@ -1523,6 +1534,7 @@ function generate_display_field($frow, $currvalue) {
     $description = (isset($frow['description']) ? htmlspecialchars(xl_layout_label($frow['description']), ENT_QUOTES) : '');
     $age_asof_date = '';
     $agestr = optionalAge($frow, $currvalue, $age_asof_date, $description);
+    /******************************************************************
     if ($agestr) {
       $s .= "<table cellpadding='0' cellspacing='0'><tr><td class='text'>";
     }
@@ -1535,6 +1547,16 @@ function generate_display_field($frow, $currvalue) {
     // Optional display of age or gestational age.
     if ($agestr) {
       $s .= "</td></tr><tr><td class='text'>" . text($agestr) . "</td></tr></table>";
+    }
+    ******************************************************************/
+    if ($currvalue === '') {
+      $s .= '&nbsp;';
+    }
+    else {
+      $s .= text(oeFormatShortDate($currvalue));
+      if ($agestr) {
+        $s .= "&nbsp;(" . text($agestr) . ")";
+      }
     }
   }
 
