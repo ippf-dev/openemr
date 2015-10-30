@@ -62,6 +62,11 @@ if ($_POST['form_csvexport']) {
   echo '"' . display_csv(xl('IVE 4 Date'          )) . '",';
   echo '"' . display_csv(xl('IVE 4 Facility'      )) . '",';
   echo '"' . display_csv(xl('Contraceptive Method')) . '",';
+  // New:
+  echo '"' . display_csv(xl('FP method counseling IVE3')) . '",'; // IVE_FPcouns
+  echo '"' . display_csv(xl('FP method counseling IVE4')) . '",'; // IVE_meth_in_use
+  echo '"' . display_csv(xl('FP Method'                )) . '",'; // IVE_contmetcounsel
+  //
   echo '"' . display_csv(xl('IVE Reason'          )) . '",';
   echo '"' . display_csv(xl('Gest Age from LMP'   )) . '",';
   echo '"' . display_csv(xl('Gest Age from ECO'   )) . '",';
@@ -69,7 +74,10 @@ if ($_POST['form_csvexport']) {
   echo '"' . display_csv(xl('Causes of unwanted pregnancy')) . '",';
   echo '"' . display_csv(xl('Support network'             )) . '",';
   echo '"' . display_csv(xl('Women resolution about IVE'  )) . '",';
-  echo '"' . display_csv(xl('Law applicable'              )) . '"' . "\n";
+  echo '"' . display_csv(xl('Law applicable'              )) . '",';
+  // New:
+  echo '"' . display_csv(xl('Hospitalization Indication'  )) . '"' . "\n";// IVE_indication
+  //
 
 } // end export
 else {
@@ -159,6 +167,9 @@ echo "   </select>&nbsp;\n";
   <td class="dehead"><?php echo xlt('IVE 4 Date'          ); ?></td>
   <td class="dehead"><?php echo xlt('IVE 4 Facility'      ); ?></td>
   <td class="dehead"><?php echo xlt('Contraceptive Method'); ?></td>
+  <td class="dehead"><?php echo xlt('FP method counseling IVE3'   ); ?></td>
+  <td class="dehead"><?php echo xlt('FP method counseling IVE4'   ); ?></td>
+  <td class="dehead"><?php echo xlt('FP Method'                   ); ?></td>
   <td class="dehead"><?php echo xlt('IVE Reason'          ); ?></td>
   <td class="dehead"><?php echo xlt('Gest Age from LMP'   ); ?></td>
   <td class="dehead"><?php echo xlt('Gest Age from ECO'   ); ?></td>
@@ -167,6 +178,7 @@ echo "   </select>&nbsp;\n";
   <td class="dehead"><?php echo xlt('Support network'             ); ?></td>
   <td class="dehead"><?php echo xlt('Women resolution about IVE'  ); ?></td>
   <td class="dehead"><?php echo xlt('Law applicable'              ); ?></td>
+  <td class="dehead"><?php echo xlt('Hospitalization Indication'  ); ?></td>
  </tr>
 
 <?php
@@ -188,6 +200,10 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     'IVE_suppnet',
     'IVE_womenres',
     'IVE_lawf1',
+    'IVE_FPcouns',
+    'IVE_meth_in_use',
+    'IVE_contmetcounsel',
+    'IVE_indication',
   );
   $varr = array();
   // Note this gives us one row per IVE form instance.
@@ -296,6 +312,14 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     $ivewomres = empty($row['IVE_womenres']) ? '' : getListTitle('IVE_womres', $row['IVE_womenres']);
     // Law applicable 
     $ivelaw = empty($row['IVE_lawf1']) ? '' : getListTitle('IVE_law', $row['IVE_lawf1']);
+    // FP method counseling IVE3.
+    $ive3couns = empty($row['IVE_FPcouns']) ? '' : getListTitle('yesno', $row['IVE_FPcouns']);
+    // FP method counseling IVE4.
+    $ive4couns = empty($row['IVE_meth_in_use']) ? '' : getListTitle('yesno', $row['IVE_meth_in_use']);
+    // FP Method.
+    $ivecmethod = empty($row['IVE_contmetcounsel']) ? '' : getListTitle('IVE_contrameth' , $row['IVE_contmetcounsel']);
+    // Hospitalization Indication.
+    $iveind = empty($row['IVE_indication']) ? '' : getListTitle('IVE_indications', $row['IVE_indication']);
 
     if ($_POST['form_csvexport']) {
       echo '"'  . display_csv($row['pubpid']) . '"';
@@ -311,6 +335,9 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo ',"' . display_csv($date4        ) . '"';
       echo ',"' . display_csv($fac4         ) . '"';
       echo ',"' . display_csv($contrameth   ) . '"';
+      echo ',"' . display_csv($ive3couns    ) . '"';
+      echo ',"' . display_csv($ive4couns    ) . '"';
+      echo ',"' . display_csv($ivecmethod   ) . '"';
       echo ',"' . display_csv($reason       ) . '"';
       echo ',"' . display_csv($gestlmp      ) . '"';
       echo ',"' . display_csv($gesteco      ) . '"';
@@ -318,7 +345,8 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo ',"' . display_csv($ivecauses    ) . '"';
       echo ',"' . display_csv($ivesuppnet   ) . '"';
       echo ',"' . display_csv($ivewomres    ) . '"';
-      echo ',"' . display_csv($ivelaw       ) . '"' . "\n";
+      echo ',"' . display_csv($ivelaw       ) . '"';
+      echo ',"' . display_csv($iveind       ) . '"' . "\n";
     }
     else {
       ++$encount;
@@ -337,6 +365,9 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo "  <td class='detail'>" . display_html($date4     ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($fac4      ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($contrameth) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($ive3couns ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($ive4couns ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($ivecmethod) . "</td>\n";
       echo "  <td class='detail'>" . display_html($reason    ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($gestlmp   ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($gesteco   ) . "</td>\n";
@@ -345,6 +376,7 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo "  <td class='detail'>" . display_html($ivesuppnet) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivewomres ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivelaw    ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($iveind    ) . "</td>\n";
       echo " </tr>\n";
     } // end not export
   } // end reporting loop
