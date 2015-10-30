@@ -27,7 +27,7 @@ $TEMPLATE_LABELS = array(
   'label_control_no'            => htmlspecialchars( xl('Control No.')),
   'label_date'                  => htmlspecialchars( xl('Date')),
   'label_webpage_title'         => htmlspecialchars( xl('Referral Form')),
-  'label_form1_title'           => htmlspecialchars( xl('REFERRAL FORM')),
+  'label_form1_title'           => htmlspecialchars( xl('Referral Form')),
   'label_name'                  => htmlspecialchars( xl('Name')),
   'label_age'                   => htmlspecialchars( xl('Age')),
   'label_gender'                => htmlspecialchars( xl('Gender')),
@@ -46,7 +46,7 @@ $TEMPLATE_LABELS = array(
   'label_wt'                    => htmlspecialchars( xl('Weight')),
   'label_ref_name_sig'          => htmlspecialchars( xl('Referer name and signature')),
   'label_special_name_sig'      => htmlspecialchars( xl('Specialist name and signature')),
-  'label_form2_title'           => htmlspecialchars( xl('COUNTER REFERRAL FORM')),
+  'label_form2_title'           => htmlspecialchars( xl('Counter Referral Form')),
   'label_findings'              => htmlspecialchars( xl('Findings')),
   'label_final_diagnosis'       => htmlspecialchars( xl('Final Diagnosis')),
   'label_services_provided'     => htmlspecialchars( xl('Services provided')),
@@ -124,7 +124,7 @@ if (empty($facrow['facility_npi'])) $facrow['facility_npi'] = '&nbsp;';
 $logo = "<!-- '$ma_logo_path' does not exist. -->";
 $ma_logo_path = "sites/" . $_SESSION['site_id'] . "/images/ma_logo.png";
 if (is_file("$webserver_root/$ma_logo_path")) {
-  $logo = "<img src='$web_root/$ma_logo_path' />";
+  $logo = "<img src='$web_root/$ma_logo_path' style='height:" . round(9 * 5.14) . "pt' />";
 }
 
 $s = '';

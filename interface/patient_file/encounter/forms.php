@@ -330,7 +330,7 @@ if ( $esign->isButtonViewable() ) {
 <?php
   if ($result = getFormByEncounter($pid, $encounter,
     "id, date, form_id, form_name, formdir, user, deleted",
-    "", "FIND_IN_SET(formdir,'newpatient'), form_name"))
+    "", "FIND_IN_SET(formdir,'newpatient') DESC, form_name"))
   {
     echo "<table width='100%' id='partable'>";
     $divnos = 1;
@@ -367,7 +367,7 @@ if ( $esign->isButtonViewable() ) {
         }
         $user = getNameFromUsername($iter['user']);
 
-        $form_name = ($formdir == 'newpatient') ? xl('Patient Encounter') : xl_form_title($iter['form_name']);
+        $form_name = ($formdir == 'newpatient') ? xl('Visit Summary') : xl_form_title($iter['form_name']);
 
         // Create the ESign instance for this form
         $esign = $esignApi->createFormESign( $iter['id'], $formdir, $encounter );
@@ -376,7 +376,6 @@ if ( $esign->isButtonViewable() ) {
 
         echo "<td style='border-bottom:1px solid'>";
 
-        echo "<div class='form_header'>";
         // Figure out the correct author (encounter authors are the '$providerNameRes', while other
         // form authors are the '$user['fname'] . "  " . $user['lname']').
         if ($formdir == 'newpatient') {
@@ -385,10 +384,11 @@ if ( $esign->isButtonViewable() ) {
         else {
           $form_author = $user['fname'] . "  " . $user['lname'];
         }
+        echo "<div class='form_header'>";
         echo "<a href='#' onclick='divtoggle(\"spanid_$divnos\",\"divid_$divnos\");' class='small' id='aid_$divnos'>" .
           "<div class='formname'>$form_name</div> " .
           "by " . text($form_author) . " " .
-          "(<span id=spanid_$divnos class=\"indicator\">" . xl('Collapse') . "</span>)</a>";
+          "(<span id=spanid_$divnos class=\"indicator\">" . ($divnos == 1 ? xl('Collapse') : xl('Expand')) . "</span>)</a>";
         echo "</div>";
 
         // a link to edit the form
@@ -440,7 +440,8 @@ if ( $esign->isButtonViewable() ) {
         echo "</td>\n";
         echo "</tr>";
         echo "<tr>";
-        echo "<td valign='top' class='formrow'><div class='tab' id='divid_$divnos' style='display:block'>";
+        echo "<td valign='top' class='formrow'><div class='tab' id='divid_$divnos' ";
+        echo "style='display:" . ($divnos == 1 ? 'block' : 'none') . "'>";
 
         // Use the form's report.php for display.  Forms with names starting with LBF
         // are list-based forms sharing a single collection of code.

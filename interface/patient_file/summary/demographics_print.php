@@ -143,23 +143,24 @@ td.dcols3 { width: 80%; }
  margin: 0 0 8pt 0;
 }
 .ftitlecell1 {
- width: 35%;
+ width: 33%;
  vertical-align: top;
  text-align: left;
  font-size: 14pt;
  font-weight: bold;
 }
 .ftitlecell2 {
- width: 35%;
+ width: 33%;
  vertical-align: top;
  text-align: right;
  font-size: 9pt;
 }
 .ftitlecellm {
- width: 30%;
+ width: 34%;
  vertical-align: top;
  text-align: center;
  font-size: 9pt;
+ font-weight: bold;
 }
 
 </style>
@@ -173,7 +174,7 @@ td.dcols3 { width: 80%; }
 $logo = '';
 $ma_logo_path = "sites/" . $_SESSION['site_id'] . "/images/ma_logo.png";
 if (is_file("$webserver_root/$ma_logo_path")) {
-  $logo = "<img src='$web_root/$ma_logo_path' />";
+  $logo = "<img src='$web_root/$ma_logo_path' style='height:" . round(9 * 5.14) . "pt' />";
 }
 else {
   $logo = "<!-- '$ma_logo_path' does not exist. -->";
