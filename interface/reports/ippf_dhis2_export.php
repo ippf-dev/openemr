@@ -132,6 +132,7 @@ function getCatCombo($sex, $dob, $asofdate) {
 // Period calculation. There are 6 different formats depending on the date range.
 //
 function getPeriod($encounter_date) {
+  /********************************************************************
   global $form_from_date, $form_to_date;
   $from_date_arr  = getdate(strtotime($form_from_date));
   $to_date_arr    = getdate(strtotime($form_to_date  ));
@@ -191,6 +192,10 @@ function getPeriod($encounter_date) {
   else {
     $period .= substr($encounter_date, 5, 2) . substr($encounter_date, 8, 2);
   }
+  ********************************************************************/
+
+  // Period is now always YYYYMM (requested by JG 2015-10-21).
+  $period = substr($encounter_date, 0, 4) . substr($encounter_date, 5, 2);
   return $period;
 }
 
@@ -342,7 +347,7 @@ if (!empty($_POST['form_submit'])) {
               $delt,
               $period,
               $row['domain_identifier'],    // org unit
-              $coc,                         // age and sex
+              'X66r2y4EuwS',                // See JG 2015-10-30 email for this request.
               'X66r2y4EuwS',
               $prow['quantity']
             );
