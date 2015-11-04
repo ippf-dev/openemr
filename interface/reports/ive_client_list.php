@@ -223,6 +223,10 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
   $query .= "WHERE f.formdir LIKE 'LBFIve%' AND f.deleted = 0 AND " .
     "fe.date >= '$form_from_date 00:00:00' AND fe.date <= '$form_to_date 23:59:59' " .
     "ORDER BY p.pubpid, f.pid, f.encounter, f.form_id";
+
+  // echo "<!-- $query -->\n"; // debugging
+  // echo "<!--\n"; print_r($varr); echo "\n-->\n"; // debugging
+
   $res = sqlStatement($query, $varr);
 
   while ($row = sqlFetchArray($res)) {
@@ -259,11 +263,14 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       $reparr[$rowpid]['fac1' ] = $facility;
     }
     foreach ($vfields as $vfield) {
-      if (!empty($row['$vfield'])) {
+      if (!empty($row[$vfield])) {
         $reparr[$rowpid][$vfield] = $row[$vfield];
+        // echo "<!-- reparr[$rowpid]['$vfield'] = '" . $row[$vfield] . "' -->\n"; // debugging
       }
     }
   }
+
+  // echo "<!--\n"; print_r($reparr); echo "\n-->\n"; // debugging
 
   foreach ($reparr as $row) {
     // Patient name string.
@@ -298,10 +305,12 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     $gesteco = empty($row['IVE_gestage_ECO']) ? '' : $row['IVE_gestage_ECO'];
     // IVE procedure type. Could be ambulatory or inpatient hospital.
     $ivemethod = '';
+    /******************************************************************
     if (!empty($row['IVE_hosp_proc'])) {
       $ivemethod = getListTitle('IVE_hosp_procedd', $row['IVE_hosp_proc']);
-    }
-    else if (!empty($row['IVE_method'])) {
+    } else
+    ******************************************************************/
+    if (!empty($row['IVE_method'])) {
       $ivemethod = getListTitle('IVE_meth', $row['IVE_method']);
     }
     // Causes of unwanted pregnancy
