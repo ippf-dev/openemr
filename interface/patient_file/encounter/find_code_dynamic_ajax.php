@@ -92,8 +92,9 @@ $out = array(
 $query = "SELECT $sellist FROM $from $where1 $where2 $orderby $limit";
 $res = sqlStatement($query);
 while ($row = sqlFetchArray($res)) {
+  $description = str_replace('|', ':', $row['description']);
   // Each <tr> will have an ID indicating codetype, code and selector.
-  $arow = array('DT_RowId' => "CID|$codetype|" . $row['code']);
+  $arow = array('DT_RowId' => "CID|$codetype|" . $row['code'] . '|' . $description);
   $arow[] = str_replace('|', ':', rtrim($row['code'], '|'));
   $arow[] = $row['description'];
   $out['aaData'][] = $arow;

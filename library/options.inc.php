@@ -418,9 +418,13 @@ function generate_form_field($frow, $currvalue) {
         $relcodes = explode(';', $currvalue);
         foreach ($relcodes as $codestring) {
           if ($codestring === '') continue;
-          list($codetype, $code) = explode(':', $codestring);
+          list($ctype, $code) = explode(':', $codestring);
+          if (empty($code)) {
+            $code = $ctype;
+            $ctype = $codetype;
+          }
           $query = "SELECT c.code_text FROM codes AS c, code_types AS ct WHERE " .
-            "ct.ct_key = '$codetype' AND " .
+            "ct.ct_key = '$ctype' AND " .
             "c.code_type = ct.ct_id AND " .
             "c.code = '$code' AND c.active = 1 " .
             "ORDER BY c.id LIMIT 1";

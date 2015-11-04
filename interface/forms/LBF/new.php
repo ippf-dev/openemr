@@ -337,8 +337,9 @@ function set_related(codetype, code, selector, codedesc) {
   frcd = frc;
   frc  = f[matches[1]];
  }
- var s = frc.value;
- var sd = frcd ? frcd.value : s;
+ // For LBFs we will allow only one code in a field.
+ var s = ''; // frc.value;
+ var sd = ''; // frcd ? frcd.value : s;
  if (code) {
   if (codetype != 'PROD') {
    if (s.indexOf(codetype + ':') == 0 || s.indexOf(';' + codetype + ':') > 0) {

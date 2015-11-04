@@ -81,18 +81,18 @@ $(document).ready(function() {
  $('#my_data_table tbody tr').live('click', function () {
   // this.id is of the form "CID|codetype|code|selector".
   var a = this.id.split('|');
-  selcode(a[1], a[2], a[3]);
+  selcode(a[1], a[2], a[3], a[4]);
  } );
 
 });
 
 // Pass info back to the opener and close this window.
-function selcode(codetype, code, selector) {
+function selcode(codetype, code, selector, codedesc) {
  if (opener.closed || ! opener.set_related) {
   alert('<?php echo xls('The destination form was closed; I cannot act on your selection.'); ?>');
  }
  else {
-  var msg = opener.set_related(codetype, code, selector);
+  var msg = opener.set_related(codetype, code, selector, codedesc);
   if (msg) alert(msg);
   window.close();
   return false;
@@ -133,8 +133,10 @@ else {
   }
   echo " <option value='PROD'";
   echo ">" . xlt("Product") . "</option>\n";
-  echo "   </select>&nbsp;&nbsp;\n";
+  echo "   </select>\n";
 }
+echo "&nbsp;&nbsp;\n";
+echo "<input type='button' value='" . xla('Erase') . "' onclick=\"selcode('', '', '', '')\" />\n";
 ?>
 </p>
 

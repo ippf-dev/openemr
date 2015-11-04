@@ -574,7 +574,7 @@ function writeFieldLine($linedata) {
       $linedata['data_type'] == 21 || $linedata['data_type'] == 22 ||
       $linedata['data_type'] == 23 || $linedata['data_type'] == 25 ||
       $linedata['data_type'] == 27 || $linedata['data_type'] == 28 ||
-      $linedata['data_type'] == 32)
+      $linedata['data_type'] == 32 || $linedata['data_type'] == 15)
     {
       // Show the width field
       echo "<input type='text' name='fld[$fld_line_no][lengthWidth]' value='" .
