@@ -112,12 +112,12 @@ function auto_populate_employer_address<?php echo $i ?>(){
  if (f.form_i<?php echo $i?>subscriber_relationship.options[f.form_i<?php echo $i?>subscriber_relationship.selectedIndex].value == "self")
  {
   f.i<?php echo $i?>subscriber_fname.value=f.form_fname.value;
-  f.i<?php echo $i?>subscriber_mname.value=f.form_mname.value;
+  if (f.form_mname) f.i<?php echo $i?>subscriber_mname.value=f.form_mname.value;
   f.i<?php echo $i?>subscriber_lname.value=f.form_lname.value;
   f.i<?php echo $i?>subscriber_street.value=f.form_street.value;
   f.i<?php echo $i?>subscriber_city.value=f.form_city.value;
   f.form_i<?php echo $i?>subscriber_state.value=f.form_state.value;
-  f.i<?php echo $i?>subscriber_postal_code.value=f.form_postal_code.value;
+  if (f.form_postal_code) f.i<?php echo $i?>subscriber_postal_code.value=f.form_postal_code.value;
   if (f.form_country_code)
     f.form_i<?php echo $i?>subscriber_country.value=f.form_country_code.value;
   f.i<?php echo $i?>subscriber_phone.value=f.form_phone_home.value;
@@ -127,11 +127,11 @@ function auto_populate_employer_address<?php echo $i ?>(){
         f.i<?php echo $i?>subscriber_ss.value=f.form_ss.value;  
     }
   f.form_i<?php echo $i?>subscriber_sex.value = f.form_sex.value;
-  f.i<?php echo $i?>subscriber_employer.value=f.form_em_name.value;
-  f.i<?php echo $i?>subscriber_employer_street.value=f.form_em_street.value;
-  f.i<?php echo $i?>subscriber_employer_city.value=f.form_em_city.value;
-  f.form_i<?php echo $i?>subscriber_employer_state.value=f.form_em_state.value;
-  f.i<?php echo $i?>subscriber_employer_postal_code.value=f.form_em_postal_code.value;
+  if (f.form_em_name       ) f.i<?php echo $i?>subscriber_employer.value=f.form_em_name.value;
+  if (f.form_em_street     ) f.i<?php echo $i?>subscriber_employer_street.value=f.form_em_street.value;
+  if (f.form_em_city       ) f.i<?php echo $i?>subscriber_employer_city.value=f.form_em_city.value;
+  if (f.form_em_state      ) f.form_i<?php echo $i?>subscriber_employer_state.value=f.form_em_state.value;
+  if (f.form_em_postal_code) f.i<?php echo $i?>subscriber_employer_postal_code.value=f.form_em_postal_code.value;
   if (f.form_em_country)
     f.form_i<?php echo $i?>subscriber_employer_country.value=f.form_em_country.value;
  }
@@ -278,7 +278,7 @@ function validate(f) {
   var subrelat = f['form_' + subpfx + 'relationship'];
   var samename =
    f[subpfx + 'fname'].value == f.form_fname.value &&
-   f[subpfx + 'mname'].value == f.form_mname.value &&
+   (!f.form_mname || f[subpfx + 'mname'].value == f.form_mname.value) &&
    f[subpfx + 'lname'].value == f.form_lname.value;
   var ss_regexp=/[0-9][0-9][0-9]-?[0-9][0-9]-?[0-9][0-9][0-9][0-9]/;
   var samess=true;
