@@ -23,6 +23,7 @@ Collections,Collection Report
 Confirm Create New Patient,Confirm create new client record
 COPAY,Payment
 CPT4,C3
+Create New Patient,Create New Client
 Encounter,Visit
 Encounter Forms to Include in this Report:,Visit Forms to include in this Report:
 Encounter History,Visit History
@@ -34,6 +35,7 @@ Facility,Clinic
 Facility:,Clinic:
 Fee Sheet,Tally Sheet
 Find Patient,Find Client
+Force Create New Patient,Force Create New Client
 Gender :,Sexe
 ID,ID
 IPPF SRH Data,GCAC Form (example)
