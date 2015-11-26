@@ -7,8 +7,8 @@
 require_once("../globals.php");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/sql.inc");
-require_once("$srcdir/calendar.inc");
 require_once("$srcdir/formdata.inc.php");
+require_once("$srcdir/calendar.inc");
 require_once("$srcdir/options.inc.php");
 require_once("$srcdir/erx_javascript.inc.php");
 
