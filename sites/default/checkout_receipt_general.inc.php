@@ -96,7 +96,7 @@ function gcrWriteLine(&$pdf, $xpos, $width) {
   ));
 }
 
-function gcrHeader(&$aReceipt, &$pdf) {
+function gcrHeader(&$aReceipt, &$pdf, $patient_id, $encounter_id, $billtime='') {
   global $GCR_PAGE_WIDTH, $GCR_LINE_HEIGHT;
   global $GCR_TOP_WIDTH_1, $GCR_TOP_WIDTH_2, $GCR_TOP_WIDTH_3;
   global $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH;
@@ -118,8 +118,12 @@ function gcrHeader(&$aReceipt, &$pdf) {
   gcrWriteCell($pdf, $GCR_TOP_WIDTH_1, $GCR_TOP_WIDTH_2, 'C', xl('Sales Receipt'), FALSE);
 
   // Write the invoice reference number in the top line right column.
-  // TBD: Append the checkout sequence number to this.
-  gcrWriteCell($pdf, $GCR_TOP_WIDTH_1 + $GCR_TOP_WIDTH_2, $GCR_TOP_WIDTH_3, 'R', $aReceipt['invoice_refno']);
+  // Append the checkout sequence number to this.
+  $tmp = craGetTimestamps($patient_id, $encounter_id);
+  $tmp = array_search($billtime, $tmp);
+  $tmp = $tmp === FALSE ? 0 : ($tmp + 1);
+  $irn = $aReceipt['invoice_refno'] . "-$tmp";
+  gcrWriteCell($pdf, $GCR_TOP_WIDTH_1 + $GCR_TOP_WIDTH_2, $GCR_TOP_WIDTH_3, 'R', $irn);
   $pdf->Ln($GCR_LINE_HEIGHT);
 
   // Write the organization name line.
@@ -219,7 +223,7 @@ function generateCheckoutReceipt($patient_id, $encounter_id, $billtime='') {
   // $pdf->SetFont('freeserif', '', 12);
 
   // Write page header section.
-  gcrHeader($aReceipt, $pdf);
+  gcrHeader($aReceipt, $pdf, $patient_id, $encounter_id, $billtime);
 
   $subtotal = 0;
 

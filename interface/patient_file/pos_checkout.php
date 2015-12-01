@@ -38,6 +38,7 @@ require_once("../../custom/code_types.inc.php");
 require_once("$srcdir/appointment_status.inc.php");
 require_once("$srcdir/options.inc.php");
 require_once("$srcdir/sl_eob.inc.php");
+require_once($GLOBALS['srcdir'] . "/checkout_receipt_array.inc.php");
 
 $currdecimals = $GLOBALS['currency_decimals'];
 
@@ -261,7 +262,7 @@ function receiptDetailLine($code_type, $code, $description, $quantity, $charge, 
 
 // Output HTML for a receipt payment line.
 //
-function receiptPaymentLine($paydate, $amount, $description='', $method='') {
+function receiptPaymentLine($paydate, $amount, $description='', $method='', $refno='') {
   global $aTaxNames;
 
   $amount = formatMoneyNumber($amount); // make it negative
@@ -282,8 +283,8 @@ function receiptPaymentLine($paydate, $amount, $description='', $method='') {
     }
   }
   echo " <tr>\n";
-  echo "  <td>&nbsp;</td>\n";
   echo "  <td>" . oeFormatShortDate($paydate) . "</td>\n";
+  echo "  <td>" . text($refno) . "</td>\n";
   echo "  <td colspan='" .
        ($GLOBALS['gbl_checkout_line_adjustments'] ? 3 : 1) .
        "' align='left'>" . text($method) . "</td>\n";
@@ -304,7 +305,7 @@ function receiptPaymentLine($paydate, $amount, $description='', $method='') {
 function generate_receipt($patient_id, $encounter=0) {
   global $css_header, $details, $rapid_data_entry, $aAdjusts;
   global $web_root, $webserver_root;
-  global $aTaxNames, $aInvTaxes;
+  global $aTaxNames, $aInvTaxes, $checkout_times;
 
   // Get the most recent invoice data or that for the specified encounter.
   if ($encounter) {
@@ -328,6 +329,9 @@ function generate_receipt($patient_id, $encounter=0) {
     "WHERE f.id = '" . $ferow['facility_id'] . "'");
 
   $patdata = getPatientData($patient_id, 'fname,mname,lname,pubpid,street,city,state,postal_code');
+
+  // Get array of checkout timestamps.
+  $checkout_times = craGetTimestamps($patient_id, $encounter);
 
   // Generate $aTaxNames = array of tax names, and $aInvTaxes = array of taxes for this invoice.
   load_taxes($patient_id, $encounter);
@@ -650,14 +654,14 @@ body, td {
  </tr>
 
  <tr>
-  <td>&nbsp;</td>
-  <td><b><?php xl('Payment Date','e'); ?></b></td>
+  <td><b><?php echo xlt('Date'); ?></b></td>
+  <td><b><?php echo xlt('Checkout Receipt Ref'); ?></b></td>
   <td colspan="<?php echo $GLOBALS['gbl_checkout_line_adjustments'] ? 3 : 1; ?>"
-   align='left'><b><?php echo xl('Payment Method'); ?></b></td>
+   align='left'><b><?php echo xlt('Payment Method'); ?></b></td>
   <td colspan="<?php echo (1 + count($aTaxNames)); ?>"
-   align='left'><b><?php xl('Ref No','e'); ?></b></td>
+   align='left'><b><?php echo xlt('Ref No'); ?></b></td>
   <td colspan='<?php echo ($GLOBALS['gbl_checkout_line_adjustments'] ? 2 : 1); ?>'
-   align='right'><b><?php xl('Amount','e'); ?></b></td>
+   align='right'><b><?php echo xlt('Amount'); ?></b></td>
  </tr>
 
  <tr>
@@ -683,7 +687,7 @@ body, td {
   // Get other payments.
   $inres = sqlStatement("SELECT " .
     "a.code, a.modifier, a.memo, a.payer_type, a.adj_amount, a.pay_amount, " .
-    "IFNULL(a.post_date, a.post_time) AS post_date, " .
+    "a.post_time, IFNULL(a.post_date, a.post_time) AS post_date, " .
     "s.payer_id, s.reference, s.check_date, s.deposit_date " .
     "FROM ar_activity AS a " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
@@ -693,8 +697,12 @@ body, td {
   $payer = empty($inrow['payer_type']) ? 'Pt' : ('Ins' . $inrow['payer_type']);
   while ($inrow = sqlFetchArray($inres)) {
     $payments += formatMoneyNumber($inrow['pay_amount']);
+    // Compute invoice number with payment suffix.
+    $tmp = array_search($inrow['post_time'], $checkout_times);
+    $tmp = $tmp === FALSE ? 0 : ($tmp + 1);
+    $refno = $invoice_refno ? "$invoice_refno-$tmp" : "$encounter-$tmp";
     receiptPaymentLine(substr($inrow['post_date'], 0, 10), $inrow['pay_amount'],
-      trim($payer . ' ' . $inrow['reference']), $inrow['memo']);
+      trim($payer . ' ' . $inrow['reference']), $inrow['memo'], $refno);
   }
 ?>
 
@@ -1289,17 +1297,11 @@ if ($patient_id && !empty($_GET['enc'])) {
   }
   else {
     // PDF receipt is requested. In this case we are probably in a new window.
-    require_once($GLOBALS['srcdir'] . "/checkout_receipt_array.inc.php");
     require_once($GLOBALS['OE_SITE_DIR'] . "/" . $GLOBALS['gbl_custom_receipt']);
     // The custom receipt might want to print just the last of multiple checkouts,
     // so compute and pass the timestamp of that.
-    $tmp = sqlQuery(
-      "(SELECT bill_date FROM billing WHERE pid = ? AND encounter = ? AND activity = 1 AND billed = 1) " .
-      "UNION " .
-      "(SELECT bill_date FROM drug_sales WHERE pid = ? AND encounter = ? AND billed = 1) " .
-      "ORDER BY bill_date DESC LIMIT 1",
-      array($patient_id, $_GET['enc'], $patient_id, $_GET['enc']));
-    $billtime = empty($tmp['bill_date']) ? '' : $tmp['bill_date'];
+    $checkout_times = craGetTimestamps($patient_id, $_GET['enc']);
+    $billtime = empty($checkout_times) ? '' : $checkout_times[count($checkout_times) - 1];
     generateCheckoutReceipt($patient_id, $_GET['enc'], $billtime);
   }
   exit();

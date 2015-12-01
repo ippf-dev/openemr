@@ -296,4 +296,19 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
 
   return $aReceipt;
 }
+
+// Get the array of checkout timestamps for the specified visit.
+//
+function craGetTimestamps($patient_id, $encounter_id) {
+  $ret = array();
+  $res = sqlStatement(
+    "(SELECT bill_date FROM billing WHERE pid = ? AND encounter = ? AND activity = 1 AND billed = 1) " .
+    "UNION " .
+    "(SELECT bill_date FROM drug_sales WHERE pid = ? AND encounter = ? AND billed = 1) " .
+    "ORDER BY bill_date",
+    array($patient_id, $encounter_id, $patient_id, $encounter_id));
+
+  while ($row = sqlFetchArray($res)) $ret[] = $row['bill_date'];
+  return $ret;
+}
 ?>
