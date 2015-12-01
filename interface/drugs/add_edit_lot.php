@@ -286,6 +286,7 @@ if ($_POST['form_save']) {
     $form_cost = 0;
   }
   else if ($form_trans_type == 7) { // consumption
+    $form_quantity = 0 - $form_quantity;
     $form_cost = 0;
   }
   else if ($form_trans_type == 0) { // no transaction
