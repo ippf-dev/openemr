@@ -22,6 +22,9 @@ require_once($GLOBALS['fileroot'] . '/library/html2pdf/_tcpdf_5.0.002/tcpdf.php'
       Phone:XXX-XXXX  Fax:XXX-XXXX 
              www.grpagy.com
 
+  Bill To: xxxxx
+  Cashier: xxxxx
+
   Item Name                  Ext.Price
   ------------------------------------
   Contraceptive Oral      9,999,999.99
@@ -46,19 +49,30 @@ global $GCR_PAGE_WIDTH, $GCR_PAGE_HEIGHT, $GCR_LINE_HEIGHT, $GCR_ITEMS_PER_PAGE;
 global $DETAIL_WIDTH_1, $DETAIL_WIDTH_2, $DETAIL_WIDTH_3, $DETAIL_WIDTH_4, $DETAIL_WIDTH_5;
 global $DETAIL_POS_1, $DETAIL_POS_2, $DETAIL_POS_3, $DETAIL_POS_4, $DETAIL_POS_5;
 
-// Star Micronics SP500 printer
-
+// Things commonly customized.
+// Reasonable font choices are probably courier, helvetica and times.
+$GCR_FONT           = 'helvetica';
 $GCR_FONTSIZE       =  10;
 $GCR_LINE_HEIGHT    =  12; // 6 lines/inch = 12 points/line
 $GCR_PAGE_WIDTH     = 210; // 63 mm = 178.58 points but printer's points are off
+
 $GCR_PAGE_HEIGHT    = 792; // Irrelevant but need to specify something
+$GCR_TOP_WIDTH_1 = round($GCR_PAGE_WIDTH * 0.42);      // Top line, MM/DD/YYYY HH:MM
+$GCR_TOP_WIDTH_2 = $GCR_PAGE_WIDTH - $GCR_TOP_WIDTH_1; // Invoice number and decoration
 
-$GCR_TOP_WIDTH_1 = 62;               // Top line, MM/DD/YYYY
-$GCR_TOP_WIDTH_3 = $GCR_TOP_WIDTH_1; // Invoice number + suffix
-$GCR_TOP_WIDTH_2 = $GCR_PAGE_WIDTH - $GCR_TOP_WIDTH_1 - $GCR_TOP_WIDTH_3;
-
-$GCR_MONEY_WIDTH = 72;     // Points allocated for 99,999,999.99
+$GCR_MONEY_WIDTH = round($GCR_PAGE_WIDTH * 72 / 210); // Points allocated for 99,999,999.99
 $GCR_DESC_WIDTH  = $GCR_PAGE_WIDTH - $GCR_MONEY_WIDTH;
+
+// Write a horizontal rule.
+function gcrWriteHR(&$pdf, $pos, $width) {
+  global $GCR_LINE_HEIGHT;
+  $pdf->Ln($GCR_LINE_HEIGHT / 2);
+  $ypos = $pdf->GetY() - ($GCR_LINE_HEIGHT / 4);
+  $pdf->Line($pos, $ypos, $pos + $width, $ypos, array(
+    'width' => 0.5,
+    'cap'   => 'butt',
+  ));
+}
 
 function gcrWriteCell(&$pdf, $pos, $width, $align, $text, $endofline=TRUE, $truncate=TRUE) {
   global $GCR_LINE_HEIGHT;
@@ -87,22 +101,10 @@ function gcrWriteCell(&$pdf, $pos, $width, $align, $text, $endofline=TRUE, $trun
   );
 }
 
-function gcrWriteLine(&$pdf, $xpos, $width) {
-  global $GCR_LINE_HEIGHT;
-  $ypos = $pdf->GetY() - ($GCR_LINE_HEIGHT / 2);
-  $pdf->Line($xpos, $ypos, $xpos + $width, $ypos, array(
-    'width' => 1,
-    'cap'   => 'butt',
-  ));
-}
-
 function gcrHeader(&$aReceipt, &$pdf, $patient_id, $encounter_id, $billtime='') {
   global $GCR_PAGE_WIDTH, $GCR_LINE_HEIGHT;
-  global $GCR_TOP_WIDTH_1, $GCR_TOP_WIDTH_2, $GCR_TOP_WIDTH_3;
+  global $GCR_TOP_WIDTH_1, $GCR_TOP_WIDTH_2; // $GCR_TOP_WIDTH_3;
   global $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH;
-
-  $HEADER_POS_1 =   0;
-  $HEADER_POS_2 =  89;
 
   // Add a page.
   $pdf->AddPage();
@@ -112,22 +114,27 @@ function gcrHeader(&$aReceipt, &$pdf, $patient_id, $encounter_id, $billtime='') 
   $pdf->setCellHeightRatio(1.00);
 
   // Write visit date in the top line left column.
-  gcrWriteCell($pdf, 0, $GCR_TOP_WIDTH_1, 'L', oeFormatShortDate($aReceipt['encounter_date']), FALSE);
+  gcrWriteCell($pdf, 0, $GCR_TOP_WIDTH_1, 'L',
+    oeFormatShortDate($billtime) . ' ' . oeFormatTime($billtime),
+    FALSE);
 
-  // Write the "Sales Receipt" centered in the top line middle column.
-  gcrWriteCell($pdf, $GCR_TOP_WIDTH_1, $GCR_TOP_WIDTH_2, 'C', xl('Sales Receipt'), FALSE);
+  // Start bold.
+  $pdf->SetFont($GCR_FONT, 'B', $GCR_FONTSIZE);
 
-  // Write the invoice reference number in the top line right column.
+  // Write the invoice reference number with its label in the top line right column.
   // Append the checkout sequence number to this.
   $tmp = craGetTimestamps($patient_id, $encounter_id);
   $tmp = array_search($billtime, $tmp);
   $tmp = $tmp === FALSE ? 0 : ($tmp + 1);
   $irn = $aReceipt['invoice_refno'] . "-$tmp";
-  gcrWriteCell($pdf, $GCR_TOP_WIDTH_1 + $GCR_TOP_WIDTH_2, $GCR_TOP_WIDTH_3, 'R', $irn);
+  gcrWriteCell($pdf, $GCR_TOP_WIDTH_1, $GCR_TOP_WIDTH_2, 'R', xl('Sales Receipt') . " # $irn");
   $pdf->Ln($GCR_LINE_HEIGHT);
 
   // Write the organization name line.
   gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'C', $aReceipt['organization_name']);
+
+  // End bold.
+  $pdf->SetFont($GCR_FONT, '', $GCR_FONTSIZE);
 
   // Write the clinic name line if it's different.
   if ($aReceipt['facility_name'] != $aReceipt['organization_name']) {
@@ -160,16 +167,23 @@ function gcrHeader(&$aReceipt, &$pdf, $patient_id, $encounter_id, $billtime='') 
     gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'C', $aReceipt['facility_url']);
   }
 
+  // Blank line, "Bill To:" line, "Cashier:" line.
+  $pdf->Ln($GCR_LINE_HEIGHT);
+  $ptname = trim(trim($aReceipt['patient_fname'] . ' ' . $aReceipt['patient_mname']) . ' ' . $aReceipt['patient_lname']);
+  gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'L', xl('Bill To') . ': ' . $ptname);
+  gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'L', xl('Cashier') . ': ' . $aReceipt['userlogin']);
+
   // Blank line.
   $pdf->Ln($GCR_LINE_HEIGHT);
 
   // Write detail section header.
+  $pdf->SetFont($GCR_FONT, 'B', $GCR_FONTSIZE);
   gcrWriteCell($pdf, 0, $GCR_DESC_WIDTH, 'L', xl('Item Name'), FALSE);
   gcrWriteCell($pdf, $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH, 'R', xl('Ext.Price'));
+  $pdf->SetFont($GCR_FONT, '', $GCR_FONTSIZE);
 
   // Blank line and then horizontal rule.
-  $pdf->Ln($GCR_LINE_HEIGHT);
-  gcrWriteLine($pdf, 0, $GCR_PAGE_WIDTH);
+  gcrWriteHR($pdf, 0, $GCR_PAGE_WIDTH);
 }
 
 function gcrLine(&$aReceipt, &$pdf, $code, $description, $quantity, $price, $total) {
@@ -195,6 +209,7 @@ function gcrFootLine(&$aReceipt, &$pdf, $description, $total) {
 function generateCheckoutReceipt($patient_id, $encounter_id, $billtime='') {
   global $GCR_PAGE_WIDTH, $GCR_PAGE_HEIGHT, $GCR_LINE_HEIGHT;
   global $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH;
+  global $GCR_FONT, $GCR_FONTSIZE;
 
   // Uncomment the next line if you want all activity and not just the last checkout.
   // $billtime = '';
@@ -219,8 +234,7 @@ function generateCheckoutReceipt($patient_id, $encounter_id, $billtime='') {
   $pdf->SetAutoPageBreak(FALSE);
 
   // Set font. Might need something else like 'freeserif' for better utf8 support.
-  $pdf->SetFont('courier', '', 10);
-  // $pdf->SetFont('freeserif', '', 12);
+  $pdf->SetFont($GCR_FONT, '', $GCR_FONTSIZE);
 
   // Write page header section.
   gcrHeader($aReceipt, $pdf, $patient_id, $encounter_id, $billtime);
@@ -246,8 +260,7 @@ function generateCheckoutReceipt($patient_id, $encounter_id, $billtime='') {
   }
 
   // Horizontal rule.
-  $pdf->Ln($GCR_LINE_HEIGHT);
-  gcrWriteLine($pdf, 0, $GCR_PAGE_WIDTH);
+  gcrWriteHR($pdf, 0, $GCR_PAGE_WIDTH);
 
   // Subtotal line.
   gcrFootLine($aReceipt, $pdf, xl('Subtotal'), $subtotal);
@@ -271,15 +284,19 @@ function generateCheckoutReceipt($patient_id, $encounter_id, $billtime='') {
   }
 
   // Short horizontal rule.
-  $pdf->Ln($GCR_LINE_HEIGHT);
-  gcrWriteLine($pdf, $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH);
+  gcrWriteHR($pdf, $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH);
+
+  // Start bold.
+  $pdf->SetFont($GCR_FONT, 'B', $GCR_FONTSIZE);
 
   // Grand total line.
   gcrFootLine($aReceipt, $pdf, xl('RECEIPT TOTAL'), $subtotal);
 
+  // End bold.
+  $pdf->SetFont($GCR_FONT, '', $GCR_FONTSIZE);
+
   // Short horizontal rule and blank line.
-  $pdf->Ln($GCR_LINE_HEIGHT);
-  gcrWriteLine($pdf, $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH);
+  gcrWriteHR($pdf, $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH);
   $pdf->Ln($GCR_LINE_HEIGHT);
 
   // TBD: Payment lines and balance due line.

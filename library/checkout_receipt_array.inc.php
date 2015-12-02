@@ -136,7 +136,7 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
 
   // Get text for the logged-in user's name (first middle last).
   $username = "UID: " . $_SESSION["authUserID"];
-  $userrow = sqlQuery("SELECT id, fname, mname, lname FROM users " .
+  $userrow = sqlQuery("SELECT id, username, fname, mname, lname FROM users " .
     "WHERE id = '" . $_SESSION["authUserID"] . "'");
   if ($userrow['id']) {
     if (!empty($userrow['fname'])) $username = $userrow['fname'];
@@ -195,6 +195,7 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     'organization_name' => $orgrow['name'],
     'docname'           => $docname,
     'username'          => $username,
+    'userlogin'         => $userrow['username'],
     'starting_balance'  => $head_begbal,
     'ending_balance'    => $head_endbal,
     'items'             => array(),
