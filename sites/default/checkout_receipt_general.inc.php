@@ -45,16 +45,18 @@ require_once($GLOBALS['fileroot'] . '/library/html2pdf/_tcpdf_5.0.002/tcpdf.php'
 **********************************************************************/
 
 // Global statement here because we may be included within a function.
-global $GCR_PAGE_WIDTH, $GCR_PAGE_HEIGHT, $GCR_LINE_HEIGHT, $GCR_ITEMS_PER_PAGE;
-global $DETAIL_WIDTH_1, $DETAIL_WIDTH_2, $DETAIL_WIDTH_3, $DETAIL_WIDTH_4, $DETAIL_WIDTH_5;
-global $DETAIL_POS_1, $DETAIL_POS_2, $DETAIL_POS_3, $DETAIL_POS_4, $DETAIL_POS_5;
+global $GCR_PAGE_WIDTH, $GCR_PAGE_HEIGHT, $GCR_LINE_HEIGHT;
 
 // Things commonly customized.
-// Reasonable font choices are probably courier, helvetica and times.
+// Reasonable font choices are courier, helvetica and times which are "core fonts" for tcpdf.
 $GCR_FONT           = 'helvetica';
-$GCR_FONTSIZE       =  10;
+$GCR_FONTSIZE       =   9;
 $GCR_LINE_HEIGHT    =  12; // 6 lines/inch = 12 points/line
-$GCR_PAGE_WIDTH     = 210; // 63 mm = 178.58 points but printer's points are off
+
+// We want the device's printable page width in points here.
+// For the Star Micronics TSP100 this is 204 points which is 72 mm.
+// For the SP500 this is 210 as a special case, even though its 63 mm = 178.58 points.
+$GCR_PAGE_WIDTH     = 204;
 
 $GCR_PAGE_HEIGHT    = 792; // Irrelevant but need to specify something
 $GCR_TOP_WIDTH_1 = round($GCR_PAGE_WIDTH * 0.42);      // Top line, MM/DD/YYYY HH:MM
