@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009-2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2015 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -428,18 +428,16 @@ while ($frow = sqlFetchArray($fres)) {
   $field_id   = $frow['field_id'];
   $list_id    = $frow['list_id'];
   $currvalue  = '';
-  
-// New client home facility defaults to user's facility.
+
+  // New client home facility defaults to user's facility.
   if ($field_id == 'home_facility') {
     $tmp = sqlQuery("SELECT facility_id FROM users WHERE id = '" . $_SESSION['authUserID'] . "'");
     if (!empty($tmp['facility_id'])) $currvalue = $tmp['facility_id'];
   }
-  else if (strpos($field_id, 'em_') === 0) {
-    $tmp = substr($field_id, 3);
-    if (isset($result2[$tmp])) $currvalue = $result2[$tmp];
-  }
-  else {
-    if (isset($result[$field_id])) $currvalue = $result[$field_id];
+
+  // Registration date defaults to today.
+  else if ($field_id == 'regdate') {
+    $currvalue = date('Y-m-d');
   }
 
   // Handle a data category (group) change.
@@ -510,13 +508,8 @@ end_group();
 
 <?php
 if (! $GLOBALS['simplified_demographics']) {
-  $insurancei = getInsuranceProviders();
-  $pid = 0;
   $insurance_headings = array(xl("Primary Insurance Provider"), xl("Secondary Insurance Provider"), xl("Tertiary Insurance provider"));
-  $insurance_info = array();
-  $insurance_info[1] = getInsuranceData($pid,"primary");
-  $insurance_info[2] = getInsuranceData($pid,"secondary");
-  $insurance_info[3] = getInsuranceData($pid,"tertiary");
+  $insurancei = getInsuranceProviders();
 
   echo "<br /><span class='bold'><input type='checkbox' name='form_cb_ins' value='1' " .
     "onclick='return divclick(this,\"div_ins\");'";
@@ -525,7 +518,6 @@ if (! $GLOBALS['simplified_demographics']) {
   echo "<div id='div_ins' class='section' style='display:$display_style;'>\n";
 
   for($i=1;$i<=3;$i++) {
-   $result3 = $insurance_info[$i];
 ?>
 <table border="0">
  <tr>
@@ -536,8 +528,6 @@ if (! $GLOBALS['simplified_demographics']) {
 <?php
  foreach ($insurancei as $iid => $iname) {
   echo "<option value='" . $iid . "'";
-  if (strtolower($iid) == strtolower($result3{"provider"}))
-   echo " selected";
   echo ">" . $iname . "</option>\n";
  }
 ?>
@@ -554,7 +544,7 @@ if (! $GLOBALS['simplified_demographics']) {
       <span class='required'><?php xl('Plan Name','e'); ?>: </span>
      </td>
      <td>
-      <input type='entry' size='20' name='i<?php echo $i?>plan_name' value="<?php echo $result3{"plan_name"} ?>"
+      <input type='entry' size='20' name='i<?php echo $i?>plan_name' value=""
        onchange="capitalizeMe(this);" />&nbsp;&nbsp;
      </td>
     </tr>
@@ -566,7 +556,7 @@ if (! $GLOBALS['simplified_demographics']) {
      <td>
       <input type='entry' size='11' name='i<?php echo $i ?>effective_date'
        id='i<?php echo $i ?>effective_date'
-       value='<?php echo $result3['date'] ?>'
+       value=''
        onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'
        title='yyyy-mm-dd' />
 
@@ -584,27 +574,27 @@ if (! $GLOBALS['simplified_demographics']) {
 
     <tr>
      <td><span class=required><?php xl('Policy Number','e'); ?>: </span></td>
-     <td><input type='entry' size='16' name='i<?php echo $i?>policy_number' value="<?php echo $result3{"policy_number"}?>"
+     <td><input type='entry' size='16' name='i<?php echo $i?>policy_number' value=""
       onkeyup='policykeyup(this)'></td>
     </tr>
 
     <tr>
-     <td><span class=required><?php xl('Group Number','e'); ?>: </span></td><td><input type=entry size=16 name=i<?php echo $i?>group_number value="<?php echo $result3{"group_number"}?>" onkeyup='policykeyup(this)'></td>
+     <td><span class=required><?php xl('Group Number','e'); ?>: </span></td><td><input type=entry size=16 name=i<?php echo $i?>group_number value="" onkeyup='policykeyup(this)'></td>
     </tr>
 
     <tr<?php if ($GLOBALS['omit_employers']) echo " style='display:none'"; ?>>
      <td class='required'><?php xl('Subscriber Employer (SE)','e'); ?><br><span style='font-weight:normal'>
       (<?php xl('if unemployed enter Student','e'); ?>,<br><?php xl('PT Student, or leave blank','e'); ?>): </span></td>
      <td><input type=entry size=25 name=i<?php echo $i?>subscriber_employer
-      value="<?php echo $result3{"subscriber_employer"}?>"
-       onchange="capitalizeMe(this);" /></td>
+      value=""
+      onchange="capitalizeMe(this);" /></td>
     </tr>
 
     <tr<?php if ($GLOBALS['omit_employers']) echo " style='display:none'"; ?>>
      <td><span class=required><?php xl('SE Address','e'); ?>: </span></td>
      <td><input type=entry size=25 name=i<?php echo $i?>subscriber_employer_street
-      value="<?php echo $result3{"subscriber_employer_street"}?>"
-       onchange="capitalizeMe(this);" /></td>
+      value=""
+      onchange="capitalizeMe(this);" /></td>
     </tr>
 
     <tr<?php if ($GLOBALS['omit_employers']) echo " style='display:none'"; ?>>
@@ -613,24 +603,38 @@ if (! $GLOBALS['simplified_demographics']) {
        <tr>
         <td><span class=required><?php xl('SE City','e'); ?>: </span></td>
         <td><input type=entry size=15 name=i<?php echo $i?>subscriber_employer_city
-         value="<?php echo $result3{"subscriber_employer_city"}?>"
-          onchange="capitalizeMe(this);" /></td>
+         value=""
+         onchange="capitalizeMe(this);" /></td>
         <td><span class=required><?php echo ($GLOBALS['phone_country_code'] == '1') ? xl('SE State','e') : xl('SE Locality','e') ?>: </span></td>
 	<td>
          <?php
           // Modified 7/2009 by BM to incorporate data types
-	  generate_form_field(array('data_type'=>$GLOBALS['state_data_type'],'field_id'=>('i'.$i.'subscriber_employer_state'),'list_id'=>$GLOBALS['state_list'],'fld_length'=>'15','max_length'=>'63','edit_options'=>'C'), $result3['subscriber_employer_state']);
+          generate_form_field(array(
+            'data_type'    => $GLOBALS['state_data_type'],
+            'field_id'     => ('i'.$i.'subscriber_employer_state'),
+            'list_id'      => $GLOBALS['state_list'],
+            'fld_length'   => '15',
+            'max_length'   => '63',
+            'edit_options' => 'C'
+          ), '');
          ?>
         </td>
        </tr>
        <tr>
         <td><span class=required><?php echo ($GLOBALS['phone_country_code'] == '1') ? xl('SE Zip Code','e') : xl('SE Postal Code','e') ?>: </span></td>
-        <td><input type=entry size=10 name=i<?php echo $i?>subscriber_employer_postal_code value="<?php echo $result3{"subscriber_employer_postal_code"}?>"></td>
+        <td><input type=entry size=10 name=i<?php echo $i?>subscriber_employer_postal_code value=""></td>
         <td><span class=required><?php xl('SE Country','e'); ?>: </span></td>
 	<td>
          <?php
           // Modified 7/2009 by BM to incorporate data types
-	  generate_form_field(array('data_type'=>$GLOBALS['country_data_type'],'field_id'=>('i'.$i.'subscriber_employer_country'),'list_id'=>$GLOBALS['country_list'],'fld_length'=>'10','max_length'=>'63','edit_options'=>'C'), $result3['subscriber_employer_country']);
+          generate_form_field(array(
+            'data_type'    => $GLOBALS['country_data_type'],
+            'field_id'     => ('i'.$i.'subscriber_employer_country'),
+            'list_id'      => $GLOBALS['country_list'],
+            'fld_length'   => '10',
+            'max_length'   => '63',
+            'edit_options' => 'C'
+          ), '');
          ?>
 	</td>
        </tr>
@@ -644,26 +648,31 @@ if (! $GLOBALS['simplified_demographics']) {
   <td valign=top>
    <span class=required><?php xl('Subscriber','e'); ?>: </span>
    <input type=entry size=10 name=i<?php echo $i?>subscriber_fname
-    value="<?php echo $result3{"subscriber_fname"}?>"
+    value=""
     onchange="capitalizeMe(this);" />
    <input type=entry size=3 name=i<?php echo $i?>subscriber_mname
-    value="<?php echo $result3{"subscriber_mname"}?>"
+    value=""
     onchange="capitalizeMe(this);" />
    <input type=entry size=10 name=i<?php echo $i?>subscriber_lname
-    value="<?php echo $result3{"subscriber_lname"}?>"
+    value=""
     onchange="capitalizeMe(this);" />
    <br>
    <span class=required><?php xl('Relationship','e'); ?>: </span>
    <?php
     // Modified 6/2009 by BM to use list_options and function
-    generate_form_field(array('data_type'=>1,'field_id'=>('i'.$i.'subscriber_relationship'),'list_id'=>'sub_relation','empty_title'=>' '), $result3['subscriber_relationship']);
+    generate_form_field(array(
+      'data_type'   => 1,
+      'field_id'    => ('i'.$i.'subscriber_relationship'),
+      'list_id'     => 'sub_relation',
+      'empty_title' => ' '
+    ), '');
    ?>
    <a href="javascript:popUp('../../interface/patient_file/summary/browse.php?browsenum=<?php echo $i?>')" class=text>(<?php xl('Browse','e'); ?>)</a><br />
 
    <span class=bold><?php xl('D.O.B.','e'); ?>: </span>
    <input type='entry' size='11' name='i<?php echo $i?>subscriber_DOB'
     id='i<?php echo $i?>subscriber_DOB'
-    value='<?php echo $result3['subscriber_DOB'] ?>'
+    value=''
     onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'
     title='yyyy-mm-dd' />
 
@@ -676,44 +685,62 @@ if (! $GLOBALS['simplified_demographics']) {
     </script>
 
 
-   <span class=bold><?php xl('S.S.','e'); ?>: </span><input type=entry size=11 name=i<?php echo $i?>subscriber_ss value="<?php echo $result3{"subscriber_ss"}?>">&nbsp;
+   <span class=bold><?php xl('S.S.','e'); ?>: </span><input type=entry size=11 name=i<?php echo $i?>subscriber_ss value="">&nbsp;
    <span class=bold><?php xl('Sex','e'); ?>: </span>
    <?php
     // Modified 6/2009 by BM to use list_options and function
-    generate_form_field(array('data_type'=>1,'field_id'=>('i'.$i.'subscriber_sex'),'list_id'=>'sex'), $result3['subscriber_sex']);
+    generate_form_field(array(
+      'data_type' => 1,
+      'field_id'  => ('i'.$i.'subscriber_sex'),
+      'list_id'   => 'sex'
+    ), '');
    ?>	
    <br>
    <span class=required><?php xl('Subscriber Address','e'); ?>: </span>
    <input type=entry size=25 name=i<?php echo $i?>subscriber_street
-    value="<?php echo $result3{"subscriber_street"}?>"
+    value=""
     onchange="capitalizeMe(this);" /><br>
    <span class=required><?php xl('City','e'); ?>: </span>
    <input type=entry size=15 name=i<?php echo $i?>subscriber_city
-    value="<?php echo $result3{"subscriber_city"}?>"
+    value=""
     onchange="capitalizeMe(this);" />
    <span class=required><?php echo ($GLOBALS['phone_country_code'] == '1') ? xl('State','e') : xl('Locality','e') ?>: </span>
    <?php
     // Modified 7/2009 by BM to incorporate data types
-    generate_form_field(array('data_type'=>$GLOBALS['state_data_type'],'field_id'=>('i'.$i.'subscriber_state'),'list_id'=>$GLOBALS['state_list'],'fld_length'=>'15','max_length'=>'63','edit_options'=>'C'), $result3['subscriber_state']);
+    generate_form_field(array(
+      'data_type'    => $GLOBALS['state_data_type'],
+      'field_id'     => ('i'.$i.'subscriber_state'),
+      'list_id'      => $GLOBALS['state_list'],
+      'fld_length'   => '15',
+      'max_length'   => '63',
+      'edit_options' => 'C'
+    ), '');
    ?>
    <br />	
-   <span class=required><?php echo ($GLOBALS['phone_country_code'] == '1') ? xl('Zip Code','e') : xl('Postal Code','e') ?>: </span><input type=entry size=10 name=i<?php echo $i?>subscriber_postal_code value="<?php echo $result3{"subscriber_postal_code"}?>">
+   <span class=required><?php echo ($GLOBALS['phone_country_code'] == '1') ? xl('Zip Code','e') : xl('Postal Code','e') ?>: </span><input type=entry size=10 name=i<?php echo $i?>subscriber_postal_code value="">
    <span class='required'<?php if ($GLOBALS['omit_employers']) echo " style='display:none'"; ?>>
    <?php xl('Country','e'); ?>: </span>
    <?php
     // Modified 7/2009 by BM to incorporate data types
-    generate_form_field(array('data_type'=>$GLOBALS['country_data_type'],'field_id'=>('i'.$i.'subscriber_country'),'list_id'=>$GLOBALS['country_list'],'fld_length'=>'10','max_length'=>'63','edit_options'=>'C'), $result3['subscriber_country']);
+    generate_form_field(array(
+      'data_type'    => $GLOBALS['country_data_type'],
+      'field_id'     => ('i'.$i.'subscriber_country'),
+      'list_id'      => $GLOBALS['country_list'],
+      'fld_length'   => '10',
+      'max_length'   => '63',
+      'edit_options' => 'C'
+    ), '');
    ?>
    <br />
    <span class=bold><?php xl('Subscriber Phone','e'); ?>: 
-   <input type='text' size='20' name='i<?php echo $i?>subscriber_phone' value='<?php echo $result3["subscriber_phone"] ?>' onkeyup='phonekeyup(this,mypcc)' />
+   <input type='text' size='20' name='i<?php echo $i?>subscriber_phone' value='' onkeyup='phonekeyup(this,mypcc)' />
    </span><br />
-   <span class=bold><?php xl('CoPay','e'); ?>: <input type=text size="6" name=i<?php echo $i?>copay value="<?php echo $result3{"copay"}?>">
+   <span class=bold><?php xl('CoPay','e'); ?>: <input type=text size="6" name=i<?php echo $i?>copay value="">
    </span><br />
    <span class='required'><?php xl('Accept Assignment','e'); ?>: </span>
    <select name=i<?php echo $i?>accept_assignment>
-     <option value="TRUE" <?php if (strtoupper($result3{"accept_assignment"}) == "TRUE") echo "selected"?>><?php xl('YES','e'); ?></option>
-     <option value="FALSE" <?php if (strtoupper($result3{"accept_assignment"}) == "FALSE") echo "selected"?>><?php xl('NO','e'); ?></option>
+     <option value="TRUE"><?php xl('YES','e'); ?></option>
+     <option value="FALSE"><?php xl('NO','e'); ?></option>
    </select>
   </td>
  </tr>
