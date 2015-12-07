@@ -50,7 +50,10 @@ class C_Prescription extends Controller {
 				"d.drug_id = t.drug_id ORDER BY t.selector");
 
 			while ($row = sqlFetchArray($res)) {
-				$tmp_output = $row['selector'];
+				$tmp_output = $row['name'];
+        if ($row['selector'] !== '' && $row['selector'] != $row['name']) {
+          $tmp_output .= ' / ' . $row['selector'];
+        }
 				if ($row['ndc_number']) {
 					$tmp_output .= ' [' . $row['ndc_number'] . ']';
 				}
