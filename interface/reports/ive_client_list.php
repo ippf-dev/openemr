@@ -29,9 +29,25 @@ function display_html($s) {
 // Get a list item's title, translated if appropriate.
 function getListTitle($list, $option) {
   $row = sqlQuery("SELECT title FROM list_options WHERE " .
-    "list_id = '$list' AND option_id = '$option'");
+    "list_id = ? AND option_id = ?", array($list, $option));
   if (empty($row['title'])) return $option;
   return xl_list_label($row['title']);
+}
+
+// Like the above but caters to multiple checkbox values.
+function getListTitles($list, $option) {
+  $s = '';
+  $avalue = explode('|', $option);
+  $lres = sqlStatement("SELECT * FROM list_options " .
+    "WHERE list_id = ? ORDER BY seq, title", array($list));
+  while ($lrow = sqlFetchArray($lres)) {
+    $option_id = $lrow['option_id'];
+    if (in_array($option_id, $avalue)) {
+      if ($s !== '') $s .= "; ";
+      $s .= xl_list_label($lrow['title']);
+    }
+  }
+  return $s;
 }
 
 if (! acl_check('acct', 'rep')) die(xl("Unauthorized access."));
@@ -71,6 +87,10 @@ if ($_POST['form_csvexport']) {
   echo '"' . display_csv(xl('Gest Age from LMP'   )) . '",';
   echo '"' . display_csv(xl('Gest Age from ECO'   )) . '",';
   echo '"' . display_csv(xl('IVE Procedure Type'  )) . '",';
+  // New 2015-12-03:
+  echo '"' . display_csv(xl('Marital Status'      )) . '",';
+  echo '"' . display_csv(xl('Education'           )) . '",';
+  //
   echo '"' . display_csv(xl('Causes of unwanted pregnancy')) . '",';
   echo '"' . display_csv(xl('Support network'             )) . '",';
   echo '"' . display_csv(xl('Women resolution about IVE'  )) . '",';
@@ -174,6 +194,8 @@ echo "   </select>&nbsp;\n";
   <td class="dehead"><?php echo xlt('Gest Age from LMP'   ); ?></td>
   <td class="dehead"><?php echo xlt('Gest Age from ECO'   ); ?></td>
   <td class="dehead"><?php echo xlt('IVE Procedure Type'  ); ?></td>
+  <td class="dehead"><?php echo xlt('Marital Status'      ); ?></td>
+  <td class="dehead"><?php echo xlt('Education'           ); ?></td>
   <td class="dehead"><?php echo xlt('Causes of unwanted pregnancy'); ?></td>
   <td class="dehead"><?php echo xlt('Support network'             ); ?></td>
   <td class="dehead"><?php echo xlt('Women resolution about IVE'  ); ?></td>
@@ -208,7 +230,7 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
   $varr = array();
   // Note this gives us one row per IVE form instance.
   $query = "SELECT f.formdir, f.pid, f.encounter, fe.date, fe.facility_id, " .
-    "p.pubpid, p.fname, p.mname, p.lname, p.state, p.DOB ";
+    "p.pubpid, p.fname, p.mname, p.lname, p.state, p.DOB, p.userlist2, p.status ";
   foreach ($vfields as $vkey => $vfield) {
     $query .= ", s$vkey.field_value AS `$vfield`";
   }
@@ -316,7 +338,7 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     // Causes of unwanted pregnancy
     $ivecauses = empty($row['IVE_reasunwantedp']) ? '' : getListTitle('IVE_unw_preg', $row['IVE_reasunwantedp']);
     // Support network
-    $ivesuppnet = empty($row['IVE_suppnet']) ? '' : getListTitle('IVE_support', $row['IVE_suppnet']);
+    $ivesuppnet = empty($row['IVE_suppnet']) ? '' : getListTitles('IVE_support', $row['IVE_suppnet']);
     // Women resolution about IVE
     $ivewomres = empty($row['IVE_womenres']) ? '' : getListTitle('IVE_womres', $row['IVE_womenres']);
     // Law applicable 
@@ -329,7 +351,10 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     $ivecmethod = empty($row['IVE_contmetcounsel']) ? '' : getListTitle('IVE_contrameth' , $row['IVE_contmetcounsel']);
     // Hospitalization Indication.
     $iveind = empty($row['IVE_indication']) ? '' : getListTitle('IVE_indications', $row['IVE_indication']);
-
+    // Marital Status
+    $marital = empty($row['status']) ? '' : getListTitle('marital' , $row['status']);
+    // Education
+    $education = empty($row['userlist2']) ? '' : getListTitle('userlist2' , $row['userlist2']);
     if ($_POST['form_csvexport']) {
       echo '"'  . display_csv($row['pubpid']) . '"';
       echo ',"' . display_csv($name         ) . '"';
@@ -351,6 +376,8 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo ',"' . display_csv($gestlmp      ) . '"';
       echo ',"' . display_csv($gesteco      ) . '"';
       echo ',"' . display_csv($ivemethod    ) . '"';
+      echo ',"' . display_csv($marital      ) . '"';
+      echo ',"' . display_csv($education    ) . '"';
       echo ',"' . display_csv($ivecauses    ) . '"';
       echo ',"' . display_csv($ivesuppnet   ) . '"';
       echo ',"' . display_csv($ivewomres    ) . '"';
@@ -381,6 +408,8 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo "  <td class='detail'>" . display_html($gestlmp   ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($gesteco   ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivemethod ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($marital   ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($education ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivecauses ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivesuppnet) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivewomres ) . "</td>\n";
