@@ -510,7 +510,7 @@ function writeFieldLine($linedata) {
             "title='".htmlspecialchars(xl('Select field', ENT_QUOTES))."' />";
 
     echo "<input type='text' name='fld[$fld_line_no][seq]' id='fld[$fld_line_no][seq]' value='" .
-      htmlspecialchars($linedata['seq'], ENT_QUOTES) . "' size='2' maxlength='3' " .
+      htmlspecialchars($linedata['seq'], ENT_QUOTES) . "' size='2' maxlength='4' " .
       "class='optin' style='width:32pt' />";
     echo "</td>\n";
 
@@ -1190,7 +1190,7 @@ while ($row = sqlFetchArray($res)) {
 </thead>
 <tbody>
 <tr class='center'>
-<td ><input type="textbox" name="gnewseq" id="gnewseq" value="" size="2" maxlength="3"> </td>
+<td ><input type="textbox" name="gnewseq" id="gnewseq" value="" size="2" maxlength="4"> </td>
 <td<?php echo " $lbfonly"; ?>>
 <select name='gnewsource' id='gnewsource'>
 <?php
@@ -1271,7 +1271,7 @@ foreach ($datatypes as $key=>$value) {
  </thead>
  <tbody>
   <tr class='center'>
-   <td ><input type="textbox" name="newseq" id="newseq" value="" size="2" maxlength="3"> </td>
+   <td ><input type="textbox" name="newseq" id="newseq" value="" size="2" maxlength="4"> </td>
    <td<?php echo " $lbfonly"; ?>>
     <select name='newsource' id='newsource'>
 <?php
@@ -1441,9 +1441,9 @@ $(document).ready(function(){
 
         // now, check the first group field values
         
-        // seq must be numeric and less than 999
-        if (! IsNumeric($("#gnewseq").val(), 0, 999)) {
-            alert("<?php xl('Order must be a number between 1 and 999','e'); ?>");
+        // seq must be numeric and <= 9999
+        if (! IsNumeric($("#gnewseq").val(), 0, 9999)) {
+            alert("<?php xl('Order must be a number between 1 and 9999','e'); ?>");
             return false;
         }
         // length must be numeric and less than 999
@@ -1602,9 +1602,9 @@ $(document).ready(function(){
     var SaveNewField = function(btnObj) {
         // check the new field values for correct formatting
     
-        // seq must be numeric and less than 999
-        if (! IsNumeric($("#newseq").val(), 0, 999)) {
-            alert("<?php xl('Order must be a number between 1 and 999','e'); ?>");
+        // seq must be numeric and <= 9999
+        if (! IsNumeric($("#newseq").val(), 0, 9999)) {
+            alert("<?php xl('Order must be a number between 1 and 9999','e'); ?>");
             return false;
         }
         // length must be numeric and less than 999
