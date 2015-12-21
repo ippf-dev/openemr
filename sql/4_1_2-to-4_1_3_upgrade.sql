@@ -266,3 +266,7 @@ UPDATE drug_sales AS s, billing     AS b SET s.bill_date = b.bill_date WHERE s.b
 UPDATE drug_sales AS s, ar_activity AS a SET s.bill_date = a.post_time WHERE s.billed = 1 AND s.bill_date IS NULL AND a.pid = s.pid AND a.encounter = s.encounter;
 UPDATE drug_sales AS s SET s.bill_date = s.sale_date WHERE s.billed = 1 AND s.bill_date IS NULL;
 #EndIf
+
+#IfNotColumnType billing units int(11)
+ALTER TABLE `billing` CHANGE `units` `units` int(11) DEFAULT NULL;
+#EndIf

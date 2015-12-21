@@ -157,7 +157,7 @@ CREATE TABLE `billing` (
   `process_date` datetime default NULL,
   `process_file` varchar(255) default NULL,
   `modifier` varchar(12) default NULL,
-  `units` tinyint(3) default NULL,
+  `units` int(11) DEFAULT NULL,
   `fee` decimal(12,2) default NULL,
   `justify` varchar(255) default NULL,
   `target` varchar(30) default NULL,

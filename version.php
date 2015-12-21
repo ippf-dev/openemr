@@ -6,7 +6,7 @@
 $v_major = '4';
 $v_minor = '1';
 $v_patch = '3';
-$v_tag   = '-20151129'; // minor revision number, should be empty for production releases
+$v_tag   = '-20151221'; // minor revision number, should be empty for production releases
 
 // A real patch identifier. This is incremented when we release a patch for a
 // production release. Note the above $v_patch variable is a misnomer and actually
@@ -17,7 +17,7 @@ $v_realpatch = '0';
 // is a database change in the course of development.  It is used
 // internally to determine when a database upgrade is needed.
 //
-$v_database = 119;
+$v_database = 120;
 
 // Access control version identifier, this is to be incremented whenever there
 // is a access control change in the course of development.  It is used

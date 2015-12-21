@@ -1803,7 +1803,7 @@ if ($_POST['form_submit']) {
         // Handle MA report types.
         if ($report_type == 'm' && !empty($row['encounter'])) {
           $query = "SELECT " .
-            "b.code_type, b.code, c.related_code " .
+            "b.code_type, b.code, b.units, c.related_code " .
             "FROM billing AS b " .
             "LEFT OUTER JOIN codes AS c ON c.code_type = '12' AND " .
             "c.code = b.code AND c.modifier = b.modifier " .
@@ -1815,7 +1815,8 @@ if ($_POST['form_submit']) {
           while ($brow = sqlFetchArray($bres)) {
             $tmp = getRelatedContraceptiveCode($brow);
             if (!empty($tmp)) {
-              process_ma_code($row, $brow['code'], $row['quantity']);
+              $units = empty($brow['units']) ? 1 : $brow['units'];
+              process_ma_code($row, $brow['code'], $row['quantity'] * $units);
               break;
             }
           }
@@ -2042,7 +2043,7 @@ if ($_POST['form_submit']) {
         "f.user AS provider, " .
         "pd.sex, pd.DOB, pd.lname, pd.fname, pd.mname, pd.regdate, " .
         "pd.referral_source$pd_fields, " .
-        "b.code_type, b.code, c.related_code, lo.title AS lo_title " .
+        "b.code_type, b.code, b.units, c.related_code, lo.title AS lo_title " .
         "FROM form_encounter AS fe " .
         "JOIN forms AS f ON f.pid = fe.pid AND f.encounter = fe.encounter AND " .
         "f.formdir = 'newpatient' AND f.form_id = fe.id AND f.deleted = 0 " .
@@ -2071,24 +2072,25 @@ if ($_POST['form_submit']) {
           $prev_encounter = $row['encounter'];
           process_visit($row);
         }
+        $units = empty($row['units']) ? 1 : $row['units'];
         if ($row['code_type'] === 'MA') {
-          process_ma_code($row);
+          process_ma_code($row, '', $units);
           if (!empty($row['related_code'])) {
             $relcodes = explode(';', $row['related_code']);
             foreach ($relcodes as $codestring) {
               if ($codestring === '') continue;
               list($codetype, $code) = explode(':', $codestring);
               if ($codetype === 'IPPF2') {
-                process_ippf_code($row, $code);
+                process_ippf_code($row, $code, $units);
               }
               else if ($codetype === 'IPPFCM') {
-                process_ippfcm_code($row, $code);
+                process_ippfcm_code($row, $code, $units);
               }
             }
           }
         }
         else if ($row['code_type'] === 'ADM') {
-          process_adm_code($row);
+          process_adm_code($row, '', $units);
         }
       } // end while
     } // end if
