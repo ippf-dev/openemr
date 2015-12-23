@@ -167,13 +167,6 @@ td { font-size:10pt; }
    return false;
   }
 
-  /*******************************************************************
-  if (f.form_trans_type.value == '6' && f.form_distributor_id.value == '') {
-   alert('<?php echo xls('A distributor is required'); ?>');
-   return false;
-  }
-  *******************************************************************/
-
   // Require comments for adjustment transactions.
   if (f.form_trans_type.value == '5' && f.form_notes.value.search(/\S/) < 0) {
    alert('<?php echo xls('Comments are required for adjustments'); ?>');
@@ -198,19 +191,12 @@ td { font-size:10pt; }
   var showCost      = true;
   var showSourceLot = true;
   var showNotes     = true;
-  // var showDistributor = false;
   if (type == '2') { // purchase
     showSourceLot = false;
   }
   else if (type == '3') { // return
     showSourceLot = false;
   }
-  /*******************************************************************
-  else if (type == '6') { // distribution
-    showSourceLot = false;
-    showDistributor = true;
-  }
-  *******************************************************************/
   else if (type == '4') { // transfer
     showCost = false;
   }
@@ -234,7 +220,6 @@ td { font-size:10pt; }
   document.getElementById('row_cost'      ).style.display = showCost      ? '' : 'none';
   document.getElementById('row_source_lot').style.display = showSourceLot ? '' : 'none';
   document.getElementById('row_notes'     ).style.display = showNotes     ? '' : 'none';
-  // document.getElementById('row_distributor').style.display = showDistributor ? '' : 'none';
  }
 
 </script>
@@ -255,15 +240,16 @@ if ($_POST['form_save']) {
   $form_quantity = $_POST['form_quantity'] + 0;
   $form_cost = sprintf('%0.2f', $_POST['form_cost']);
   $form_source_lot = $_POST['form_source_lot'] + 0;
-  
+
   list($form_source_lot, $form_source_facility) = explode('|', $_POST['form_source_lot']);
   $form_source_lot = intval($form_source_lot);
 
   list($form_warehouse_id) = explode('|', $_POST['form_warehouse_id']);
-  
-  // $form_distributor_id = $_POST['form_distributor_id'] + 0;
 
-  $form_expiration = $_POST['form_expiration'];
+  $form_expiration   = $_POST['form_expiration'];
+  $form_lot_number   = $_POST['form_lot_number'];
+  $form_manufacturer = $_POST['form_manufacturer'];
+  $form_vendor_id    = $_POST['form_vendor_id'];
 
   if ($form_trans_type < 0 || $form_trans_type > 7) die(text('Internal error!'));
 
@@ -293,27 +279,24 @@ if ($_POST['form_save']) {
     $form_quantity = 0;
     $form_cost = 0;
   }
-  /********************************************************************
-  else if ($form_trans_type == 6) { // distribution
-    $form_quantity = 0 - $form_quantity;
-    $form_cost = 0 - $form_cost;
-  }
-  ********************************************************************/
   if ($form_trans_type != 4) { // not transfer
     $form_source_lot = 0;
   }
-  /********************************************************************
-  if ($form_trans_type != 6) { // not distribution
-    $form_distributor_id = '0';
-  }
-  ********************************************************************/
 
-  // If a transfer, make sure there is sufficient quantity in the source lot.
-  if ($_POST['form_save'] && $form_source_lot && $form_quantity) {
-    $srow = sqlQuery("SELECT on_hand FROM drug_inventory WHERE " .
-      "drug_id = ? AND inventory_id = ?", array($drug_id,$form_source_lot) );
-    if ($srow['on_hand'] < $form_quantity) {
-        $info_msg = xl('Transfer failed, insufficient quantity in source lot');
+  // If a transfer, make sure there is sufficient quantity in the source lot
+  // and apply some default values from it.
+  if ($form_source_lot) {
+    $srow = sqlQuery("SELECT lot_number, expiration, manufacturer, vendor_id, on_hand " .
+      "FROM drug_inventory WHERE drug_id = ? AND inventory_id = ?",
+      array($drug_id, $form_source_lot));
+
+    if (empty($form_lot_number  )) $form_lot_number   = $srow['lot_number'  ];
+    if (empty($form_expiration  )) $form_expiration   = $srow['expiration'  ];
+    if (empty($form_manufacturer)) $form_manufacturer = $srow['manufacturer'];
+    if (empty($form_vendor_id   )) $form_vendor_id    = $srow['vendor_id'   ];
+
+    if ($form_quantity && $srow['on_hand'] < $form_quantity) {
+      $info_msg = xl('Transfer failed, insufficient quantity in source lot');
     }
   }
 
@@ -327,12 +310,12 @@ if ($_POST['form_save']) {
         }
         else {
           sqlStatement("UPDATE drug_inventory SET " .
-            "lot_number = '"   . add_escape_custom($_POST['form_lot_number'])    . "', " .
-            "manufacturer = '" . add_escape_custom($_POST['form_manufacturer'])  . "', " .
-            "expiration = "    . QuotedOrNull($form_expiration) . ", "  .
-            "vendor_id = '"    . add_escape_custom($_POST['form_vendor_id'])     . "', " .
+            "lot_number = '"   . add_escape_custom($form_lot_number)    . "', " .
+            "manufacturer = '" . add_escape_custom($form_manufacturer)  . "', " .
+            "expiration = "    . QuotedOrNull($form_expiration)         . ", "  .
+            "vendor_id = '"    . add_escape_custom($form_vendor_id)     . "', " .
             "warehouse_id = '" . add_escape_custom($form_warehouse_id)  . "', " .
-            "on_hand = on_hand + '" . add_escape_custom($form_quantity)            . "' "  .
+            "on_hand = on_hand + '" . add_escape_custom($form_quantity) . "' "  .
             "WHERE drug_id = ? AND inventory_id = ?", array($drug_id,$lot_id) );
         }
       }
@@ -350,7 +333,7 @@ if ($_POST['form_save']) {
         $exptest = $form_expiration ?
           ("expiration = '" . add_escape_custom($form_expiration) . "'") : "expiration IS NULL";
         $crow = sqlQuery("SELECT count(*) AS count from drug_inventory " .
-          "WHERE lot_number = '" . formData('form_lot_number') . "' " .
+          "WHERE lot_number = '" . add_escape_custom($form_lot_number) . "' " .
           "AND drug_id = '"      . $drug_id                    . "' " .
           "AND warehouse_id = '" . $form_warehouse_id          . "' " .
           "AND $exptest " .
@@ -363,13 +346,13 @@ if ($_POST['form_save']) {
             "drug_id, lot_number, manufacturer, expiration, " .
             "vendor_id, warehouse_id, on_hand " .
             ") VALUES ( " .
-            "'$drug_id', "                            .
-            "'" . add_escape_custom($_POST['form_lot_number'])   . "', " .
-            "'" . add_escape_custom($_POST['form_manufacturer']) . "', " .
-            QuotedOrNull($form_expiration)      . ", "  .
-            "'" . add_escape_custom($_POST['form_vendor_id'])      . "', " .
-            "'" . add_escape_custom($form_warehouse_id)            . "', " .
-            "'" . add_escape_custom($form_quantity)                . "' "  .
+            "'$drug_id', "                              .
+            "'" . add_escape_custom($form_lot_number)   . "', " .
+            "'" . add_escape_custom($form_manufacturer) . "', " .
+            QuotedOrNull($form_expiration)              . ", "  .
+            "'" . add_escape_custom($form_vendor_id)    . "', " .
+            "'" . add_escape_custom($form_warehouse_id) . "', " .
+            "'" . add_escape_custom($form_quantity)     . "' "  .
             ")");
         }
       }
@@ -395,20 +378,11 @@ if ($_POST['form_save']) {
         "'" . add_escape_custom($form_notes) ."', " .
         "'" . add_escape_custom($form_trans_type)."' )");
 
-      // If this is a transfer then reduce source QOH, and also copy some
-      // fields from the source when they are missing.
+      // If this is a transfer then reduce source QOH.
       if ($form_source_lot) {
         sqlStatement("UPDATE drug_inventory SET " .
           "on_hand = on_hand - ? " .
           "WHERE inventory_id = ?", array($form_quantity,$form_source_lot) );
-
-        foreach (array('lot_number', 'manufacturer', 'expiration', 'vendor_id') as $item) {
-          sqlStatement("UPDATE drug_inventory AS di1, drug_inventory AS di2 " .
-            "SET di1.".add_escape_custom($item)." = di2.".add_escape_custom($item)." " .
-            "WHERE di1.inventory_id = ? AND " .
-            "di2.inventory_id = ? AND " .
-            "( di1.".add_escape_custom($item)." IS NULL OR di1.".add_escape_custom($item)." = '' OR di1.".add_escape_custom($item)." = '0' )", array($lot_id,$form_source_lot) );
-        }
       }
     }
   } // end if not $info_msg
@@ -499,7 +473,6 @@ foreach (array(
   '0' => xl('None'),
   '2' => xl('Purchase/Receipt'),
   '3' => xl('Return'),
-  // '6' => xl('Distribution'),
   '4' => xl('Transfer'),
   '5' => xl('Adjustment'),
   '7' => xl('Consumption'),
@@ -524,20 +497,6 @@ foreach (array(
    </select>
   </td>
  </tr>
-
-<?php /* ?>
- <tr id='row_distributor'>
-  <td valign='top' nowrap><b><?php echo xlt('Distributor'); ?>:</b></td>
-  <td>
-<?php
-// Address book entries for distributors.
-generate_form_field(array('data_type' => 14, 'field_id' => 'distributor_id',
-  'list_id' => '', 'edit_options' => 'R',
-  'description' => xl('Address book entry for the distributor')), '');
-?>
-  </td>
- </tr>
-<>php */ ?>
 
  <tr id='row_sale_date'>
   <td valign='top' nowrap><b><?php echo xlt('Date'); ?>:</b></td>
