@@ -1419,6 +1419,9 @@ if (!empty($reg)) {
           <?php if ($GLOBALS['gbl_menu_projects']) {
             genMiscLink('RTop','rep','0',xl('Projects'),'reports/restricted_projects_report.php');
           } ?>
+          <?php if ($GLOBALS['gbl_menu_surinam_insurance']) {
+            genMiscLink('RTop','rep','0',xl('LOBI Insurers Report'),'reports/surinam_insurance_report.php');
+          } ?>
         </ul>
       </li>
 <?php } ?>

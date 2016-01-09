@@ -63,12 +63,19 @@
       '0',                              // default
       xl('Accounting transactions export to CSV')
     ),
-      
+
     'gbl_menu_projects' => array(
       xl('Restricted Projects Reporting'),
       'bool', // data type
       '0', // default
       xl('For IPPF Belize and maybe others')
+    ),
+
+    'gbl_menu_surinam_insurance' => array(
+      xl('LOBI Insurers Report'),
+      'bool', // data type
+      '0', // default
+      xl('For IPPF Suriname and maybe others')
     ),
 
     'gbl_menu_ive_clients' => array(
@@ -84,6 +91,7 @@
       '0', // default
       xl('For IPPF Argentina and maybe others')
     ),
+
     'gbl_menu_service_and_client_volume' => array(
       xl('Service and Client Volume Report'),
       'bool', // data type

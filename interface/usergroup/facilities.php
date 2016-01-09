@@ -120,11 +120,17 @@ $(document).ready(function(){
     <div class="tabContainer" style="width:550px;">
         <div>
 <table cellpadding="1" cellspacing="0" class="showborder">
-	<tr class="showborder_head" height="22">
+  <tr class="showborder_head" height="22">
+    <!--
 		<th style="border-style:1px solid #000" width="140px"><?php xl('Name','e'); ?></th>
 		<th style="border-style:1px solid #000" width="320px"><?php xl('Address','e'); ?></th>
 		<th style="border-style:1px solid #000"><?php xl('Phone','e'); ?></th>
-    </tr>
+    -->
+    <th style="border-style:1px solid #000"><?php echo xlt('Name'); ?></th>
+    <th style="border-style:1px solid #000"><?php echo xlt('Address'); ?></th>
+    <th style="border-style:1px solid #000"><?php echo xlt('Phone'); ?></th>
+    <th style="border-style:1px solid #000"><?php echo xlt('CLIA Number'); ?></th>
+  </tr>
      <?php
         $fres = 0;
         $fres = sqlStatement("select * from facility order by name");
@@ -145,6 +151,7 @@ $(document).ready(function(){
        <td valign="top" class="text"><b><a href="facility_admin.php?fid=<?php echo $iter3{id};?>" class="iframe medium_modal"><span><?php echo htmlspecialchars($iter3{name});?></span></a></b>&nbsp;</td>
        <td valign="top" class="text"><?php echo htmlspecialchars($varstreet.$varcity.$varstate.$iter3{country_code}." ".$iter3{postal_code}); ?>&nbsp;</td>
        <td><?php echo htmlspecialchars($iter3{phone});?>&nbsp;</td>
+       <td><?php echo text($iter3['domain_identifier']); ?>&nbsp;</td>
     </tr>
 <?php
   }
