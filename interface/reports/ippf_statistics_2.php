@@ -297,9 +297,18 @@ function genAnyCell($data, $align='left', $class='', $colspan=1, $forcetext=fals
       // point notation.  :)
       // if ($forcetext) echo '=';
       // The above freaked out LibreOffice when the field includes a comma. So now this:
-      if (preg_match('/^[0-9]+$/', $datum)) echo '=';
+      if (preg_match('/^[0-9]+$/', $datum)) {
+        if ($forcetext) {
+          echo '="' . $datum . '"';
+        }
+        else {
+          echo $datum;
+        }
+      }
+      else {
+        echo '"' . $datum . '"';
+      }
       //
-      echo '"' . $datum . '"';
       while ($colspan-- > 1) echo ',""';
     }
     else {
@@ -314,7 +323,7 @@ function genAnyCell($data, $align='left', $class='', $colspan=1, $forcetext=fals
 }
 
 function genHeadCell($data, $align='left', $colspan=1) {
-  genAnyCell($data, $align, 'dehead', $colspan);
+  genAnyCell($data, $align, 'dehead', $colspan, true);
 }
 
 // Create an HTML table cell containing a numeric value, and track totals.
