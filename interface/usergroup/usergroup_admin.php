@@ -250,10 +250,6 @@ if (isset($_POST["privatemode"]) && $_POST["privatemode"] =="user_admin") {
 /* To refresh and save variables in mail frame  - Arb*/
 if (isset($_POST["mode"])) {
   if ($_POST["mode"] == "new_user") {
-    if ($_POST["authorized"] != "1") {
-      $_POST["authorized"] = 0;
-    }
-    // $_POST["info"] = addslashes($_POST["info"]);
 
     $calvar = $_POST["calendar"] ? 1 : 0;
     $actvar = $_POST["active"]   ? 1 : 0;
@@ -283,7 +279,7 @@ if (isset($_POST["mode"])) {
             "', federaltaxid = '"  . trim(formData('taxid'        )) .
             "', state_license_number = '" . trim(formData('state_license_number' )) .
             "', newcrop_user_role = '"  . trim(formData('erxrole' )) .
-            "', authorized = '"    . trim(formData('authorized'   )) .
+            "', authorized = '"    . (empty($_POST['authorized']) ? 0 : 1) .
             "', info = '"          . trim(formData('comments'     )) .
             "', federaldrugid = '" . trim(formData('drugid'       )) .
             "', upin = '"          . trim(formData('upin'         )) .
