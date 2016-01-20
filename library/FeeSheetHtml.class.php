@@ -189,7 +189,7 @@ function jsLineItemValidation(f) {
  var max_contra_code = '';
  var required_code_count = 0;
  // Loop thru the services.
- for (var lino = 1; f['{$bill}['+lino+'][code_type]']; ++lino) {
+ for (var lino = 0; f['{$bill}['+lino+'][code_type]']; ++lino) {
   var pfx = '{$bill}[' + lino + ']';
   if (f[pfx + '[del]'] && f[pfx + '[del]'].checked) continue;
   if (f[pfx + '[ndcnum]'] && f[pfx + '[ndcnum]'].value) {
@@ -264,7 +264,7 @@ function jsLineItemValidation(f) {
    if (tmp_cyp < 10.0) {
    // Was: if (tmp_meth.substring(0, 2) != '12') {
     var got_prod = false;
-    for (var plino = 1; f['{$prod}['+plino+'][drug_id]']; ++plino) {
+    for (var plino = 0; f['{$prod}['+plino+'][drug_id]']; ++plino) {
      var ppfx = '{$prod}[' + plino + ']';
      if (f[ppfx+'[del]'] && f[ppfx+'[del]'].checked) continue;
      if (f[ppfx+'[method]'] && f[ppfx+'[method]'].value) {
@@ -287,14 +287,14 @@ function jsLineItemValidation(f) {
       $s .= "
  // The following applies to contraception for family planning clinics.
  // Loop thru the products.
- for (var lino = 1; f['{$prod}['+lino+'][drug_id]']; ++lino) {
+ for (var lino = 0; f['{$prod}['+lino+'][drug_id]']; ++lino) {
   var pfx = '{$prod}[' + lino + ']';
   if (f[pfx + '[del]'] && f[pfx + '[del]'].checked) continue;
   if (f[pfx + '[method]'] && f[pfx + '[method]'].value) {
    var tmp_meth = f[pfx + '[method]'].value;
    // Contraceptive products should normally include a corresponding method.
    var got_svc = false;
-   for (var slino = 1; f['{$bill}[' + slino + '][code_type]']; ++slino) {
+   for (var slino = 0; f['{$bill}[' + slino + '][code_type]']; ++slino) {
     var spfx = '{$bill}[' + slino + ']';
     if (f[spfx + '[del]'] && f[spfx + '[del]'].checked) continue;
     if (f[spfx + '[method]'] && f[spfx + '[method]'].value) {
@@ -310,13 +310,12 @@ function jsLineItemValidation(f) {
  }
 ";
     } // end match services to products
-    if (isset($code_types['MA'])) {
+    if (isset($GLOBALS['code_types']['MA'])) {
       $s .= "
  if (required_code_count == 0) {
   if (!confirm('" . xls('You have not entered any clinical services or products.' .
-    ' Click Cancel to add them. Or click OK if you want to save as-is.') . "')) {
-    return false;
-   }
+   ' Click Cancel to add them. Or click OK if you want to save as-is.') . "')) {
+   return false;
   }
  }
 ";

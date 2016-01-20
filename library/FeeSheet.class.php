@@ -170,7 +170,7 @@ class FeeSheet {
 
   // IPPF-specific; get contraception attributes of the related codes.
   //
-  protected function checkRelatedForContraception($related_code, $is_initial_consult=false) {
+  public function checkRelatedForContraception($related_code, $is_initial_consult=false) {
     $this->line_contra_code     = '';
     $this->line_contra_cyp      = 0;
     $this->line_contra_methtype = 0; // 0 = None, 1 = Not initial, 2 = Initial consult
@@ -249,6 +249,7 @@ class FeeSheet {
     $justify     = isset($args['justify']) ? $args['justify'] : '';
     $notecodes   = isset($args['notecodes']) ? $args['notecodes'] : '';
     $fee         = isset($args['fee']) ? (0 + $args['fee']) : 0;
+    $del         = !empty($args['del']);
 
     if ($codetype == 'COPAY') {
       if (!$code_text) $code_text = 'Cash';
@@ -331,6 +332,7 @@ class FeeSheet {
     $li['notecodes'] = $notecodes;
     $li['del'      ] = $id && $del;
     $li['code_text'] = $code_text;
+    $li['auth'     ] = $auth;
 
     $li['hidden']['price'] = $li['price'];
 
@@ -396,6 +398,7 @@ class FeeSheet {
     $li['del'      ] = $sale_id && $del;
     $li['code_text'] = $code_text;
     $li['warehouse'] = $warehouse_id;
+    $li['rx'       ] = $rx;
 
     $li['hidden']['drug_id'] = $drug_id;
     $li['hidden']['sale_id'] = $sale_id;
@@ -405,8 +408,8 @@ class FeeSheet {
     // This logic is only used for family planning clinics, and then only when
     // the option is chosen to use or auto-generate Contraception forms.
     // It adds contraceptive method and effectiveness to relevant lines.
-    if ($GLOBALS['ippf_specific'] && $GLOBALS['gbl_new_acceptor_policy'] && $codetype == 'MA') {
-      checkRelatedForContraception($drow['related_code']);
+    if ($GLOBALS['ippf_specific'] && $GLOBALS['gbl_new_acceptor_policy']) {
+      $this->checkRelatedForContraception($drow['related_code']);
       if ($this->line_contra_code) {
         $li['hidden']['method'  ] = $this->line_contra_code;
         $li['hidden']['methtype'] = $this->line_contra_methtype;
@@ -478,7 +481,7 @@ class FeeSheet {
     $alertmsg = '';
     $insufficient = 0;
     $expiredlots = false;
-    if (is_array($prod)) foreach ($prod as $lino => $iter) {
+    if (is_array($prod)) foreach ($prod as $iter) {
       if (!empty($iter['billed'])) continue;
       $drug_id   = $iter['drug_id'];
       $sale_id     = empty($iter['sale_id']) ? 0 : intval($iter['sale_id']); // present only if already saved
@@ -544,7 +547,7 @@ class FeeSheet {
     $cod0 = ''; // takes the code of the first fee type code type entry from the fee sheet, against which the copay is posted
     $mod0 = ''; // takes the modifier of the first fee type code type entry from the fee sheet, against which the copay is posted
 
-    if (is_array($bill)) foreach ($bill as $lino => $iter) {
+    if (is_array($bill)) foreach ($bill as $iter) {
       // Skip disabled (billed) line items.
       if (!empty($iter['billed'])) continue;
 
@@ -659,7 +662,7 @@ class FeeSheet {
     }
 
     // Doing similarly to the above but for products.
-    if (is_array($prod)) foreach ($prod as $lino => $iter) {
+    if (is_array($prod)) foreach ($prod as $iter) {
       // Skip disabled (billed) line items.
       if (!empty($iter['billed'])) continue;
 
@@ -829,6 +832,9 @@ class FeeSheet {
 
   // Call this after save() for Family Planning implementations.
   // It checks the contraception form, or makes a new one if $newmauser is set.
+  // Returns 0 unless user intervention is required to fix a missing or incorrect form,
+  // and in that case the return value is an existing form ID, or -1 if none.
+
   // Returns FALSE if user intervention is required to fix a missing or incorrect form.
   //
   public function doContraceptionForm($ippfconmeth=NULL, $newmauser=NULL, $main_provid=0) {
@@ -852,16 +858,16 @@ class FeeSheet {
           $this->insert_lbf_item($newid, 'pastmodern', $pastmodern);
           // Do we care about a service-specific provider here?
           $this->insert_lbf_item($newid, 'provider', $main_provid);
-          addForm($encounter, 'Contraception', $newid, 'LBFccicon', $this->pid, $GLOBALS['userauthorized']);
+          addForm($this->encounter, 'Contraception', $newid, 'LBFccicon', $this->pid, $GLOBALS['userauthorized']);
         }
       }
       else if (empty($csrow) || $csrow['field_value'] != "IPPFCM:$ippfconmeth") {
         // Contraceptive method does not match what is in an existing Contraception
         // form for this visit, or there is no such form. User intervention is needed.
-        return false;
+        return empty($csrow) ? -1 : intval($csrow['form_id']);
       }
     }
-    return true;
+    return 0;
   }
 
   // Update price level in patient demographics if it's changed.
