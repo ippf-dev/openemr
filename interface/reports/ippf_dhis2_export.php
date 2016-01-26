@@ -141,7 +141,7 @@ $outarr = array();
 $form_from_date = fixDate($_POST['form_from_date'], date('Y-m-01'));
 $form_to_date   = fixDate($_POST['form_to_date'  ], date('Y-m-d'));
 $form_facids    = is_array($_POST['form_facids']) ? $_POST['form_facids'] : array();
-$form_channel   = empty($_POST['form_channel']) ? '' : $_POST['form_channel'];
+$form_channel   = empty($_POST['form_channel']) ? '0' : $_POST['form_channel'];
 
 if (!empty($_POST['form_submit'])) {
 
@@ -150,7 +150,7 @@ if (!empty($_POST['form_submit'])) {
     "fe.pid, fe.encounter, fe.date, f.domain_identifier, f.country_code, " .
     "p.regdate, p.date AS last_update, p.DOB, p.sex " .
     "FROM form_encounter AS fe " .
-    "JOIN facility AS f ON f.id = fe.facility_id ";
+    "JOIN facility AS f ON f.id = fe.facility_id AND f.domain_identifier != '' ";
   if (!empty($form_facids)) {
     $query .= "AND ( 0 ";
     foreach ($form_facids AS $facid) {
@@ -158,7 +158,7 @@ if (!empty($_POST['form_submit'])) {
     }
     $query .= ") ";
   }
-  if ($form_channel !== '') {
+  if ($form_channel) {
     $query .= "AND f.pos_code = '" . add_escape_custom($form_channel) . "' ";
   }
   $query .=
@@ -218,7 +218,8 @@ if (!empty($_POST['form_submit'])) {
             $period,
             $row['domain_identifier'],    // org unit
             $coc,                         // age and sex
-            'X66r2y4EuwS'
+            'X66r2y4EuwS',
+            (empty($brow['units']) ? 1 : $brow['units'])
           );
         }
       }
@@ -279,7 +280,7 @@ if (!empty($_POST['form_submit'])) {
 
   // Now do all outbound external referrals in the date range.
   $query = "SELECT t.pid, t.refer_date, t.refer_related_code, " .
-    "p.regdate, p.date AS last_update, p.DOB, p.sex " .
+    "p.regdate, p.date AS last_update, p.DOB, p.sex, p.home_facility " .
     "FROM transactions AS t " .
     "JOIN patient_data AS p ON p.pid = t.pid WHERE " .
     "t.refer_date >= '$form_from_date' AND " .
@@ -291,16 +292,27 @@ if (!empty($_POST['form_submit'])) {
   while ($trow = sqlFetchArray($tres)) {
     $row_pid = $trow['pid'];
     $row_date = $trow['refer_date'];
-    $erow = sqlQuery("SELECT f.id, f.domain_identifier, f.country_code " .
+    $erow = sqlQuery("SELECT f.id, f.domain_identifier, f.country_code, f.pos_code " .
       "FROM form_encounter AS fe " .
       "JOIN facility AS f ON f.id = fe.facility_id " .
       "WHERE fe.pid = ? AND fe.date <= ? " .
       "ORDER BY fe.date DESC, fe.encounter DESC LIMIT 1",
       array($row_pid, "$row_date 23:59:59"));
+
+    if (empty($erow)) {
+      // No encounter found so default to home facility.
+      $erow = sqlQuery("SELECT f.id, f.domain_identifier, f.country_code, f.pos_code " .
+        "FROM facility AS f WHERE f.id = ?",
+        array($trow['home_facility']));
+    }
+
     $domain_identifier = empty($erow['domain_identifier']) ? '' : $erow['domain_identifier'];
     $country = empty($erow['country_code']) ? '' : $erow['country_code'];
+    $channel = empty($erow['pos_code']) ? 0 : $erow['pos_code'];
 
+    if ($domain_identifier === '') continue;
     if (!empty($form_facids) && !in_array($erow['id'], $form_facids)) continue;
+    if ($form_channel && $form_channel != $channel) continue;
 
     if ($row_pid != $last_pid) {
       $sex = strtoupper(substr($trow['sex'], 0, 1)); // F or M
@@ -318,17 +330,22 @@ if (!empty($_POST['form_submit'])) {
           "code_type = '16' AND code = '$code' AND active = 1 " .
           "ORDER BY id LIMIT 1");
         if (!empty($rrow['related_code'])) {
-          list($codetype, $code) = explode(':', $rrow['related_code']);
+          // There can be both IPPF (obsolete) and IPPF2 related codes here.
+          $relcodes2 = explode(';', $rrow['related_code']);
+          foreach ($relcodes2 as $codestring2) {
+            if ($codestring2 === '') continue;
+            list($codetype, $code) = explode(':', $codestring2);
+            if ($codetype !== 'IPPF2') continue;
+            recordStats(
+              getDataElement('REF', $code, $country),
+              $period,
+              $domain_identifier,           // org unit
+              $coc,                         // age and sex
+              'X66r2y4EuwS'
+            );
+          }
         }
       }
-      if ($codetype !== 'IPPF2') continue;
-      recordStats(
-        getDataElement('REF', $code, $country),
-        $period,
-        $domain_identifier,           // org unit
-        $coc,                         // age and sex
-        'X66r2y4EuwS'
-      );
     }
 
     $last_pid = $row_pid;
@@ -410,9 +427,25 @@ if (!empty($_POST['form_submit'])) {
 <link rel="stylesheet" href='<?php echo $css_header ?>' type='text/css'>
 <title><?php xl('Backup','e'); ?></title>
 <style type="text/css">@import url(../../library/dynarch_calendar.css);</style>
+<script type="text/javascript" src="../../library/textformat.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
+<script language="JavaScript">
+
+var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
+
+function channel_changed() {
+ var f = document.forms[0];
+ var chan = parseInt(f.form_channel.value);
+ // alert('Channel is "' + chan + '".'); // debugging
+ var optarr = f['form_facids[]'].options;
+ for (var i = 0; i < optarr.length; ++i) {
+  optarr[i].disabled = (chan != 0 && parseInt(optarr[i].id.substring(4)) != chan);
+ }
+}
+
+</script>
 </head>
 
 <body class="body_top">
@@ -453,43 +486,47 @@ if (!empty($_POST['form_submit'])) {
   </td>
  </tr>
  <tr>
-  <td align='center' valign='top'>
-   <?php echo xl('SDP ID'); ?>:
-  </td>
-  <td align='center' valign='top'>
-   <select multiple name='form_facids[]' size='20' title='<?php echo xla('Default is all'); ?>'>
+
 <?php
-$fres = sqlStatement("SELECT id, domain_identifier, name FROM facility " .
+echo "  <td align='center' valign='top'>\n";
+echo "   " . xlt('Channel') . ":\n";
+echo "   <select name='form_channel' onchange='channel_changed()'>\n";
+echo "    <option value='0'>-- " . xlt('All') . " --</option>\n";
+$lres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
+  "list_id = 'posref' ORDER BY seq, option_id, title");
+while ($lrow = sqlFetchArray($lres)) {
+  $key = $lrow['option_id'];
+  echo "    <option value='" . attr($key) . "'";
+  if ($key == $form_channel) echo " selected";
+  echo ">" . text($lrow['option_id'] . ': ' . xl_list_label($lrow['title'])) . "</option>\n";
+}
+echo "   </select>\n";
+echo "   &nbsp;" . xlt('SDP ID') . ":\n";
+echo "  </td>\n";
+
+echo "  <td align='center' valign='top'>\n";
+echo "   <select multiple name='form_facids[]' size='20' title='" . xla('Default is all') . "'>\n";
+$fres = sqlStatement("SELECT id, domain_identifier, name, pos_code FROM facility " .
   "ORDER BY domain_identifier, name, id");
 while ($frow = sqlFetchArray($fres)) {
   $facid = intval($frow['id']);
   $sdpid = trim($frow['domain_identifier']);
+  $channel = intval($frow['pos_code']);
   if (strlen($sdpid) == 0) continue;
-  echo "    <option value='$facid'";
+  // id identifies the channel so javascript can hide options based on this.
+  echo "    <option value='$facid' id='cod_$channel'";
   if (in_array($facid, $form_facids)) echo " selected";
   echo ">" . text($sdpid . ' (' . $frow['name'] . ')') . "</option>\n";
 }
 echo "   </select>\n\n";
-
 echo "  </td>\n";
-echo "  <td align='center' valign='top'>\n";
 
-echo "   &nbsp;" . xlt('POS Code') . ":\n";
-echo "   <select name='form_channel'>\n";
-echo "    <option value=''>-- " . xlt('All') . " --</option>\n";
-$lres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-  "list_id = 'posref' ORDER BY title, seq");
-while ($lrow = sqlFetchArray($lres)) {
-  $key = $lrow['option_id'];
-  echo "    <option value='" . attr($key) . "'";
-  echo ">" . text(xl_list_label($lrow['title'])) . "</option>\n";
-}
-echo "   </select>\n";
+echo "  <td align='center' valign='top'>\n";
+echo "   &nbsp;\n";
+echo "   <input type='submit' name='form_submit' value='Generate' />\n";
+echo "  </td>\n";
 ?>
-   &nbsp;
-   <input type='submit' name='form_submit' value='Generate' />
-  </span>
-  </td>
+
  </tr>
 </table>
 
@@ -505,6 +542,7 @@ Calendar.setup({inputField:"form_to_date", ifFormat:"%Y-%m-%d", button:"img_to_d
     echo "alert('" . htmlentities($alertmsg) . "');\n";
   }
 ?>
+channel_changed();
 </script>
 
 </body>

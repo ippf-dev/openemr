@@ -1332,11 +1332,9 @@ function process_visit($row) {
 }
 
 // This is called for each selected referral.
-// Row keys are the first specified MA code, if any.
 //
 function process_referral($row) {
   global $form_by, $code_types, $report_type;
-  $key = 'Unspecified';
 
   // For followups we care about the actual service provided, otherwise
   // the requested service.
@@ -1349,43 +1347,41 @@ function process_referral($row) {
       if ($codestring === '') continue;
       list($codetype, $code) = explode(':', $codestring);
 
-      if ($report_type != 'm') {
-        if ($codetype == 'MA' || $codetype == 'REF') {
-          // In the case of a MA or REF code, look up the associated IPPF2 code.
-          $rrow = sqlQuery("SELECT related_code FROM codes WHERE " .
-            "code_type = '" . $code_types[$codetype]['id'] . "' AND " .
-            "code = '$code' AND active = 1 " .
-            "ORDER BY id LIMIT 1");
-          $relcodes2 = explode(';', $rrow['related_code']);
-          foreach ($relcodes2 as $codestring2) {
-            if ($codestring2 === '') continue;
-            list($codetype2, $code2) = explode(':', $codestring2);
-            if ($codetype2 !== 'IPPF2') continue;
-            $codetype = $codetype2;
-            $code = $code2;
-            break;
+      if ($report_type == 'm' || $codetype == 'IPPF2') {
+        if ($form_by === '1') {
+          if (preg_match('/^[12]/', $code)) {
+            loadColumnData(xl('SRH Referrals'), $row);
           }
         }
-        // Alternatively a direct IPPF2 code is also supported.
-        if ($codetype !== 'IPPF2') continue;
-      }
-
-      if ($form_by === '1') {
-        if (preg_match('/^[12]/', $code)) {
-          $key = xl('SRH Referrals');
-          loadColumnData($key, $row);
-          break;
+        else {
+          // $form_by is 9/14 (internal) or 10/15/20 (external) referrals
+          loadColumnData("$codetype:$code", $row);
         }
       }
-      else { // $form_by is 9/14 (internal) or 10/15/20 (external) referrals
-        // $key = $code;
-        $key = "$codetype:$code";
-        break;
+
+      if ($report_type != 'm' && ($codetype == 'MA' || $codetype == 'REF')) {
+        // In the case of a MA or REF code, look up the associated IPPF2 code.
+        $rrow = sqlQuery("SELECT related_code FROM codes WHERE " .
+          "code_type = '" . $code_types[$codetype]['id'] . "' AND " .
+          "code = '$code' AND active = 1 " .
+          "ORDER BY id LIMIT 1");
+        $relcodes2 = explode(';', $rrow['related_code']);
+        foreach ($relcodes2 as $codestring2) {
+          if ($codestring2 === '') continue;
+          list($codetype2, $code2) = explode(':', $codestring2);
+          if ($codetype2 !== 'IPPF2') continue;
+          if ($form_by === '1') {
+            if (preg_match('/^[12]/', $code2)) {
+              loadColumnData(xl('SRH Referrals'), $row);
+            }
+          }
+          else {
+            loadColumnData("$codetype2:$code2", $row);
+          }
+        } // end foreach
       }
     } // end foreach
   }
-
-  if ($form_by !== '1') loadColumnData($key, $row);
 }
 
 function uses_description($form_by) {
@@ -1781,7 +1777,8 @@ if ($_POST['form_submit']) {
         "FROM drug_sales AS ds " .
         "JOIN drugs AS d ON d.drug_id = ds.drug_id " .
         "JOIN patient_data AS pd ON pd.pid = ds.pid $sexcond" . sql_age_filter("fe.date") .
-        "LEFT JOIN form_encounter AS fe ON fe.pid = ds.pid AND fe.encounter = ds.encounter " .
+        // "LEFT JOIN form_encounter AS fe ON fe.pid = ds.pid AND fe.encounter = ds.encounter " .
+        "JOIN form_encounter AS fe ON fe.pid = ds.pid AND fe.encounter = ds.encounter " .
         "WHERE ds.sale_date >= '$from_date' AND " .
         "ds.sale_date <= '$to_date' AND " .
         "ds.pid > 0 AND ds.quantity != 0";
@@ -1865,7 +1862,7 @@ if ($_POST['form_submit']) {
 
       $query = "SELECT " .
         "t.pid, t.refer_related_code, t.reply_related_code, $datefld AS encdate, " .
-        "pd.regdate, pd.referral_source, " .
+        "pd.regdate, pd.referral_source, pd.home_facility, " .
         "pd.sex, pd.DOB, pd.lname, pd.fname, pd.mname $pd_fields " .
         "FROM transactions AS t " .
         "JOIN patient_data AS pd ON pd.pid = t.pid $sexcond" . sql_age_filter($datefld) .
@@ -1874,14 +1871,17 @@ if ($_POST['form_submit']) {
         "ORDER BY t.pid, t.id";
       $res = sqlStatement($query);
       while ($row = sqlFetchArray($res)) {
-        if ($form_clinics) {
+        if ($form_clinics || $form_facility) {
           // Get facility_id from the most recent form_encounter as of the
-          // referral date, and add that into $row.
+          // referral date, and add that into $row.  Or if there is no such
+          // encounter then use the client's home facility.
           $tmp = sqlQuery("SELECT facility_id FROM form_encounter WHERE " .
             "pid = '" . $row['pid'] . "' AND " .
             "date <= '" . $row['encdate'] . "' " .
             "ORDER BY date DESC LIMIT 1");
-          $row['facility_id'] = empty($tmp['facility_id']) ? '0' : $tmp['facility_id'];
+          $row['facility_id'] = empty($tmp['facility_id']) ? $row['home_facility'] : $tmp['facility_id'];
+          // Do facility filtering if applicable.
+          if ($form_facility && $row['facility_id'] != $form_facility) continue;
         }
         process_referral($row);
       }
