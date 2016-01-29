@@ -20,10 +20,10 @@ class C_Prescription extends Controller {
 	var $providerid = 0;
 	var $is_faxing = false;
 	var $is_print_to_fax = false;
-        var $checkarray = array();
+  var $checkarray = array();
         
-	function C_Prescription($template_mod = "general") {
-		parent::Controller();
+	function __construct($template_mod = "general") {
+		parent::__construct();
 
 		$this->template_mod = $template_mod;
 		$this->assign("FORM_ACTION", $GLOBALS['webroot']."/controller.php?" . $_SERVER['QUERY_STRING']);
