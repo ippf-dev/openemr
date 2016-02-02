@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2015-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -96,7 +96,8 @@ if ($_POST['form_csvexport']) {
   echo '"' . display_csv(xl('Women resolution about IVE'  )) . '",';
   echo '"' . display_csv(xl('Law applicable'              )) . '",';
   // New:
-  echo '"' . display_csv(xl('Hospitalization Indication'  )) . '"' . "\n";// IVE_indication
+  echo '"' . display_csv(xl('Hospitalization Indication'  )) . '",'; // IVE_indication
+  echo '"' . display_csv(xl('Domestic Violence'           )) . '"' . "\n"; // IVE_domviolence
   //
 
 } // end export
@@ -201,6 +202,7 @@ echo "   </select>&nbsp;\n";
   <td class="dehead"><?php echo xlt('Women resolution about IVE'  ); ?></td>
   <td class="dehead"><?php echo xlt('Law applicable'              ); ?></td>
   <td class="dehead"><?php echo xlt('Hospitalization Indication'  ); ?></td>
+  <td class="dehead"><?php echo xlt('Domestic Violence'           ); ?></td>
  </tr>
 
 <?php
@@ -226,6 +228,7 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     'IVE_meth_in_use',
     'IVE_contmetcounsel',
     'IVE_indication',
+    'IVE_domviolence',
   );
   $varr = array();
   // Note this gives us one row per IVE form instance.
@@ -355,6 +358,8 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     $marital = empty($row['status']) ? '' : getListTitle('marital' , $row['status']);
     // Education
     $education = empty($row['userlist2']) ? '' : getListTitle('userlist2' , $row['userlist2']);
+    // Domestic Violence IVE3.
+    $ivedomviolence = empty($row['IVE_domviolence']) ? '' : getListTitle('yesno', $row['IVE_domviolence']);
     if ($_POST['form_csvexport']) {
       echo '"'  . display_csv($row['pubpid']) . '"';
       echo ',"' . display_csv($name         ) . '"';
@@ -382,7 +387,8 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo ',"' . display_csv($ivesuppnet   ) . '"';
       echo ',"' . display_csv($ivewomres    ) . '"';
       echo ',"' . display_csv($ivelaw       ) . '"';
-      echo ',"' . display_csv($iveind       ) . '"' . "\n";
+      echo ',"' . display_csv($iveind       ) . '"';
+      echo ',"' . display_csv($ivedomviolence) . '"' . "\n";
     }
     else {
       ++$encount;
@@ -415,6 +421,7 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo "  <td class='detail'>" . display_html($ivewomres ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivelaw    ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($iveind    ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($ivedomviolence) . "</td>\n";
       echo " </tr>\n";
     } // end not export
   } // end reporting loop
