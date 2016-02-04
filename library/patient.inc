@@ -502,7 +502,7 @@ function getByPatientDemographicsFilter($searchFields, $searchTerm = "%",
   $orderby = "lname ASC, fname ASC", $limit="all", $start="0", $search_service_code=''
   , $exact=false, $condition='')
 {
-	$layoutCols = split( '~', $searchFields );
+	$layoutCols = explode( '~', $searchFields );
   $sqlBindArray = array();
   $where = "";
   $i = 0;
@@ -656,7 +656,7 @@ function getPatientPhone($phone = "%",
 {
     $wild = $exact ? '' : '%';    
     
-    $phone = ereg_replace( "[[:punct:]]","", $phone );
+    $phone = preg_replace( "/[[:punct:]]/","", $phone );
     $sqlBindArray = array();
     $where = "REPLACE(REPLACE(phone_home, '-', ''), ' ', '') LIKE ?";
     array_push($sqlBindArray, $phone.$wild);

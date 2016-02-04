@@ -921,7 +921,7 @@ function checkError($xml)
     erx_error_log($xml);
     erx_error_log($result);
     }
-    $arr=split('Error',$error_message[1]);
+    $arr=explode('Error',$error_message[1]);
     //echo "Te: ".count($arr);
     //print_r($arr);
     if(count($arr)==1)
