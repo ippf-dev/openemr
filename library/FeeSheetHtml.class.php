@@ -123,6 +123,36 @@ class FeeSheetHtml extends FeeSheet {
     return $s;
   }
 
+  // Build a drop-down list of price levels.
+  // Includes the specified item's price in the "id" of each option.
+  //
+  public function genPriceLevelSelect($tagname, $toptext, $pr_id, $pr_selector='', $default='', $disabled=false) {
+    // echo "<!-- pr_id = '$pr_id', pr_selector = '$pr_selector' -->\n"; // debugging
+    $s = "<select name='$tagname'";
+    if (!$disabled) $s .= " onchange='pricelevel_changed(this);'";
+    if ($disabled ) $s .= " disabled";
+    $s .= ">";
+    $s .= "<option value=''>$toptext</option>";
+    $lres = sqlStatement("SELECT lo.*, p.pr_price " .
+      "FROM list_options AS lo " .
+      "LEFT JOIN prices AS p ON p.pr_id = ? AND p.pr_selector = ? AND p.pr_level = lo.option_id " .
+      "WHERE lo.list_id = 'pricelevel' ORDER BY lo.seq, lo.title",
+      array($pr_id, $pr_selector));
+    while ($lrow = sqlFetchArray($lres)) {
+      $price = empty($lrow['pr_price']) ? 0 : $lrow['pr_price'];
+      $s .= "<option value='" . attr($lrow['option_id']) . "'";
+      $s .= " id='prc_$price'";
+      if ((strlen($default) == 0 && $lrow['is_default'] && !$disabled) ||
+          (strlen($default)  > 0 && $lrow['option_id'] == $default)
+      ) {
+        $s .= " selected";
+      }
+      $s .= ">" . text(xl_list_label($lrow['title'])) . "</option>\n";
+    }
+    $s .= "</select>";
+    return $s;
+  }
+
   // If Contraception forms can be auto-created by the Fee Sheet we might need
   // to ask about the client's prior contraceptive use.
   //

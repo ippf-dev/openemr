@@ -270,3 +270,32 @@ UPDATE drug_sales AS s SET s.bill_date = s.sale_date WHERE s.billed = 1 AND s.bi
 #IfNotColumnType billing units int(11)
 ALTER TABLE `billing` CHANGE `units` `units` int(11) DEFAULT NULL;
 #EndIf
+
+#IfMissingColumn billing pricelevel
+ALTER TABLE `billing` ADD COLUMN `pricelevel` varchar(31) default '';
+# Fill in missing price levels where possible. Specific to IPPF but will not hurt anyone else.
+UPDATE billing AS b, codes AS c, prices AS p
+  SET b.pricelevel = p.pr_level WHERE
+  b.code_type = 'MA' AND b.activity = 1 AND b.pricelevel = '' AND b.units = 1 AND b.fee > 0.00 AND
+  c.code_type = '12' AND c.code = b.code AND c.modifier = b.modifier AND
+  p.pr_id = c.id AND p.pr_selector = '' AND p.pr_price = b.fee;
+#EndIf
+
+#IfMissingColumn drug_sales pricelevel
+ALTER TABLE `drug_sales` ADD COLUMN `pricelevel` varchar(31) default '';
+#EndIf
+
+#IfMissingColumn drug_sales selector
+ALTER TABLE `drug_sales` ADD COLUMN `selector` varchar(255) default '' comment 'references drug_templates.selector';
+# Fill in missing selector values where not ambiguous.
+UPDATE drug_sales AS s, drug_templates AS t
+  SET s.selector = t.selector WHERE
+  s.pid != 0 AND s.selector = '' AND t.drug_id = s.drug_id AND
+  (SELECT COUNT(*) FROM drug_templates AS t2 WHERE t2.drug_id = s.drug_id) = 1;
+# Fill in missing price levels where not ambiguous.
+UPDATE drug_sales AS s, drug_templates AS t, prices AS p
+  SET s.pricelevel = p.pr_level WHERE
+  s.pid != 0 AND s.selector != '' AND s.pricelevel = '' AND
+  t.drug_id = s.drug_id AND t.selector = s.selector AND t.quantity = s.quantity AND
+  p.pr_id = s.drug_id AND p.pr_selector = s.selector AND p.pr_price = s.fee;
+#EndIf

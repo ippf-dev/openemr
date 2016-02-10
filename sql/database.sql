@@ -164,6 +164,7 @@ CREATE TABLE `billing` (
   `x12_partner_id` int(11) default NULL,
   `ndc_info` varchar(255) default NULL,
   `notecodes` varchar(25) NOT NULL default '',
+  `pricelevel` varchar(31) default '',
   PRIMARY KEY  (`id`),
   KEY `pid` (`pid`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 ;
@@ -805,6 +806,8 @@ CREATE TABLE `drug_sales` (
   `distributor_id` bigint(20) NOT NULL DEFAULT 0 COMMENT 'references users.id',
   `notes` varchar(255) NOT NULL DEFAULT '',
   `bill_date` datetime default NULL,
+  `pricelevel` varchar(31) default '',
+  `selector` varchar(255) default '' comment 'references drug_templates.selector',
   PRIMARY KEY  (`sale_id`),
   KEY `sale_date` (`sale_date`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 ;

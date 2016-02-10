@@ -50,6 +50,7 @@ class FeeSheet {
   public $match_services_to_products = false; // For IPPF
   public $patient_age = 0;                    // Age in years as of the visit date
   public $patient_male = 0;                   // 1 if male
+  public $patient_pricelevel = '';            // From patient_data.pricelevel
   public $provider_id = 0;
   public $supervisor_id = 0;
   public $code_is_in_fee_sheet = false;       // Set by genCodeSelectorValue()
@@ -119,9 +120,10 @@ class FeeSheet {
       !empty($visit_row['extra_validation']);
 
     // Get some information about the patient.
-    $patientrow = getPatientData($this->pid, "DOB, sex");
+    $patientrow = getPatientData($this->pid, "DOB, sex, pricelevel");
     $this->patient_age = $this->getAge($patientrow['DOB'], $this->visit_date);
     $this->patient_male = strtoupper(substr($patientrow['sex'], 0, 1)) == 'M' ? 1 : 0;
+    $this->patient_pricelevel = $patientrow['pricelevel'];
   }
 
   // Convert numeric code type to the alpha version.
@@ -225,6 +227,7 @@ class FeeSheet {
   //  justify
   //  provider_id
   //  notecodes
+  //  pricelevel
   public function addServiceLineItem($args) {
     global $code_types;
 
@@ -249,6 +252,8 @@ class FeeSheet {
     $justify     = isset($args['justify']) ? $args['justify'] : '';
     $notecodes   = isset($args['notecodes']) ? $args['notecodes'] : '';
     $fee         = isset($args['fee']) ? (0 + $args['fee']) : 0;
+    // Price level should be unset only if adding a new line item.
+    $pricelevel  = isset($args['pricelevel']) ? $args['pricelevel'] : $this->patient_pricelevel;
     $del         = !empty($args['del']);
 
     if ($codetype == 'COPAY') {
@@ -256,32 +261,31 @@ class FeeSheet {
       if ($fee > 0) $fee = 0 - $fee;
     }
 
+    // Get the matching entry from the codes table.
+    $sqlArray = array();
+    $query = "SELECT id, units, code_text FROM codes WHERE " .
+      "code_type = ? AND code = ?";
+    array_push($sqlArray, $code_types[$codetype]['id'], $code);
+    if ($modifier) {
+      $query .= " AND modifier = ?";
+      array_push($sqlArray, $modifier);
+    }
+    else {
+      $query .= " AND (modifier IS NULL OR modifier = '')";
+    }
+    $result = sqlQuery($query, $sqlArray);
+    $codes_id = $result['id'];
+
     if (!$code_text) {
-      $sqlArray = array();
-      $query = "SELECT id, units, code_text FROM codes WHERE " .
-        "code_type = ? AND code = ?";
-      array_push($sqlArray, $code_types[$codetype]['id'], $code);
-      if ($modifier) {
-        $query .= " AND modifier = ?";
-        array_push($sqlArray, $modifier);
-      }
-      else {
-        $query .= " AND (modifier IS NULL OR modifier = '')";
-      }
-      $result = sqlQuery($query, $sqlArray);
       $code_text = $result['code_text'];
       if (empty($units)) $units = max(1, intval($result['units']));
       if (!isset($args['fee'])) {
         // Fees come from the prices table now.
-        $query = "SELECT prices.pr_price " .
-          "FROM patient_data, prices WHERE " .
-          "patient_data.pid = ? AND " .
-          "prices.pr_id = ? AND " .
-          "prices.pr_selector = '' AND " .
-          "prices.pr_level = patient_data.pricelevel " .
+        $query = "SELECT pr_price FROM prices WHERE " .
+          "pr_id = ? AND pr_selector = '' AND pr_level = ? " .
           "LIMIT 1";
         // echo "\n<!-- $query -->\n"; // debugging
-        $prrow = sqlQuery($query, array($this->pid, $result['id']));
+        $prrow = sqlQuery($query, array($codes_id, $pricelevel));
         $fee = empty($prrow) ? 0 : $prrow['pr_price'];
       }
     }
@@ -292,6 +296,7 @@ class FeeSheet {
     $li['hidden']['mod'      ] = $modifier;
     $li['hidden']['billed'   ] = $billed;
     $li['hidden']['id'       ] = $id;
+    $li['hidden']['codes_id' ] = $codes_id;
 
     // This logic is only used for family planning clinics, and then only when
     // the option is chosen to use or auto-generate Contraception forms.
@@ -326,6 +331,7 @@ class FeeSheet {
     $li['mod'      ] = $modifier;
     $li['fee'      ] = $fee;
     $li['price'    ] = $fee / $units;
+    $li['pricelevel'] = $pricelevel;
     $li['units'    ] = $units;
     $li['provid'   ] = $provider_id;
     $li['justify'  ] = $justify;
@@ -360,6 +366,7 @@ class FeeSheet {
   // Create an array of data for a particular drug_sales table item that is useful
   // for building a user interface form row.  $args is an array containing:
   //  drug_id
+  //  selector
   //  sale_id
   //  rx (boolean)
   //  del (boolean)
@@ -367,6 +374,7 @@ class FeeSheet {
   //  fee
   //  billed
   //  warehouse_id
+  //  pricelevel
   //
   public function addProductLineItem($args) {
     global $code_types;
@@ -375,6 +383,7 @@ class FeeSheet {
     $li['hidden'] = array();
 
     $drug_id      = $args['drug_id'];
+    $selector     = isset($args['selector']) ? $args['selector'] : '';
     $sale_id      = isset($args['sale_id']) ? intval($args['sale_id']) : 0;
     $units        = isset($args['units']) ? $args['units'] : 0;
     $units        = max(1, intval($units));
@@ -382,6 +391,7 @@ class FeeSheet {
     $rx           = !empty($args['rx']);
     $del          = !empty($args['del']);
     $fee          = isset($args['fee']) ? (0 + $args['fee']) : 0;
+    $pricelevel   = isset($args['pricelevel']) ? $args['pricelevel'] : $this->patient_pricelevel;
     $warehouse_id = isset($args['warehouse_id']) ? $args['warehouse_id'] : '';
 
     $drow = sqlQuery("SELECT name, related_code FROM drugs WHERE drug_id = ?", array($drug_id) );
@@ -390,10 +400,21 @@ class FeeSheet {
     // If no warehouse ID passed, use the logged-in user's default.
     if ($this->got_warehouses && $warehouse_id === '') $warehouse_id = $this->default_warehouse;
 
+    // If fee is not provided, get it from the prices table.
+    // It is assumed in this case that units will match what is in the product template.
+    if (!isset($args['fee'])) {
+      $query = "SELECT pr_price FROM prices WHERE " .
+        "pr_id = ? AND pr_selector = ? AND pr_level = ? " .
+        "LIMIT 1";
+      $prrow = sqlQuery($query, array($drug_id, $selector, $pricelevel));
+      $fee = empty($prrow) ? 0 : $prrow['pr_price'];
+    }
+
     $fee = sprintf('%01.2f', $fee);
 
     $li['fee'      ] = $fee;
     $li['price'    ] = $fee / $units;
+    $li['pricelevel'] = $pricelevel;
     $li['units'    ] = $units;
     $li['del'      ] = $sale_id && $del;
     $li['code_text'] = $code_text;
@@ -401,6 +422,7 @@ class FeeSheet {
     $li['rx'       ] = $rx;
 
     $li['hidden']['drug_id'] = $drug_id;
+    $li['hidden']['selector'] = $selector;
     $li['hidden']['sale_id'] = $sale_id;
     $li['hidden']['billed' ] = $billed;
     $li['hidden']['price'  ] = $li['price'];
@@ -440,6 +462,7 @@ class FeeSheet {
           'code_text'   => trim($iter['code_text']),
           'units'       => $iter['units'],
           'fee'         => $iter['fee'],
+          'pricelevel'  => $iter['pricelevel'],
           'billed'      => $iter['billed'],
           'ndc_info'    => $iter['ndc_info'],
           'provider_id' => $iter['provider_id'],
@@ -463,10 +486,12 @@ class FeeSheet {
     while ($srow = sqlFetchArray($sres)) {
       $this->addProductLineItem(array(
         'drug_id'      => $srow['drug_id'],
+        'selector'     => $srow['selector'],
         'sale_id'      => $srow['sale_id'],
         'rx'           => !empty($srow['prescription_id']),
         'units'        => $srow['quantity'],
         'fee'          => $srow['fee'],
+        'pricelevel'   => $srow['pricelevel'],
         'billed'       => $srow['billed'],
         'warehouse_id' => $srow['warehouse_id'],
       ));
@@ -557,6 +582,7 @@ class FeeSheet {
       $del       = !empty($iter['del']);
       $units     = empty($iter['units']) ? 1 : intval($iter['units']);
       $price     = empty($iter['price']) ? 0 : (0 + trim($iter['price']));
+      $pricelevel = empty($iter['pricelevel']) ? '' : $iter['pricelevel'];
       $modifier  = empty($iter['mod']) ? '' : trim($iter['mod']);
       $justify   = empty($iter['justify'  ]) ? '' : trim($iter['justify']);
       $notecodes = empty($iter['notecodes']) ? '' : trim($iter['notecodes']);
@@ -628,6 +654,7 @@ class FeeSheet {
             $tmparr = array('code' => $code, 'authorized' => $auth);
             if (isset($iter['units'    ])) $tmparr['units'      ] = $units;
             if (isset($iter['price'    ])) $tmparr['fee'        ] = $fee;
+            if (isset($iter['pricelevel'])) $tmparr['pricelevel'] = $pricelevel;
             if (isset($iter['mod'      ])) $tmparr['modifier'   ] = $modifier;
             if (isset($iter['provid'   ])) $tmparr['provider_id'] = $provid;
             if (isset($iter['ndcnum'   ])) $tmparr['ndc_info'   ] = $ndc_info;
@@ -649,7 +676,7 @@ class FeeSheet {
         $this->logFSMessage(xl('Service added'));
         $code_text = lookup_code_descriptions($code_type.":".$code);
         addBilling($this->encounter, $code_type, $code, $code_text, $this->pid, $auth,
-          $provid, $modifier, $units, $fee, $ndc_info, $justify, 0, $notecodes);
+          $provid, $modifier, $units, $fee, $ndc_info, $justify, 0, $notecodes, $pricelevel);
       }
     } // end for
 
@@ -667,9 +694,11 @@ class FeeSheet {
       if (!empty($iter['billed'])) continue;
 
       $drug_id   = $iter['drug_id'];
+      $selector  = empty($iter['selector']) ? '' : $iter['selector'];
       $sale_id   = $iter['sale_id']; // present only if already saved
       $units     = max(1, intval(trim($iter['units'])));
       $price     = empty($iter['price']) ? 0 : (0 + trim($iter['price']));
+      $pricelevel = empty($iter['pricelevel']) ? '' : $iter['pricelevel'];
       $fee       = sprintf('%01.2f', $price * $units);
       $del       = !empty($iter['del']);
       $rxid      = 0;
@@ -704,12 +733,16 @@ class FeeSheet {
             foreach (array(
               'quantity'    => $units,
               'fee'         => $fee,
+              'pricelevel'  => $pricelevel,
+              'selector'    => $selector,
               'sale_date'   => $this->visit_date,
             ) AS $key => $value) {
               if ($tmprow[$key] != $value) {
                 $somechange = true;
-                if ('fee'      == $key) $this->logFSMessage(xl('Price changed'));
-                if ('quantity' == $key) $this->logFSMessage(xl('Quantity changed'));
+                if ('fee'        == $key) $this->logFSMessage(xl('Price changed'));
+                if ('pricelevel' == $key) $this->logFSMessage(xl('Price level changed'));
+                if ('selector'   == $key) $this->logFSMessage(xl('Template selector changed'));
+                if ('quantity'   == $key) $this->logFSMessage(xl('Quantity changed'));
                 sqlStatement("UPDATE drug_sales SET `$key` = ? WHERE sale_id = ?",
                   array($value, $sale_id));
                 if ($key == 'quantity' && $tmprow['inventory_id']) {
@@ -725,8 +758,10 @@ class FeeSheet {
               sqlStatement("DELETE FROM drug_sales WHERE sale_id = ?", array($sale_id));
               sqlStatement("UPDATE drug_inventory SET on_hand = on_hand + ? WHERE inventory_id = ?",
                 array($units, $tmprow['inventory_id']));
+              $tmpnull = null;
               $sale_id = sellDrug($drug_id, $units, $fee, $this->pid, $this->encounter,
-                (empty($iter['rx']) ? 0 : $rxid), $this->visit_date, '', $warehouse_id);
+                (empty($iter['rx']) ? 0 : $rxid), $this->visit_date, '', $warehouse_id,
+                false, $tmpnull, $pricelevel, $selector);
             }
           }
           // Delete Rx if $rxid and flag not set.
@@ -741,8 +776,9 @@ class FeeSheet {
       else if (! $del) {
         $somechange = true;
         $this->logFSMessage(xl('Product added'));
+        $tmpnull = null;
         $sale_id = sellDrug($drug_id, $units, $fee, $this->pid, $this->encounter, 0,
-          $this->visit_date, '', $warehouse_id);
+          $this->visit_date, '', $warehouse_id, false, $tmpnull, $pricelevel, $selector);
         if (!$sale_id) die(xlt("Insufficient inventory for product ID") . " \"" . text($drug_id) . "\".");
       }
 
@@ -751,12 +787,13 @@ class FeeSheet {
         // If an active rx already exists for this drug and date we will
         // replace it, otherwise we'll make a new one.
         if (empty($rxid)) $rxid = '';
-        // Get default drug attributes.
+        // Get default drug attributes; prefer the template with the matching selector.
         $drow = sqlQuery("SELECT dt.*, " .
           "d.name, d.form, d.size, d.unit, d.route, d.substitute " .
           "FROM drugs AS d, drug_templates AS dt WHERE " .
-          "d.drug_id = '$drug_id' AND dt.drug_id = d.drug_id " .
-          "ORDER BY dt.quantity, dt.dosage, dt.selector LIMIT 1");
+          "d.drug_id = ? AND dt.drug_id = d.drug_id " .
+          "ORDER BY (dt.selector = ?) DESC, dt.quantity, dt.dosage, dt.selector LIMIT 1",
+          array($drug_id, $selector));
         if (!empty($drow)) {
           $rxobj = new Prescription($rxid);
           $rxobj->set_patient_id($this->pid);
@@ -870,68 +907,24 @@ class FeeSheet {
     return 0;
   }
 
-  // Update price level in patient demographics if it's changed.
+  // Get price level from patient demographics.
   //
   public function getPriceLevel() {
-    $tmp = sqlQuery("SELECT pricelevel FROM patient_data WHERE pid = ?", array($this->pid));
-    return $tmp['pricelevel'];
+    return $this->patient_pricelevel;
   }
 
   // Update price level in patient demographics if it's changed.
   //
   public function updatePriceLevel($pricelevel) {
     if (!empty($pricelevel)) {
-      $currlevel = $this->getPriceLevel();
-      if ($currlevel != $pricelevel) {
+      if ($this->patient_pricelevel != $pricelevel) {
         $this->logFSMessage(xl('Price level changed'));
         sqlStatement("UPDATE patient_data SET pricelevel = ? WHERE pid = ?",
           array($pricelevel, $this->pid));
+        $this->patient_pricelevel = $pricelevel;
       }
     }
   }
-
-  /********************************************************************
-  // Create JSON string representing code type, code, description and prices for all
-  // price levels. This can be a checkbox value for parsing when the checkbox is clicked.
-  //
-  public function genCodeSelectorValue($codes) {
-    global $code_types;
-    list($codetype, $code, $selector) = explode(':', $codes);
-    if ($codetype == 'PROD') {
-      $crow = sqlQuery("SELECT d.name, s.sale_id " .
-        "FROM drugs AS d " .
-        "LEFT JOIN drug_sales AS s ON s.pid = ? AND s.encounter = ? AND s.drug_id = d.drug_id " .
-        "WHERE d.drug_id = ? LIMIT 1",
-        array($this->pid, $this->encounter, $code));
-      $this->code_is_in_fee_sheet = !empty($crow['sale_id']);
-      $code_text = empty($crow['name']) ? '???' : $crow['name'];
-      $cbarray = array($codetype, $code, $code_text);
-      $plres = sqlStatement("SELECT p.pr_price FROM list_options AS lo " .
-        "LEFT JOIN prices AS p ON p.pr_id = ? AND p.pr_selector = ? AND p.pr_level = lo.option_id " .
-        "WHERE lo.list_id = 'pricelevel' ORDER BY lo.seq",
-        array($code, $selector));
-    }
-    else {
-      $crow = sqlQuery("SELECT c.id AS code_id, c.code_text, b.id " .
-        "FROM codes AS c " .
-        "LEFT JOIN billing AS b ON b.pid = ? AND b.encounter = ? AND b.code_type = ? AND b.code = c.code AND b.activity = 1 " .
-        "WHERE c.code_type = ? AND c.code = ? LIMIT 1",
-        array($this->pid, $this->encounter, $codetype, $code_types[$codetype]['id'], $code));
-      $this->code_is_in_fee_sheet = !empty($crow['id']);
-      $code_text = empty($crow['code_text']) ? '???' : $crow['code_text'];
-      $cbarray = array($codetype, $code, $code_text);
-      $plres = sqlStatement("SELECT p.pr_price FROM list_options AS lo " .
-        "LEFT JOIN prices AS p ON p.pr_id = ? AND p.pr_selector = '' AND p.pr_level = lo.option_id " .
-        "WHERE lo.list_id = 'pricelevel' ORDER BY lo.seq",
-        array($crow['code_id']));
-    }
-    while ($plrow = sqlFetchArray($plres)) {
-      $cbarray[] = empty($plrow['pr_price']) ? 0 : $plrow['pr_price'];
-    }
-    $cbval = json_encode($cbarray);
-    return $cbval;
-  }
-  ********************************************************************/
 
   // Create JSON string representing code type, code and selector.
   // This can be a checkbox value for parsing when the checkbox is clicked.

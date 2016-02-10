@@ -20,7 +20,6 @@
  */
 var fee_sheet_new=webroot+"/interface/forms/fee_sheet/new.php";
 
-
 var review_path=webroot+"/interface/forms/fee_sheet/review/";
 var review_ajax=review_path+"fee_sheet_ajax.php";
 
@@ -33,7 +32,6 @@ var display_table_selector="table[cellspacing='5']";
 
 function add_review_button()
 {
-
     var review=$("<input type='button'/>");
     review.attr("value",review_tag);
     review.attr("data-bind","click: review_event")
@@ -41,11 +39,10 @@ function add_review_button()
     td.append(review)
     var template=$("<div class='review'></div>").appendTo(td);
     template.attr("data-bind","template: {name: 'review-display', data: review}");
-    var copay=$("td > input:first").parent();
+    var copay = $("[name='search_term']").parent();
     copay.before(td);
     return td;
 }
-
 
 function get_fee_sheet_options(level)
 {
@@ -60,7 +57,6 @@ function get_fee_sheet_options(level)
     return fee_sheet_options;
 }
 
-
 var view_model;
 function initialize_review()
 {
@@ -72,4 +68,3 @@ function initialize_review()
     ko.applyBindings(view_model,review.get(0));
 }
 $(document).ready(initialize_review);
-
