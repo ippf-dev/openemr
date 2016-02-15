@@ -8,9 +8,10 @@ $sanitize_all_escapes=true;
 $fake_register_globals=false;
 //
 
-include_once("../../globals.php");
-include_once("$srcdir/transactions.inc");
+require_once("../../globals.php");
+require_once("$srcdir/transactions.inc");
 require_once("$srcdir/options.inc.php");
+require_once("$srcdir/formatting.inc.php");
 ?>
 
 <html>
@@ -43,11 +44,15 @@ if ($result = getTransByPid($pid)) {
 		// Print Heading .. to have better Understanding of the Listed Transactions   -- ends here
 
 	foreach ($result as $iter) {
+    /******************************************************************
 		if (getdate() == strtotime($iter{"date"})) {
 			$date_string = "Today, " . date( "D F dS" ,strtotime($iter{"date"}));
 		} else {
 			$date_string = date( "D F dS" ,strtotime($iter{"date"}));
 		}
+    ******************************************************************/
+    $date_string = oeFormatShortDate($iter['date']);
+
 		echo "<tr height='25'><td>";
 		if ($iter{"title"} == "Referral") {
 			//show the print button for referral forms only
