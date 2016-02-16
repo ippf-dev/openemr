@@ -67,6 +67,7 @@ function getCatCombo($sex, $dob, $asofdate) {
   $age = getPatientAge($dob, str_replace('-', '', $asofdate));
   if (empty($dob)) $age = 999;
   $coc = '';
+  /********************************************************************
   if      ($age <  6) $coc = $sex == 'M' ? 'FarKVV1ZD3V' : ($sex == 'F' ? 'tKsuEPYTRZL' : 'iRnq68mGW36');
   else if ($age < 11) $coc = $sex == 'M' ? 'jX0XhbOJDBA' : ($sex == 'F' ? 'qNr2sWtzAIh' : 'M467KejTGpY');
   else if ($age < 15) $coc = $sex == 'M' ? 'Wfhzt104TIg' : ($sex == 'F' ? 'vADYdyGrC50' : 'avlAHamZDo7');
@@ -78,6 +79,20 @@ function getCatCombo($sex, $dob, $asofdate) {
   else if ($age < 45) $coc = $sex == 'M' ? 'Sb8vSolIwNO' : ($sex == 'F' ? 'euO866oyyvR' : 'rpFcLQ4jcm3');
   else if ($age < 50) $coc = $sex == 'M' ? 'e0wl11kYHkk' : ($sex == 'F' ? 'qmHvuvsUH65' : 'Ty35QB5scY9');
   else                $coc = $sex == 'M' ? 'Qaly3cXcMTt' : ($sex == 'F' ? 'NZTCw0MlTnq' : 'mRMuOEwCUw1');
+  ********************************************************************/
+  // The following per JG email 2016-02-15:
+  if      ($age <  6) $coc = $sex == 'M' ? 'M0-5'    : ($sex == 'F' ? 'F0-5'    : 'U0-5'   );
+  else if ($age < 11) $coc = $sex == 'M' ? 'M6-10'   : ($sex == 'F' ? 'F6-10'   : 'U6-10'  );
+  else if ($age < 15) $coc = $sex == 'M' ? 'M11-14'  : ($sex == 'F' ? 'F11-14'  : 'U11-14' );
+  else if ($age < 20) $coc = $sex == 'M' ? 'M15-19'  : ($sex == 'F' ? 'F15-19'  : 'U15-19' );
+  else if ($age < 25) $coc = $sex == 'M' ? 'M20-24'  : ($sex == 'F' ? 'F20-24'  : 'U20-24' );
+  else if ($age < 30) $coc = $sex == 'M' ? 'M25-29'  : ($sex == 'F' ? 'F25-29'  : 'U25-29' );
+  else if ($age < 35) $coc = $sex == 'M' ? 'M30-34'  : ($sex == 'F' ? 'F30-34'  : 'U30-34' );
+  else if ($age < 40) $coc = $sex == 'M' ? 'M35-39'  : ($sex == 'F' ? 'F35-39'  : 'U35-39' );
+  else if ($age < 45) $coc = $sex == 'M' ? 'M40-44'  : ($sex == 'F' ? 'F40-44'  : 'U40-44' );
+  else if ($age < 50) $coc = $sex == 'M' ? 'M45-49'  : ($sex == 'F' ? 'F45-49'  : 'U45-49' );
+  else                $coc = $sex == 'M' ? 'M50plus' : ($sex == 'F' ? 'F50plus' : 'U50plus');
+  /*******************************************************************/
   return $coc;
 }
 
@@ -266,7 +281,8 @@ if (!empty($_POST['form_submit'])) {
               $delt,
               $period,
               $row['domain_identifier'],    // org unit
-              'X66r2y4EuwS',                // See JG 2015-10-30 email for this request.
+              // 'X66r2y4EuwS',             // See JG 2015-10-30 email for this request.
+              '',                           // See JG 2016-02-15 email for this request.
               'X66r2y4EuwS',
               $prow['quantity']
             );
