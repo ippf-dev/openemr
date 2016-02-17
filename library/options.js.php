@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2014-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -123,6 +123,61 @@ function checkSkipConditions() {
   }
   // If any errors, all show in the first pass and none in subsequent passes.
   cskerror = cskerror || myerror;
+}
+
+///////////////////////////////////////////////////////////////////////
+// Image canvas support starts here.
+///////////////////////////////////////////////////////////////////////
+
+// An indicator of whether the mouse button is down.
+var lbfCanvasDragging = false;
+
+// Initialize the canvas image data.
+function lbfCanvasSetup(canid) {
+ var infld = document.forms[0][canid];
+ if (infld.value) {
+  var canvas = document.getElementById(canid);
+  var image = document.getElementById(canid + '_img');
+  canvas.getContext('2d').drawImage(image, 0, 0);
+ }
+}
+
+// Handle the mouse down event on the canvas.
+// This may also be a good place to save data for an "undo" feature.
+function lbfCanvasMousedown(argevt, obj) {
+ var evt = argevt ? argevt : window.event;
+ var x = evt.layerX ? evt.layerX : (evt.offsetX ? evt.offsetX : 0);
+ var y = evt.layerY ? evt.layerY : (evt.offsetY ? evt.offsetY : 0);
+ lbfCanvasDragging = true;
+
+ var context = obj.getContext('2d');
+ context.beginPath();
+ context.moveTo(x, y);
+
+ return false;
+}
+
+// Handle the mouse up event on the canvas.
+function lbfCanvasMouseup(argevt, obj) {
+ lbfCanvasDragging = false;
+ // Copying to the hidden form field is now handled by generate_layout_validation().
+ // document.forms[0][obj.id].value = obj.toDataURL();
+ return false;
+}
+
+// Handle the mouse move event on the canvas.
+function lbfCanvasMousemove(argevt, obj) {
+ if (!lbfCanvasDragging) return false;
+
+ var evt = argevt ? argevt : window.event;
+ var x = evt.layerX ? evt.layerX : (evt.offsetX ? evt.offsetX : 0);
+ var y = evt.layerY ? evt.layerY : (evt.offsetY ? evt.offsetY : 0);
+
+ var context = obj.getContext('2d');
+ context.lineTo(x, y);
+ context.stroke();
+
+ return false;
 }
 
 </script>

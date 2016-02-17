@@ -70,7 +70,8 @@ $datatypes = array(
   "32" => xl("Smoking Status"),
   "33" => xl("Race/Ethnicity"),
   "34" => xl("NationNotes"),
-  "35" => xl("Facilities")
+  "35" => xl("Facilities"),
+  "40" => xl("Image canvas"),
 );
 
 $sources = array(
@@ -574,17 +575,18 @@ function writeFieldLine($linedata) {
       $linedata['data_type'] == 21 || $linedata['data_type'] == 22 ||
       $linedata['data_type'] == 23 || $linedata['data_type'] == 25 ||
       $linedata['data_type'] == 27 || $linedata['data_type'] == 28 ||
-      $linedata['data_type'] == 32 || $linedata['data_type'] == 15)
-    {
+      $linedata['data_type'] == 32 || $linedata['data_type'] == 15 ||
+      $linedata['data_type'] == 40
+    ) {
       // Show the width field
       echo "<input type='text' name='fld[$fld_line_no][lengthWidth]' value='" .
         htmlspecialchars($linedata['fld_length'], ENT_QUOTES) .
-        "' size='1' maxlength='10' class='optin' title='" . xla('Width') . "' />";
-      if ($linedata['data_type'] == 3) {
+        "' size='2' maxlength='10' class='optin' title='" . xla('Width') . "' />";
+      if ($linedata['data_type'] == 3 || $linedata['data_type'] == 40) {
         // Show the height field
         echo "<input type='text' name='fld[$fld_line_no][lengthHeight]' value='" .
           htmlspecialchars($linedata['fld_rows'], ENT_QUOTES) .
-          "' size='1' maxlength='10' class='optin' title='" . xla('Height') . "' />";
+          "' size='2' maxlength='10' class='optin' title='" . xla('Height') . "' />";
       }
       else {
         // Hide the height field

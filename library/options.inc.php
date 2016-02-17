@@ -963,6 +963,33 @@ function generate_form_field($frow, $currvalue) {
       $allow_unspecified = true, $allow_allfacilities = false, $disabled, $lbfchange);
   }
 
+  // Canvas and image for drawing
+  else if ($data_type == 40) {
+    // Unlike other field types, width and height are in pixels.
+    $canWidth  = intval($frow['fld_length']);
+    $canHeight = intval($frow['fld_rows']);
+    // position:relative here is important so that mouse positions are reported
+    // relative to the top left corner of the canvas.
+    echo "<canvas" .
+      " id='form_$field_id_esc'" .
+      " style='border:1px solid #000000;position:relative;'" .
+      " width='$canWidth'" .
+      " height='$canHeight'" .
+      " onmousedown='lbfCanvasMousedown(event, this)'" .
+      " onmouseup='lbfCanvasMouseup(event, this)'" .
+      " onmousemove='lbfCanvasMousemove(event, this)'" .
+      ">" . xlt('Browser does not support this data type.') . "</canvas>";
+    // Hidden form field exists to send updated data to the server at submit time.
+    echo "<input type='hidden'" .
+      " name='form_$field_id_esc'" .
+      " value='" . attr($currvalue) . "' />";
+    // Hidden image exists to support JavaScript that copies it to the canvas.
+    echo "<img src='" . attr($currvalue) . "' id='form_{$field_id_esc}_img' style='display:none'>";
+    // $date_init is a misnomer but it's the place for browser-side setup logic.
+    // lbfCanvasSetup() to be defined in options.js.php.
+    $date_init .= " lbfCanvasSetup('form_$field_id_esc');\n";
+  }
+
 }
 
 function generate_print_field($frow, $currvalue) {
@@ -1498,6 +1525,11 @@ function generate_print_field($frow, $currvalue) {
     echo "</table>";
   }
 
+  // Image from canvas drawing
+  else if ($data_type == 40) {
+    echo "<img src='" . attr($currvalue) . "'>";
+  }
+
 }
 
 function generate_display_field($frow, $currvalue) {
@@ -1828,6 +1860,11 @@ function generate_display_field($frow, $currvalue) {
     $urow = sqlQuery("SELECT id, name FROM facility ".
       "WHERE id = ?", array($currvalue) );
     $s = htmlspecialchars($urow['name'],ENT_NOQUOTES);
+  }
+
+  // Image from canvas drawing
+  else if ($data_type == 40) {
+    $s .= "<img src='" . attr($currvalue) . "'>";
   }
 
   return $s;
@@ -2539,12 +2576,24 @@ function generate_layout_validation($form_id) {
     "ORDER BY group_name, seq", array($form_id) );
 
   while ($frow = sqlFetchArray($fres)) {
-    if ($frow['uor'] < 2) continue;
     $data_type = $frow['data_type'];
     $field_id  = $frow['field_id'];
     $fldtitle  = $frow['title'];
     if (!$fldtitle) $fldtitle  = $frow['description'];
-    $fldname   = htmlspecialchars( "form_$field_id", ENT_QUOTES);
+    $fldname   = htmlspecialchars("form_$field_id", ENT_QUOTES);
+
+    if ($data_type == 40) {
+      $fldid = addslashes("form_$field_id");
+      // Move canvas image data to its hidden form field so the server will get it.
+      echo
+      " var canvas = document.getElementById('$fldid');\n" .
+      " var canfld = f['$fldid'];\n" .
+      " if (canvas && canfld) canfld.value = canvas.toDataURL();\n";
+      continue;
+    }
+
+    if ($frow['uor'] < 2) continue;
+
     echo " if (!f.$fldname.disabled) {\n";    
     switch($data_type) {
       case  1:
