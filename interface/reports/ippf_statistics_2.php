@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2008-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2008-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -1777,10 +1777,9 @@ if ($_POST['form_submit']) {
         "FROM drug_sales AS ds " .
         "JOIN drugs AS d ON d.drug_id = ds.drug_id " .
         "JOIN patient_data AS pd ON pd.pid = ds.pid $sexcond" . sql_age_filter("fe.date") .
-        // "LEFT JOIN form_encounter AS fe ON fe.pid = ds.pid AND fe.encounter = ds.encounter " .
         "JOIN form_encounter AS fe ON fe.pid = ds.pid AND fe.encounter = ds.encounter " .
-        "WHERE ds.sale_date >= '$from_date' AND " .
-        "ds.sale_date <= '$to_date' AND " .
+        "WHERE fe.date >= '$from_date 00:00:00' AND " .
+        "fe.date <= '$to_date 23:59:59' AND " .
         "ds.pid > 0 AND ds.quantity != 0";
 
       if ($form_facility) {
@@ -2054,8 +2053,11 @@ if ($_POST['form_submit']) {
         "pd.referral_source$pd_fields, " .
         "b.code_type, b.code, b.units, c.related_code, lo.title AS lo_title " .
         "FROM form_encounter AS fe " .
-        "JOIN forms AS f ON f.pid = fe.pid AND f.encounter = fe.encounter AND " .
+        // "JOIN forms AS f ON f.pid = fe.pid AND f.encounter = fe.encounter AND " .
+        // "f.formdir = 'newpatient' AND f.form_id = fe.id AND f.deleted = 0 " .
+        "LEFT JOIN forms AS f ON f.pid = fe.pid AND f.encounter = fe.encounter AND " .
         "f.formdir = 'newpatient' AND f.form_id = fe.id AND f.deleted = 0 " .
+        //
         "JOIN patient_data AS pd ON pd.pid = fe.pid $sexcond" . sql_age_filter("fe.date") .
         "LEFT OUTER JOIN billing AS b ON " .
         "b.pid = fe.pid AND b.encounter = fe.encounter AND b.activity = 1 " .
