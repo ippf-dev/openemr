@@ -439,10 +439,10 @@ function code_type_changed() {
  </tr>
 
  <tr>
-  <td><?php echo xlt('Type'); ?>:</td>
+  <td nowrap><?php echo xlt('Type'); ?>:&nbsp;</td>
   <td width="5">
   </td>
-  <td>
+  <td nowrap>
 
    <?php if ($mode != "modify") { ?>
     <select name='code_type' onchange='code_type_changed()'>
@@ -493,23 +493,25 @@ function code_type_changed() {
 <?php } ?>
    &nbsp;
   </td>
-  <td>
+  <td nowrap width='70%'>
+   &nbsp;&nbsp;
    <input type='checkbox' name='active' value='1'<?php if (!empty($active) || ($mode == 'modify' && $active == NULL) ) echo ' checked'; ?> />
    <?php echo xlt('Active'); ?>
   </td>
  </tr>
 
  <tr>
-  <td><?php echo xlt('Description'); ?>:</td>
+  <td nowrap><?php echo xlt('Description'); ?>:&nbsp;</td>
   <td></td>
-  <td>
+  <td nowrap>
    <?php if ($mode == "modify") { ?>
      <input type='text' size='60'  maxlength='255' name="code_text" readonly="readonly" value='<?php echo attr($code_text) ?>'>
    <?php } else { ?>
      <input type='text' size='60'  maxlength='255' name="code_text" value='<?php echo attr($code_text) ?>'>
    <?php } ?>
   </td>
-  <td id='id_initial_consult'>
+  <td id='id_initial_consult' nowrap>
+   &nbsp;&nbsp;
    <input type='checkbox' name="initial_consult" value='1' <?php echo $cyp_factor ? 'checked' : ''; ?> />
    <input type='hidden' name='initial_consult_used' value='1' />
    <?php xl('Initial Consult','e'); ?>
@@ -517,18 +519,17 @@ function code_type_changed() {
  </tr>
 
  <tr id='id_code_text_short'>
-  <td><?php xl('Short Description','e'); ?>:</td>
+  <td nowrap><?php xl('Short Description','e'); ?>:&nbsp;</td>
   <td></td>
-  <td>
+  <td colspan='2'>
    <input type='text' size='24'  maxlength='24' name='code_text_short' value='<?php echo $code_text_short ?>' />
   </td>
-  <td></td>
  </tr>
 
  <tr>
-  <td><?php echo xlt('Category'); ?>:</td>
+  <td nowrap><?php echo xlt('Category'); ?>:&nbsp;</td>
   <td></td>
-  <td>
+  <td nowrap>
 <?php
 generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'superbill'), $superbill);
 ?>
@@ -536,14 +537,15 @@ generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'sup
    <input type='checkbox' title='<?php echo xlt("Syndromic Surveillance Report") ?>' name='reportable' value='1'<?php if (!empty($reportable)) echo ' checked'; ?> />
    <?php echo xlt('Diagnosis Reporting'); ?>
   </td>
-  <td>
+  <td nowrap>
+   &nbsp;&nbsp;
    <input type='checkbox' title='<?php echo xlt("Service Code Finance Reporting") ?>' name='financial_reporting' value='1'<?php if (!empty($financial_reporting)) echo ' checked'; ?> />
    <?php echo xlt('Service Reporting'); ?>
   </td>
  </tr>
 
  <tr id='id_contra_method'>
-  <td><?php xl('Contraceptive Method','e'); ?>:</td>
+  <td nowrap><?php xl('Contraceptive Method','e'); ?>:&nbsp;</td>
   <td></td>
   <td colspan='2'>
    <?php echo generate_select_list('contra_method', 'contrameth', $code_text_short); ?>
@@ -551,17 +553,17 @@ generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'sup
  </tr>
 
  <tr id='id_cyp_factor'>
-  <td><?php echo xl('CYP Factor'); ?>:</td>
+  <td nowrap><?php echo xl('CYP Factor'); ?>:&nbsp;</td>
   <td></td>
-  <td colspan='2'>
+  <td colspan='2' nowrap>
    <input type='text' size='10' maxlength='20' name="cyp_factor" value='<?php echo $cyp_factor ?>'>
   </td>
  </tr>
 
  <tr id='id_sex'>
-  <td><?php echo xlt('Sex Specific'); ?>:</td>
+  <td nowrap><?php echo xlt('Sex Specific'); ?>:&nbsp;</td>
   <td></td>
-  <td colspan='2'>
+  <td colspan='2' nowrap>
 <?php
   foreach (array(4 => xl('All'), 1 => xl('Women Only'), 2 => xl('Men Only')) as $key => $value) {
     echo "   <input type='radio' name='sex' value='$key'";
@@ -573,7 +575,7 @@ generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'sup
  </tr>
 
  <tr<?php if (!related_codes_are_used()) echo " style='display:none'"; ?>>
-  <td><?php echo xlt('Relate To'); ?>:</td>
+  <td nowrap><?php echo xlt('Relate To'); ?>:&nbsp;</td>
   <td></td>
   <td colspan='2'>
    <input type='text' size='60' name='related_desc'
@@ -584,19 +586,20 @@ generate_form_field(array('data_type'=>1,'field_id'=>'superbill','list_id'=>'sup
  </tr>
 
  <tr>
-  <td><?php echo xlt('Fees'); ?>:</td>
+  <td nowrap><?php echo xlt('Fees'); ?>:&nbsp;</td>
   <td></td>
-  <td>
+  <td colspan='2'>
 <?php
 $pres = sqlStatement("SELECT lo.option_id, lo.title, p.pr_price " .
   "FROM list_options AS lo LEFT OUTER JOIN prices AS p ON " .
   "p.pr_id = ? AND p.pr_selector = '' AND p.pr_level = lo.option_id " .
   "WHERE list_id = 'pricelevel' ORDER BY lo.seq, lo.title", array($code_id) );
 for ($i = 0; $prow = sqlFetchArray($pres); ++$i) {
-  if ($i) echo "&nbsp;&nbsp;";
-  echo text(xl_list_label($prow['title'])) . " ";
+  echo "<span style='white-space: nowrap'>";
+  echo text(xl_list_label($prow['title'])) . "&nbsp;";
   echo "<input type='text' size='6' name='fee[" . attr($prow['option_id']) . "]' " .
-    "value='" . attr($prow['pr_price']) . "' >\n";
+    "value='" . attr($prow['pr_price']) . "' />";
+  echo "</span>&nbsp; ";
 }
 ?>
   </td>
@@ -616,16 +619,16 @@ while ($prow = sqlFetchArray($pres)) {
 if ($taxline) {
 ?>
  <tr>
-  <td><?php echo xlt('Taxes'); ?>:</td>
+  <td><?php echo xlt('Taxes'); ?>:&nbsp;</td>
   <td></td>
-  <td>
+  <td colspan='2'>
    <?php echo $taxline ?>
   </td>
  </tr>
 <?php } ?>
 
  <tr>
-  <td colspan="3" align="center">
+  <td colspan="4" align="center">
    <input type="hidden" name="code_id" value="<?php echo attr($code_id) ?>"><br>
    <input type="hidden" name="code_type_name_external" value="<?php echo attr($code_type_name_external) ?>">
    <input type="hidden" name="code_external" value="<?php echo attr($code_external) ?>">
