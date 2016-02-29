@@ -20,6 +20,9 @@
  * @link    http://www.open-emr.org
  */
 
+$fake_register_globals=false;
+$sanitize_all_escapes=true;
+
 include_once("../../globals.php");
 
 // allow a custom 'delete' form
@@ -73,7 +76,7 @@ if ($_POST['confirm']) {
 
 <body class="body_top">
 
-<span class="title">Delete Encounter Form</span>
+<span class="title"><?php echo xlt('Delete Encounter Form'); ?></span>
 
 <form method="post" action="<?php echo $rootdir;?>/patient_file/encounter/delete_form.php" name="my_form" id="my_form">
 <?php
@@ -86,7 +89,7 @@ foreach ($_GET as $key => $value) {
 <p>
 <?php
 $tmp = empty($_GET['formdesc']) ? $_GET['formname'] : $_GET['formdesc'];
-echo xls("You are about to delete the form") . " '" . text($tmp) . "' " . xls('from this visit.');
+echo xlt("You are about to delete the form") . " '" . text($tmp) . "' " . xlt('from this visit.');
 ?>
 </p>
 <input type="button" id="confirmbtn" name="confirmbtn" value="<?php echo xla('Yes, Delete this form'); ?>">
