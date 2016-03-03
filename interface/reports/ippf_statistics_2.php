@@ -83,6 +83,7 @@ $form_facility = isset($_POST['form_facility']) ? $_POST['form_facility'] : '';
 $form_adjreason = isset($_POST['form_adjreason']) ? $_POST['form_adjreason'] : '';
 $form_sexes    = isset($_POST['form_sexes']) ? $_POST['form_sexes'] : '4';
 $form_content  = isset($_POST['form_content']) ? $_POST['form_content'] : '1';
+$form_sortby   = isset($_POST['form_sortby']) ? $_POST['form_sortby'] : '1';
 $form_output   = isset($_POST['form_output']) ? 0 + $_POST['form_output'] : 1;
 
 $age_minimum = validate_age_filter('age_minimum');
@@ -184,6 +185,11 @@ else {
     15  => array(5,6),
   );
 }
+
+$arr_sortby = array(
+  1 => xl('Code'),
+  2 => xl('Description'),
+);
 
 // Default Rows selection is just the first one in the list.
 if (empty($form_by_arr)) {
@@ -695,6 +701,7 @@ function accumClinicPeriod($key, $row, $quantity, $clikey, $perkey) {
 function loadColumnData($key, $row, $quantity=1) {
   global $areport, $arr_titles, $form_content, $from_date, $to_date, $arr_show;
   global $form_clinics, $form_periods, $arr_periods;
+  global $form_by, $form_sortby, $arr_keydesc;
 
   // If we are counting new acceptors, then this must be a report of contraceptive
   // (methods or services or products), and a contraceptive start date is provided.
@@ -724,6 +731,22 @@ function loadColumnData($key, $row, $quantity=1) {
     $areport[$key] = array();
     $areport[$key]['.prp'] = 0;       // previous pid
     $areport[$key]['.dtl'] = array();
+    // If there is a description column, save the description before sorting.
+    if (uses_description($form_by)) {
+      $arr_keydesc[$key] = '';
+      $sqltype = $form_by === '102' ? 'MA' : 'IPPF2';
+      $sqlcode = $key;
+      // If key is of the form codetype:code, extract accordingly.
+      if (preg_match('/^([A-Za-z0-9]+):(.+)/', $key, $tmp)) {
+        $sqltype = $tmp[1];
+        $sqlcode = $tmp[2];
+      }
+      $crow = sqlQuery("SELECT c.code_text FROM codes AS c, code_types AS ct WHERE " .
+        "ct.ct_key = ? AND c.code_type = ct.ct_id AND c.code = ? " .
+        "ORDER BY c.id LIMIT 1",
+        array($sqltype, $sqlcode));
+      if (!empty($crow['code_text'])) $arr_keydesc[$key] = $crow['code_text'];
+    }
   }
 
   // If we are counting unique clients, new or returning clients, then
@@ -1426,6 +1449,19 @@ function clinic_compare($a, $b) {
   return $arr_clinics[$a] < $arr_clinics[$b] ? -1 : ($arr_clinics[$a] > $arr_clinics[$b] ? 1 : 0);
 }
 
+// This supports uksort() on key descriptions.
+//
+function keydesc_compare($a, $b) {
+  global $arr_keydesc, $form_sortby;
+  $x = $a;
+  $y = $b;
+  if ($form_sortby == '2' && isset($arr_keydesc[$a]) && $arr_keydesc[$a] != $arr_keydesc[$b]) {
+    $x = $arr_keydesc[$a];
+    $y = $arr_keydesc[$b];
+  }
+  return $x < $y ? -1 : ($x > $y ? 1 : 0);
+}
+
 $arr_show   = array(
   // '.total' => array('title' => xl('Total')),
   '.age2'  => array('title' => xl('Age Category') . ' (2)'),
@@ -1507,7 +1543,7 @@ while ($lrow = sqlFetchArray($lres)) {
   <td valign='top' class='dehead' nowrap>
    <?php xl('Rows','e'); ?>:
   </td>
-  <td valign='top' class='detail'>
+  <td valign='top' class='detail' rowspan='2'>
    <select name='form_by[]' size='3' multiple
     title='<?php xl('Hold down Ctrl to select multiple reports','e'); ?>'>
 <?php
@@ -1520,7 +1556,7 @@ while ($lrow = sqlFetchArray($lres)) {
    </select>
   </td>
   <td valign='top' class='dehead' nowrap>
-   <?php xl('Content','e'); ?>:
+   <?php echo xlt('Content'); ?>:
   </td>
   <td valign='top' class='detail'>
    <select name='form_content' title='<?php xl('What is to be counted?','e'); ?>'>
@@ -1528,6 +1564,30 @@ while ($lrow = sqlFetchArray($lres)) {
   foreach ($arr_content as $key => $value) {
     echo "    <option value='$key'";
     if ($key == $form_content) echo " selected";
+    echo ">$value</option>\n";
+  }
+?>
+   </select>
+  </td>
+  <td valign='top' class='detail'>
+   &nbsp;
+  </td>
+ </tr>
+
+ <tr>
+  <td valign='top' class='dehead' nowrap>
+   &nbsp;
+  </td>
+  <!-- td omitted because of rowspan -->
+  <td valign='top' class='dehead' nowrap>
+   <?php echo xlt('Sort By'); ?>:
+  </td>
+  <td valign='top' class='detail'>
+   <select name='form_sortby' title='<?php echo xlt('What to sort on'); ?>'>
+<?php
+  foreach ($arr_sortby as $key => $value) {
+    echo "    <option value='$key'";
+    if ($key == $form_sortby) echo " selected";
     echo ">$value</option>\n";
   }
 ?>
@@ -1739,6 +1799,9 @@ if ($_POST['form_submit']) {
 
     // This accumulates the bottom line totals.
     $atotals = array();
+
+    // This saves descriptions of the reporting keys.
+    $arr_keydesc = array();
 
     $pd_fields = '';
     foreach ($arr_show as $askey => $asval) {
@@ -2106,8 +2169,8 @@ if ($_POST['form_submit']) {
       } // end while
     } // end if
 
-    // Sort everything by key for reporting.
-    ksort($areport);
+    // Sort everything for reporting.
+    uksort($areport, 'keydesc_compare');
     foreach ($arr_titles as $atkey => $dummy) ksort($arr_titles[$atkey]);
 
     // Generate a blank row to separate from the previous report.
@@ -2346,17 +2409,9 @@ if ($_POST['form_submit']) {
       if (uses_description($form_by)) {
         $dispkey = array($display_key, '');
         $dispspan = 1;
-        $sqltype = $form_by === '102' ? 'MA' : 'IPPF2'; // MA or IPPF2
-        $sqlcode = $display_key;
-        // If key is of the form codetype:code, extract accordingly.
-        if (preg_match('/^([A-Za-z0-9]+):(.+)/', $display_key, $tmp)) {
-          $sqltype = $tmp[1];
-          $sqlcode = $tmp[2];
+        if (isset($arr_keydesc[$key])) {
+          $dispkey[1] = $arr_keydesc[$key];
         }
-        $crow = sqlQuery("SELECT c.code_text FROM codes AS c, code_types AS ct WHERE " .
-          "ct.ct_key = '$sqltype' AND c.code_type = ct.ct_id AND c.code = '$sqlcode' " .
-          "ORDER BY c.id LIMIT 1");
-        if (!empty($crow['code_text'])) $dispkey[1] = $crow['code_text'];
       }
 
       // Or if a separate column for group name is needed, do that.
