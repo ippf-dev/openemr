@@ -77,9 +77,9 @@ $report_type = empty($_GET['t']) ? 'i' : $_GET['t'];
 
 $from_date     = fixDate($_POST['form_from_date']);
 $to_date       = fixDate($_POST['form_to_date'], date('Y-m-d'));
-$form_by_arr   = $_POST['form_by'];     // this is an array
-$form_show     = $_POST['form_show'];   // this is an array
-$form_facility = isset($_POST['form_facility']) ? $_POST['form_facility'] : '';
+$form_by_arr   = $_POST['form_by'];       // this is an array
+$form_show     = $_POST['form_show'];     // this is an array
+$form_fac_arr  = is_array($_POST['form_facility']) ? $_POST['form_facility'] : array();
 $form_adjreason = isset($_POST['form_adjreason']) ? $_POST['form_adjreason'] : '';
 $form_sexes    = isset($_POST['form_sexes']) ? $_POST['form_sexes'] : '4';
 $form_content  = isset($_POST['form_content']) ? $_POST['form_content'] : '1';
@@ -1541,11 +1541,11 @@ while ($lrow = sqlFetchArray($lres)) {
 
  <tr>
   <td valign='top' class='dehead' nowrap>
-   <?php xl('Rows','e'); ?>:
+   <?php echo xlt('Rows'); ?>:
   </td>
-  <td valign='top' class='detail' rowspan='2'>
+  <td valign='top' class='detail'>
    <select name='form_by[]' size='3' multiple
-    title='<?php xl('Hold down Ctrl to select multiple reports','e'); ?>'>
+    title='<?php echo xlt('Hold down Ctrl to select multiple items'); ?>'>
 <?php
   foreach ($arr_by as $key => $value) {
     echo "    <option value='$key'";
@@ -1555,6 +1555,124 @@ while ($lrow = sqlFetchArray($lres)) {
 ?>
    </select>
   </td>
+  <td valign='top' class='dehead' nowrap>
+   <?php echo xlt('Filters'); ?>:
+  </td>
+  <td colspan='2' rowspan='4' class='detail' style='border-style:solid;border-width:1px;border-color:#cccccc'>
+   <table>
+    <tr>
+     <td valign='top' class='detail' nowrap>
+      <?php echo xlt('Sex'); ?>:
+     </td>
+     <td class='detail' valign='top'>
+      <select name='form_sexes' title='<?php echo xlt('To filter by sex'); ?>'>
+<?php
+  foreach (array(4 => xl('All'), 1 => xl('Women Only'), 2 => xl('Men Only'), 3 => xl('Other Only')) as $key => $value) {
+    echo "       <option value='$key'";
+    if ($key == $form_sexes) echo " selected";
+    echo ">$value</option>\n";
+  }
+?>
+      </select>
+     </td>
+    </tr>
+    <tr>
+     <td valign='top' class='detail' nowrap>
+      <?php echo xlt('Facility'); ?>:
+     </td>
+     <td valign='top' class='detail'>
+<?php
+ // Build a multi-select list of facilities.
+ //
+ $query = "SELECT id, name FROM facility ORDER BY name";
+ $fres = sqlStatement($query);
+ echo "      <select name='form_facility[]' size='5' multiple title='" .
+  xlt('Hold down Ctrl to select multiple clinics.') . "\n" .
+  xlt('If no selection then all are included.') . "'>\n";
+ while ($frow = sqlFetchArray($fres)) {
+  $facid = $frow['id'];
+  echo "       <option value='$facid'";
+  if (in_array($facid, $form_fac_arr)) echo " selected";
+  echo ">" . $frow['name'] . "\n";
+ }
+ echo "      </select>\n";
+?>
+     </td>
+    </tr>
+
+<?php if ($report_type == 'm' && $GLOBALS['gbl_checkout_line_adjustments']) { ?>
+    <tr>
+     <td valign='top' class='detail' nowrap>
+      <?php echo xlt('Adj Type'); ?>:
+     </td>
+     <td valign='top' class='detail'>
+<?php
+  echo generate_select_list('form_adjreason', 'adjreason', $form_adjreason);
+?>
+     </td>
+    </tr>
+<?php } ?>
+
+    <tr>
+     <td colspan='2' class='detail' nowrap>
+      <?php echo xlt('From'); ?>
+      <input type='text' name='form_from_date' id='form_from_date' size='10' value='<?php echo $from_date ?>'
+       onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='Start date yyyy-mm-dd'>
+      <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
+       id='img_from_date' border='0' alt='[?]' style='cursor:pointer'
+       title='<?php echo xlt('Click here to choose a date'); ?>'>
+      <?php echo xlt('To'); ?>
+      <input type='text' name='form_to_date' id='form_to_date' size='10' value='<?php echo $to_date ?>'
+       onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='End date yyyy-mm-dd'>
+      <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
+       id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
+       title='<?php echo xlt('Click here to choose a date'); ?>'>
+     </td>
+    </tr>
+    <tr>
+        <td colspan="2" class='detail' nowrap>
+            <?php echo xlt("Age >="); ?>
+                <input type='text' name='age_minimum' size='4'
+                       value='<?php echo $age_minimum; ?>'
+                       title='<?php echo xlt("Do not include clients younger this value in results");?>'/>
+            <?php echo xlt("Age <="); ?>
+                <input type='text' name='age_maximum' size='4'
+                       value='<?php echo $age_maximum; ?>'
+                       title='<?php echo xlt("Do not include clients older this value in results");?>'/>
+        </td>
+    </tr>
+   </table>
+  </td>
+ </tr>
+
+ <tr>
+  <td valign='top' class='dehead' nowrap>
+   <?php xl('Columns','e'); ?>:
+  </td>
+  <td valign='top' class='detail'>
+   <select name='form_show[]' size='4' multiple
+    title='<?php echo xlt('Hold down Ctrl to select multiple items'); ?>'>
+<?php
+  foreach ($arr_show as $key => $value) {
+    $title = $value['title'];
+    if (empty($title) || $key == 'title') $title = $value['description'];
+    echo "    <option value='$key'";
+    if (is_array($form_show) && in_array($key, $form_show)) echo " selected";
+    echo ">$title</option>\n";
+  }
+?>
+   </select>
+  </td>
+  <td valign='top' class='detail'>
+   &nbsp;
+  </td>
+  <!-- td omitted due to rowspan -->
+  <td valign='top' class='detail'>
+   &nbsp;
+  </td>
+ </tr>
+
+ <tr>
   <td valign='top' class='dehead' nowrap>
    <?php echo xlt('Content'); ?>:
   </td>
@@ -1572,17 +1690,17 @@ while ($lrow = sqlFetchArray($lres)) {
   <td valign='top' class='detail'>
    &nbsp;
   </td>
+  <!-- td omitted due to rowspan -->
+  <td valign='top' class='detail'>
+   &nbsp;
+  </td>
  </tr>
 
  <tr>
   <td valign='top' class='dehead' nowrap>
-   &nbsp;
-  </td>
-  <!-- td omitted because of rowspan -->
-  <td valign='top' class='dehead' nowrap>
    <?php echo xlt('Sort By'); ?>:
   </td>
-  <td valign='top' class='detail'>
+  <td valign='top' class='dehead' nowrap>
    <select name='form_sortby' title='<?php echo xlt('What to sort on'); ?>'>
 <?php
   foreach ($arr_sortby as $key => $value) {
@@ -1596,112 +1714,9 @@ while ($lrow = sqlFetchArray($lres)) {
   <td valign='top' class='detail'>
    &nbsp;
   </td>
- </tr>
-
- <tr>
-  <td valign='top' class='dehead' nowrap>
-   <?php xl('Columns','e'); ?>:
-  </td>
+  <!-- td omitted due to rowspan -->
   <td valign='top' class='detail'>
-   <select name='form_show[]' size='4' multiple
-    title='<?php xl('Hold down Ctrl to select multiple items','e'); ?>'>
-<?php
-  foreach ($arr_show as $key => $value) {
-    $title = $value['title'];
-    if (empty($title) || $key == 'title') $title = $value['description'];
-    echo "    <option value='$key'";
-    if (is_array($form_show) && in_array($key, $form_show)) echo " selected";
-    echo ">$title</option>\n";
-  }
-?>
-   </select>
-  </td>
-  <td valign='top' class='dehead' nowrap>
-   <?php xl('Filters','e'); ?>:
-  </td>
-  <td colspan='2' class='detail' style='border-style:solid;border-width:1px;border-color:#cccccc'>
-   <table>
-    <tr>
-     <td valign='top' class='detail' nowrap>
-      <?php xl('Sex','e'); ?>:
-     </td>
-     <td class='detail' valign='top'>
-      <select name='form_sexes' title='<?php xl('To filter by sex','e'); ?>'>
-<?php
-  foreach (array(4 => xl('All'), 1 => xl('Women Only'), 2 => xl('Men Only'), 3 => xl('Other Only')) as $key => $value) {
-    echo "       <option value='$key'";
-    if ($key == $form_sexes) echo " selected";
-    echo ">$value</option>\n";
-  }
-?>
-      </select>
-     </td>
-    </tr>
-    <tr>
-     <td valign='top' class='detail' nowrap>
-      <?php xl('Facility','e'); ?>:
-     </td>
-     <td valign='top' class='detail'>
-<?php
- // Build a drop-down list of facilities.
- //
- $query = "SELECT id, name FROM facility ORDER BY name";
- $fres = sqlStatement($query);
- echo "      <select name='form_facility'>\n";
- echo "       <option value=''>-- " . xl('All Facilities') . " --\n";
- while ($frow = sqlFetchArray($fres)) {
-  $facid = $frow['id'];
-  echo "       <option value='$facid'";
-  if ($facid == $_POST['form_facility']) echo " selected";
-  echo ">" . $frow['name'] . "\n";
- }
- echo "      </select>\n";
-?>
-     </td>
-    </tr>
-
-<?php if ($report_type == 'm' && $GLOBALS['gbl_checkout_line_adjustments']) { ?>
-    <tr>
-     <td valign='top' class='detail' nowrap>
-      <?php echo xl('Adj Type'); ?>:
-     </td>
-     <td valign='top' class='detail'>
-<?php
-  echo generate_select_list('form_adjreason', 'adjreason', $form_adjreason);
-?>
-     </td>
-    </tr>
-<?php } ?>
-
-    <tr>
-     <td colspan='2' class='detail' nowrap>
-      <?php xl('From','e'); ?>
-      <input type='text' name='form_from_date' id='form_from_date' size='10' value='<?php echo $from_date ?>'
-       onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='Start date yyyy-mm-dd'>
-      <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
-       id='img_from_date' border='0' alt='[?]' style='cursor:pointer'
-       title='<?php xl('Click here to choose a date','e'); ?>'>
-      <?php xl('To','e'); ?>
-      <input type='text' name='form_to_date' id='form_to_date' size='10' value='<?php echo $to_date ?>'
-       onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='End date yyyy-mm-dd'>
-      <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
-       id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
-       title='<?php xl('Click here to choose a date','e'); ?>'>
-     </td>
-    </tr>
-    <tr>
-        <td colspan="2" class='detail' nowrap>
-            <?php echo xlt("Age >="); ?>
-                <input type='text' name='age_minimum' size='4'
-                       value='<?php echo $age_minimum; ?>'
-                       title='<?php echo xlt("Do not include clients younger this value in results");?>'/>
-            <?php echo xlt("Age <="); ?>
-                <input type='text' name='age_maximum' size='4'
-                       value='<?php echo $age_maximum; ?>'
-                       title='<?php echo xlt("Do not include clients older this value in results");?>'/>
-        </td>
-    </tr>
-   </table>
+   &nbsp;
   </td>
  </tr>
 
@@ -1763,7 +1778,9 @@ foreach (array(1 => xl('Screen'), 2 => xl('Printer'), 3 => xl('Export File')) as
   <td colspan='5' height="1">
   </td>
  </tr>
+
 </table>
+
 <?php
   } // end not export
 
@@ -1845,8 +1862,12 @@ if ($_POST['form_submit']) {
         "fe.date <= '$to_date 23:59:59' AND " .
         "ds.pid > 0 AND ds.quantity != 0";
 
-      if ($form_facility) {
-        $query .= " AND fe.facility_id = '$form_facility'";
+      if (!empty($form_fac_arr)) {
+        $query .= " AND ( 1 = 2";
+        foreach ($form_fac_arr as $form_facility) {
+          $query .= " OR fe.facility_id = '$form_facility'";
+        }
+        $query .= " )";
       }
       $query .= " ORDER BY ds.pid, ds.encounter, ds.drug_id";
       $res = sqlStatement($query);
@@ -1933,7 +1954,7 @@ if ($_POST['form_submit']) {
         "ORDER BY t.pid, t.id";
       $res = sqlStatement($query);
       while ($row = sqlFetchArray($res)) {
-        if ($form_clinics || $form_facility) {
+        if ($form_clinics || !empty($form_fac_arr)) {
           // Get facility_id from the most recent form_encounter as of the
           // referral date, and add that into $row.  Or if there is no such
           // encounter then use the client's home facility.
@@ -1943,7 +1964,7 @@ if ($_POST['form_submit']) {
             "ORDER BY date DESC LIMIT 1");
           $row['facility_id'] = empty($tmp['facility_id']) ? $row['home_facility'] : $tmp['facility_id'];
           // Do facility filtering if applicable.
-          if ($form_facility && $row['facility_id'] != $form_facility) continue;
+          if (!empty($form_fac_arr) && !in_array($row['facility_id'], $form_fac_arr)) continue;
         }
         process_referral($row);
       }
@@ -2049,7 +2070,7 @@ if ($_POST['form_submit']) {
           continue;
         }
         // Skip if facility filter (if used) is not satisfied.
-        if ($form_facility && $row['facility_id'] != $form_facility) {
+        if (!empty($form_fac_arr) && !in_array($row['facility_id'], $form_fac_arr)) {
           continue;
         }
         // Skip if age filters are not satisfied.
@@ -2133,9 +2154,14 @@ if ($_POST['form_submit']) {
         "WHERE fe.date >= '$from_date 00:00:00' AND " .
         "fe.date <= '$to_date 23:59:59' ";
 
-      if ($form_facility) {
-        $query .= "AND fe.facility_id = '$form_facility' ";
+      if (!empty($form_fac_arr)) {
+        $query .= " AND ( 1 = 2";
+        foreach ($form_fac_arr as $form_facility) {
+          $query .= " OR fe.facility_id = '$form_facility'";
+        }
+        $query .= " )";
       }
+
       $query .= "ORDER BY fe.pid, fe.encounter, b.code";
       $res = sqlStatement($query);
 
