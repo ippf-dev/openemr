@@ -809,3 +809,8 @@ DELETE FROM ar_activity WHERE pay_amount = 0 AND adj_amount = 0 AND deleted IS N
 #IfMissingColumn facility related_code_2
 ALTER TABLE `facility` ADD COLUMN `related_code_2` VARCHAR(255) NOT NULL default '';
 #EndIf
+
+#IfMissingColumn lang_languages lang_is_rtl
+ALTER TABLE `lang_languages` ADD COLUMN `lang_is_rtl` TINYINT DEFAULT 0;
+UPDATE `lang_languages` SET `lang_is_rtl`=1 WHERE `lang_code` IN ('he','ar') OR `lang_description` IN('Hebrew','Arabic');
+#EndIf
