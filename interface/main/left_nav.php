@@ -128,6 +128,7 @@ use ESign\Api;
   'dem' => array(xl('Patient')   , 1,  "patient_file/summary/demographics.php"),
   'his' => array(xl('History')   , 1, 'patient_file/history/history.php'),
   'ens' => array(xl('Visit History'), 1, 'patient_file/history/encounters.php'),
+  'ref' => array(xl('Referrals')    , 1, 'reports/referrals_report.php?patient_id={PID}'),
   'nen' => array(xl('Create Visit'), 1, 'forms/newpatient/new.php?autoloaded=1&calenc='),
   'pre' => array(xl('Rx')        , 1, 'patient_file/summary/rx_frameset.php'),
   'iss' => array(xl('Issues')    , 1, 'patient_file/summary/stats_full.php?active=all'),
@@ -1217,6 +1218,7 @@ if ($GLOBALS['athletic_team']) {
           <?php genTreeLink('RBot','nen',xl('Create Visit')); ?>
           <?php genTreeLink('RBot','enc',xl('Current')); ?>
           <?php genTreeLink('RBot','ens',xl('Visit History')); ?>
+          <?php genTreeLink('RBot','ref',xl('Referrals')); ?>
         </ul>
       </li>
 

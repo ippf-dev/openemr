@@ -17,24 +17,25 @@ require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/options.inc.php");
 include_once("../../custom/code_types.inc.php");
 
-// For each sorting option, specify the ORDER BY argument.
-$ORDERHASH = array(
-  'refby'   => 'referer_name, t.refer_date, t.id',
-  'refto'   => 'ut.organization, referto_name, t.refer_date, t.id',
-  'service' => 't.refer_related_code, t.refer_date, t.id',
-  'refdate' => 't.refer_date, t.id',
-  'expdate' => 't.refer_reply_date, t.id',
-  'repdate' => 't.reply_date, t.id',
-  'ptname'  => 'patient_name, t.id',
-  'ptid'    => 'p.pubpid, t.id',
-);
-
-$from_date = fixDate($_POST['form_from_date'], date('Y-m-d'));
+$patient_id = empty($_REQUEST['patient_id']) ? 0 : intval($_REQUEST['patient_id']);
+$from_date = fixDate($_POST['form_from_date'], $patient_id ? '0000-00-00' : date('Y-m-d'));
 $to_date   = fixDate($_POST['form_to_date'], date('Y-m-d'));
 $form_facility = isset($_POST['form_facility']) ? $_POST['form_facility'] : '';
 $form_referral_type = isset($_POST['form_referral_type']) ? $_POST['form_referral_type'] : '';
 
-$form_orderby = $ORDERHASH[$_REQUEST['form_orderby']] ? $_REQUEST['form_orderby'] : 'refto';
+// For each sorting option, specify the ORDER BY argument.
+$ORDERHASH = array(
+  'refby'   => 'referer_name, refer_date, f.id',
+  'refto'   => 'ut.organization, referto_name, refer_date, f.id',
+  'service' => 'refer_related_code, refer_date, f.id',
+  'refdate' => $patient_id ? 'refer_date DESC, f.id DESC' : 'refer_date, f.id',
+  'expdate' => 'refer_reply_date, f.id',
+  'repdate' => 'reply_date, f.id',
+  'ptname'  => 'patient_name, f.id',
+  'ptid'    => 'p.pubpid, f.id',
+);
+
+$form_orderby = $ORDERHASH[$_REQUEST['form_orderby']] ? $_REQUEST['form_orderby'] : ($patient_id ? 'refdate' : 'refto');
 $orderby = $ORDERHASH[$form_orderby];
 
 if ($_POST['form_csvexport']) {
@@ -67,7 +68,7 @@ else {
 <html>
 <head>
 <?php html_header_show(); ?>
-<title><?php echo xlt('Referrals'); ?></title>
+<title><?php echo $patient_id ? xlt('Referrals for Current Client') : xlt('Referrals'); ?></title>
 
 <style type="text/css">@import url(../../library/dynarch_calendar.css);</style>
 
@@ -128,7 +129,7 @@ else {
 
 <center>
 
-<h2><?php xl('Referrals','e'); ?></h2>
+<h2><?php echo $patient_id ? xlt('Referrals for Current Client') : xlt('Referrals'); ?></h2>
 
 <div id="referreport_parameters">
 <form name='theform' method='post' action='referrals_report.php'>
@@ -237,24 +238,42 @@ else {
 <?php
 } // end not export
 
-if ($_POST['form_orderby']) {
+if ($_POST['form_orderby'] || $patient_id) {
   $query = "SELECT " .
-    "t.id, t.refer_date, t.refer_reply_date, t.reply_date, t.body, t.pid, " .
-    "t.refer_external, t.refer_related_code, " .
+    "f.id, f.pid, f.encounter, fe.facility_id, " .
+    "d1.field_value AS refer_date, " .
+    "d2.field_value AS refer_reply_date, " .
+    "d3.field_value AS reply_date, " .
+    "d4.field_value AS body, " .
+    "d5.field_value AS refer_external, " .
+    "d6.field_value AS refer_related_code, " .
     "ut.organization, uf.facility_id, p.pubpid, p.home_facility, " .
     "CONCAT(uf.fname,' ', uf.lname) AS referer_name, " .
     "CONCAT(ut.fname,' ', ut.lname) AS referto_name, " .
     "CONCAT(p.fname,' ', p.lname) AS patient_name " .
-    "FROM transactions AS t " .
-    "LEFT OUTER JOIN patient_data AS p ON p.pid = t.pid " .
-    "LEFT OUTER JOIN users AS ut ON ut.id = t.refer_to " .
-    "LEFT OUTER JOIN users AS uf ON uf.id = t.refer_from " .
-    "WHERE t.title = 'Referral' AND " .
-    "t.refer_date >= ? AND t.refer_date <= ? ";
+    "FROM forms AS f " .
+    "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'refer_date' " .
+    "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'refer_reply_date' " .
+    "LEFT JOIN lbf_data AS d3 ON d3.form_id = f.form_id AND d3.field_id = 'reply_date' " .
+    "LEFT JOIN lbf_data AS d4 ON d4.form_id = f.form_id AND d4.field_id = 'body' " .
+    "LEFT JOIN lbf_data AS d5 ON d5.form_id = f.form_id AND d5.field_id = 'refer_external' " .
+    "LEFT JOIN lbf_data AS d6 ON d6.form_id = f.form_id AND d6.field_id = 'refer_related_code' " .
+    "LEFT JOIN lbf_data AS d7 ON d7.form_id = f.form_id AND d7.field_id = 'refer_to' " .
+    "LEFT JOIN lbf_data AS d8 ON d8.form_id = f.form_id AND d8.field_id = 'refer_from' " .
+    "LEFT JOIN patient_data AS p ON p.pid = f.pid " .
+    "LEFT JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
+    "LEFT JOIN users AS ut ON ut.id = d7.field_value " .
+    "LEFT JOIN users AS uf ON uf.id = d8.field_value " .
+    "WHERE f.formdir = 'LBFref' AND f.deleted = 0 AND " .
+    "d1.field_value >= ? AND d1.field_value <= ? ";
   $sqlarr = array($from_date, $to_date);
   if ($form_referral_type) {
-    $query .= "AND t.refer_external = ? ";
+    $query .= "AND d5.field_value IS NOT NULL AND d5.field_value = ? ";
     $sqlarr[] = $form_referral_type;
+  }
+  if ($patient_id) {
+    $query .= "AND f.pid = ? ";
+    $sqlarr[] = $patient_id;
   }
   $query .= "ORDER BY $orderby";
 
@@ -267,20 +286,7 @@ if ($_POST['form_orderby']) {
   while ($row = sqlFetchArray($res)) {
     // If a facility is specified, ignore rows that do not match.
     if ($form_facility !== '') {
-      $facility_id = $row['home_facility'];
-      if ($row['refer_external'] <= 3) {
-        // Outbound referrals, look for last visit on or before referral date.
-        $tmp = sqlQuery("SELECT facility_id FROM form_encounter WHERE " .
-          "pid = ? AND date <= ? ORDER BY date DESC LIMIT 1",
-          array($row['pid'], $row['refer_date']));
-      }
-      else {
-        // Inbound referrals, look for first visit on or after referral date.
-        $tmp = sqlQuery("SELECT facility_id FROM form_encounter WHERE " .
-          "pid = ? AND date >= ? ORDER BY date ASC LIMIT 1",
-          array($row['pid'], $row['refer_date']));
-      }
-      if (!empty($tmp['facility_id'])) $facility_id = $tmp['facility_id'];
+      $facility_id = empty($row['facility_id']) ? $row['home_facility'] : $row['facility_id'];
       if ($form_facility) {
         if ($facility_id != $form_facility) continue;
       }
@@ -290,25 +296,27 @@ if ($_POST['form_orderby']) {
       }
     }
 
-    // Get referred services.
-    $svcstring = '';
-    $relcodes = explode(';', $row['refer_related_code']);
-    foreach ($relcodes as $codestring) {
-      if ($codestring === '') continue;
-      ++$svccount;
-      list($codetype, $code) = explode(':', $codestring);
-      $rrow = sqlQuery("SELECT code_text FROM codes WHERE " .
-        "code_type = ? AND code = ? " .
-        "ORDER BY active DESC, id ASC LIMIT 1",
-        array($code_types[$codetype]['id'], $code));
-      $code_text = empty($rrow['code_text']) ? '' : $rrow['code_text'];
-      if ($_POST['form_csvexport']) {
-        if ($svcstring) $svcstring .= '; ';
-        $svcstring .= addslashes("$code: $code_text");
-      }
-      else {
-        if ($svcstring) $svcstring .= '<br />';
-        $svcstring .= text("$code: $code_text");
+    if (!empty($row['refer_related_code'])) {
+      // Get referred services.
+      $svcstring = '';
+      $relcodes = explode(';', $row['refer_related_code']);
+      foreach ($relcodes as $codestring) {
+        if ($codestring === '') continue;
+        ++$svccount;
+        list($codetype, $code) = explode(':', $codestring);
+        $rrow = sqlQuery("SELECT code_text FROM codes WHERE " .
+          "code_type = ? AND code = ? " .
+          "ORDER BY active DESC, id ASC LIMIT 1",
+          array($code_types[$codetype]['id'], $code));
+        $code_text = empty($rrow['code_text']) ? '' : $rrow['code_text'];
+        if ($_POST['form_csvexport']) {
+          if ($svcstring) $svcstring .= '; ';
+          $svcstring .= addslashes("$code: $code_text");
+        }
+        else {
+          if ($svcstring) $svcstring .= '<br />';
+          $svcstring .= text("$code: $code_text");
+        }
       }
     }
 
@@ -363,7 +371,7 @@ if ($_POST['form_orderby']) {
   }
 }
 if (!$_POST['form_csvexport']) {
-  if ($_POST['form_orderby']) {
+  if ($_POST['form_orderby'] || $patient_id) {
     echo " <tr bgcolor='#cccccc'>\n";
     echo "  <td class='dehead' colspan='9'>" . xlt('Total Referrals') . ": $encount" .
       "&nbsp;&nbsp;" . xlt('Services') . ": $svccount</td>\n";
@@ -375,6 +383,7 @@ if (!$_POST['form_csvexport']) {
 </div> <!-- end of results -->
 
 <input type="hidden" name="form_orderby" value="<?php echo $form_orderby ?>" />
+<input type="hidden" name="patient_id" value="<?php echo $patient_id ?>" />
 
 </form>
 </center>

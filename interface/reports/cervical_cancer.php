@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2014-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -157,7 +157,7 @@ foreach ($counters as $key => $dummy) {
   $counters[$key] = array(0, 0);
 }
 
-// Tracks which referrals have already been used. Key is transactions.id.
+// Tracks which referrals have already been used. Key is forms.id.
 // Value is irrelevant. Avoids counting any referral more than once.
 $refsused = array();
 
@@ -189,7 +189,7 @@ while ($row = sqlFetchArray($res)) {
   if ($row['encounter'] == $encounter_id) continue;
   $encounter_id = $row['encounter'];
   $patient_id   = $row['pid'];
-  $encdate      = $row['encdate'];
+  $encdate      = substr($row['encdate'], 0, 10);
   $positive     = false;
   $local_treatment = false;
 
@@ -272,19 +272,31 @@ while ($row = sqlFetchArray($res)) {
     }
     else {
       // Process outgoing referrals starting from the encounter date up to 90 days forward.
-      $rres = sqlStatement("SELECT " .
-        "t.id, t.refer_external, t.refer_related_code, t.reply_related_code " .
-        "FROM transactions AS t WHERE " .
-        "t.pid = ? AND " .
-        "t.title = 'Referral' AND " .
-        "t.refer_date IS NOT NULL AND " .
-        "t.refer_date >= ? AND " .
-        "DATE_SUB(t.refer_date, INTERVAL 90 DAY) < ? AND " .
-        "(t.refer_external = ? OR t.refer_external = ?) " .
-        "ORDER BY t.id",
-        array($patient_id, $encdate, $encdate, '2', '3'));
+      $query = "SELECT " .
+        "f.id, " .
+        "d2.field_value AS refer_external, " .
+        "d3.field_value AS refer_related_code, " .
+        "d4.field_value AS reply_related_code " .
+        "FROM forms AS f " .
+        "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'refer_date' " .
+        "JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'refer_external' " .
+        "LEFT JOIN lbf_data AS d3 ON d3.form_id = f.form_id AND d3.field_id = 'refer_related_code' " .
+        "LEFT JOIN lbf_data AS d4 ON d4.form_id = f.form_id AND d4.field_id = 'reply_related_code' " .
+        "WHERE " .
+        "f.pid = ? AND " .
+        "f.formdir = 'LBFref' AND f.deleted = 0 AND " .
+        "d1.field_value IS NOT NULL AND " .
+        "d1.field_value >= ? AND " .
+        "DATE_SUB(d1.field_value, INTERVAL 90 DAY) < ? AND " .
+        "(d2.field_value = ? OR d2.field_value = ?) " .
+        "ORDER BY f.id";
+
+      // echo "<!-- $patient_id $encdate $query -->\n"; // debugging
+
+      $rres = sqlStatement($query, array($patient_id, $encdate, $encdate, '2', '3'));
+
       while ($rrow = sqlFetchArray($rres)) {
-        // echo "<!-- from referral: '{$rrow['refer_related_code']}' '{$rrow['reply_related_code']}' -->\n"; // debugging
+        // echo "<!-- from referral {$rrow['id']}: '{$rrow['refer_related_code']}' '{$rrow['reply_related_code']}' -->\n"; // debugging
         if (isset($refsused[$rrow['id']])) {
           // This referral has already been processed, so skip it.
           continue;
@@ -518,4 +530,3 @@ if (empty($_POST['form_csvexport'])) {
 </html>
 <?php
 } // end not exporting
-

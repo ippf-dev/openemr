@@ -1,10 +1,12 @@
 <?php
-// Copyright (C) 2008-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2008-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; either version 2
 // of the License, or (at your option) any later version.
+
+// 2016-03-14: Referrals changed from transactions to visit forms.
 
 //SANITIZE ALL ESCAPES
 $sanitize_all_escapes=true;
@@ -64,7 +66,12 @@ $transid = empty($_REQUEST['transid']) ? 0 : $_REQUEST['transid'] + 0;
 // if (!$transid) die("Transaction ID is missing!");
 
 if ($transid) {
-  $trow = getTransById($transid);
+  // Referrals are now visit forms and not transactions.
+  $trow = sqlQuery("SELECT * FROM forms WHERE id = ?", array($transid));
+  $dres = sqlStatement("SELECT * FROM lbf_data WHERE form_id = ?", array($trow['form_id']));
+  while ($drow = sqlFetchArray($dres)) {
+    $trow[$drow['field_id']] = $drow['field_value'];
+  }
   $patient_id = $trow['pid'];
   $refer_date = empty($trow['refer_date']) ? date('Y-m-d') : $trow['refer_date'];
 }
@@ -145,7 +152,7 @@ $s = str_replace("{ref_pid}"         , $patient_id            , $s);
 $s = str_replace("{pt_age}"          , $patient_age           , $s);
 
 $fres = sqlStatement("SELECT * FROM layout_options " .
-  "WHERE form_id = 'LBTref' ORDER BY group_name, seq");
+  "WHERE form_id = 'LBFref' ORDER BY group_name, seq");
 while ($frow = sqlFetchArray($fres)) {
   $data_type = $frow['data_type'];
   $field_id  = $frow['field_id'];

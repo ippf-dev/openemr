@@ -296,33 +296,31 @@ if (!empty($_POST['form_submit'])) {
   }
 
   // Now do all outbound external referrals in the date range.
-  $query = "SELECT t.pid, t.refer_date, t.refer_related_code, " .
+  $query = "SELECT f.pid, " .
+    "d1.field_value AS refer_date, " .
+    "d2.field_value AS refer_related_code, " .
     "p.regdate, p.date AS last_update, p.DOB, p.sex, p.home_facility " .
-    "FROM transactions AS t " .
-    "JOIN patient_data AS p ON p.pid = t.pid WHERE " .
-    "t.title = 'Referral' AND " .
-    "t.refer_date >= '$form_from_date' AND " .
-    "t.refer_date <= '$form_to_date' AND " .
-    "t.refer_related_code != '' AND t.refer_external = 2 " .
-    "ORDER BY t.pid, t.id";
+    "FROM forms AS f " .
+    "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'refer_date' " .
+    "JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'refer_related_code' " .
+    "JOIN lbf_data AS d3 ON d3.form_id = f.form_id AND d3.field_id = 'refer_external' " .
+    "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
+    "JOIN patient_data AS p ON p.pid = f.pid WHERE " .
+    "f.formdir = 'LBFref' AND f.deleted = 0 AND " .
+    "d1.field_value >= '$form_from_date' AND " .
+    "d1.field_value <= '$form_to_date' AND " .
+    "d2.field_value != '' AND d3.field_value = 2 " .
+    "ORDER BY f.pid, f.id";
+
   $tres = sqlStatement($query);
   $last_pid = 0;
   while ($trow = sqlFetchArray($tres)) {
     $row_pid = $trow['pid'];
     $row_date = $trow['refer_date'];
+    if (empty($trow['facility_id'])) $trow['facility_id'] = $trow['home_facility'];
     $erow = sqlQuery("SELECT f.id, f.domain_identifier, f.country_code, f.pos_code " .
-      "FROM form_encounter AS fe " .
-      "JOIN facility AS f ON f.id = fe.facility_id " .
-      "WHERE fe.pid = ? AND fe.date <= ? " .
-      "ORDER BY fe.date DESC, fe.encounter DESC LIMIT 1",
-      array($row_pid, "$row_date 23:59:59"));
-
-    if (empty($erow)) {
-      // No encounter found so default to home facility.
-      $erow = sqlQuery("SELECT f.id, f.domain_identifier, f.country_code, f.pos_code " .
-        "FROM facility AS f WHERE f.id = ?",
-        array($trow['home_facility']));
-    }
+      "FROM facility AS f WHERE f.id = ?",
+      array($trow['facility_id']));
 
     $domain_identifier = empty($erow['domain_identifier']) ? '' : $erow['domain_identifier'];
     $country = empty($erow['country_code']) ? '' : $erow['country_code'];

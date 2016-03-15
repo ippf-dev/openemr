@@ -420,3 +420,107 @@ ALTER TABLE transactions DROP COLUMN                  reply_rx_refer;
 INSERT INTO lbt_data SELECT id, 'reply_related_code', reply_related_code FROM transactions WHERE reply_related_code != '';
 ALTER TABLE transactions DROP COLUMN                  reply_related_code;
 #EndIf
+
+# Conversion of transaction referrals to LBF referrals, 2016-03-11:
+
+#IfNotRow2D list_options list_id lbfnames option_id LBFref
+
+INSERT INTO list_options (list_id,option_id,title,seq,option_value) VALUES ('lbfnames','LBFref','Referral',1,0);
+
+# Create forms table entries to match what is in transactions.
+INSERT INTO forms
+(date, encounter, form_name, form_id, pid, user, groupname, authorized, formdir)
+SELECT date, 0, id, 0, pid, user, groupname, authorized, 'LBFref'
+FROM transactions WHERE title = 'LBTref';
+
+# form_name is now transactions.id and also lbt_data.form_id.
+# Next generate form_id values by creating one lbf_data entry per form.
+INSERT INTO lbf_data (field_id, field_value)
+SELECT '#LBTref#', id FROM forms WHERE formdir = 'LBFref' AND encounter = 0 AND deleted = 0;
+
+# Copy these new form_id values to the forms table.
+UPDATE forms AS f, lbf_data AS fd
+SET f.form_id = fd.form_id WHERE
+fd.field_id = '#LBTref#' AND fd.field_value = f.id;
+
+# Remove the dummy lbf_data rows.
+DELETE FROM lbf_data WHERE field_id = '#LBTref#';
+
+# Now create real lbf_data entries from lbt_data and the information in the forms table.
+INSERT INTO lbf_data (form_id, field_id, field_value)
+SELECT f.form_id, td.field_id, td.field_value
+FROM forms AS f, lbt_data AS td WHERE
+f.formdir = 'LBFref' AND f.encounter = 0 AND f.deleted = 0 AND td.form_id = f.form_name;
+
+# Fix forms.form_name which held the old form ID.
+UPDATE forms AS f
+SET f.form_name = 'Referral' WHERE
+f.formdir = 'LBFref' AND f.encounter = 0 AND f.deleted = 0;
+
+# Fix forms.encounter for inbound referrals.
+# Try the most recent encounter on or after the referral creation date.
+UPDATE forms AS f
+SET f.encounter =  COALESCE((
+  SELECT fe.encounter FROM form_encounter AS fe
+  JOIN lbf_data AS fd ON fd.form_id = f.form_id AND fd.field_id = 'refer_external'
+  WHERE
+  fe.pid = f.pid AND fe.date >= f.date AND fd.field_value > '3'
+  ORDER BY fe.date, fe.encounter LIMIT 1
+), 0)
+WHERE f.formdir = 'LBFref' AND f.encounter = 0 AND f.deleted = 0;
+
+# Fix forms.encounter for remaining referrals.
+# Try the most recent encounter dated on or before the referral creation date.
+UPDATE forms AS f
+SET f.encounter =  COALESCE((
+  SELECT fe.encounter FROM form_encounter AS fe WHERE
+  fe.pid = f.pid AND fe.date <= f.date
+  ORDER BY fe.date DESC, fe.encounter DESC LIMIT 1
+), 0)
+WHERE f.formdir = 'LBFref' AND f.encounter = 0 AND f.deleted = 0;
+
+# Where that did not work try the first encounter for the patient.
+UPDATE forms AS f
+SET f.encounter =  COALESCE((
+  SELECT fe.encounter FROM form_encounter AS fe WHERE
+  fe.pid = f.pid
+  ORDER BY fe.date, fe.encounter LIMIT 1
+), 0)
+WHERE f.formdir = 'LBFref' AND f.encounter = 0 AND f.deleted = 0;
+
+# Create form_encounter table entries for referrals that still have no encounter.
+SELECT @i:=(SELECT id FROM sequences);
+INSERT INTO form_encounter (date, reason, pid, encounter)
+  SELECT DATE(f.date), 'Dummy visit for referral', f.pid, @i:=@i+1
+  FROM forms AS f
+  WHERE f.formdir = 'LBFref' AND f.encounter = 0 AND f.deleted = 0;
+UPDATE sequences set id = @i;
+
+# Create the 'newpatient' forms table rows for the new form_encounter rows.
+INSERT INTO forms (date, encounter, form_name, form_id, pid, user, groupname, authorized, formdir)
+  SELECT fe.date, fe.encounter, 'New Patient Encounter', fe.id, fe.pid, 'admin', 'Default', '1', 'newpatient'
+  FROM form_encounter AS fe
+  WHERE fe.reason = 'Dummy visit for referral' AND
+  (SELECT COUNT(*) FROM forms WHERE pid = fe.pid AND encounter = fe.encounter AND formdir = 'newpatient' and deleted = 0) = 0;
+
+# Link remaining referrals to these created encounters.
+UPDATE forms AS f
+SET f.encounter =  COALESCE((
+  SELECT fe.encounter FROM form_encounter AS fe WHERE
+  fe.pid = f.pid
+  ORDER BY fe.date, fe.encounter LIMIT 1
+), 0)
+WHERE f.formdir = 'LBFref' AND f.encounter = 0 AND f.deleted = 0;
+
+# TBD: Might need to assign a facility to the new encounters.
+
+DELETE FROM layout_options WHERE form_id = 'LBFref';
+UPDATE layout_options SET form_id = 'LBFref' WHERE form_id = 'LBTref';
+
+# Finally, delete all traces of referral transactions.
+DELETE FROM lbt_data WHERE
+  (SELECT id FROM transactions AS t WHERE t.id = lbt_data.form_id AND t.title = 'LBTref')
+  IS NOT NULL;
+DELETE FROM transactions WHERE title = 'LBTref';
+
+#EndIf

@@ -2872,3 +2872,7 @@ UPDATE codes SET code_text = 'Gynecology - Management - Surgical - Cervical Canc
 #IfRow2D codes code_type 31 code 2150000000000
 DELETE FROM codes WHERE code_type = '31' AND code = '2150000000000';
 #EndIf
+
+#IfRow2D lang_definitions lang_id 1 definition Referrals
+DELETE FROM lang_definitions WHERE lang_id = 1 AND definition LIKE 'Referrals%';
+#EndIf

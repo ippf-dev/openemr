@@ -590,25 +590,20 @@ function getGcacClientStatus($row) {
 
   // Check for a referred-out abortion.
   $query = "SELECT COUNT(*) AS count " .
-    "FROM transactions AS t " .
-    "LEFT JOIN codes AS c ON t.refer_related_code LIKE 'REF:%' AND " .
+    "FROM forms AS f " .
+    "JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'refer_related_code' " .
+    "JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'refer_external' " .
+    "JOIN lbf_data AS d3 ON d3.form_id = f.form_id AND d3.field_id = 'refer_date' " .
+    "LEFT JOIN codes AS c ON d1.field_value LIKE 'REF:%' AND " .
     "c.code_type = '16' AND " .
-    "c.code = SUBSTRING(t.refer_related_code, 5) " .
+    "c.code = SUBSTRING(d1.field_value, 5) " .
     "WHERE " .
-    "t.title = 'Referral' AND " .
-    "t.refer_external < '4' AND " .
-    "t.refer_date IS NOT NULL AND " .
-    "t.refer_date <= '$encdate' AND " .
-    "DATE_ADD(t.refer_date, INTERVAL 14 DAY) > '$encdate' AND " .
-
-    /*****************************************************************
-    "( t.refer_related_code LIKE '%IPPF:252223%' OR " .
-    "t.refer_related_code LIKE '%IPPF:252224%' OR " .
-    "( c.related_code IS NOT NULL AND " .
-    "( c.related_code LIKE '%IPPF:252223%' OR " .
-    "c.related_code LIKE '%IPPF:252224%' )))";
-    *****************************************************************/
-    "( " . genAbortionSQL('t.refer_related_code') . " OR " .
+    "f.formdir = 'LBFref' AND f.deleted = 0 AND " .
+    "d2.dield_value < '4' AND " .
+    "d3.dield_value IS NOT NULL AND " .
+    "d3.dield_value <= '$encdate' AND " .
+    "DATE_ADD(d3.dield_value, INTERVAL 14 DAY) > '$encdate' AND " .
+    "( " . genAbortionSQL('d1.field_value') . " OR " .
     "( c.related_code IS NOT NULL AND ( " .
     genAbortionSQL('c.related_code') . " )))";
 
@@ -1927,42 +1922,43 @@ if ($_POST['form_submit']) {
       $form_by === '14' || $form_by === '15' || $form_by === '20' ||
       $form_by === '1'))
     {
-      $exttest = "t.refer_external = '2'"; // outbound external
-      $datefld = "t.refer_date";
+      $exttest = "d5.field_value = '2'";   // outbound external
+      $datefld = "d1.field_value";
 
       if ($form_by === '9') {
-        $exttest = "t.refer_external = '3'"; // outbound internal
+        $exttest = "d5.field_value = '3'"; // outbound internal
       }
       else if ($form_by === '14') {
-        $exttest = "t.refer_external = '5'"; // inbound internal
+        $exttest = "d5.field_value = '5'"; // inbound internal
       }
       else if ($form_by === '15') {
-        $exttest = "t.refer_external = '4'"; // inbound external
+        $exttest = "d5.field_value = '4'"; // inbound external
       }
-      else if ($form_by === '20') {
-        $datefld = "t.reply_date";
+      else if ($form_by === '20') {        // external referral followups
+        $datefld = "d4.field_value";
       }
-
       $query = "SELECT " .
-        "t.pid, t.refer_related_code, t.reply_related_code, $datefld AS encdate, " .
+        "f.pid, fe.facility_id, $datefld AS encdate, " .
+        "d2.field_value AS refer_related_code, " .
+        "d3.field_value AS reply_related_code, " .
         "pd.regdate, pd.referral_source, pd.home_facility, " .
         "pd.sex, pd.DOB, pd.lname, pd.fname, pd.mname $pd_fields " .
-        "FROM transactions AS t " .
-        "JOIN patient_data AS pd ON pd.pid = t.pid $sexcond" . sql_age_filter($datefld) .
-        "WHERE t.title = 'Referral' AND $datefld IS NOT NULL AND " .
+        "FROM forms AS f " .
+        "LEFT JOIN lbf_data AS d1 ON d1.form_id = f.form_id AND d1.field_id = 'refer_date' " .
+        "LEFT JOIN lbf_data AS d2 ON d2.form_id = f.form_id AND d2.field_id = 'refer_related_code' " .
+        "LEFT JOIN lbf_data AS d3 ON d3.form_id = f.form_id AND d3.field_id = 'reply_related_code' " .
+        "LEFT JOIN lbf_data AS d4 ON d4.form_id = f.form_id AND d4.field_id = 'reply_date' " .
+        "JOIN lbf_data AS d5 ON d5.form_id = f.form_id AND d5.field_id = 'refer_external' " .
+        "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
+        "JOIN patient_data AS pd ON pd.pid = f.pid $sexcond" . sql_age_filter($datefld) .
+        "WHERE f.formdir = 'LBFref' AND f.deleted = 0 AND $datefld IS NOT NULL AND " .
         "$datefld >= '$from_date' AND $datefld <= '$to_date' AND $exttest " .
-        "ORDER BY t.pid, t.id";
+        "ORDER BY f.pid, f.id";
       $res = sqlStatement($query);
+
       while ($row = sqlFetchArray($res)) {
+        if (empty($row['facility_id'])) $row['facility_id'] = $row['home_facility'];
         if ($form_clinics || !empty($form_fac_arr)) {
-          // Get facility_id from the most recent form_encounter as of the
-          // referral date, and add that into $row.  Or if there is no such
-          // encounter then use the client's home facility.
-          $tmp = sqlQuery("SELECT facility_id FROM form_encounter WHERE " .
-            "pid = '" . $row['pid'] . "' AND " .
-            "date <= '" . $row['encdate'] . "' " .
-            "ORDER BY date DESC LIMIT 1");
-          $row['facility_id'] = empty($tmp['facility_id']) ? $row['home_facility'] : $tmp['facility_id'];
           // Do facility filtering if applicable.
           if (!empty($form_fac_arr) && !in_array($row['facility_id'], $form_fac_arr)) continue;
         }

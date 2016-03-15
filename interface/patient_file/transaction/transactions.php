@@ -51,16 +51,18 @@ include_once("$srcdir/transactions.inc");
     <table>
     <tr>
         <td>
-            <span class="title"><?php echo htmlspecialchars( xl('Patient Transactions'), ENT_NOQUOTES); ?></span>&nbsp;</td>
+            <span class="title"><?php echo xlt('Patient Transactions'); ?></span>&nbsp;</td>
         <td>
             <!-- Define CSS Buttons -->
             <a href="add_transaction.php"  <?php if (!$GLOBALS['concurrent_layout']) echo "target='Main'"; ?> class="css_button" onclick="top.restoreSession()">
             <span><?php echo htmlspecialchars( xl('Add'), ENT_NOQUOTES); ?></span></a>
         </td>
+        <!--
         <td>
             <a href="print_referral.php" <?php if (!$GLOBALS['concurrent_layout']) echo "target='Main'"; ?> onclick="top.restoreSession()" class="css_button" >
             <span><?php echo htmlspecialchars( xl('Print Blank Referral Form'), ENT_NOQUOTES); ?></span></a>
         </td>
+        -->
     </tr>
     </table>
 
