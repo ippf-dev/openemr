@@ -2410,7 +2410,7 @@ if ($_POST['form_submit']) {
         if ($this_group != $last_group) {
           // IPPF Stats does not get subtotals.
           if ($report_type !== 'i') {
-            if ($last_group_count > 1) {
+            if ($last_group_count > 0) {
               // Write subtotals only if more than one row in the group.
               writeSubtotals($last_group, $asubtotals, $form_by);  
             }
@@ -2543,7 +2543,7 @@ if ($_POST['form_submit']) {
 
       if ($report_type !== 'i') {
         // If there is a non-empty $last_group, generate a subtotals line.
-        if ($last_group_count > 1) {
+        if ($last_group_count > 0) {
           writeSubtotals($last_group, $asubtotals, $form_by);
         }
       }
