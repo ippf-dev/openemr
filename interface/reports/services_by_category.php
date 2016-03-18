@@ -286,13 +286,9 @@ if ($_POST['form_submit'] || $_POST['form_csvexport']) {
             $tmp2 .= $rval[2];
           }
         }
-        // echo ',"' . addslashes($tmp1) . '"';
-        if ($tmp1 !== '') {
-          echo ',="' . addslashes($tmp1) . '"';
-        }
-        else {
-          echo ',""';
-        }
+        // If numeric, force to be alpha format.
+        echo preg_match('/^[0-9]+$/', $tmp1) ? ',=' : ',';
+        echo '"' . addslashes($tmp1) . '"';
         echo ',"' . addslashes($tmp2) . '"';
       }
 
