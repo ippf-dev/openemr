@@ -169,10 +169,10 @@ function cancelClickedOld() {
 <!-- Required for the popup date selectors -->
 <div id="overDiv" style="position:absolute; display:none; z-index:1000;"></div>
 
-<form method='post' action="<?php echo $rootdir ?>/forms/newpatient/save.php" name='new_encounter'
+<form id="new-encounter-form" method='post' action="<?php echo $rootdir ?>/forms/newpatient/save.php" name='new_encounter'
  <?php if (!$GLOBALS['concurrent_layout']) echo "target='Main'"; ?>>
 
-<div style = 'float:left'>
+<div style='float:left'>
 <?php if ($viewmode) { ?>
 <input type=hidden name='mode' value='update'>
 <input type=hidden name='id' value='<?php echo (isset($_GET["id"])) ? attr($_GET["id"]) : '' ?>'>

@@ -654,7 +654,7 @@ if ($GLOBALS['patient_id_category_name']) {
 <div style='margin-top:10px'> <!-- start main content div -->
  <table border="0" cellspacing="0" cellpadding="0" width="100%">
   <tr>
-   <td align="left" valign="top">
+      <td class="demographics-box" align="left" valign="top">
     <!-- start left column div -->
     <div style='float:left; margin-right:20px'>
      <table cellspacing=0 cellpadding=0>

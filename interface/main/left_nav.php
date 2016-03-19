@@ -337,6 +337,7 @@ function genFindBlock() {
 <html>
 <head>
 <title>Navigation</title>
+  
 <link rel="stylesheet" href="<?php echo $css_header;?>" type="text/css">
 
 <style type="text/css">
