@@ -9,11 +9,12 @@
 // This module creates statistical reports related to family planning
 // and sexual and reproductive health.
 
-include_once("../globals.php");
-include_once("../../library/patient.inc");
-include_once("../../library/acl.inc");
-include_once("../../library/options.inc.php");
-include_once("../../custom/code_types.inc.php");
+require_once("../globals.php");
+require_once("../../library/patient.inc");
+require_once("../../library/acl.inc");
+require_once("../../library/options.inc.php");
+require_once("../../library/formdata.inc.php");
+require_once("../../custom/code_types.inc.php");
 
 $alertmsg = '';
 
@@ -81,6 +82,7 @@ $form_by_arr   = $_POST['form_by'];       // this is an array
 $form_show     = $_POST['form_show'];     // this is an array
 $form_fac_arr  = is_array($_POST['form_facility']) ? $_POST['form_facility'] : array();
 $form_adjreason = isset($_POST['form_adjreason']) ? $_POST['form_adjreason'] : '';
+$form_svccat   = isset($_POST['form_svccat']) ? $_POST['form_svccat'] : '';
 $form_sexes    = isset($_POST['form_sexes']) ? $_POST['form_sexes'] : '4';
 $form_content  = isset($_POST['form_content']) ? $_POST['form_content'] : '1';
 $form_sortby   = isset($_POST['form_sortby']) ? $_POST['form_sortby'] : '1';
@@ -103,6 +105,7 @@ if ($report_type == 'm') {
   $arr_by = array(
     101 => xl('MA Category'),
     102 => xl('Specific Service'),
+    106 => xl('Service by Category'),         // new on 3/2016
     6   => xl('Contraceptive Method'),        // reactivated 2/2012 same as in ippf report
     105 => xl('Contraceptive Products'),      // new on 2/2012
     17  => xl('Clients who had a visit'),
@@ -124,6 +127,7 @@ if ($report_type == 'm') {
   $arr_invalid = array(
     101 => array(5,6),
     102 => array(5,6),
+    106 => array(5,6),
     6   => array(5),
     105 => array(1,2,4,7),
     17  => array(5,6),
@@ -423,9 +427,6 @@ function getRelatedContraceptiveCode($row) {
     foreach ($relcodes as $codestring) {
       if ($codestring === '') continue;
       list($codetype, $code) = explode(':', $codestring);
-      /***************************************************************
-      if ($codetype !== 'IPPF2') continue;
-      ***************************************************************/
       if ($codetype !== 'IPPFCM') continue;
       // Check if the related code concerns contraception.
       $tmp = getContraceptiveMethod($code);
@@ -468,25 +469,6 @@ function getRelatedAbortionMethod($row) {
 function getAbortionMethod($code) {
   $key = '';
 
-  /*******************************************************************
-  if (preg_match('/^25222[34]/', $code)) {
-    if (preg_match('/^2522231/', $code)) {
-      $key = xl('D&C');
-    }
-    else if (preg_match('/^2522232/', $code)) {
-      $key = xl('D&E');
-    }
-    else if (preg_match('/^2522233/', $code)) {
-      $key = xl('MVA');
-    }
-    else if (preg_match('/^252224/', $code)) {
-      $key = xl('Medical');
-    }
-    else {
-      $key = xl('Other Surgical');
-    }
-  }
-  *******************************************************************/
   if (preg_match('/^2113230302301/', $code)) {
     $key = xl('D&C');
   }
@@ -542,13 +524,6 @@ function hadRecentAbService($pid, $encdate, $includeIncomplete=false) {
     "b.code_type = 'MA' AND " .
     "c.code_type = '12' AND " .
     "c.code = b.code AND c.modifier = b.modifier AND " .
-  /*******************************************************************
-    "( c.related_code LIKE '%IPPF:252223%' OR c.related_code LIKE '%IPPF:252224%'";
-  if ($includeIncomplete) {
-    // In this case we want to include treatment for incomplete.
-    $query .= " OR c.related_code LIKE '%IPPF:252225%'";
-  }
-  *******************************************************************/
     "( " . genAbortionSQL('c.related_code');
   if ($includeIncomplete) {
     // In this case we want to include treatment for incomplete.
@@ -599,10 +574,10 @@ function getGcacClientStatus($row) {
     "c.code = SUBSTRING(d1.field_value, 5) " .
     "WHERE " .
     "f.formdir = 'LBFref' AND f.deleted = 0 AND " .
-    "d2.dield_value < '4' AND " .
-    "d3.dield_value IS NOT NULL AND " .
-    "d3.dield_value <= '$encdate' AND " .
-    "DATE_ADD(d3.dield_value, INTERVAL 14 DAY) > '$encdate' AND " .
+    "d2.field_value < '4' AND " .
+    "d3.field_value IS NOT NULL AND " .
+    "d3.field_value <= '$encdate' AND " .
+    "DATE_ADD(d3.field_value, INTERVAL 14 DAY) > '$encdate' AND " .
     "( " . genAbortionSQL('d1.field_value') . " OR " .
     "( c.related_code IS NOT NULL AND ( " .
     genAbortionSQL('c.related_code') . " )))";
@@ -700,9 +675,6 @@ function loadColumnData($key, $row, $quantity=1) {
 
   // If we are counting new acceptors, then this must be a report of contraceptive
   // (methods or services or products), and a contraceptive start date is provided.
-  /*******************************************************************
-  if ($form_content == '3' || $form_content == '6') {
-  *******************************************************************/
   if ($form_content == '6') {
     if (empty($row['contrastart'])) return;
   }
@@ -729,10 +701,14 @@ function loadColumnData($key, $row, $quantity=1) {
     // If there is a description column, save the description before sorting.
     if (uses_description($form_by)) {
       $arr_keydesc[$key] = '';
-      $sqltype = $form_by === '102' ? 'MA' : 'IPPF2';
+      $sqltype = in_array($form_by, array('102', '106')) ? 'MA' : 'IPPF2';
       $sqlcode = $key;
+      // If key has a group name, get just the code part.
+      if (preg_match('/^{(.*)}(.*)/', $sqlcode, $tmp)) {
+        $sqlcode = $tmp[2];
+      }
       // If key is of the form codetype:code, extract accordingly.
-      if (preg_match('/^([A-Za-z0-9]+):(.+)/', $key, $tmp)) {
+      if (preg_match('/^([A-Za-z0-9]+):(.+)/', $sqlcode, $tmp)) {
         $sqltype = $tmp[1];
         $sqlcode = $tmp[2];
       }
@@ -746,10 +722,6 @@ function loadColumnData($key, $row, $quantity=1) {
 
   // If we are counting unique clients, new or returning clients, then
   // require a unique patient.
-  /*******************************************************************
-  if ($form_content == '2' || $form_content == '3' || $form_content == '4' ||
-    $form_content == '6' || $form_content == '7')
-  *******************************************************************/
   if (in_array($form_content, array(2, 4, 6, 7))) {
     if ($row['pid'] == $areport[$key]['.prp']) return;
   }
@@ -799,29 +771,6 @@ function product_contraception_scan($pid, $encounter) {
     foreach ($relcodes as $relstring) {
       if ($relstring === '') continue;
       list($reltype, $relcode) = explode(':', $relstring);
-
-      /***************************************************************
-      if ($reltype !== 'IPPF') continue;
-      if (
-        preg_match('/^11....110/'    , $relcode) ||
-        preg_match('/^11...[1-5]999/', $relcode) ||
-        preg_match('/^112152010/'    , $relcode) ||
-        preg_match('/^11317[1-2]111/', $relcode) ||
-        preg_match('/^12118[1-2].13/', $relcode) ||
-        preg_match('/^121181999/'    , $relcode) ||
-        preg_match('/^122182.13/'    , $relcode) ||
-        preg_match('/^122182999/'    , $relcode)
-      ) {
-        $tmprow = sqlQuery("SELECT cyp_factor FROM codes WHERE " .
-          "code_type = '11' AND code = '$relcode' LIMIT 1");
-        $cyp = 0 + $tmprow['cyp_factor'];
-        if ($cyp > $current_cyp) {
-          $current_cyp     = $cyp;
-          $current_ippf    = $relcode;
-          $current_name    = $dsrow['name'];
-        }
-      }
-      ***************************************************************/
       if ($reltype !== 'IPPFCM') continue;
       $tmprow = sqlQuery("SELECT cyp_factor FROM codes WHERE " .
         "code_type = '32' AND code = '$relcode' LIMIT 1");
@@ -831,7 +780,6 @@ function product_contraception_scan($pid, $encounter) {
         $current_ippfcm = $relcode;
         $current_name   = $dsrow['name'];
       }
-
     }
   }
   $key = '{(' . xl('None') . ')}(' . xl('No Product') . ')';
@@ -953,32 +901,6 @@ function process_ippf_code($row, $code, $quantity=1) {
   // from the old framework.
   //
   else if ($form_by === '13') {
-    /*****************************************************************
-    if (preg_match('/^252221/', $code)) {
-      $key = xl('Pre-Abortion Counseling');
-    }
-    else if (preg_match('/^252222/', $code)) {
-      $key = xl('Pre-Abortion Consultation');
-    }
-    else if (preg_match('/^252223/', $code)) {
-      $key = xl('Induced Abortion');
-    }
-    else if (preg_match('/^252224/', $code)) {
-      $key = xl('Medical Abortion');
-    }
-    else if (preg_match('/^252225/', $code)) {
-      $key = xl('Incomplete Abortion Treatment');
-    }
-    else if (preg_match('/^252226/', $code)) {
-      $key = xl('Post-Abortion Care');
-    }
-    else if (preg_match('/^252227/', $code)) {
-      $key = xl('Post-Abortion Counseling');
-    }
-    else if (preg_match('/^25222/', $code)) {
-      $key = xl('Other/Generic Abortion-Related');
-    }
-    *****************************************************************/
     if (preg_match('/^2111/', $code)) {
       $key = xl('Abortion Counseling');
     }
@@ -1010,10 +932,6 @@ function process_ippf_code($row, $code, $quantity=1) {
   else if ($form_by === '104') {
     if ($form_content != 5) {
       // Skip codes not for contraceptive services.
-      /***************************************************************
-      $tmp = getContraceptiveMethod($code);
-      if (empty($tmp)) return;
-      ***************************************************************/
       if (!isIPPF2Contraceptive($code)) return;
     }
     $key = $code;
@@ -1079,9 +997,6 @@ function process_ippf_code($row, $code, $quantity=1) {
   // can be anything - age category, religion, whatever.
   //
   else if ($form_by === '8') {
-    /*****************************************************************
-    if (preg_match('/^25222[567]/', $code)) { // care, followup and incomplete abortion treatment
-    *****************************************************************/
     if (in_array($code, array(
       '2111010122000', // Abortion - Counselling - Post-abortion
       '2112020202101', // Abortion - Consultation - Follow up consultation - Harm reduction model
@@ -1102,9 +1017,6 @@ function process_ippf_code($row, $code, $quantity=1) {
   //   Decided not to have the abortion
   //
   else if ($form_by === '12') {
-    /*****************************************************************
-    if (preg_match('/^252221/', $code)) { // all pre-abortion counseling
-    *****************************************************************/
     /*****************************************************************
     if (in_array($code, array(
       '2111010121000', // Abortion - Counselling - Pre-abortion / Options Counselling
@@ -1223,6 +1135,12 @@ function process_ma_code($row, $code='', $quantity=1) {
   //
   else if ($form_by === '102') {
     $key = $code;
+  }
+
+  // Service by Category. One row for each MA code with service category in the key.
+  //
+  else if ($form_by === '106') {
+    $key = '{' . (empty($row['lo_title']) ? xl('Uncategorized') : $row['lo_title']) . '}' . $code;
   }
 
   // One row for each referral source.
@@ -1402,16 +1320,16 @@ function process_referral($row) {
   }
 }
 
+// Returns true if this report type has separate columns for code and description.
+//
 function uses_description($form_by) {
-  return ($form_by === '4'  || $form_by === '102' || $form_by === '9' ||
-    $form_by === '10' || $form_by === '14' || $form_by === '15' ||
-    $form_by === '20' || $form_by === '104');
+  return in_array($form_by, array('4', '102', '106', '9', '10', '14', '15', '20', '104'));
 }
 
 function uses_group_names($form_by) {
   global $form_output;
   if ($form_output != 3) return false;
-  return ($form_by === '6'  || $form_by === '7' || $form_by === '105');
+  return in_array($form_by, array('6', '7', '105', '106'));
 }
 
 function writeSubtotals($last_group, &$asubtotals, $form_by) {
@@ -1420,11 +1338,16 @@ function writeSubtotals($last_group, &$asubtotals, $form_by) {
       $last_group = $tmp[2] . ' - ' . $tmp[1];
     }
     genStartRow("bgcolor='#dddddd'");
+
+    /******************************************************************
     if (uses_description($form_by)) {
       genHeadCell(array(xl('Subtotals for') . " $last_group", ''));
     } else {
       genHeadCell(xl('Subtotals for') . " $last_group", 'right', 2);
     }
+    ******************************************************************/
+    genHeadCell(xl('Subtotals for') . " $last_group", 'right', 2);
+
     for ($cnum = 0; $cnum < count($asubtotals); ++$cnum) {
       genHeadCell($asubtotals[$cnum], 'right');
     }
@@ -1539,7 +1462,7 @@ while ($lrow = sqlFetchArray($lres)) {
    <?php echo xlt('Rows'); ?>:
   </td>
   <td valign='top' class='detail'>
-   <select name='form_by[]' size='3' multiple
+   <select name='form_by[]' size='4' multiple
     title='<?php echo xlt('Hold down Ctrl to select multiple items'); ?>'>
 <?php
   foreach ($arr_by as $key => $value) {
@@ -1603,6 +1526,19 @@ while ($lrow = sqlFetchArray($lres)) {
      <td valign='top' class='detail'>
 <?php
   echo generate_select_list('form_adjreason', 'adjreason', $form_adjreason);
+?>
+     </td>
+    </tr>
+<?php } ?>
+
+<?php if ($report_type == 'm') { ?>
+    <tr>
+     <td valign='top' class='detail' nowrap>
+      <?php echo xlt('Svc Cat'); ?>:
+     </td>
+     <td valign='top' class='detail'>
+<?php
+  echo generate_select_list('form_svccat', 'superbill', $form_svccat);
 ?>
      </td>
     </tr>
@@ -1830,9 +1766,6 @@ if ($_POST['form_submit']) {
     else if ($form_sexes == '2') $sexcond = "AND pd.sex LIKE 'M%' ";
     else if ($form_sexes == '3') $sexcond = "AND pd.sex NOT LIKE 'M%' AND pd.sex NOT LIKE 'F%' ";
 
-    /*****************************************************************
-    if ($form_by == '105' && $form_content != 5 && $form_content != 3 && $form_content != 6) {
-    *****************************************************************/
     if ($form_by == '105' && !in_array($form_content, array(5, 6))) {
       $alertmsg = xl("Contraceptive Products report requires Contraceptive Items Provided or New Users content type.");
     }
@@ -1884,6 +1817,7 @@ if ($_POST['form_submit']) {
         }
         if (!$desired) continue; // skip if not a contraceptive product
 
+        /**************************************************************
         // Handle MA report types.
         if ($report_type == 'm' && !empty($row['encounter'])) {
           $query = "SELECT " .
@@ -1905,6 +1839,9 @@ if ($_POST['form_submit']) {
             }
           }
         }
+        **************************************************************/
+        // The above commented out because there are no MA reports for services where
+        // $form_content is 5.
 
         // At this point $prodcode is the desired IPPFCM code, or empty if none.
         process_ippfcm_code($row, $prodcode, $row['quantity']);
@@ -1970,9 +1907,6 @@ if ($_POST['form_submit']) {
     // service or product is a special case that gets one method, service or product
     // on each contraceptive start date.
     //
-    /*****************************************************************
-    if ($form_content == 3 || $form_content == 6) {
-    *****************************************************************/
     if ($form_content == 6) {
 
      /****************************************************************
@@ -2083,10 +2017,6 @@ if ($_POST['form_submit']) {
 
         if ($form_by == '104') {
           // Specific contraceptive service.
-          /***********************************************************
-          service_contraception_scan($thispid, $thisenc);
-          process_ippf_code($row, $contraception_ippf2_code);
-          ***********************************************************/
           $ippf2code = method_to_ippf2_code($ippfconmeth);
           // If the new method is missing, try to get it from the billing table.
           // That should happen only for old data from sites upgraded from release 3.2.0.7.
@@ -2114,13 +2044,6 @@ if ($_POST['form_submit']) {
         }
       } // end while
 
-     /****************************************************************
-     }
-     else { // content is new acceptors but incompatible report type
-      $alertmsg = xl("New Acceptors content type is valid only for contraceptive method or product reporting.");
-     }
-     ****************************************************************/
-
     } // end if
 
     else if ($form_content != 5 && !in_array($form_by, array(9, 10, 14, 15, 20))) {
@@ -2133,11 +2056,8 @@ if ($_POST['form_submit']) {
         "pd.referral_source$pd_fields, " .
         "b.code_type, b.code, b.units, c.related_code, lo.title AS lo_title " .
         "FROM form_encounter AS fe " .
-        // "JOIN forms AS f ON f.pid = fe.pid AND f.encounter = fe.encounter AND " .
-        // "f.formdir = 'newpatient' AND f.form_id = fe.id AND f.deleted = 0 " .
         "LEFT JOIN forms AS f ON f.pid = fe.pid AND f.encounter = fe.encounter AND " .
         "f.formdir = 'newpatient' AND f.form_id = fe.id AND f.deleted = 0 " .
-        //
         "JOIN patient_data AS pd ON pd.pid = fe.pid $sexcond" . sql_age_filter("fe.date") .
         "LEFT OUTER JOIN billing AS b ON " .
         "b.pid = fe.pid AND b.encounter = fe.encounter AND b.activity = 1 " .
@@ -2150,12 +2070,16 @@ if ($_POST['form_submit']) {
         "WHERE fe.date >= '$from_date 00:00:00' AND " .
         "fe.date <= '$to_date 23:59:59' ";
 
+      if (!empty($form_svccat)) {
+        $query .= "AND lo.option_id IS NOT NULL AND lo.option_id = '" . add_escape_custom($form_svccat) . "' ";
+      }
+
       if (!empty($form_fac_arr)) {
-        $query .= " AND ( 1 = 2";
+        $query .= "AND ( 1 = 2";
         foreach ($form_fac_arr as $form_facility) {
           $query .= " OR fe.facility_id = '$form_facility'";
         }
-        $query .= " )";
+        $query .= " ) ";
       }
 
       $query .= "ORDER BY fe.pid, fe.encounter, b.code";
@@ -2395,10 +2319,6 @@ if ($_POST['form_submit']) {
         $this_group = $tmp[3];
         $display_key = $tmp[2];
       }
-      /**************************************************************
-      if ($form_output != 3 && $form_content != '2' && $form_content != '3' &&
-        $form_content != '4' && $form_content != '7') {
-      **************************************************************/
       if ($form_output != 3 && !in_array($form_content, array(2, 4, 7))) {
         // If it is a group change and there is a non-empty $last_group,
         // generate a subtotals line and clear subtotals array.
@@ -2531,10 +2451,6 @@ if ($_POST['form_submit']) {
     // If we are exporting or counting unique clients, new acceptors, new or returning clients,
     // then the totals line is skipped.
     //
-    /*****************************************************************
-    if ($form_output != 3 && $form_content != '2' && $form_content != '3' &&
-      $form_content != '4' && $form_content != '7') {
-    *****************************************************************/
     if ($form_output != 3 && !in_array($form_content, array(2, 4, 7))) {
 
       if ($report_type !== 'i') {
