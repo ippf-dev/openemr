@@ -45,7 +45,13 @@ $PDF_OUTPUT = empty($_POST['pdf']) ? false : true;
 
 if ($PDF_OUTPUT) {
   require_once("$srcdir/html2pdf/vendor/autoload.php");
-  $pdf = new HTML2PDF('P', 'Letter', 'en', 'true', 'UTF-8');
+
+  $pdf = new HTML2PDF('P', 'Letter', 'en', 'true', 'UTF-8', array(5, 5, 5, 8),
+    $_SESSION['language_direction'] == 'rtl' ? true : false);
+  //set 'dejavusans' for now. which is supported by a lot of languages - http://dejavu-fonts.org/wiki/Main_Page
+  //TODO: can have this selected as setting in globals after we have more experience with this to fully support internationalization.
+  $pdf->setDefaultFont('dejavusans');
+
   ob_start();
 }
 
@@ -105,7 +111,7 @@ function postToGet($arin) {
 ?>
 
 <?php if ($PDF_OUTPUT) { ?>
-<link rel="stylesheet" href="<?php echo $webserver_root; ?>/interface/themes/style_pdf.css" type="text/css">
+<link rel="stylesheet" href="<?php echo  $webserver_root . '/interface/themes/style_pdf.css' ?>" type="text/css">
 <link rel="stylesheet" type="text/css" href="<?php echo $webserver_root; ?>/library/ESign/css/esign_report.css" />
 <?php } else {?>
 <html>
