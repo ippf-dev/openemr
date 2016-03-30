@@ -524,3 +524,7 @@ DELETE FROM lbt_data WHERE
 DELETE FROM transactions WHERE title = 'LBTref';
 
 #EndIf
+
+#IfMissingColumn forms issue_id
+ALTER TABLE `forms` ADD COLUMN `issue_id` bigint(20) NOT NULL default 0 COMMENT 'references lists.id to identify a case';
+#EndIf

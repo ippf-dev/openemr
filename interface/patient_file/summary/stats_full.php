@@ -59,7 +59,7 @@ function refreshIssue(issue, title) {
 function dopclick(id,category) {
     <?php if (acl_check('patients','med','','write')): ?>
     if (category == 0) category = '';
-    dlgopen('add_edit_issue.php?issue=' + encodeURIComponent(id) + '&thistype=' + encodeURIComponent(category), '_blank', 550, 400);
+    dlgopen('add_edit_issue.php?issue=' + encodeURIComponent(id) + '&thistype=' + encodeURIComponent(category), '_blank', 950, 700);
     <?php else: ?>
     alert("<?php echo addslashes( xl('You are not authorized to add/edit issues') ); ?>");
     <?php endif; ?>
