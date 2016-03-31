@@ -104,7 +104,7 @@ if ($report_type == 'm') {
   $report_name_prefix = 'MA';
   $arr_by = array(
     101 => xl('MA Category'),
-    102 => xl('Specific Service'),
+    102 => xl('All Services'),
     106 => xl('Service by Category'),         // new on 3/2016
     6   => xl('Contraceptive Method'),        // reactivated 2/2012 same as in ippf report
     105 => xl('Contraceptive Products'),      // new on 2/2012
@@ -165,7 +165,8 @@ else {
   $report_name_prefix = 'IPPF';
   $arr_by = array(
     3  => xl('General Service Category'),
-    4  => xl('Specific Service'),
+    4  => xl('All Services'),
+    107 => xl('Service by Category'),         // new on 3/2016
     104 => xl('Specific Contraceptive Service'),
     6  => xl('Contraceptive Method'),
     9   => xl('Outbound Internal Referrals'),
@@ -181,6 +182,7 @@ else {
   $arr_invalid = array(                       // Per CV email 2014-01-30
     3   => array(5,6),
     4   => array(5,6),
+    107 => array(5,6),
     104 => array(5),
     6   => array(6),
     9   => array(5,6),
@@ -193,6 +195,22 @@ else {
 $arr_sortby = array(
   1 => xl('Code'),
   2 => xl('Description'),
+);
+
+$arr_ippf2_cats = array(
+  '1'   => xl('CONTRACEPTIVE SERVICES'),
+  '211' => xl('SRH - ABORTION'),
+  '212' => xl('SRH - HIV AND AIDS'),
+  '213' => xl('SRH - STI/RTI'),
+  '214' => xl('SRH - GYNECOLOGY'),
+  '215' => xl('SRH - OBSTETRIC'),
+  '216' => xl('SRH - UROLOGY'),
+  '217' => xl('SRH - SUBFERTILITY'),
+  '218' => xl('SRH- SPECIALISED SRH SERVICES'),
+  '219' => xl('SRH - PEDIATRICS'),
+  '220' => xl('SRH - OTHER'),
+  '31'  => xl('NON-SRH - MEDICAL'),
+  '4'   => xl('NON-CLINICAL - ADMINISTRATION'),
 );
 
 // Default Rows selection is just the first one in the list.
@@ -671,7 +689,7 @@ function accumClinicPeriod($key, $row, $quantity, $clikey, $perkey) {
 function loadColumnData($key, $row, $quantity=1) {
   global $areport, $arr_titles, $form_content, $from_date, $to_date, $arr_show;
   global $form_clinics, $form_periods, $arr_periods;
-  global $form_by, $form_sortby, $arr_keydesc;
+  global $form_by, $form_sortby, $arr_keydesc, $report_type;
 
   // If we are counting new acceptors, then this must be a report of contraceptive
   // (methods or services or products), and a contraceptive start date is provided.
@@ -701,7 +719,8 @@ function loadColumnData($key, $row, $quantity=1) {
     // If there is a description column, save the description before sorting.
     if (uses_description($form_by)) {
       $arr_keydesc[$key] = '';
-      $sqltype = in_array($form_by, array('102', '106')) ? 'MA' : 'IPPF2';
+      // $sqltype = in_array($form_by, array('102', '106')) ? 'MA' : 'IPPF2';
+      $sqltype = $report_type == 'm' ? 'MA' : 'IPPF2';
       $sqlcode = $key;
       // If key has a group name, get just the code part.
       if (preg_match('/^{(.*)}(.*)/', $sqlcode, $tmp)) {
@@ -853,10 +872,10 @@ function get_adjustment_type($patient_id, $encounter_id, $code_type, $code) {
   return $adjreason;
 }
 
-// This is called for each IPPF service code that is selected.
+// This is called for each IPPF2 service code that is selected.
 //
 function process_ippf_code($row, $code, $quantity=1) {
-  global $form_by, $form_content, $contra_group_name;
+  global $form_by, $form_content, $contra_group_name, $arr_ippf2_cats;
 
   $key = 'Unspecified';
 
@@ -921,10 +940,25 @@ function process_ippf_code($row, $code, $quantity=1) {
     }
   }
 
-  // Specific Services. One row for each IPPF2 code.
+  // All Services. One row for each IPPF2 code.
   //
   else if ($form_by === '4') {
     $key = $code;
+  }
+
+  // Service by Category. One row for each IPPF2 code with IPPF2 category in the key.
+  //
+  else if ($form_by === '107') {
+    $tmp = xl('Uncategorized');
+    foreach ($arr_ippf2_cats as $tmpkey => $tmpval) {
+      // Quotes are necessary here so $tmpkey is treated as a string.
+      if (strpos($code, "$tmpkey") === 0) {
+        $tmp = $tmpval;
+        break;
+      }
+    }
+    $key = '{' . $tmp . '}' . $code;
+    // echo "<!-- $key -->\n"; // debugging
   }
 
   // Specific Contraceptive Services. One row for each IPPF2 code.
@@ -1131,7 +1165,7 @@ function process_ma_code($row, $code='', $quantity=1) {
     if (!empty($row['lo_title'])) $key = xl($row['lo_title']);
   }
 
-  // Specific Services. One row for each MA code.
+  // All Services. One row for each MA code.
   //
   else if ($form_by === '102') {
     $key = $code;
@@ -1189,7 +1223,7 @@ function process_adm_code($row, $code='', $quantity=1) {
     if (!empty($row['lo_title'])) $key = xl($row['lo_title']);
   }
 
-  // Specific Services. One row for each ADM code.
+  // All Services. One row for each ADM code.
   //
   else if ($form_by === '102') {
     $key = "ADM:$code";
@@ -1323,13 +1357,13 @@ function process_referral($row) {
 // Returns true if this report type has separate columns for code and description.
 //
 function uses_description($form_by) {
-  return in_array($form_by, array('4', '102', '106', '9', '10', '14', '15', '20', '104'));
+  return in_array($form_by, array('4', '102', '106', '107', '9', '10', '14', '15', '20', '104'));
 }
 
 function uses_group_names($form_by) {
   global $form_output;
   if ($form_output != 3) return false;
-  return in_array($form_by, array('6', '7', '105', '106'));
+  return in_array($form_by, array('6', '7', '105', '106', '107'));
 }
 
 function writeSubtotals($last_group, &$asubtotals, $form_by) {
@@ -1459,16 +1493,15 @@ while ($lrow = sqlFetchArray($lres)) {
 
  <tr>
   <td valign='top' class='dehead' nowrap>
-   <?php echo xlt('Rows'); ?>:
+   <?php echo xlt('Content'); ?>:
   </td>
   <td valign='top' class='detail'>
-   <select name='form_by[]' size='4' multiple
-    title='<?php echo xlt('Hold down Ctrl to select multiple items'); ?>'>
+   <select name='form_content' title='<?php xl('What is to be counted?','e'); ?>'>
 <?php
-  foreach ($arr_by as $key => $value) {
+  foreach ($arr_content as $key => $value) {
     echo "    <option value='$key'";
-    if (is_array($form_by_arr) && in_array($key, $form_by_arr)) echo " selected";
-    echo ">" . $value . "</option>\n";
+    if ($key == $form_content) echo " selected";
+    echo ">$value</option>\n";
   }
 ?>
    </select>
@@ -1531,14 +1564,29 @@ while ($lrow = sqlFetchArray($lres)) {
     </tr>
 <?php } ?>
 
-<?php if ($report_type == 'm') { ?>
+<?php if ($report_type == 'm' || $report_type == 'i') { ?>
     <tr>
      <td valign='top' class='detail' nowrap>
       <?php echo xlt('Svc Cat'); ?>:
      </td>
      <td valign='top' class='detail'>
 <?php
-  echo generate_select_list('form_svccat', 'superbill', $form_svccat);
+  // Generate the service category selector.
+  if ($report_type == 'm') {
+    // For MA Stats it's the Service Categories list.
+    echo generate_select_list('form_svccat', 'superbill', $form_svccat);
+  }
+  else {
+    // For IPPF Stats it's the hard coded categories.
+    echo "<select name='form_svccat' id='form_svccat' title=''>\n";
+    echo " <option value=''> </option>\n";
+    foreach ($arr_ippf2_cats AS $key => $value) {
+      echo " <option value='$key'";
+      if ($key == $form_svccat) echo " selected";
+      echo ">" . text($value) . "</option>\n";
+    }
+    echo "</select>\n";
+  }
 ?>
      </td>
     </tr>
@@ -1578,18 +1626,16 @@ while ($lrow = sqlFetchArray($lres)) {
 
  <tr>
   <td valign='top' class='dehead' nowrap>
-   <?php xl('Columns','e'); ?>:
+   <?php echo xlt('Rows'); ?>:
   </td>
   <td valign='top' class='detail'>
-   <select name='form_show[]' size='4' multiple
+   <select name='form_by[]' size='4' multiple
     title='<?php echo xlt('Hold down Ctrl to select multiple items'); ?>'>
 <?php
-  foreach ($arr_show as $key => $value) {
-    $title = $value['title'];
-    if (empty($title) || $key == 'title') $title = $value['description'];
+  foreach ($arr_by as $key => $value) {
     echo "    <option value='$key'";
-    if (is_array($form_show) && in_array($key, $form_show)) echo " selected";
-    echo ">$title</option>\n";
+    if (is_array($form_by_arr) && in_array($key, $form_by_arr)) echo " selected";
+    echo ">" . $value . "</option>\n";
   }
 ?>
    </select>
@@ -1605,15 +1651,18 @@ while ($lrow = sqlFetchArray($lres)) {
 
  <tr>
   <td valign='top' class='dehead' nowrap>
-   <?php echo xlt('Content'); ?>:
+   <?php xl('Columns','e'); ?>:
   </td>
   <td valign='top' class='detail'>
-   <select name='form_content' title='<?php xl('What is to be counted?','e'); ?>'>
+   <select name='form_show[]' size='4' multiple
+    title='<?php echo xlt('Hold down Ctrl to select multiple items'); ?>'>
 <?php
-  foreach ($arr_content as $key => $value) {
+  foreach ($arr_show as $key => $value) {
+    $title = $value['title'];
+    if (empty($title) || $key == 'title') $title = $value['description'];
     echo "    <option value='$key'";
-    if ($key == $form_content) echo " selected";
-    echo ">$value</option>\n";
+    if (is_array($form_show) && in_array($key, $form_show)) echo " selected";
+    echo ">$title</option>\n";
   }
 ?>
    </select>
@@ -2324,18 +2373,15 @@ if ($_POST['form_submit']) {
         // generate a subtotals line and clear subtotals array.
         // Set $last_group to the current group name.
         if ($this_group != $last_group) {
-          // IPPF Stats does not get subtotals.
-          if ($report_type !== 'i') {
-            if ($last_group_count > 0) {
-              // Write subtotals only if more than one row in the group.
-              writeSubtotals($last_group, $asubtotals, $form_by);  
-            }
-            if ($last_group !== '' && !$form_clinics) {
-              // Add some space before the next group.
-              genStartRow("bgcolor='#dddddd'");
-              genHeadCell('&nbsp;', 'left', $report_col_count);
-              genEndRow();
-            }
+          if ($last_group_count > 0) {
+            // Write subtotals only if more than one row in the group.
+            writeSubtotals($last_group, $asubtotals, $form_by);  
+          }
+          if ($last_group !== '' && !$form_clinics) {
+            // Add some space before the next group.
+            genStartRow("bgcolor='#dddddd'");
+            genHeadCell('&nbsp;', 'left', $report_col_count);
+            genEndRow();
           }
           $last_group = $this_group;
           $last_group_count = 0;
