@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2015 Rod Roark <rod@sunsetsystems.com>
+/* Copyright (C) 2015-2016 Rod Roark <rod@sunsetsystems.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -43,10 +43,12 @@ $target_element = empty($_GET['target_element']) ? '' : $_GET['target_element'];
 
 <script language="JavaScript">
 
+var oTable;
+
 $(document).ready(function() {
 
  // Initializing the DataTable.
- var oTable = $('#my_data_table').dataTable({
+ oTable = $('#my_data_table').dataTable({
   "bProcessing": true,
   // Next 2 lines invoke server side processing
   "bServerSide": true,
@@ -56,9 +58,10 @@ $(document).ready(function() {
   "iDisplayLength": 10,
   // Specify a width for the first column.
   "aoColumns": [{"sWidth":"10%"}, null],
-  // This callback function passes the codetype on each call to the ajax handler
+  // This callback function passes some form data on each call to the ajax handler.
   "fnServerParams": function (aoData) {
     aoData.push({"name": "codetype", "value": document.forms[0].form_code_type.value});
+    aoData.push({"name": "inactive", "value": (document.forms[0].form_include_inactive.checked ? 1 : 0)});
   },
   // Language strings are included so we can translate them
   "oLanguage": {
@@ -84,6 +87,20 @@ $(document).ready(function() {
   selcode(a[1], a[2], a[3], a[4]);
  } );
 
+ // Initialize the selector of codes that can be deleted.
+ if (opener.get_related) {
+  var acodes = opener.get_related();
+  var sel = document.forms[0].form_delcodes;
+  if (acodes.length > 1) {
+   for (var i = 0; i < acodes.length; ++i) {
+    sel.options[sel.options.length] = new Option(acodes[i], acodes[i]);
+   }
+  }
+  else {
+   sel.style.display = 'none';
+  }
+ }
+
 });
 
 // Pass info back to the opener and close this window.
@@ -94,6 +111,19 @@ function selcode(codetype, code, selector, codedesc) {
  else {
   var msg = opener.set_related(codetype, code, selector, codedesc);
   if (msg) alert(msg);
+  window.close();
+  return false;
+ }
+}
+
+// Function to call the opener to delete all or one related code.
+function delcode() {
+ if (opener.closed || ! opener.del_related) {
+  alert('<?php echo xls('The destination form was closed; I cannot act on your selection.'); ?>');
+ }
+ else {
+  var sel = document.forms[0].form_delcodes;
+  opener.del_related(sel.value);
   window.close();
   return false;
  }
@@ -117,7 +147,7 @@ if (isset($allowed_codes)) {
   if (count($allowed_codes) == 1) {
     echo "<input type='text' name='form_code_type' value='" . attr($codetype) . "' size='5' readonly>\n";
   } else {
-    echo "<select name='form_code_type'>\n";
+    echo "<select name='form_code_type' onchange='oTable.fnDraw()'>\n";
     foreach ($allowed_codes as $code) {
      	echo " <option value='" . attr($code) . "'>" . xlt($code_types[$code]['label']) . "</option>\n";
     }
@@ -125,8 +155,7 @@ if (isset($allowed_codes)) {
   }
 }
 else {
-  echo "<select name='form_code_type'";
-  echo ">\n";
+  echo "<select name='form_code_type' onchange='oTable.fnDraw()'>\n";
   foreach ($code_types as $key => $value) {
     echo " <option value='" . attr($key) . "'";
     echo ">" . xlt($value['label']) . "</option>\n";
@@ -136,7 +165,14 @@ else {
   echo "   </select>\n";
 }
 echo "&nbsp;&nbsp;\n";
-echo "<input type='button' value='" . xla('Erase') . "' onclick=\"selcode('', '', '', '')\" />\n";
+echo "<input type='checkbox' name='form_include_inactive' value='1' onclick='oTable.fnDraw()' />" .
+  xlt('Include Inactive') . "\n";
+echo "&nbsp;&nbsp;\n";
+// echo "<input type='button' value='" . xla('Erase') . "' onclick=\"selcode('', '', '', '')\" />\n";
+echo "<input type='button' value='" . xla('Delete') . "' onclick='delcode()' />\n";
+echo "<select name='form_delcodes'>\n";
+echo " <option value=''>" . xlt('All') . "</option>\n";
+echo "</select>\n";
 ?>
 </p>
 

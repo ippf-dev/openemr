@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2015-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -28,6 +28,7 @@ if ($iDisplayStart >= 0 && $iDisplayLength >= 0) {
 $codetype = $_GET['codetype'];
 $prod = $codetype == 'PROD';
 $ncodetype = $code_types[$codetype]['id'];
+$include_inactive = !empty($_GET['inactive']);
 
 // Column sorting parameters.
 //
@@ -57,10 +58,12 @@ $where1 = '';
 $where2 = '';
 if ($prod) {
   $from = "drugs AS d LEFT JOIN drug_templates AS t ON t.drug_id = d.drug_id";
+  if (!$include_inactive) $where1 = "WHERE d.active = 1";
 }
 else {
   $from = "codes AS c";
-  $where1 = "WHERE c.code_type = '$ncodetype' AND c.active = 1";
+  $where1 = "WHERE c.code_type = '$ncodetype'";
+  if (!$include_inactive) $where1 .= " AND c.active = 1";
 }
 
 if (isset($_GET['sSearch']) && $_GET['sSearch'] !== "") {

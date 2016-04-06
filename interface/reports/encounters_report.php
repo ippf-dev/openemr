@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2007-2011 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2007-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -209,9 +209,39 @@ $res = sqlStatement($query);
   f.form_related_code.title = t;
  }
 
+ // This is for callback by the find-code popup.
+ // Returns the array of currently selected codes with each element in codetype:code format.
+ function get_related() {
+  var f = document.forms[0];
+  var e = f.form_related_code;
+  return e.value.split(';');
+ }
+
+ // This is for callback by the find-code popup.
+ // Deletes the specified codetype:code from the currently selected list.
+ function del_related(s) {
+  var f = document.forms[0];
+  var e = f.form_related_code;
+  if (!s) {
+   e.value = '';
+   e.title = '';
+   return;
+  }
+  // Convert the codes and their descriptions to arrays for easy manipulation.
+  var acodes  = e.value.split(';');
+  var atitles = e.title.split(';');
+  var i = acodes.indexOf(s);
+  if (i < 0) return; // not found, should not happen
+  // Delete the indicated code and description and convert back to strings.
+  acodes.splice(i, 1);
+  atitles.splice(i, 1);
+  e.value = acodes.join(';');
+  e.title = atitles.join(';');
+ }
+
  // This invokes the find-code popup.
  function sel_related() {
-  dlgopen('../patient_file/encounter/find_code_popup.php', '_blank', 500, 400);
+  dlgopen('../patient_file/encounter/find_code_dynamic.php', '_blank', 900, 600);
  }
 
 </script>
