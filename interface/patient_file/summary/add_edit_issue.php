@@ -274,6 +274,9 @@ div.section {
  padding: 5pt;
 }
 
+/* Override theme's selected tab top color so it matches tab contents. */
+ul.tabNav li.current a { background:#ffffff; }
+
 </style>
 
 <style type="text/css">@import url(<?php echo $GLOBALS['webroot']; ?>/library/dynarch_calendar.css);</style>
@@ -500,7 +503,7 @@ if ($issue) {
     $visitid = $vrow['encounter'];
     echo " <li><a href='#'>" . oeFormatShortDate($vrow['date']) . ' ' . text($vrow['form_name']) . "</a></li>\n";
     $tabcontents .= "<div class='tab' style='height:90%;width:98%;'>\n";
-    $tabcontents .= "<iframe style='height:100%;width:100%;' " .
+    $tabcontents .= "<iframe frameborder='0' style='height:100%;width:100%;' " .
       "src='../../forms/LBF/new.php?formname=$formdir&id=$formid&visitid=$visitid&from_issue_form=1'" .
       ">Oops</iframe>\n";
     $tabcontents .= "</div>\n";

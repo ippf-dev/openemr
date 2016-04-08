@@ -592,7 +592,8 @@ function warehouse_changed(sel) {
 </script>
 </head>
 
-<body <?php echo $top_bg_line; ?> topmargin="0" rightmargin="0" leftmargin="2" bottommargin="0" marginwidth="2" marginheight="0">
+<body <?php echo $top_bg_line; if ($from_issue_form) echo " style='background-color: #ffffff'"; ?>
+ topmargin="0" rightmargin="0" leftmargin="2" bottommargin="0" marginwidth="2" marginheight="0">
 <form method="post" action="<?php echo $rootdir ?>/forms/LBF/new.php?formname=<?php echo attr($formname) ?>&id=<?php echo attr($formid) ?>"
  onsubmit="return validate(this)">
 
