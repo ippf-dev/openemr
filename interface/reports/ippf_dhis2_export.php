@@ -21,6 +21,30 @@ if (!acl_check('admin', 'super')) die("Not authorized!");
 
 $alertmsg = '';
 
+// Arrays to save code descriptions and facility names.
+$arr_code_desc = array();
+$arr_org_unit  = array();
+
+// Save array item for a code description.
+function noteCodeDescription($codetype, $code, $key) {
+  global $code_types, $arr_code_desc;
+  if (isset($arr_code_desc[$key])) return;
+  $row = sqlQuery("SELECT code_text FROM codes WHERE " .
+    "code_type = ? AND code = ? " .
+    "ORDER BY active DESC, id LIMIT 1",
+    array($code_types[$codetype]['id'], $code));
+  if (isset($row['code_text'])) {
+    $arr_code_desc[$key] = $row['code_text'];
+  }
+}
+
+// Save array item for an org unit name.
+function noteOrgUnitName($key, $name) {
+  global $arr_org_unit;
+  if (isset($arr_org_unit[$key])) return;
+  $arr_org_unit[$key] = $name;
+}
+
 function recordStats($dataelement, $period, $orgunit, $categoryoptioncombo, $attributeoptioncombo, $quantity=1) {
   global $outarr;
   $key = "$period|$orgunit|$dataelement|$categoryoptioncombo|$attributeoptioncombo";
@@ -129,6 +153,8 @@ function getDataElement($prefix, $code, $country) {
       $de .= 'G';
     }
   }
+  // Save code description for final reporting.
+  noteCodeDescription('IPPF2', $code, $de);
   return $de;
 }
 
@@ -164,7 +190,7 @@ if (!empty($_POST['form_submit'])) {
 
   // This selects all encounters in the date range and (optionally) with the selected facilities.
   $query = "SELECT " .
-    "fe.pid, fe.encounter, fe.date, f.domain_identifier, f.country_code, " .
+    "fe.pid, fe.encounter, fe.date, f.domain_identifier, f.country_code, f.name, " .
     "p.regdate, p.date AS last_update, p.DOB, p.sex " .
     "FROM form_encounter AS fe " .
     "JOIN facility AS f ON f.id = fe.facility_id AND f.domain_identifier != '' ";
@@ -197,7 +223,8 @@ if (!empty($_POST['form_submit'])) {
     // Category Option Combo and Period.
     $coc = getCatCombo($sex, $row['DOB'], $encounter_date);
     $period = getPeriod($encounter_date);
-
+    // Record org unit name for reporting.
+    noteOrgUnitName($row['domain_identifier'], $row['name']);
     if ($row_pid != $last_pid) {
       // Get New Acceptor date, method and encounter ID for this client.
       $nainfo = getNewAcceptorInfo($row_pid);
@@ -279,6 +306,8 @@ if (!empty($_POST['form_submit'])) {
           if ('????' == $code) $delt = 'IT602'; else // EC (combined pills - Yuzpe)
           if ('????' == $code) $delt = 'IT603';      // EC (10 year IUD)
           if ($delt) {
+            // Save code description for final reporting.
+            noteCodeDescription('IPPFCM', $code, $delt);
             recordStats(
               $delt,
               $period,
@@ -296,7 +325,7 @@ if (!empty($_POST['form_submit'])) {
   }
 
   // Now do all outbound external referrals in the date range.
-  $query = "SELECT f.pid, " .
+  $query = "SELECT f.pid, fe.facility_id, " .
     "d1.field_value AS refer_date, " .
     "d2.field_value AS refer_related_code, " .
     "p.regdate, p.date AS last_update, p.DOB, p.sex, p.home_facility " .
@@ -318,7 +347,7 @@ if (!empty($_POST['form_submit'])) {
     $row_pid = $trow['pid'];
     $row_date = $trow['refer_date'];
     if (empty($trow['facility_id'])) $trow['facility_id'] = $trow['home_facility'];
-    $erow = sqlQuery("SELECT f.id, f.domain_identifier, f.country_code, f.pos_code " .
+    $erow = sqlQuery("SELECT f.id, f.domain_identifier, f.country_code, f.pos_code, f.name " .
       "FROM facility AS f WHERE f.id = ?",
       array($trow['facility_id']));
 
@@ -329,6 +358,9 @@ if (!empty($_POST['form_submit'])) {
     if ($domain_identifier === '') continue;
     if (!empty($form_facids) && !in_array($erow['id'], $form_facids)) continue;
     if ($form_channel && $form_channel != $channel) continue;
+
+    // Record org unit name for reporting.
+    noteOrgUnitName($domain_identifier, $erow['name']);
 
     if ($row_pid != $last_pid) {
       $sex = strtoupper(substr($trow['sex'], 0, 1)); // F or M
@@ -369,13 +401,27 @@ if (!empty($_POST['form_submit'])) {
 
   // Generate the output text.
   ksort($outarr);
-  $out = '';
+  $out =  '"dataelement",'          .
+          '"period",'               .
+          '"orgunit",'              .
+          '"categoryoptioncombo",'  .
+          '"attributeoptioncombo",' .
+          '"value",'                .
+          '"storedby",'             .
+          '"lastupdated",'          .
+          '"comment",'              .
+          '"followup",'             .
+          '"code description",'     .
+          '"org unit name"'         . "\n";
   foreach ($outarr as $key => $value) {
     list($period, $orgunit, $dataelement, $categoryoptioncombo, $attributeoptioncombo) =
       explode('|', $key);
     $out .= "$dataelement,$period,$orgunit,$categoryoptioncombo," .
       "$attributeoptioncombo,$value," . $_SESSION['authUser'] . "," .
-      date('Y-m-d') . ",,FALSE\n";
+      date('Y-m-d') . ",,FALSE" .
+      ',"' . addslashes($arr_code_desc[$dataelement]) . '"' .
+      ',"' . addslashes($arr_org_unit[$orgunit]) . '"' .
+      "\n";
   }
 
   // This is the "filename" for the Content-Disposition header.

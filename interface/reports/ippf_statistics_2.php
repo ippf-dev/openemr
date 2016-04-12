@@ -875,7 +875,14 @@ function get_adjustment_type($patient_id, $encounter_id, $code_type, $code) {
 // This is called for each IPPF2 service code that is selected.
 //
 function process_ippf_code($row, $code, $quantity=1) {
-  global $form_by, $form_content, $contra_group_name, $arr_ippf2_cats;
+  global $form_by, $form_content, $contra_group_name, $arr_ippf2_cats, $form_svccat;
+
+  if (!empty($form_svccat) && $report_type != 'm') {
+    // For IPPF/GCAC Stats, service category should match the IPPF2 code's beginning.
+    if (strpos($code, "$form_svccat") !== 0) {
+      return;
+    }
+  }
 
   $key = 'Unspecified';
 
@@ -2119,7 +2126,7 @@ if ($_POST['form_submit']) {
         "WHERE fe.date >= '$from_date 00:00:00' AND " .
         "fe.date <= '$to_date 23:59:59' ";
 
-      if (!empty($form_svccat)) {
+      if (!empty($form_svccat) && $report_type == 'm') {
         $query .= "AND lo.option_id IS NOT NULL AND lo.option_id = '" . add_escape_custom($form_svccat) . "' ";
       }
 
