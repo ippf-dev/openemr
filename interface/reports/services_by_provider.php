@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -321,8 +321,8 @@ else {
  .delink { color:#0000cc; font-family:sans-serif; font-size:10pt; font-weight:normal; cursor:pointer }
 </style>
 
-<script type="text/javascript" src="../../library/topdialog.js"></script>
-<script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
 <script language="JavaScript">
 
 <?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
@@ -349,12 +349,24 @@ function set_related(codetype, code, selector, codedesc) {
   s = '';
  }
  f.form_related_code.value = s;
- f.form_related_code.title = t;
+ // f.form_related_code.title = t; // this is flawed, php code does not set it
 }
 
 // This invokes the find-code popup.
 function sel_related() {
- dlgopen('../patient_file/encounter/find_code_popup.php', '_blank', 500, 400);
+ dlgopen('../patient_file/encounter/find_code_dynamic.php', '_blank', 900, 600);
+}
+
+// This is for callback by the find-code popup.
+// Returns the array of currently selected codes with each element in codetype:code format.
+function get_related() {
+ return document.forms[0].form_related_code.value.split(';');
+}
+
+// This is for callback by the find-code popup.
+// Deletes the specified codetype:code from the currently selected list.
+function del_related(s) {
+ my_del_related(s, document.forms[0].form_related_code, false);
 }
 
 </script>
@@ -424,7 +436,7 @@ echo "   </select>\n";
    <?php echo xl('Service Filter'); ?>:
    <input type='text' size='30' name='form_related_code'
     value='<?php echo $form_related_code ?>' onclick="sel_related()"
-    title='<?php xl('Click to select a code for filtering','e'); ?>' readonly />
+    title='<?php echo xla('Click to select a code for filtering'); ?>' readonly />
   </td>
  </tr>
  <tr>

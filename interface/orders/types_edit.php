@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2012 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -80,8 +80,8 @@ td { font-size:10pt; }
 
 </style>
 
-<script type="text/javascript" src="../../library/topdialog.js"></script>
-<script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
 <script type="text/javascript" src="../../library/js/jquery-1.2.2.min.js"></script>
 
 <script language="JavaScript">
@@ -105,11 +105,23 @@ function set_related(codetype, code, selector, codedesc) {
  f[rcvarname].value = s;
 }
 
+// This is for callback by the find-code popup.
+// Returns the array of currently selected codes with each element in codetype:code format.
+function get_related() {
+ return document.forms[0][rcvarname].value.split(';');
+}
+
+// This is for callback by the find-code popup.
+// Deletes the specified codetype:code from the currently selected list.
+function del_related(s) {
+ my_del_related(s, document.forms[0][rcvarname], false);
+}
+
 // This invokes the find-code popup.
 function sel_related(varname) {
  if (typeof varname == 'undefined') varname = 'form_related_code';
  rcvarname = varname;
- dlgopen('../patient_file/encounter/find_code_popup.php', '_blank', 500, 400);
+ dlgopen('../patient_file/encounter/find_code_dynamic.php', '_blank', 900, 600);
 }
 
 // Show or hide sections depending on procedure type.

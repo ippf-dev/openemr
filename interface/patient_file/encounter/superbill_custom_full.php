@@ -223,8 +223,8 @@ if ($fend > $count) $fend = $count;
 <head>
 <?php html_header_show(); ?>
 <link rel="stylesheet" href="<?php echo attr($css_header);?>" type="text/css">
-<script type="text/javascript" src="../../../library/dialog.js"></script>
-<script type="text/javascript" src="../../../library/textformat.js"></script>
+<script type="text/javascript" src="../../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../../library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script language="JavaScript">
 
@@ -249,6 +249,19 @@ function set_related(codetype, code, selector, codedesc) {
  return '';
 }
 
+// This is for callback by the find-code popup.
+// Returns the array of currently selected codes with each element in codetype:code format.
+function get_related() {
+ return document.forms[0].related_code.value.split(';');
+}
+
+// This is for callback by the find-code popup.
+// Deletes the specified codetype:code from the currently selected list.
+function del_related(s) {
+ my_del_related(s, document.forms[0].related_code, false);
+ my_del_related(s, document.forms[0].related_desc, false);
+}
+
 // This invokes the find-code popup.
 function sel_related() {
  var f = document.forms[0];
@@ -269,7 +282,7 @@ foreach ($code_types as $key => $value) {
   alert('<?php echo addslashes( xl('This code type does not accept relations.') ); ?>');
   return;
  }
- dlgopen('find_code_popup.php', '_blank', 500, 400);
+ dlgopen('find_code_dynamic.php', '_blank', 900, 600);
 }
 
 // Some validation for saving a new code entry.

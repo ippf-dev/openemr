@@ -165,9 +165,9 @@ $res = sqlStatement($query);
 }
 </style>
 
-<script type="text/javascript" src="../../library/textformat.js"></script>
-<script type="text/javascript" src="../../library/topdialog.js"></script>
-<script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
@@ -206,7 +206,7 @@ $res = sqlStatement($query);
    s = '';
   }
   f.form_related_code.value = s;
-  f.form_related_code.title = t;
+  // f.form_related_code.title = t; // this is flawed, php code does not set it
  }
 
  // This is for callback by the find-code popup.
@@ -220,23 +220,7 @@ $res = sqlStatement($query);
  // This is for callback by the find-code popup.
  // Deletes the specified codetype:code from the currently selected list.
  function del_related(s) {
-  var f = document.forms[0];
-  var e = f.form_related_code;
-  if (!s) {
-   e.value = '';
-   e.title = '';
-   return;
-  }
-  // Convert the codes and their descriptions to arrays for easy manipulation.
-  var acodes  = e.value.split(';');
-  var atitles = e.title.split(';');
-  var i = acodes.indexOf(s);
-  if (i < 0) return; // not found, should not happen
-  // Delete the indicated code and description and convert back to strings.
-  acodes.splice(i, 1);
-  atitles.splice(i, 1);
-  e.value = acodes.join(';');
-  e.title = atitles.join(';');
+  my_del_related(s, document.forms[0].form_related_code, false);
  }
 
  // This invokes the find-code popup.
@@ -321,7 +305,7 @@ $res = sqlStatement($query);
    <?php xl('Service Filter','e'); ?>
    <input type='text' size='30' name='form_related_code'
     value='<?php echo $form_related_code ?>' onclick="sel_related()"
-    title='<?php xl('Click to select a code for filtering','e'); ?>' readonly />
+    title='<?php echo xla('Click to select a code for filtering'); ?>' readonly />
 
    <input type='checkbox' name='form_new_patients' title='First-time visits only'<?php  if ($form_new_patients) echo ' checked'; ?>>
    <?php  xl('New','e'); ?>
@@ -539,5 +523,5 @@ if ($res) {
 <script type="text/javascript">
     var export_label="<?php echo xlt("Export to CSV"); ?>";
 </script>
-<script type="text/javascript" src="csvExport/encounter_report_export.js"></script>
+<script type="text/javascript" src="csvExport/encounter_report_export.js?v=<?php echo $v_js_includes; ?>"></script>
 </html>

@@ -283,10 +283,10 @@ ul.tabNav li.current a { background:#ffffff; }
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/dynarch_calendar.js"></script>
 <?php require_once($GLOBALS['srcdir'].'/dynarch_calendar_en.inc.php'); ?>
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/dynarch_calendar_setup.js"></script>
-<script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/textformat.js"></script>
-<script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/dialog.js"></script>
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/js/jquery-1.9.1.min.js"></script>
-<script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/js/common.js"></script>
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/js/common.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script language="JavaScript">
 
@@ -433,24 +433,28 @@ function set_related(codetype, code, selector, codedesc) {
   s = '';
  }
  f.form_diagnosis.value = s;
- if(title == '') f.form_title.value = codedesc;
+ if (title == '') f.form_title.value = codedesc;
+}
+
+// This is for callback by the find-code popup.
+// Returns the array of currently selected codes with each element in codetype:code format.
+function get_related() {
+ return document.forms[0].form_diagnosis.value.split(';');
+}
+
+// This is for callback by the find-code popup.
+// Deletes the specified codetype:code from the currently selected list.
+function del_related(s) {
+ my_del_related(s, document.forms[0].form_diagnosis, false);
 }
 
 // This invokes the find-code popup.
 function sel_diagnosis() {
-  <?php
-  if($irow['type'] == 'medical_problem')
-  {
-  ?>
- dlgopen('../encounter/find_code_popup.php?codetype=<?php echo attr(collect_codetypes("medical_problem","csv")) ?>', '_blank', 500, 400);
-  <?php
-  }
-  else{
-  ?>
-  dlgopen('../encounter/find_code_popup.php?codetype=<?php echo attr(collect_codetypes("diagnosis","csv")) ?>', '_blank', 500, 400);
-  <?php
-  }
-  ?>
+  <?php if($irow['type'] == 'medical_problem') { ?>
+  dlgopen('../encounter/find_code_dynamic.php?codetype=<?php echo attr(collect_codetypes("medical_problem","csv")) ?>', '_blank', 900, 600);
+  <?php } else { ?>
+  dlgopen('../encounter/find_code_dynamic.php?codetype=<?php echo attr(collect_codetypes("diagnosis","csv")) ?>', '_blank', 900, 600);
+  <?php } ?>
 }
 
 // Check for errors when the form is submitted.

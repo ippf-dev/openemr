@@ -175,9 +175,8 @@ if (!$administered_by && !$administered_by_id) {
 
 <!-- supporting javascript code -->
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/jquery.js"></script>
-<script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/textformat.js"></script>
-<script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/dialog.js"></script>
-
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <!-- page styles -->
 <link rel="stylesheet" href="<?php echo $css_header;?>" type="text/css">
@@ -573,25 +572,38 @@ var ErrorImm = function(imm) {
 function set_related(codetype, code, selector, codedesc) {
 	var f = document.forms[0][current_sel_name];
 	var s = f.value;
-	
 	if (code) {
 		s = code;
 	}
 	else {
 		s = '';
 	}
-	
-	f.value = s;
+  f.value = s;
 	$("#cvx_description").text( codedesc );
 	$("#form_immunization_id").attr( "value", "" );
 	$("#form_immunization_id").change();
 }
 
+// This is for callback by the find-code popup.
+// Returns the array of currently selected codes with each element in codetype:code format.
+function get_related() {
+  return new Array();
+}
+
+// This is for callback by the find-code popup.
+// Deletes the specified codetype:code from the currently selected list.
+function del_related(s) {
+  var e = document.forms[0][current_sel_name];
+  e.value = '';
+  $("#cvx_description").text('');
+  $("#form_immunization_id").attr("value", "");
+  $("#form_immunization_id").change();
+}
 
 // This invokes the find-code popup.
 function sel_cvxcode(e) {
  current_sel_name = e.name;
- dlgopen('../encounter/find_code_popup.php?codetype=CVX', '_blank', 500, 400);
+ dlgopen('../encounter/find_code_dynamic.php?codetype=CVX', '_blank', 900, 600);
 }
 
 // This ensures the cvx centric entry is filled.

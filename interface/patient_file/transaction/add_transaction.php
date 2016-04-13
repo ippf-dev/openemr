@@ -21,7 +21,7 @@ require_once("$srcdir/options.inc.php");
 require_once("$srcdir/amc.php");
 
 // This can come from the URL if it's an Add.
-$title   = empty($_REQUEST['title']) ? 'LBTref' : $_REQUEST['title'];
+$title   = empty($_REQUEST['title']) ? 'LBTptreq' : $_REQUEST['title'];
 $form_id = $title;
 
 // Plugin support.
