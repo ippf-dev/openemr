@@ -981,10 +981,17 @@ function generate_form_field($frow, $currvalue) {
       " onmousemove='lbfCanvasMousemove(event, this)'" .
       ">" . xlt('Browser does not support this data type.') . "</canvas>";
     // Hidden form field exists to send updated data to the server at submit time.
-    echo "<input type='hidden'" .
-      " name='form_$field_id_esc'" .
-      " value='" . attr($currvalue) . "' />";
+    echo "<input type='hidden' name='form_$field_id_esc' value='' />";
     // Hidden image exists to support JavaScript that copies it to the canvas.
+    if (empty($currvalue)) {
+      if (preg_match('/\\bimage=([a-zA-Z0-9._-]*)/', $frow['description'], $matches)) {
+        // If defined this is the filename of the default starting image.
+        $currvalue = $GLOBALS['web_root'] . '/sites/' . $_SESSION['site_id'] . '/images/' . $matches[1];
+      }
+      else {
+        $currvalue = 'blank'; // special value meaning there is no image.
+      }
+    }
     echo "<img src='" . attr($currvalue) . "' id='form_{$field_id_esc}_img' style='display:none'>";
     // $date_init is a misnomer but it's the place for browser-side setup logic.
     // lbfCanvasSetup() to be defined in options.js.php.

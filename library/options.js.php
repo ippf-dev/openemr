@@ -134,12 +134,10 @@ var lbfCanvasDragging = false;
 
 // Initialize the canvas image data.
 function lbfCanvasSetup(canid) {
- var infld = document.forms[0][canid];
- if (infld.value) {
-  var canvas = document.getElementById(canid);
-  var image = document.getElementById(canid + '_img');
-  canvas.getContext('2d').drawImage(image, 0, 0);
- }
+ var canvas = document.getElementById(canid);
+ var image = document.getElementById(canid + '_img');
+ // We use src='blank' to mean no image is present.
+ if (image.src.substr(-5) != 'blank') canvas.getContext('2d').drawImage(image, 0, 0);
 }
 
 // Handle the mouse down event on the canvas.
