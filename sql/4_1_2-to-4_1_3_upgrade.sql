@@ -529,3 +529,7 @@ DELETE FROM list_options WHERE list_id = 'transactions' AND option_id = 'LBTref'
 #IfMissingColumn forms issue_id
 ALTER TABLE `forms` ADD COLUMN `issue_id` bigint(20) NOT NULL default 0 COMMENT 'references lists.id to identify a case';
 #EndIf
+
+#IfMissingColumn forms provider_id
+ALTER TABLE `forms` ADD COLUMN `provider_id` bigint(20) NOT NULL default 0 COMMENT 'references users.id to identify a provider';
+#EndIf

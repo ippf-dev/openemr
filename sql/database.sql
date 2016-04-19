@@ -1547,6 +1547,7 @@ CREATE TABLE `forms` (
   `deleted` tinyint(4) DEFAULT '0' NOT NULL COMMENT 'flag indicates form has been deleted',
   `formdir` longtext,
   `issue_id` bigint(20) NOT NULL default 0 COMMENT 'references lists.id to identify a case',
+  `provider_id` bigint(20) NOT NULL default 0 COMMENT 'references users.id to identify a provider',
   PRIMARY KEY  (`id`),
   KEY `pid_encounter` (`pid`, `encounter`),
   KEY `form_id` (`form_id`)

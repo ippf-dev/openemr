@@ -40,7 +40,7 @@ class FeeSheetHtml extends FeeSheet {
   // field, so that we can define providers (for billing purposes)
   // who do not appear in the calendar.
   //
-  public function genProviderOptionList($toptext, $default=0) {
+  public static function genProviderOptionList($toptext, $default=0) {
     $s = '';
     // Get user's default facility, or 0 if none.
     $drow = sqlQuery("SELECT facility_id FROM users where username = '" . $_SESSION['authUser'] . "'");
@@ -76,11 +76,11 @@ class FeeSheetHtml extends FeeSheet {
 
   // Does the above but including <select> ... </select>.
   //
-  public function genProviderSelect($tagname, $toptext, $default=0, $disabled=false) {
+  public static function genProviderSelect($tagname, $toptext, $default=0, $disabled=false) {
     $s = "   <select name='" . attr($tagname) . "'";
     if ($disabled) $s .= " disabled";
     $s .= ">";
-    $s .= $this->genProviderOptionList($toptext, $default);
+    $s .= self::genProviderOptionList($toptext, $default);
     $s .= "</select>\n";
     return $s;
   }

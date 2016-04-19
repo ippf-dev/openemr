@@ -32,6 +32,7 @@ require_once("$srcdir/patient.inc");
 require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/formatting.inc.php");
 require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
+require_once("$srcdir/FeeSheetHtml.class.php");
 
 $CPR = 4; // cells per row
 
@@ -125,7 +126,6 @@ if (preg_match('/\\bissue=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
 }
 
 if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION) || isset($LBF_DIAGS_SECTION)) {
-  require_once("$srcdir/FeeSheetHtml.class.php");
   $fs = new FeeSheetHtml($pid, $visitid);
 }
 
@@ -148,11 +148,18 @@ if (!empty($_POST['bn_save']) || !empty($_POST['bn_save_print'])) {
     addForm($visitid, $formtitle, $newid, $formname, $pid, $userauthorized);
   }
 
+  $my_form_id = $formid ? $formid : $newid;
+
   // If there is an issue ID, update it in the forms table entry.
   if (isset($_POST['form_issue_id'])) {
-    $my_form_id = $formid ? $formid : $newid;
     sqlStatement("UPDATE forms SET issue_id = ? WHERE formdir = ? AND form_id = ? AND deleted = 0",
       array($_POST['form_issue_id'], $formname, $my_form_id));
+  }
+
+  // If there is a provider ID, update it in the forms table entry.
+  if (isset($_POST['form_provider_id'])) {
+    sqlStatement("UPDATE forms SET provider_id = ? WHERE formdir = ? AND form_id = ? AND deleted = 0",
+      array($_POST['form_provider_id'], $formname, $my_form_id));
   }
 
   $sets = "";
@@ -599,17 +606,59 @@ function warehouse_changed(sel) {
 
 <?php
   if (!$from_trend_form) {
+    echo "<table cellpadding='0' cellspacing='0' width='100%'>\n";
+
+    echo " <td class='title' style='padding-top:8px;padding-bottom:8px;text-align:left'>\n";
     $enrow = sqlQuery("SELECT p.fname, p.mname, p.lname, fe.date FROM " .
       "form_encounter AS fe, forms AS f, patient_data AS p WHERE " .
       "p.pid = ? AND f.pid = ? AND f.encounter = ? AND " .
       "f.formdir = 'newpatient' AND f.deleted = 0 AND " .
       "fe.id = f.form_id LIMIT 1", array($pid, $pid, $visitid));
-    echo "<p class='title' style='margin-top:8px;margin-bottom:8px;text-align:center'>\n";
+    // echo "<p class='title' style='margin-top:8px;margin-bottom:8px;text-align:center'>\n";
     echo text($formtitle) . " " . xlt('for') . ' ';
     echo text($enrow['fname']) . ' ' . text($enrow['mname']) . ' ' . text($enrow['lname']);
     echo ' ' . xlt('on') . ' ' . text(oeFormatShortDate(substr($enrow['date'], 0, 10)));
-    echo "</p>\n";
-  }
+    // echo "</p>\n";
+    echo " </td>\n";
+
+    echo " <td class='title' style='padding-top:8px;padding-bottom:8px;text-align:right'>\n";
+
+    $firow = sqlQuery("SELECT issue_id, provider_id FROM forms WHERE " .
+      "formdir = ? AND form_id = ? AND deleted = 0",
+      array($formname, $formid));
+    $form_issue_id = empty($firow['issue_id']) ? 0 : intval($firow['issue_id']);
+    $form_provider_id = empty($firow['provider_id']) ? 0 : intval($firow['provider_id']);
+
+    // Provider selector.
+    // TBD: Refactor this function out of the FeeSheetHTML class as that is not the best place for it.
+    echo xlt('Provider') . ": ";
+    echo FeeSheetHtml::genProviderSelect('form_provider_id', '-- ' . xl("Please Select") . ' --', $form_provider_id);
+
+    // If appropriate build a drop-down selector of issues of this type for this patient.
+    // We skip this if in an issue form tab because removing and adding visit form tabs is
+    // beyond the current scope of that code.
+    if (!empty($LBF_ISSUE_TYPE) && !$from_issue_form) {
+      echo "&nbsp;&nbsp;";
+      // echo "\n<!-- formname = '$formname' formid = '$formid' -->\n"; // debugging
+      $query = "SELECT id, title, date, begdate FROM lists WHERE pid = ? AND type = ? " .
+        "ORDER BY COALESCE(begdate, date) DESC, id DESC";
+      $ires = sqlStatement($query, array($pid, $LBF_ISSUE_TYPE));
+      echo "<select name='form_issue_id'>\n";
+      echo " <option value='0'>-- " . xlt('Select Case') . " --</option>\n";
+      while ($irow = sqlFetchArray($ires)) {
+        $issueid = $irow['id'];
+        $issuedate = oeFormatShortDate(empty($irow['begdate']) ? $irow['date'] : $irow['begdate']);
+        echo " <option value='$issueid'";
+        if ($issueid == $form_issue_id) echo " selected";
+        echo ">$issuedate " . text($irow['title']) . "</option>\n";
+      }
+      echo "</select>\n";
+      echo "&nbsp;&nbsp;";
+    }
+    echo " </td>\n";
+
+    echo "</table>\n";
+  } // end not from trend form
 ?>
 
 <!-- This is where a chart might display. -->
@@ -1205,29 +1254,6 @@ function warehouse_changed(sel) {
   if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION)) {
     echo xlt('Price Level') . ": ";
     echo $fs->generatePriceLevelSelector('form_fs_pricelevel');
-    echo "&nbsp;&nbsp;";
-  }
-  // If appropriate build a drop-down selector of issues of this type for this patient.
-  // We skip this if in an issue form tab because removing and adding visit form tabs is
-  // beyond the current scope of that code.
-  if (!empty($LBF_ISSUE_TYPE) && !$from_issue_form) {
-    // echo "\n<!-- formname = '$formname' formid = '$formid' -->\n"; // debugging
-    $firow = sqlQuery("SELECT issue_id FROM forms WHERE formdir = ? AND form_id = ? AND deleted = 0",
-      array($formname, $formid));
-    $form_issue_id = empty($firow['issue_id']) ? 0 : intval($firow['issue_id']);
-    $query = "SELECT id, title, date, begdate FROM lists WHERE pid = ? AND type = ? " .
-      "ORDER BY COALESCE(begdate, date) DESC, id DESC";
-    $ires = sqlStatement($query, array($pid, $LBF_ISSUE_TYPE));
-    echo "<select name='form_issue_id'>\n";
-    echo " <option value='0'>-- " . xlt('Select Case') . " --</option>\n";
-    while ($irow = sqlFetchArray($ires)) {
-      $issueid = $irow['id'];
-      $issuedate = oeFormatShortDate(empty($irow['begdate']) ? $irow['date'] : $irow['begdate']);
-      echo " <option value='$issueid'";
-      if ($issueid == $form_issue_id) echo " selected";
-      echo ">$issuedate " . text($irow['title']) . "</option>\n";
-    }
-    echo "</select>\n";
     echo "&nbsp;&nbsp;";
   }
 ?>
