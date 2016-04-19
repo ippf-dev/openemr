@@ -1297,7 +1297,12 @@ var skipArray = [
 <?php echo $condition_str; ?>
 ];
 
+$(window).load(function() {
+ // Unlike with $(document).ready(), this stuff is done after any images are loaded.
+ // That's important because we might have code here that loads a canvas from an image.
 <?php echo $date_init; ?>
+});
+
 <?php
 if (function_exists($formname . '_javascript_onload')) {
   call_user_func($formname . '_javascript_onload');
