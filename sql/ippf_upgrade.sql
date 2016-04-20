@@ -188,7 +188,8 @@ INSERT INTO layout_options (form_id, field_id, group_name, title, seq, data_type
 INSERT INTO layout_options (form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length, list_id, titlecols, datacols, default_value, edit_options, description) VALUES ('REF','reply_rx_refer'    ,'2Counter-Referral','Prescriptions/Referrals',50, 3,1,30,  3,''         ,1,1,'' ,'' ,'Prescriptions and/or referrals by specialist');
 #EndIf
 
-#IfRow2D list_options list_id transactions option_id LBTref
+## The above is irrelevant if referrals were already converted to LBTref or (later) to LBFref.
+#IfTable lbt_data
 DELETE FROM layout_options WHERE form_id = 'REF';
 #EndIf
 
