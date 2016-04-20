@@ -83,6 +83,7 @@ $form_show     = $_POST['form_show'];     // this is an array
 $form_fac_arr  = is_array($_POST['form_facility']) ? $_POST['form_facility'] : array();
 $form_adjreason = isset($_POST['form_adjreason']) ? $_POST['form_adjreason'] : '';
 $form_svccat   = isset($_POST['form_svccat']) ? $_POST['form_svccat'] : '';
+$form_related_code = isset($_POST['form_related_code']) ? $_POST['form_related_code'] : '';
 $form_sexes    = isset($_POST['form_sexes']) ? $_POST['form_sexes'] : '4';
 $form_content  = isset($_POST['form_content']) ? $_POST['form_content'] : '1';
 $form_sortby   = isset($_POST['form_sortby']) ? $_POST['form_sortby'] : '1';
@@ -875,12 +876,28 @@ function get_adjustment_type($patient_id, $encounter_id, $code_type, $code) {
 // This is called for each IPPF2 service code that is selected.
 //
 function process_ippf_code($row, $code, $quantity=1) {
-  global $form_by, $form_content, $contra_group_name, $arr_ippf2_cats, $form_svccat;
+  global $form_by, $form_content, $contra_group_name, $arr_ippf2_cats, $form_svccat, $form_related_code;
 
-  if (!empty($form_svccat) && $report_type != 'm') {
-    // For IPPF/GCAC Stats, service category should match the IPPF2 code's beginning.
-    if (strpos($code, "$form_svccat") !== 0) {
-      return;
+  // We did not do any IPPF2 code filtering in SQL, so do it here.
+  if ($report_type != 'm') {
+    // If one or more service codes were specified.
+    if ($form_related_code) {
+      $match = false;
+      $arel = explode(';', $form_related_code);
+      foreach ($arel as $tmp) {
+        list($reltype, $relcode) = explode(':', $tmp);
+        if (empty($relcode) || empty($reltype)) continue;
+        if ($reltype == 'IPPF2' && $relcode == $code) $match = true;
+      }
+      if (!$match) return;
+    }
+    // It is not valid to specify a service category in addition to service codes, but if you
+    // do the service codes will take precedence.  Thus the "else" here.
+    else if (!empty($form_svccat)) {
+      // For IPPF/GCAC Stats, service category should match the IPPF2 code's beginning.
+      if (strpos($code, "$form_svccat") !== 0) {
+        return;
+      }
     }
   }
 
@@ -1478,12 +1495,52 @@ while ($lrow = sqlFetchArray($lres)) {
  .dehead    { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:bold }
  .detail    { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:normal }
 </style>
-<script type="text/javascript" src="../../library/textformat.js"></script>
+<script type="text/javascript" src="../../library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
 <script language="JavaScript">
+
+<?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
+
  var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
+
+// This is for callback by the find-code popup.
+// Appends to or erases the current list of related codes.
+function set_related(codetype, code, selector, codedesc) {
+ var f = document.forms[0];
+ var s = f.form_related_code.value;
+ if (code) {
+  if (s.length > 0) {
+   s += ';';
+  }
+  s += codetype + ':' + code;
+ } else {
+  s = '';
+ }
+ f.form_related_code.value = s;
+}
+
+// This invokes the find-code popup.
+function sel_related() {
+ dlgopen('../patient_file/encounter/find_code_dynamic.php?codetype=<?php
+  echo $report_type == 'm' ? 'MA' : 'IPPF2'; ?>', '_blank', 900, 600);
+}
+
+// This is for callback by the find-code popup.
+// Returns the array of currently selected codes with each element in codetype:code format.
+function get_related() {
+ return document.forms[0].form_related_code.value.split(';');
+}
+
+// This is for callback by the find-code popup.
+// Deletes the specified codetype:code from the currently selected list.
+function del_related(s) {
+ my_del_related(s, document.forms[0].form_related_code, false);
+}
+
 </script>
 </head>
 
@@ -1595,6 +1652,19 @@ while ($lrow = sqlFetchArray($lres)) {
     echo "</select>\n";
   }
 ?>
+     </td>
+    </tr>
+<?php } ?>
+
+<?php if ($report_type == 'm' || $report_type == 'i') { ?>
+    <tr>
+     <td valign='top' class='detail' nowrap>
+      <?php echo xlt('Services'); ?>:
+     </td>
+     <td valign='top' class='detail'>
+      <input type='text' size='30' name='form_related_code'
+       value='<?php echo $form_related_code ?>' onclick="sel_related()"
+       title='<?php echo xla('Click to select a code for filtering'); ?>' readonly />
      </td>
     </tr>
 <?php } ?>
@@ -2126,8 +2196,24 @@ if ($_POST['form_submit']) {
         "WHERE fe.date >= '$from_date 00:00:00' AND " .
         "fe.date <= '$to_date 23:59:59' ";
 
-      if (!empty($form_svccat) && $report_type == 'm') {
-        $query .= "AND lo.option_id IS NOT NULL AND lo.option_id = '" . add_escape_custom($form_svccat) . "' ";
+      if ($report_type == 'm') {
+        // If one or more service codes were specified.
+        if ($form_related_code) {
+          $qsvc = "";
+          $arel = explode(';', $form_related_code);
+          foreach ($arel as $tmp) {
+            list($reltype, $relcode) = explode(':', $tmp);
+            if (empty($relcode) || empty($reltype)) continue;
+            if ($qsvc) $qsvc .= " OR ";
+            $qsvc .= "( b.code_type = '$reltype' AND b.code = '$relcode' )";
+          }
+          if ($qsvc) $query .= "AND ( $qsvc )";
+        }
+        // It is not valid to specify a service category in addition to service codes, but if you
+        // do the service codes will take precedence.  Thus the "else" here.
+        else if (!empty($form_svccat)) {
+          $query .= "AND lo.option_id IS NOT NULL AND lo.option_id = '" . add_escape_custom($form_svccat) . "' ";
+        }
       }
 
       if (!empty($form_fac_arr)) {
@@ -2506,12 +2592,12 @@ if ($_POST['form_submit']) {
     //
     if ($form_output != 3 && !in_array($form_content, array(2, 4, 7))) {
 
-      if ($report_type !== 'i') {
+      // if ($report_type !== 'i') {
         // If there is a non-empty $last_group, generate a subtotals line.
         if ($last_group_count > 0) {
           writeSubtotals($last_group, $asubtotals, $form_by);
         }
-      }
+      // }
 
       if ($last_group !== '' && !$form_clinics) {
         // Add some space before the totals line.
