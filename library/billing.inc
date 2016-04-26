@@ -309,15 +309,26 @@ function doVoid($patient_id, $encounter_id, $purge=false) {
   $date_original = '';
   $adjustments = 0;
   $payments = 0;
-  $row = sqlQuery("SELECT post_time, SUM(pay_amount) AS payments, " .
-    "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
-    "pid = '$patient_id' AND encounter = '$encounter_id' " .
-    "GROUP BY post_time ORDER BY post_time DESC LIMIT 1");
-  if (!empty($row['post_time'])) {
-    $date_original = $row['post_time'];
+
+  // Get last checkout timestamp.
+  $corow = sqlQuery("(SELECT bill_date FROM billing WHERE " .
+    "pid = ? AND encounter = ? AND activity = 1 AND bill_date IS NOT NULL) " .
+    "UNION " .
+    "(SELECT bill_date FROM drug_sales WHERE " .
+    "pid = ? AND encounter = ? AND bill_date IS NOT NULL) " .
+    "ORDER BY bill_date DESC LIMIT 1",
+    array($patient_id, $encounter_id, $patient_id, $encounter_id));
+  // Get its charges and adjustments.
+  if (!empty($corow['bill_date'])) {
+    $date_original = $corow['bill_date'];
+    $row = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
+      "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
+      "pid = ? AND encounter = ? AND post_time = ?",
+      array($patient_id, $encounter_id, $date_original));
     $adjustments = $row['adjustments'];
     $payments = $row['payments'];
   }
+
   // Get old invoice reference number.
   $encrow = sqlQuery("SELECT invoice_refno FROM form_encounter WHERE " .
     "pid = '$patient_id' AND encounter = '$encounter_id' LIMIT 1");
