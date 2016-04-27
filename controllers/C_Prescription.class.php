@@ -1073,7 +1073,6 @@ class C_Prescription extends Controller {
 			if(empty($cmd))
 			{
 				$err .= " Send fax not set in includes/config.php";
-				break;
 			}
 			else
 			{
@@ -1083,7 +1082,6 @@ class C_Prescription extends Controller {
 				if(empty($faxFile))
 				{
 					$err .= " _print_prescription returned empty file";
-					break;
 				}
         $fileName = $GLOBALS['OE_SITE_DIR'] . "/documents/" . $p->get_id() .
           $p->get_patient_id() . "_fax_.pdf";
@@ -1093,12 +1091,10 @@ class C_Prescription extends Controller {
 				if(!$handle)
 				{
 					$err .= " Failed to open file $fileName to write fax to";
-					break;
 				}
 				if(fwrite($handle, $faxFile) === false)
 				{
 					$err .= " Failed to write data to $fileName";
-					break;
 				}
 				fclose($handle);
 				$args = " -n -d $faxNum $fileName";
