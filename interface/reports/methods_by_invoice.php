@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2012-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2012-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -255,10 +255,20 @@ else {
 td.dehead { font-size:10pt; text-align:center; }
 td.detail { font-size:10pt; }
 td.delink { color:#0000cc; font-size:10pt; cursor:pointer }
+
+table.mymaintable, table.mymaintable td {
+ border: 1px solid #aaaaaa;
+ border-collapse: collapse;
+}
+table.mymaintable td {
+ padding: 1pt 4pt 1pt 4pt;
+}
 </style>
 
-<script type="text/javascript" src="../../library/topdialog.js"></script>
-<script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script language="JavaScript">
 
@@ -276,6 +286,10 @@ function dosort(orderby) {
 function doinvopen(ptid,encid) {
  dlgopen('../patient_file/pos_checkout.php?ptid=' + ptid + '&enc=' + encid, '_blank', 750, 550);
 }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
 
 </script>
 
@@ -505,8 +519,9 @@ if (isset($_POST['form_orderby'])) {
 
 </table>
 
-<table border='0' cellpadding='1' cellspacing='2' width='98%'>
+<table width='98%' id='mymaintable' class='mymaintable'>
 
+ <thead>
  <tr bgcolor="#dddddd" style="font-weight:bold">
   <td class="dehead">
    <?php xl('ID','e') ?>
@@ -554,6 +569,8 @@ foreach ($metharray as $key => $value) {
    <?php xl('User','e') ?>
   </td>
  </tr>
+ </thead>
+ <tbody>
 
 <?php
   } // end not export
@@ -827,6 +844,7 @@ foreach ($metharray as $key => $value) {
 if (!$_POST['form_csvexport']) {
 ?>
 
+ </tbody>
 </table>
 <input type="hidden" name="form_orderby" value="<?php echo $form_orderby ?>" />
 </form>

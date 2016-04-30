@@ -319,10 +319,21 @@ else {
  .dehead { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:bold }
  .detail { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:normal }
  .delink { color:#0000cc; font-family:sans-serif; font-size:10pt; font-weight:normal; cursor:pointer }
+
+table.mymaintable, table.mymaintable td {
+ border: 1px solid #aaaaaa;
+ border-collapse: collapse;
+}
+table.mymaintable td {
+ padding: 1pt 4pt 1pt 4pt;
+}
 </style>
 
 <script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
 <script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
+
 <script language="JavaScript">
 
 <?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
@@ -368,6 +379,10 @@ function get_related() {
 function del_related(s) {
  my_del_related(s, document.forms[0].form_related_code, false);
 }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
 
 </script>
 
@@ -456,8 +471,9 @@ echo "   </select>\n";
 
 </table>
 
-<table border='0' cellpadding='1' cellspacing='2' width='98%'>
+<table width='98%' id='mymaintable' class='mymaintable'>
 
+ <thead>
  <tr bgcolor="#dddddd">
   <td class="dehead">
    <?php xl('Provider','e'); ?>
@@ -484,6 +500,8 @@ echo "   </select>\n";
    <?php xl('Charge','e'); ?>
   </td>
  </tr>
+ </thead>
+ <tbody>
 
 <?php
 } // end not export
@@ -596,6 +614,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
 if (! $_POST['form_csvexport']) {
 ?>
 
+</tbody>
 </table>
 </form>
 </center>

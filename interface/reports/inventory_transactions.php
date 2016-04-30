@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -206,21 +206,30 @@ else {
   #report_parameters_daterange {visibility: visible; display: inline;}
   #report_results {margin-top: 30px;}
  }
+
  /* specifically exclude some from the screen */
  @media screen {
   #report_parameters_daterange {visibility: hidden; display: none;}
  }
+
  body       { font-family:sans-serif; font-size:10pt; font-weight:normal }
  .dehead    { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:bold }
  .detail    { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:normal }
  .delink    { color:#0000cc; font-family:sans-serif; font-size:10pt; font-weight:normal; cursor:pointer }
+
+ #report_results table thead {
+  font-size:10pt;
+ }
+
 </style>
 
 <style type="text/css">@import url(../../library/dynarch_calendar.css);</style>
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
-<script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script language='JavaScript'>
 
@@ -243,6 +252,10 @@ else {
  function doinvopen(ptid,encid) {
   dlgopen('../patient_file/pos_checkout.php?ptid=' + ptid + '&enc=' + encid, '_blank', 750, 550);
  }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
 
 </script>
 
@@ -356,7 +369,8 @@ foreach (array(
 <?php if ($form_action) { // if submit (already not export here) ?>
 
 <div id="report_results">
-<table border='0' cellpadding='1' cellspacing='2' width='98%'>
+<table border='0' cellpadding='1' cellspacing='2' width='98%' id='mymaintable' class='mymaintable'>
+ <thead>
  <tr bgcolor="#dddddd">
   <td class="dehead">
    <a href="#" onclick="return dosort('date')"
@@ -402,6 +416,8 @@ foreach (array(
    <?php echo xlt('Notes'); ?>
   </td>
  </tr>
+ </thead>
+ <tbody>
 <?php
 } // end if submit
 } // end not export
@@ -482,6 +498,7 @@ if ($form_action) { // if submit or export
 if ($form_action != 'export') {
   if ($form_action) {
 ?>
+ </tbody>
 </table>
 </div>
 <?php

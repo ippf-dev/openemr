@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2012-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2012-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -43,9 +43,24 @@ $res = sqlStatement($query);
 <style>
 tr.head   { font-size:10pt; background-color:#cccccc; text-align:center; }
 tr.detail { font-size:10pt; }
+
+table.mymaintable, table.mymaintable td, table.mymaintable th {
+ border: 1px solid #aaaaaa;
+ border-collapse: collapse;
+}
+table.mymaintable td, table.mymaintable th {
+ padding: 1pt 4pt 1pt 4pt;
+}
 </style>
 
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
+
 <script language="JavaScript">
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
 
 </script>
 
@@ -69,7 +84,7 @@ tr.detail { font-size:10pt; }
 </table>
 </form>
 
-<table width='98%' cellpadding='2' cellspacing='2'>
+<table width='98%' id='mymaintable' class='mymaintable'>
  <thead style='display:table-header-group'>
   <tr class='head'>
    <th><?php  xl('Name','e'); ?></th>

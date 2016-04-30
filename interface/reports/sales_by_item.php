@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -483,19 +483,39 @@ function get_adjustment_type($patient_id, $encounter_id, $code_type, $code) {
 <title><?php xl('Sales by Item','e') ?></title>
 
 <style type="text/css">
+
  .dehead { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:bold }
  .detail { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:normal }
  .delink { color:#0000cc; font-family:sans-serif; font-size:10pt; font-weight:normal; cursor:pointer }
+
+table.mymaintable, table.mymaintable td {
+ border: 1px solid #aaaaaa;
+ border-collapse: collapse;
+}
+table.mymaintable td {
+ padding: 1pt 4pt 1pt 4pt;
+}
+
 </style>
 
-<script type="text/javascript" src="../../library/topdialog.js"></script>
-<script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
+
 <script language="JavaScript">
+
 <?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
+
 // Process click to pop up the add/edit window.
 function doinvopen(ptid,encid) {
  dlgopen('../patient_file/pos_checkout.php?ptid=' + ptid + '&enc=' + encid, '_blank', 750, 550);
 }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
+
 </script>
 
 </head>
@@ -567,8 +587,8 @@ function doinvopen(ptid,encid) {
 
 </table>
 
-<table border='0' cellpadding='1' cellspacing='2' width='98%'>
-
+<table width='98%' id='mymaintable' class='mymaintable'>
+ <thead>
  <tr bgcolor="#dddddd">
   <td class="dehead">
    <?php xl('Category','e'); ?>
@@ -602,6 +622,8 @@ function doinvopen(ptid,encid) {
    <?php xl('Payment','e'); ?>
   </td>
  </tr>
+ </thead>
+ <tbody>
 <?php
   } // end not export
 
@@ -732,6 +754,7 @@ function doinvopen(ptid,encid) {
   if (! $_POST['form_csvexport']) {
 ?>
 
+</tbody>
 </table>
 </form>
 </center>

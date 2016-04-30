@@ -84,6 +84,28 @@ else { // not export
 <?php html_header_show(); ?>
 <title><?php xl('Services by Category','e'); ?></title>
 <link rel="stylesheet" href="<?php echo $css_header;?>" type="text/css">
+
+<style>
+table.mymaintable, table.mymaintable td, table.mymaintable th {
+ border: 1px solid #aaaaaa;
+ border-collapse: collapse;
+}
+table.mymaintable td, table.mymaintable th {
+ padding: 1pt 4pt 1pt 4pt;
+}
+</style>
+
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
+
+<script LANGUAGE="JavaScript">
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
+
+</script>
+
 </head>
 <body>
 <center>
@@ -167,7 +189,7 @@ if ($_POST['form_submit'] || $_POST['form_csvexport']) {
   else { // not export
 ?>
 
-<table border='0' cellpadding='1' cellspacing='2' width='98%'>
+<table width='98%' id='mymaintable' class='mymaintable'>
  <thead style='display:table-header-group'>
   <tr bgcolor="#dddddd">
    <th class='bold'><?php xl('Category'   ,'e'); ?></th>

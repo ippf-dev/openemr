@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006-2015 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -49,13 +49,27 @@ $orderby = $ORDERHASH[$form_orderby];
 <link rel='stylesheet' href='<?php echo $css_header ?>' type='text/css'>
 
 <style  type="text/css">@import url(../../library/dynarch_calendar.css);</style>
-<script type="text/javascript" src="../../library/textformat.js"></script>
+
+<style>
+table.mymaintable, table.mymaintable td, table.mymaintable th {
+ border: 1px solid #aaaaaa;
+ border-collapse: collapse;
+}
+table.mymaintable td, table.mymaintable th {
+ padding: 1pt 4pt 1pt 4pt;
+}
+</style>
+
+<script type="text/javascript" src="../../library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
-<script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script language="JavaScript">
+
  var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
 
  function dosort(orderby) {
@@ -65,6 +79,11 @@ $orderby = $ORDERHASH[$form_orderby];
   f.submit();
   return false;
  }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
+
 </script>
 
 </head>
@@ -128,7 +147,8 @@ echo "   </select>&nbsp;\n";
 
 </table>
 
-<table border='0' cellpadding='1' cellspacing='2' width='98%'>
+<table width='98%' id='mymaintable' class='mymaintable'>
+ <thead>
  <tr bgcolor="#dddddd">
   <td class='dehead'>
    <a href="#" onclick="return dosort('drug')"
@@ -169,7 +189,9 @@ echo "   </select>&nbsp;\n";
    <?php echo xlt('Notes'); ?>
   </td>
  </tr>
-<?
+ </thead>
+ <tbody>
+<?php
  if ($_POST['form_orderby']) {
   $where = "i.destroy_date IS NOT NULL AND i.destroy_date >= '$form_from_date' AND " .
    "i.destroy_date <= '$form_to_date'";
@@ -249,6 +271,7 @@ echo "   </select>&nbsp;\n";
  } // end if
 ?>
 
+ </tbody>
 </table>
 
 <input type="hidden" name="form_orderby" value="<?php echo $form_orderby ?>" />

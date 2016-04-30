@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006-2015 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -92,9 +92,19 @@ $dion = $form_show_empty ? "" : "AND di.on_hand != 0";
 tr.head   { font-size:10pt; background-color:#cccccc; text-align:center; }
 tr.detail { font-size:10pt; }
 a, a:visited, a:hover { color:#0000cc; }
+
+table.mymaintable, table.mymaintable td {
+ border: 1px solid #aaaaaa;
+ border-collapse: collapse;
+}
+table.mymaintable td {
+ padding: 1pt 4pt 1pt 4pt;
+}
 </style>
 
-<script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script language="JavaScript">
 
@@ -134,6 +144,10 @@ function facchanged() {
   if (dis) theopts[i].selected = false;
  }
 }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
 
 </script>
 
@@ -198,8 +212,10 @@ function facchanged() {
   </td>
  </tr>
 </table>
-    
-<table width='100%' cellpadding='1' cellspacing='2'>
+
+<!-- <table width='100%' cellpadding='1' cellspacing='2' id='mymaintable'> -->
+<table width='100%' id='mymaintable' class='mymaintable'>
+ <thead>
  <tr class='head'>
   <td title='<?php echo xla('Click to edit'); ?>'>
    <a href="#" onclick="return dosort('prod')"
@@ -254,6 +270,8 @@ function facchanged() {
    <?php echo xlt('Expires'); ?> </a>
   </td>
  </tr>
+ </thead>
+ <tbody>
 <?php 
  $lastid = "";
  $encount = 0;
@@ -320,6 +338,7 @@ function facchanged() {
   echo " </tr>\n";
  } // end while
 ?>
+ </tbody>
 </table>
 
 <center><p>

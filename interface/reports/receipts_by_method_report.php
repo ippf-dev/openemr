@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -177,6 +177,28 @@ $form_cptcode   = trim($_POST['form_cptcode']);
 <head>
 <?php if (function_exists('html_header_show')) html_header_show(); ?>
 <title><?php xl('Receipts Summary','e') ?></title>
+
+<style>
+table.mymaintable, table.mymaintable td {
+ border: 1px solid #aaaaaa;
+ border-collapse: collapse;
+}
+table.mymaintable td {
+ padding: 1pt 4pt 1pt 4pt;
+}
+</style>
+
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
+
+<script language="JavaScript">
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
+
+</script>
+
 </head>
 
 <body leftmargin='0' topmargin='0' marginwidth='0' marginheight='0'>
@@ -255,8 +277,9 @@ echo "   </select>\n";
 
 </table>
 
-<table border='0' cellpadding='1' cellspacing='2' width='98%'>
+<table width='98%' id='mymaintable' class='mymaintable'>
 
+ <thead>
  <tr bgcolor="#dddddd">
   <td class="dehead">
    <?php xl('Method','e') ?>
@@ -288,6 +311,8 @@ echo "   </select>\n";
    <?php xl('Payments','e') ?>
   </td>
  </tr>
+ </thead>
+ <tbody>
 <?php
 
 if (!$INTEGRATED_AR) {
@@ -568,6 +593,7 @@ if ($_POST['form_refresh']) {
 if (!$INTEGRATED_AR) SLClose();
 ?>
 
+ </tbody>
 </table>
 </form>
 </center>

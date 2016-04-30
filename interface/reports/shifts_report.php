@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013, 2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -160,12 +160,14 @@ $res = sqlStatement($query);
 }
 </style>
 
-<script type="text/javascript" src="../../library/textformat.js"></script>
-<script type="text/javascript" src="../../library/topdialog.js"></script>
-<script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script LANGUAGE="JavaScript">
 
@@ -183,6 +185,10 @@ $res = sqlStatement($query);
  function refreshme() {
   document.forms[0].submit();
  }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
 
 </script>
 
@@ -280,9 +286,10 @@ $res = sqlStatement($query);
 </div> <!-- end encreport_parameters -->
 
 <div id="encreport_results">
-<table>
+<table id='mymaintable'>
 
  <thead>
+ <tr>
 <?php if ($form_details) { ?>
   <th>
    <a href="nojs.php" onclick="return dosort('shift')"
@@ -321,6 +328,7 @@ $res = sqlStatement($query);
   <th align='left'><?php  xl('Provider','e'); ?></td>
   <th align='right'><?php  xl('Encounters','e'); ?></td>
 <?php } ?>
+ </tr>
  </thead>
  <tbody>
 <?php

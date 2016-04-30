@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2005-2014 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2005-2016 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -172,6 +172,18 @@ function postError($msg) {
 
 </style>
 <title><?php  xl('Appointments and Encounters','e'); ?></title>
+
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
+
+<script LANGUAGE="JavaScript">
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
+
+</script>
+
 </head>
 
 <body class="body_top">
@@ -281,7 +293,7 @@ function postError($msg) {
  if ($_POST['form_refresh'] ) {
 ?>
 <div id="report_results">
-<table>
+<table id='mymaintable'>
 
  <thead>
   <th> &nbsp;<?php  xl('Practitioner','e'); ?> </th>
@@ -523,7 +535,6 @@ function postError($msg) {
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
-<script type="text/javascript" src="../../library/js/jquery.1.3.2.js"></script>
 
 <script language="Javascript">
  Calendar.setup({inputField:"form_from_date", ifFormat:"%Y-%m-%d", button:"img_from_date"});

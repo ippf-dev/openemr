@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -408,18 +408,36 @@ else {
  .dehead { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:bold }
  .detail { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:normal }
  .delink { color:#0000cc; font-family:sans-serif; font-size:10pt; font-weight:normal; cursor:pointer }
+
+table.mymaintable, table.mymaintable td, table.mymaintable th {
+ border: 1px solid #aaaaaa;
+ border-collapse: collapse;
+}
+table.mymaintable td, table.mymaintable th {
+ padding: 1pt 4pt 1pt 4pt;
+}
 </style>
 
-<script type="text/javascript" src="../../library/textformat.js"></script>
-<script type="text/javascript" src="../../library/topdialog.js"></script>
-<script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script language='JavaScript'>
+
 var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
+
 <?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
+
 function doinvopen(ptid,encid) {
  dlgopen('../patient_file/pos_checkout.php?ptid=' + ptid + '&enc=' + encid, '_blank', 750, 550);
 }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
+
 </script>
 
 </head>
@@ -515,8 +533,9 @@ echo "   </select>&nbsp;\n";
 
 </table>
 
-<table border='0' cellpadding='1' cellspacing='2' width='98%'>
+<table width='98%' id='mymaintable' class='mymaintable'>
 
+ <thead>
  <tr bgcolor="#dddddd">
   <td class="dehead">
    <?php echo $product_first ? xl('Product') : xl('Warehouse'); ?>
@@ -563,6 +582,8 @@ echo "   </select>&nbsp;\n";
    <?php xl('Closing Balance','e'); ?>
   </td>
  </tr>
+ </thead>
+ <tbody>
 <?php
 } // end not export
 
@@ -717,6 +738,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
 
 if (!$_POST['form_csvexport']) {
 ?>
+ </tbody>
 </table>
 </form>
 </center>

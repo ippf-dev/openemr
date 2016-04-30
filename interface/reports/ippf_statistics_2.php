@@ -1490,10 +1490,21 @@ while ($lrow = sqlFetchArray($lres)) {
 <?php html_header_show(); ?>
 <title><?php echo $report_title; ?></title>
 <style type="text/css">@import url(../../library/dynarch_calendar.css);</style>
+
 <style type="text/css">
+
  body       { font-family:sans-serif; font-size:10pt; font-weight:normal }
  .dehead    { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:bold }
  .detail    { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:normal }
+
+table.mymaintable, table.mymaintable td {
+ border: 1px solid #aaaaaa;
+ border-collapse: collapse;
+}
+table.mymaintable td {
+ padding: 1pt 4pt 1pt 4pt;
+}
+
 </style>
 <script type="text/javascript" src="../../library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
 <script type="text/javascript" src="../../library/topdialog.js?v=<?php echo $v_js_includes; ?>"></script>
@@ -1501,6 +1512,9 @@ while ($lrow = sqlFetchArray($lres)) {
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
+
 <script language="JavaScript">
 
 <?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
@@ -1541,7 +1555,14 @@ function del_related(s) {
  my_del_related(s, document.forms[0].form_related_code, false);
 }
 
+<?php if ($form_output != 3 && count($form_by_arr) == 1) { ?>
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
+<?php } ?>
+
 </script>
+
 </head>
 
 <body leftmargin='0' topmargin='0' marginwidth='0' marginheight='0'>
@@ -1847,7 +1868,7 @@ if ($_POST['form_submit']) {
 
   // Start table.
   if ($form_output != 3) {
-    echo "<table border='0' cellpadding='1' cellspacing='2' width='98%'>\n";
+    echo "<table width='98%' id='mymaintable' class='mymaintable'>\n";
   } // end not csv export
 
   $report_col_count = 0;
@@ -2261,6 +2282,9 @@ if ($_POST['form_submit']) {
     uksort($areport, 'keydesc_compare');
     foreach ($arr_titles as $atkey => $dummy) ksort($arr_titles[$atkey]);
 
+    // If writing a single report as HTML then start thead section.
+    if ($form_output != 3 && count($form_by_arr) == 1) echo " <thead>\n";
+
     // Generate a blank row to separate from the previous report.
     if ($report_col_count && $form_output != 3) {
       genStartRow("bgcolor='#ffffff'");
@@ -2440,6 +2464,9 @@ if ($_POST['form_submit']) {
       genHeadCell(xl('Total'), 'right');
     }
     genEndRow();
+
+    // If writing a single report as HTML then end thead section.
+    if ($form_output != 3 && count($form_by_arr) == 1) echo " </thead>\n";
 
     $encount = 0;
 

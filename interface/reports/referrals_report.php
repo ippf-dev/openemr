@@ -72,11 +72,13 @@ else {
 
 <style type="text/css">@import url(../../library/dynarch_calendar.css);</style>
 
-<script type="text/javascript" src="../../library/dialog.js"></script>
-<script type="text/javascript" src="../../library/textformat.js"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/textformat.js?v=<?php echo $v_js_includes; ?>"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
 <script language="JavaScript">
 
 <?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
@@ -121,6 +123,11 @@ else {
   f.submit();
   return false;
  }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
+
 </script>
 
 </head>
@@ -187,7 +194,7 @@ else {
 </div> <!-- end of parameters -->
 
 <div id="referreport_results">
-<table width='98%'>
+<table width='98%' id='mymaintable'>
  <thead>
  <tr bgcolor="#cccccc">
   <td class='dehead'>

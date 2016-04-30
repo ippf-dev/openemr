@@ -7,7 +7,7 @@
  * but I wanted to make the code available to the project because
  * many other practices have this same need. - rod@sunsetsystems.com
  *
- * Copyright (C) 2006-2010 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -105,7 +105,10 @@ require_once($GLOBALS['fileroot'].'/custom/code_types.inc.php');
 }
 </style>
 
-<script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/dialog.js"></script>
+<script type="text/javascript" src="<?php echo $GLOBALS['webroot']; ?>/library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
+
 <script language="JavaScript">
 // This is for callback by the find-code popup.
 // Erases the current entry
@@ -131,6 +134,10 @@ function sel_procedure() {
 function sel_diagnosis() {
  dlgopen('../patient_file/encounter/find_code_popup.php?target_element=form_dx_codefull&codetype=<?php echo attr(collect_codetypes("diagnosis","csv")) ?>', '_blank', 500, 400);
 }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
 
 </script>
 
@@ -275,7 +282,7 @@ function sel_diagnosis() {
  if ($_POST['form_refresh']) {
 ?>
 <div id="report_results">
-<table border='0' cellpadding='1' cellspacing='2' width='98%'>
+<table border='0' cellpadding='1' cellspacing='2' width='98%' id='mymaintable'>
  <thead>
   <th>
    <?php xl('Practitioner','e') ?>

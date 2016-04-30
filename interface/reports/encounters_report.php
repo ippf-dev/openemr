@@ -171,6 +171,8 @@ $res = sqlStatement($query);
 <script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
+<script type="text/javascript" src="<?php echo $web_root;?>/library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script LANGUAGE="JavaScript">
 
@@ -227,6 +229,10 @@ $res = sqlStatement($query);
  function sel_related() {
   dlgopen('../patient_file/encounter/find_code_dynamic.php', '_blank', 900, 600);
  }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
 
 </script>
 
@@ -330,7 +336,7 @@ $res = sqlStatement($query);
 </div> <!-- end encreport_parameters -->
 
 <div id="encreport_results">
-<table>
+<table id='mymaintable'>
 
  <thead>
 <?php if ($form_details) { ?>
@@ -519,7 +525,6 @@ if ($res) {
 <?php if ($alertmsg) { echo " alert('$alertmsg');\n"; } ?>
 
 </script>
-<script type="text/javascript" src="<?php echo $web_root;?>/library/js/jquery-1.9.1.min.js"></script>
 <script type="text/javascript">
     var export_label="<?php echo xlt("Export to CSV"); ?>";
 </script>
