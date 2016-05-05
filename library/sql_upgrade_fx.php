@@ -259,7 +259,7 @@ function upgradeFromSqlFile($filename) {
   if ($fd == FALSE) {
     echo "ERROR.  Could not open '$fullname'.\n";
     flush();
-    break;
+    return;
   }
 
   $query = "";
