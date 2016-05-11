@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -51,8 +51,8 @@ $this_bill_date = date('Y-m-d H:i:s');
 // Details default to yes now.
 $details = (!isset($_GET['details']) || !empty($_GET['details'])) ? 1 : 0;
 
-$patient_id = empty($_GET['ptid']) ? $pid : intval($_GET['ptid']);
-$url_enid   = empty($_GET['enid']) ?    0 : intval($_GET['enid']);
+$patient_id   = empty($_GET['ptid']) ? $pid : intval($_GET['ptid']);
+$encounter_id = empty($_GET['enid']) ?    0 : intval($_GET['enid']);
 
 // This flag comes from the Fee Sheet form and perhaps later others.
 $rapid_data_entry = empty($_GET['rde']) ? 0 : 1;
@@ -88,9 +88,9 @@ function generate_layout_display_field($formid, $fieldid, $currvalue) {
 
 // This creates and loads the array $aAdjusts of adjustment data for this encounter.
 //
-function load_adjustments($patient_id, $inv_encounter) {
+function load_adjustments($patient_id, $encounter_id) {
   global $aAdjusts;
-  // Create array aAdjusts from ar_activity rows for $inv_encounter.
+  // Create array aAdjusts from ar_activity rows for $encounter_id.
   $aAdjusts = array();
   $ares = sqlStatement("SELECT " .
     "a.payer_type, a.adj_amount, a.memo, a.code_type, a.code, a.post_time, " .
@@ -98,7 +98,7 @@ function load_adjustments($patient_id, $inv_encounter) {
     "FROM ar_activity AS a " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
-    "a.pid = '$patient_id' AND a.encounter = '$inv_encounter' AND " .
+    "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND " .
     "( a.adj_amount != 0 OR a.pay_amount = 0 ) " .
     "ORDER BY s.check_date, a.sequence_no");
   while ($arow = sqlFetchArray($ares)) {
@@ -297,6 +297,32 @@ function receiptPaymentLine($paydate, $amount, $description='', $method='', $ref
   echo " </tr>\n";
 }
 
+// Compute a current checksum of this encounter's invoice-related data from the database.
+//
+function invoiceChecksum($pid, $encounter) {
+  $row1 = sqlQuery("SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
+    "id, code, modifier, units, fee, authorized, provider_id, ndc_info, justify, billed, user, bill_date" .
+    "))) AS checksum FROM billing WHERE " .
+    "pid = ? AND encounter = ? AND activity = 1",
+    array($pid, $encounter));
+  $row2 = sqlQuery("SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
+    "sale_id, inventory_id, prescription_id, quantity, fee, sale_date, billed, bill_date" .
+    "))) AS checksum FROM drug_sales WHERE " .
+    "pid = ? AND encounter = ?",
+    array($pid, $encounter));
+  $row3 = sqlQuery("SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
+    "sequence_no, code, modifier, payer_type, post_time, post_user, memo, pay_amount, adj_amount, post_date" .
+    "))) AS checksum FROM ar_activity WHERE " .
+    "pid = ? AND encounter = ?",
+    array($pid, $encounter));
+  $row4 = sqlQuery("SELECT BIT_XOR(CRC32(CONCAT_WS(',', " .
+    "id, date, reason, facility_id, provider_id, supervisor_id, invoice_refno" .
+    "))) AS checksum FROM form_encounter WHERE " .
+    "pid = ? AND encounter = ?",
+    array($pid, $encounter));
+  return (0 + $row1['checksum']) ^ (0 + $row2['checksum']) ^ (0 + $row3['checksum']) ^ (0 + $row4['checksum']);
+}
+
 //////////////////////////////////////////////////////////////////////
 //
 // Generate a receipt from the last-billed invoice for this patient,
@@ -305,7 +331,7 @@ function receiptPaymentLine($paydate, $amount, $description='', $method='', $ref
 function generate_receipt($patient_id, $encounter=0) {
   global $css_header, $details, $rapid_data_entry, $aAdjusts;
   global $web_root, $webserver_root;
-  global $aTaxNames, $aInvTaxes, $checkout_times;
+  global $aTaxNames, $aInvTaxes, $checkout_times, $current_checksum;
 
   // Get the most recent invoice data or that for the specified encounter.
   if ($encounter) {
@@ -323,6 +349,9 @@ function generate_receipt($patient_id, $encounter=0) {
   $encounter = $ferow['encounter'];
   $svcdate = substr($ferow['date'], 0, 10);
   $invoice_refno = $ferow['invoice_refno'];
+
+  // Generate checksum.
+  $current_checksum = invoiceChecksum($patient_id, $encounter);
 
   // Get details for the visit's facility.
   $frow = sqlQuery("SELECT f.* FROM facility AS f " .
@@ -384,12 +413,14 @@ body, td {
 
  // Process click on a void option.
  function voidme(action) {
-  if (action == 'void' &&
+  if ((action == 'void' || action == 'voidall') &&
    !confirm('<?php echo xl('This will advance the receipt number. Please print the receipt if you have not already done so.'); ?>')) {
    return false;
   }
   top.restoreSession();
-  document.location.href = 'pos_checkout.php?ptid=<?php echo $patient_id; ?>&' + action + '=<?php echo $encounter; ?>';
+  document.location.href = 'pos_checkout.php?ptid=<?php echo $patient_id; ?>&' + action +
+    '=<?php echo $encounter; ?>' + '&form_checksum=<?php echo $current_checksum; ?>' +
+    '<?php if (!empty($_GET['framed'])) echo '&framed=1'; ?>';
   return false;
  }
 
@@ -541,7 +572,7 @@ body, td {
  </tr>
 
 <?php
-  // Create array aAdjusts from ar_activity rows for $inv_encounter.
+  // Create array aAdjusts from ar_activity rows for $encounter.
   load_adjustments($patient_id, $encounter);
 
   $aTotals = array(0, 0, 0, 0, 0);
@@ -745,10 +776,9 @@ body, td {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href='#' onclick='return voidme("regen");'><?php echo xl('Reprint with New Receipt'); ?></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<a href='#' onclick='return voidme("void");'><?php echo xl('Void and Return to Checkout'); ?></a>
-<!--
-<a href='#' onclick='return deleteme();'><?php xl('Undo Checkout','e'); ?></a>
--->
+<a href='#' onclick='return voidme("void");'><?php echo xl('Void Last Checkout'); ?></a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href='#' onclick='return voidme("voidall");'><?php echo xl('Void All Checkouts'); ?></a>
 <?php } ?>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <?php if ($details) { ?>
@@ -763,9 +793,17 @@ body, td {
  top.restoreSession();
 
 <?php if ($rapid_data_entry && $GLOBALS['concurrent_layout']) { ?>
- parent.left_nav.setRadio('RTop', 'new');
- parent.left_nav.loadFrame('new1', 'RTop', 'new/new.php');
+ if (parent.left_nav) {
+  parent.left_nav.setRadio('RTop', 'new');
+  parent.left_nav.loadFrame('new1', 'RTop', 'new/new.php');
+ }
 <?php } ?>
+
+<?php
+if ($alertmsg) {
+  echo " alert('" . addslashes($alertmsg) . "');\n";
+}
+?>
 
 <?php if (!empty($GLOBALS['gbl_custom_receipt'])) { ?>
  // Custom checkout receipt needs to be sent as a PDF in a new window or tab.
@@ -788,14 +826,14 @@ body, td {
 //
 $form_headers_written = false;
 function write_form_headers() {
-  global $form_headers_written, $patdata, $patient_id, $inv_encounter, $aAdjusts;
+  global $form_headers_written, $patdata, $patient_id, $encounter_id, $aAdjusts;
   global $taxes, $encounter_date;
 
   if ($form_headers_written) return;
   $form_headers_written = true;
 
   $ferow = sqlQuery("SELECT date FROM form_encounter " .
-    "WHERE pid = '$patient_id' AND encounter = '$inv_encounter'");
+    "WHERE pid = '$patient_id' AND encounter = '$encounter_id'");
   $encounter_date = substr($ferow['date'], 0, 10);
 ?>
  <tr>
@@ -805,7 +843,7 @@ function write_form_headers() {
    <br />&nbsp;
    <p>
 <?php
-  $prvbal = get_patient_balance_excluding($patient_id, $inv_encounter);
+  $prvbal = get_patient_balance_excluding($patient_id, $encounter_id);
   echo xl('Previous Balance') . '&nbsp;&nbsp;&nbsp;&nbsp;';
   echo "<input type='text' value='" . oeFormatMoney($prvbal) . "' size='6' ";
   echo "style='text-align:right;background-color:transparent' readonly />\n";
@@ -866,8 +904,8 @@ function write_form_headers() {
  </tr>
 <?php
   // Create arrays $aAdjusts, $aTaxNames and $aInvTaxes for this encounter.
-  load_adjustments($patient_id, $inv_encounter);
-  load_taxes($patient_id, $inv_encounter);
+  load_adjustments($patient_id, $encounter_id);
+  load_taxes($patient_id, $encounter_id);
 }
 
 // Function to output a line item for the input form.
@@ -1049,9 +1087,34 @@ $aCellHTML[] = "<input type='text' name='payment[%d][amount]' size='6' style='te
 
 $alertmsg = ''; // anything here pops up in an alert box
 
+// Make sure we have the encounter ID applicable to this request.
+if (!empty($_POST['form_save'])) {
+  $patient_id = 0 + $_POST['form_pid'];
+  $encounter_id = 0 + $_POST['form_encounter'];
+}
+else {
+  foreach(array('regen', 'enc', 'void', 'voidall') as $key) {
+    if (!empty($_GET[$key])) {
+      $encounter_id = 0 + $_GET[$key];
+      break;
+    }
+  }
+}
+
+// Compute and validate the checksum.
+$current_checksum = 0;
+if ($patient_id && $encounter_id) {
+  $current_checksum = invoiceChecksum($patient_id, $encounter_id);
+  if (!empty($_REQUEST['form_checksum'])) {
+    if ($_REQUEST['form_checksum'] != $current_checksum) {
+      $alertmsg = xl('Someone else has just changed this visit. Please cancel this page and try again.');
+    }
+  }
+}
+
 // If the Save button was clicked...
 //
-if ($_POST['form_save']) {
+if ($_POST['form_save'] && !$alertmsg) {
 
   // On a save, do the following:
   // Flag this form's drug_sales and billing items as billed.
@@ -1061,12 +1124,9 @@ if ($_POST['form_save']) {
   // Call the generate-receipt function.
   // Exit.
 
-  $form_pid = $_POST['form_pid'];
-  $form_encounter = $_POST['form_encounter'];
-
   // A current invoice reference number may be present if there was a previous checkout.
   $tmprow = sqlQuery("SELECT invoice_refno FROM form_encounter WHERE " .
-    "pid = '$form_pid' AND encounter = '$form_encounter'");
+    "pid = '$patient_id' AND encounter = '$encounter_id'");
   $current_irnumber = $tmprow['invoice_refno'];
 
   // Get the posting date from the form as yyyy-mm-dd.
@@ -1076,30 +1136,14 @@ if ($_POST['form_save']) {
   }
   $dosdate = $postdate; // not sure if this is appropriate
 
-  // If there is no associated encounter (i.e. this invoice has only
-  // prescriptions) then assign an encounter number of the service
-  // date, with an optional suffix to ensure that it's unique.
-  //
-  if (! $form_encounter) {
-    /*****************************************************************
-    $form_encounter = substr($dosdate,0,4) . substr($dosdate,5,2) . substr($dosdate,8,2);
-    $tmp = '';
-    while (true) {
-      $ferow = sqlQuery("SELECT id FROM form_encounter WHERE " .
-        "pid = '$form_pid' AND encounter = '$form_encounter$tmp'");
-      if (empty($ferow)) break;
-      $tmp = $tmp ? $tmp + 1 : 1;
-    }
-    $form_encounter .= $tmp;
-    *****************************************************************/
-    // The above seems obsolete. Nothing should be sold without an encounter form.
+  if (! $encounter_id) {
     die("Internal error: Encounter ID is missing!");
   }
 
   // Delete unbilled TAX rows from billing because they will be recalculated.
   // Do not delete already-billed taxes; we must not touch billed stuff.
   sqlStatement("UPDATE billing SET activity = 0 WHERE " .
-    "pid = '$form_pid' AND encounter = '$form_encounter' AND " .
+    "pid = '$patient_id' AND encounter = '$encounter_id' AND " .
     "code_type = 'TAX' AND billed = 0 AND activity = 1");
 
   /********************************************************************
@@ -1136,7 +1180,7 @@ if ($_POST['form_save']) {
       foreach ($taxes as $taxid => $taxarr) {
         $taxamount = $line['tax'][$i++] + 0;
         if ($taxamount != 0) {
-          addBilling($form_encounter, 'TAX', $taxid, $taxarr[0], $form_pid, 0, 0,
+          addBilling($encounter_id, 'TAX', $taxid, $taxarr[0], $patient_id, 0, 0,
             '', '', $taxamount, $ndc_info, '', 0);
           // billed=0 because we will set billed and bill_date for unbilled items below.
           $linetax += $taxamount;
@@ -1159,8 +1203,8 @@ if ($_POST['form_save']) {
           "pid, encounter, code_type, code, modifier, payer_type, " .
           "post_user, post_time, post_date, session_id, memo, adj_amount " .
           ") VALUES ( " .
-          "'$form_pid', " .
-          "'$form_encounter', " .
+          "'$patient_id', " .
+          "'$encounter_id', " .
           "'$code_type', " .
           "'$code', " .
           "'', " .
@@ -1206,10 +1250,10 @@ if ($_POST['form_save']) {
 
   // Flag the encounter as billed.
   $query = "UPDATE billing SET billed = 1, bill_date = '$this_bill_date' WHERE " .
-    "pid = '$form_pid' AND encounter = '$form_encounter' AND activity = 1 AND billed = 0";
+    "pid = '$patient_id' AND encounter = '$encounter_id' AND activity = 1 AND billed = 0";
   sqlQuery($query);
   $query = "update drug_sales SET billed = 1, bill_date = '$this_bill_date' WHERE " .
-    "pid = '$form_pid' AND encounter = '$form_encounter' AND billed = 0";
+    "pid = '$patient_id' AND encounter = '$encounter_id' AND billed = 0";
   sqlQuery($query);
 
   // Post discount.
@@ -1226,8 +1270,8 @@ if ($_POST['form_save']) {
       "pid, encounter, code, modifier, payer_type, post_user, post_time, " .
       "post_date, session_id, memo, adj_amount " .
       ") VALUES ( " .
-      "'$form_pid', " .
-      "'$form_encounter', " .
+      "'$patient_id', " .
+      "'$encounter_id', " .
       "'', " .
       "'', " .
       "'0', " .
@@ -1252,7 +1296,7 @@ if ($_POST['form_save']) {
         $refno  = $line['refno'];
         if ($method !== '' && $refno !== '') $method .= " $refno";
         $session_id = 0; // Is this OK?
-        arPostPayment($form_pid, $form_encounter, $session_id, $amount, '', 0, $method, 0, $this_bill_date,'', $postdate);
+        arPostPayment($patient_id, $encounter_id, $session_id, $amount, '', 0, $method, 0, $this_bill_date,'', $postdate);
       }
     }
   }
@@ -1269,23 +1313,23 @@ if ($_POST['form_save']) {
     if ($invoice_refno) {
       sqlStatement("UPDATE form_encounter " .
         "SET invoice_refno = '$invoice_refno' " .
-        "WHERE pid = '$form_pid' AND encounter = '$form_encounter'");
+        "WHERE pid = '$patient_id' AND encounter = '$encounter_id'");
     }
   }
 
   // If appropriate, update the status of the related appointment to
   // "Checked out".
-  updateAppointmentStatus($form_pid, $dosdate, '>');
+  updateAppointmentStatus($patient_id, $dosdate, '>');
 
-  generate_receipt($form_pid, $form_encounter);
+  generate_receipt($patient_id, $encounter_id);
   exit();
 }
 
 // If "regen" encounter ID was given, then we must generate a new receipt ID.
 //
-if ($patient_id && !empty($_GET['regen'])) {
-  $encounter_id = 0 + $_GET['regen'];
+if (!$alertmsg && $patient_id && !empty($_GET['regen'])) {
   doVoid($patient_id, $encounter_id, false);
+  $current_checksum = invoiceChecksum($patient_id, $encounter_id);
   $_GET['enc'] = $encounter_id;
 }
 
@@ -1308,18 +1352,20 @@ if ($patient_id && !empty($_GET['enc'])) {
 }
 
 // If "void" encounter ID was given, then we must undo the last checkout.
+// Or for "voidall" undo all checkouts for the encounter.
 //
-if ($patient_id && !empty($_GET['void'])) {
-  $encounter_id = 0 + $_GET['void'];
+if (!$alertmsg && $patient_id && !empty($_GET['void'])) {
   doVoid($patient_id, $encounter_id, true);
-  // Make sure we display checkout for the same visit that was just voided.
-  $url_enid = $encounter_id;
+  $current_checksum = invoiceChecksum($patient_id, $encounter_id);
+}
+else if (!$alertmsg && $patient_id && !empty($_GET['voidall'])) {
+  doVoid($patient_id, $encounter_id, true, 'all');
+  $current_checksum = invoiceChecksum($patient_id, $encounter_id);
 }
 
 // Get the specified or first unbilled encounter ID for this patient.
 //
-$inv_encounter = $url_enid;
-if (!$inv_encounter) {
+if (!$encounter_id) {
   $query = "SELECT encounter FROM billing WHERE " .
     "pid = ? AND activity = 1 AND billed = 0 AND code_type != 'TAX' " .
     "ORDER BY encounter DESC LIMIT 1";
@@ -1330,23 +1376,26 @@ if (!$inv_encounter) {
   $drow = sqlQuery($query, array($patient_id));
   if (!empty($brow['encounter'])) {
     if (!empty($drow['encounter'])) {
-      $inv_encounter = min(intval($brow['encounter']), intval($drow['encounter']));
+      $encounter_id = min(intval($brow['encounter']), intval($drow['encounter']));
     }
     else {
-      $inv_encounter = $brow['encounter'];
+      $encounter_id = $brow['encounter'];
     }
   }
   else if (!empty($drow['encounter'])) {
-    $inv_encounter = $drow['encounter'];
+    $encounter_id = $drow['encounter'];
   }
 }
 
 // If there are none, just redisplay the last receipt and exit.
 //
-if (!$inv_encounter) {
+if (!$encounter_id) {
   generate_receipt($patient_id);
   exit();
 }
+
+// We have $patient_id and $encounter_id. Generate checksum if not already done.
+if (!$current_checksum) $current_checksum = invoiceChecksum($patient_id, $encounter_id);
 
 // Get the valid practitioners, including those not active.
 $arr_users = array();
@@ -1690,7 +1739,8 @@ foreach ($aCellHTML as $ix => $html) {
 
 <?php
 echo "<form method='post' action='pos_checkout.php?rde=$rapid_data_entry";
-if ($url_enid) echo "&enid=$url_enid";
+if ($encounter_id) echo "&enid=$encounter_id";
+if (!empty($_GET['framed'])) echo '&framed=1';
 echo "' onsubmit='return validate()'>\n";
 echo "<input type='hidden' name='form_pid' value='$patient_id' />\n";
 ?>
@@ -1718,7 +1768,7 @@ $query = "SELECT id, date, code_type, code, modifier, code_text, " .
   "provider_id, payer_id, units, fee, encounter, billed, bill_date " .
   "FROM billing WHERE pid = ? AND encounter = ? AND activity = 1 AND " .
   "code_type != 'TAX' ORDER BY id ASC";
-$bres = sqlStatement($query, array($patient_id, $inv_encounter));
+$bres = sqlStatement($query, array($patient_id, $encounter_id));
 
 $query = "SELECT s.sale_id, s.sale_date, s.prescription_id, s.fee, s.quantity, " .
   "s.encounter, s.drug_id, s.billed, s.bill_date, d.name, r.provider_id " .
@@ -1727,7 +1777,7 @@ $query = "SELECT s.sale_id, s.sale_date, s.prescription_id, s.fee, s.quantity, "
   "LEFT OUTER JOIN prescriptions AS r ON r.id = s.prescription_id " .
   "WHERE s.pid = ? AND s.encounter = ? " .
   "ORDER BY s.sale_id ASC";
-$dres = sqlStatement($query, array($patient_id, $inv_encounter));
+$dres = sqlStatement($query, array($patient_id, $encounter_id));
 
 // Process billing table items.  Note this includes co-pays.
 // Items that are not allowed to have a fee are skipped.
@@ -1793,11 +1843,11 @@ while ($brow = sqlFetchArray($bres)) {
 // Process drug sales / products.
 //
 while ($drow = sqlFetchArray($dres)) {
-  // if ($inv_encounter && $drow['encounter'] && $drow['encounter'] != $inv_encounter) continue;
-  if ($inv_encounter && $drow['encounter'] != $inv_encounter) continue;
+  // if ($encounter_id && $drow['encounter'] && $drow['encounter'] != $encounter_id) continue;
+  if ($encounter_id && $drow['encounter'] != $encounter_id) continue;
 
   $thisdate = $drow['sale_date'];
-  if (!$inv_encounter) $inv_encounter = $drow['encounter'];
+  if (!$encounter_id) $encounter_id = $drow['encounter'];
 
   if (!$inv_provider && !empty($arr_users[$drow['provider_id']]))
     $inv_provider = $drow['provider_id'] + 0;
@@ -1925,7 +1975,7 @@ $ares = sqlStatement("SELECT " .
   "a.payer_type, a.pay_amount, a.memo, s.session_id, s.reference, s.check_date " .
   "FROM ar_activity AS a " .
   "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
-  "a.pid = '$patient_id' AND a.encounter = '$inv_encounter' AND a.pay_amount != 0 " .
+  "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND a.pay_amount != 0 " .
   "ORDER BY s.check_date, a.sequence_no");
 while ($arow = sqlFetchArray($ares)) {
   $memo = $arow['memo'];
@@ -1972,9 +2022,9 @@ echo "  <td align='right' colspan='" .
 echo "></td>\n";
 echo " </tr>\n";
 
-if ($inv_encounter) {
+if ($encounter_id) {
   $erow = sqlQuery("SELECT provider_id FROM form_encounter WHERE " .
-    "pid = '$patient_id' AND encounter = '$inv_encounter' " .
+    "pid = '$patient_id' AND encounter = '$encounter_id' " .
     "ORDER BY id DESC LIMIT 1");
   $inv_provider = $erow['provider_id'] + 0;
 }
@@ -2024,7 +2074,7 @@ echo " </tr>\n";
 <?php
 // A current invoice reference number may be present if there was a previous checkout.
 $tmprow = sqlQuery("SELECT invoice_refno FROM form_encounter WHERE " .
-  "pid = '$patient_id' AND encounter = '$inv_encounter'");
+  "pid = '$patient_id' AND encounter = '$encounter_id'");
 $current_irnumber = $tmprow['invoice_refno'];
 
 if (!$current_irnumber) {
@@ -2073,7 +2123,8 @@ if (!$current_irnumber) {
 <?php } ?>
    <input type='hidden' name='form_provider'  value='<?php echo $inv_provider  ?>' />
    <input type='hidden' name='form_payer'     value='<?php echo $inv_payer     ?>' />
-   <input type='hidden' name='form_encounter' value='<?php echo $inv_encounter ?>' />
+   <input type='hidden' name='form_encounter' value='<?php echo $encounter_id ?>' />
+   <input type='hidden' name='form_checksum'  value='<?php echo $current_checksum; ?>' />
   </td>
  </tr>
 
@@ -2089,7 +2140,7 @@ if (!$current_irnumber) {
  function payprevious() {
   var width  = 750;
   var height = 550;
-  var loc = '../patient_file/front_payment.php?omitenc=<?php echo $inv_encounter; ?>';
+  var loc = '../patient_file/front_payment.php?omitenc=<?php echo $encounter_id; ?>';
 <?php if (empty($_GET['framed'])) { ?>
   opener.parent.left_nav.dlgopen(loc, '_blank', width, height);
   window.close();
@@ -2104,6 +2155,10 @@ if (!$current_irnumber) {
  addPayLine();
  billingChanged();
 <?php
+if ($alertmsg) {
+  echo "alert('" . addslashes($alertmsg) . "');\n";
+}
+
 if ($gcac_related_visit && !$gcac_service_provided) {
   // Skip this warning if the GCAC visit form is not allowed.
   $grow = sqlQuery("SELECT COUNT(*) AS count FROM list_options " .
@@ -2115,7 +2170,7 @@ if ($gcac_related_visit && !$gcac_service_provided) {
       "refer_date = '$inv_date' AND pid = '$patient_id'");
     if (empty($grow['count'])) { // if there is no referral
       $grow = sqlQuery("SELECT COUNT(*) AS count FROM forms " .
-        "WHERE pid = '$patient_id' AND encounter = '$inv_encounter' AND " .
+        "WHERE pid = '$patient_id' AND encounter = '$encounter_id' AND " .
         "deleted = 0 AND formdir = 'LBFgcac'");
       if (empty($grow['count'])) { // if there is no gcac form
         echo " alert('" . xl('This visit will need a GCAC form, referral or procedure service.') . "');\n";
@@ -2130,12 +2185,12 @@ if ($GLOBALS['ippf_specific']) {
   // o If a LBFccicon form exists with a new method on it, make sure the TS initial consult exists.
 
   require_once("$srcdir/contraception_billing_scan.inc.php");
-  contraception_billing_scan($patient_id, $inv_encounter);
+  contraception_billing_scan($patient_id, $encounter_id);
 
   $csrow = sqlQuery("SELECT f.form_id, ld.field_value FROM forms AS f " .
     "LEFT JOIN lbf_data AS ld ON ld.form_id = f.form_id AND ld.field_id = 'newmethod' " .
     "WHERE " .
-    "f.pid = '$patient_id' AND f.encounter = '$inv_encounter' AND " .
+    "f.pid = '$patient_id' AND f.encounter = '$encounter_id' AND " .
     "f.formdir = 'LBFccicon' AND f.deleted = 0 " .
     "ORDER BY f.form_id DESC LIMIT 1");
   $csmethod = empty($csrow['field_value']) ? '' : $csrow['field_value'];

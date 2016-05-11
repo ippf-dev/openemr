@@ -302,25 +302,41 @@ function updateInvoiceRefNumber() {
   return $irnumber;
 }
 
-// Common function for voiding a receipt or checkout.
+// Common function for voiding a receipt or checkout.  When voiding a checkout you can specify
+// $time as a timestamp (yyyy-mm-dd hh:mm:ss) or 'all'; default is the last checkout.
 //
-function doVoid($patient_id, $encounter_id, $purge=false) {
+function doVoid($patient_id, $encounter_id, $purge=false, $time='') {
   $what_voided = $purge ? 'checkout' : 'receipt';
   $date_original = '';
   $adjustments = 0;
   $payments = 0;
 
-  // Get last checkout timestamp.
-  $corow = sqlQuery("(SELECT bill_date FROM billing WHERE " .
-    "pid = ? AND encounter = ? AND activity = 1 AND bill_date IS NOT NULL) " .
-    "UNION " .
-    "(SELECT bill_date FROM drug_sales WHERE " .
-    "pid = ? AND encounter = ? AND bill_date IS NOT NULL) " .
-    "ORDER BY bill_date DESC LIMIT 1",
-    array($patient_id, $encounter_id, $patient_id, $encounter_id));
+  if (!$time) {
+    // Get last checkout timestamp.
+    $corow = sqlQuery("(SELECT bill_date FROM billing WHERE " .
+      "pid = ? AND encounter = ? AND activity = 1 AND bill_date IS NOT NULL) " .
+      "UNION " .
+      "(SELECT bill_date FROM drug_sales WHERE " .
+      "pid = ? AND encounter = ? AND bill_date IS NOT NULL) " .
+      "ORDER BY bill_date DESC LIMIT 1",
+      array($patient_id, $encounter_id, $patient_id, $encounter_id));
+    if (!empty($corow['bill_date'])) {
+      $date_original = $corow['bill_date'];
+    }
+  }
+  else if ($time == 'all') {
+    $row = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
+      "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
+      "pid = ? AND encounter = ?",
+      array($patient_id, $encounter_id));
+    $adjustments = $row['adjustments'];
+    $payments = $row['payments'];
+  }
+  else {
+    $date_original = $time;
+  }
   // Get its charges and adjustments.
-  if (!empty($corow['bill_date'])) {
-    $date_original = $corow['bill_date'];
+  if ($date_original) {
     $row = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
       "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
       "pid = ? AND encounter = ? AND post_time = ?",
@@ -355,6 +371,10 @@ function doVoid($patient_id, $encounter_id, $purge=false) {
       sqlStatement("DELETE FROM ar_activity WHERE " .
         "pid = '$patient_id' AND encounter = '$encounter_id' AND " .
         "post_time = '$date_original'");
+    }
+    else if ($time == 'all') {
+      sqlStatement("DELETE FROM ar_activity WHERE " .
+        "pid = '$patient_id' AND encounter = '$encounter_id'");
     }
     sqlStatement("UPDATE billing SET billed = 0, bill_date = NULL WHERE " .
       "pid = '$patient_id' AND encounter = '$encounter_id' AND activity = 1");
