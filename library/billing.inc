@@ -371,15 +371,23 @@ function doVoid($patient_id, $encounter_id, $purge=false, $time='') {
       sqlStatement("DELETE FROM ar_activity WHERE " .
         "pid = '$patient_id' AND encounter = '$encounter_id' AND " .
         "post_time = '$date_original'");
+      sqlStatement("UPDATE billing SET billed = 0, bill_date = NULL WHERE " .
+        "pid = '$patient_id' AND encounter = '$encounter_id' AND activity = 1 AND " .
+        "bill_date IS NOT NULL AND bill_date = '$date_original'");
+      sqlStatement("update drug_sales SET billed = 0, bill_date = NULL WHERE " .
+        "pid = '$patient_id' AND encounter = '$encounter_id' AND " .
+        "bill_date IS NOT NULL AND bill_date = '$date_original'");
     }
-    else if ($time == 'all') {
-      sqlStatement("DELETE FROM ar_activity WHERE " .
+    else {
+      if ($time == 'all') {
+        sqlStatement("DELETE FROM ar_activity WHERE " .
+          "pid = '$patient_id' AND encounter = '$encounter_id'");
+      }
+      sqlStatement("UPDATE billing SET billed = 0, bill_date = NULL WHERE " .
+        "pid = '$patient_id' AND encounter = '$encounter_id' AND activity = 1");
+      sqlStatement("update drug_sales SET billed = 0, bill_date = NULL WHERE " .
         "pid = '$patient_id' AND encounter = '$encounter_id'");
     }
-    sqlStatement("UPDATE billing SET billed = 0, bill_date = NULL WHERE " .
-      "pid = '$patient_id' AND encounter = '$encounter_id' AND activity = 1");
-    sqlStatement("update drug_sales SET billed = 0 WHERE " .
-      "pid = '$patient_id' AND encounter = '$encounter_id'");
     sqlStatement("UPDATE form_encounter SET last_level_billed = 0, " .
       "last_level_closed = 0, stmt_count = 0, last_stmt_date = NULL " .
       "WHERE pid = '$patient_id' AND encounter = '$encounter_id'");

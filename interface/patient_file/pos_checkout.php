@@ -776,9 +776,11 @@ body, td {
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href='#' onclick='return voidme("regen");'><?php echo xl('Reprint with New Receipt'); ?></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<a href='#' onclick='return voidme("void");'><?php echo xl('Void Last Checkout'); ?></a>
+<a href='#' onclick='return voidme("void");' title='<?php echo xla('Applies to this visit only'); ?>'>
+ <?php echo xlt('Void Last Checkout'); ?></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<a href='#' onclick='return voidme("voidall");'><?php echo xl('Void All Checkouts'); ?></a>
+<a href='#' onclick='return voidme("voidall");' title='<?php echo xla('Applies to this visit only'); ?>'>
+ <?php echo xl('Void All Checkouts'); ?></a>
 <?php } ?>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <?php if ($details) { ?>
