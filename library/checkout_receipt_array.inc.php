@@ -208,6 +208,18 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     'total_payments'    => 0,
   );
 
+  // Get timestamp of the previous checkout, if any.
+  $prevtime = '1900-01-01 00:00:00';
+  if ($billtime) {
+    $tmp = sqlQuery(
+      "(SELECT bill_date FROM billing WHERE pid = ? AND encounter = ? AND activity = 1 AND billed = 1 AND bill_date < ?) " .
+      "UNION " .
+      "(SELECT bill_date FROM drug_sales WHERE pid = ? AND encounter = ? AND billed = 1 AND bill_date < ?) " .
+      "ORDER BY bill_date DESC LIMIT 1",
+      array($patient_id, $encounter, $billtime, $patient_id, $encounter, $billtime));
+    if (!empty($tmp['bill_date'])) $prevtime = $tmp['bill_date'];
+  }
+
   // Create array aAdjusts from ar_activity rows for $inv_encounter.
   $aReceipt['_adjusts'] = array();
   $ares = sqlStatement("SELECT " .
@@ -286,13 +298,18 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
     "a.pid = '$patient_id' AND a.encounter = '$encounter' AND " .
     "a.pay_amount != 0 " .
-    "ORDER BY s.check_date, a.sequence_no");
+    "ORDER BY a.post_time, s.check_date, a.sequence_no");
   $payer = empty($inrow['payer_type']) ? 'Pt' : ('Ins' . $inrow['payer_type']);
   while ($inrow = sqlFetchArray($inres)) {
-    if ($billtime && $inrow['post_time'] != $billtime) continue;
+    $meth = $inrow['memo'];
+    if ($billtime && $inrow['post_time'] != $billtime) {
+      if ($inrow['post_time'] > $billtime || $inrow['post_time'] <= $prevtime) continue;
+      // This is the case of payments after the previous checkout and before this checkout.
+      $meth = xl('Previous');
+    }
     $payments += sprintf('%01.2f', $inrow['pay_amount']);
     receiptArrayPaymentLine($aReceipt, $svcdate, $inrow['pay_amount'],
-      $payer . ' ' . $inrow['reference'], $inrow['memo']);
+      $payer . ' ' . $inrow['reference'], $meth);
   }
 
   return $aReceipt;
