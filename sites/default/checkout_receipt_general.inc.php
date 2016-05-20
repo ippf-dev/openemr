@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -297,11 +297,17 @@ function generateCheckoutReceipt($patient_id, $encounter_id, $billtime='') {
   // End bold.
   $pdf->SetFont($GCR_FONT, '', $GCR_FONTSIZE);
 
+  // Previous Balance line. From previous checkouts in this same visit. Usually not applicable.
+  if ($aReceipt['checkout_prvbal'] != 0) {
+    gcrFootLine($aReceipt, $pdf, xl('Visit Previous Balance'), $aReceipt['checkout_prvbal']);
+    $subtotal += $aReceipt['checkout_prvbal'];
+  }
+
   // Short horizontal rule and blank line.
   gcrWriteHR($pdf, $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH);
   $pdf->Ln($GCR_LINE_HEIGHT);
 
-  // TBD: Payment lines and balance due line.
+  // Payment lines.
   foreach ($aReceipt['payments'] as $item) {
     gcrFootLine($aReceipt, $pdf, $item['method'] . ' ' . xl('Payment'), $item['amount']);
     $subtotal -= $item['amount'];

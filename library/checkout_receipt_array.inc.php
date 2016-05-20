@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -154,21 +154,27 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
   $head_begbal = get_patient_balance_excluding($patient_id, $encounter);
   $row = sqlQuery("SELECT SUM(fee) AS amount FROM billing WHERE " .
     "pid = '$patient_id' AND encounter = '$encounter' AND activity = 1 AND " .
-    "code_type != 'COPAY'");
+    "code_type != 'COPAY'" .
+    ($billtime ? " AND billed = 1 AND bill_date <= '$billtime'" : ""));
   $head_charges = $row['amount'];
   $row = sqlQuery("SELECT SUM(fee) AS amount FROM drug_sales WHERE " .
-    "pid = '$patient_id' AND encounter = '$encounter'");
+    "pid = '$patient_id' AND encounter = '$encounter'" .
+    ($billtime ? " AND billed = 1 AND bill_date <= '$billtime'" : ""));
   $head_charges += $row['amount'];
   $row = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
     "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
-    "pid = '$patient_id' AND encounter = '$encounter'");
+    "pid = '$patient_id' AND encounter = '$encounter'" .
+    ($billtime ? " AND post_time <= '$billtime'" : ""));
   $head_charges -= $row['adjustments'];
   $head_payments = $row['payments'];
   $row = sqlQuery("SELECT SUM(fee) AS amount FROM billing WHERE " .
     "pid = '$patient_id' AND encounter = '$encounter' AND activity = 1 AND " .
-    "code_type = 'COPAY'");
+    "code_type = 'COPAY'" .
+    ($billtime ? " AND billed = 1 AND bill_date <= '$billtime'" : ""));
   $head_payments -= $row['amount'];
-  $head_endbal = $head_begbal + $head_charges - $head_payments;
+  // This is the amount due for the encounter as a whole up to this point.
+  $encounter_due = $head_charges - $head_payments;
+  $head_endbal = $head_begbal + $encounter_due;
 
   $aReceipt = array(
     'encounter_id'      => $encounter,
@@ -206,6 +212,8 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     'total_adjustments' => 0,
     'total_totals'      => 0,
     'total_payments'    => 0,
+    'checkout_prvbal'   => 0, // see calculation at end of this function
+    'encounter_due'     => $encounter_due,
   );
 
   // Get timestamp of the previous checkout, if any.
@@ -311,6 +319,11 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     receiptArrayPaymentLine($aReceipt, $svcdate, $inrow['pay_amount'],
       $payer . ' ' . $inrow['reference'], $meth);
   }
+
+  // Previous balance for this checkout is local to the encounter, and is the total balance
+  // for the encounter up to this time minus total balance for this checkout.
+  // If there is no $billtime then this should always be zero.
+  $aReceipt['checkout_prvbal'] = $aReceipt['encounter_due'] - $aReceipt['total_totals'] + $aReceipt['total_payments'];
 
   return $aReceipt;
 }
