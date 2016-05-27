@@ -59,32 +59,44 @@ function VitalsComputeWI() {
 ";
 **********************************************************************/
 
-  echo "// Height in cm has changed.
-function Vitals_height_cm_changed() {
+ echo "// Some measurement in inches has changed.
+function Vitals_in_changed(field) {
  var f = document.forms[0];
- var cm = f.form_VIT_Height_cm.value;
- if (cm == parseFloat(cm)) {
-  inch = cm / 2.54;
-  f.form_VIT_Height_in.value = inch.toFixed(2);
+ var inch = f['form_' + field + '_in'].value;
+ if (inch == parseFloat(inch)) {
+  cm = inch * 2.54;
+  f['form_' + field + '_cm'].value = cm.toFixed(2);
  }
  else {
-  f.form_VIT_Height_in.value = '';
+  f['form_' + field + '_cm'].value = '';
  }
+}
+";
+
+  echo "// Some measurement in cm has changed.
+function Vitals_cm_changed(field) {
+ var f = document.forms[0];
+ var cm = f['form_' + field + '_cm'].value;
+ if (cm == parseFloat(cm)) {
+  inch = cm / 2.54;
+  f['form_' + field + '_in'].value = inch.toFixed(2);
+ }
+ else {
+  f['form_' + field + '_in'].value = '';
+ }
+}
+";
+
+  echo "// Height in cm has changed.
+function Vitals_height_cm_changed() {
+ Vitals_cm_changed('VIT_Height');
  VitalsComputeBMI();
 }
 ";
 
   echo "// Height in inches has changed.
 function Vitals_height_in_changed() {
- var f = document.forms[0];
- var inch = f.form_VIT_Height_in.value;
- if (inch == parseFloat(inch)) {
-  cm = inch * 2.54;
-  f.form_VIT_Height_cm.value = cm.toFixed(2);
- }
- else {
-  f.form_VIT_Height_cm.value = '';
- }
+ Vitals_in_changed('VIT_Height');
  VitalsComputeBMI();
 }
 ";
@@ -149,57 +161,37 @@ function Vitals_temperature_f_changed() {
 
   echo "// Head circumference in cm has changed.
 function Vitals_Head_circum_cm_changed() {
- var f = document.forms[0];
- var cm = f.form_VIT_Head_circum_cm.value;
- if (cm == parseFloat(cm)) {
-  inch = cm / 2.54;
-  f.form_VIT_Head_circum_in.value = inch.toFixed(2);
- }
- else {
-  f.form_VIT_Head_circum_in.value = '';
- }
+ Vitals_cm_changed('VIT_Head_circum');
 }
 ";
 
   echo "// Head circumference in inches has changed.
 function Vitals_Head_circum_in_changed() {
- var f = document.forms[0];
- var inch = f.form_VIT_Head_circum_in.value;
- if (inch == parseFloat(inch)) {
-  cm = inch * 2.54;
-  f.form_VIT_Head_circum_cm.value = cm.toFixed(2);
- }
- else {
-  f.form_VIT_Head_circum_cm.value = '';
- }
+ Vitals_in_changed('VIT_Head_circum');
 }
 ";
 
   echo "// Waist circumference in cm has changed.
 function Vitals_Waist_circum_cm_changed() {
- var f = document.forms[0];
- var cm = f.form_VIT_Waist_circum_cm.value;
- if (cm == parseFloat(cm)) {
-  inch = cm / 2.54;
-  f.form_VIT_Waist_circum_in.value = inch.toFixed(2);
- }
- else {
-  f.form_VIT_Waist_circum_in.value = '';
- }
+ Vitals_cm_changed('VIT_Waist_circum');
 }
 ";
 
-  echo "// Head circumference in inches has changed.
+  echo "// Waist circumference in inches has changed.
 function Vitals_Waist_circum_in_changed() {
- var f = document.forms[0];
- var inch = f.form_VIT_Waist_circum_in.value;
- if (inch == parseFloat(inch)) {
-  cm = inch * 2.54;
-  f.form_VIT_Waist_circum_cm.value = cm.toFixed(2);
- }
- else {
-  f.form_VIT_Waist_circum_cm.value = '';
- }
+ Vitals_in_changed('VIT_Waist_circum');
+}
+";
+
+  echo "// Hip circumference in cm has changed.
+function Vitals_Hip_circum_cm_changed() {
+ Vitals_cm_changed('VIT_Hip_circum');
+}
+";
+
+  echo "// Hip circumference in inches has changed.
+function Vitals_Hip_circum_in_changed() {
+ Vitals_in_changed('VIT_Hip_circum');
 }
 ";
 
@@ -236,6 +228,11 @@ if (f.form_VIT_Waist_circum_in && f.form_VIT_Waist_circum_cm) {
  // Set onchange handlers to convert centimeters to inches and vice versa.
  f.form_VIT_Waist_circum_in.onchange = function () { Vitals_Waist_circum_in_changed(); };
  f.form_VIT_Waist_circum_cm.onchange = function () { Vitals_Waist_circum_cm_changed(); };
+}
+if (f.form_VIT_Hip_circum_in && f.form_VIT_Hip_circum_cm) {
+ // Set onchange handlers to convert centimeters to inches and vice versa.
+ f.form_VIT_Hip_circum_in.onchange = function () { Vitals_Hip_circum_in_changed(); };
+ f.form_VIT_Hip_circum_cm.onchange = function () { Vitals_Hip_circum_cm_changed(); };
 }
 // Set computed fields to be readonly.
 if (f.form_VIT_BMI) {
