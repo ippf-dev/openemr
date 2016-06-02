@@ -973,38 +973,25 @@ function generate_form_field($frow, $currvalue) {
       $allow_unspecified = true, $allow_allfacilities = false, $disabled, $lbfchange);
   }
 
-  // Canvas and image for drawing
+  // Canvas and related elements for browser-side image drawing.
+  // Note you must invoke lbf_canvas_head() (below) to use this field type in a form.
   else if ($data_type == 40) {
     // Unlike other field types, width and height are in pixels.
     $canWidth  = intval($frow['fld_length']);
     $canHeight = intval($frow['fld_rows']);
-    // position:relative here is important so that mouse positions are reported
-    // relative to the top left corner of the canvas.
-    echo "<canvas" .
-      " id='form_$field_id_esc'" .
-      " style='border:1px solid #000000;position:relative;'" .
-      " width='$canWidth'" .
-      " height='$canHeight'" .
-      " onmousedown='lbfCanvasMousedown(event, this)'" .
-      " onmouseup='lbfCanvasMouseup(event, this)'" .
-      " onmousemove='lbfCanvasMousemove(event, this)'" .
-      ">" . xlt('Browser does not support this data type.') . "</canvas>";
-    // Hidden form field exists to send updated data to the server at submit time.
-    echo "<input type='hidden' name='form_$field_id_esc' value='' />";
-    // Hidden image exists to support JavaScript that copies it to the canvas.
     if (empty($currvalue)) {
       if (preg_match('/\\bimage=([a-zA-Z0-9._-]*)/', $frow['description'], $matches)) {
         // If defined this is the filename of the default starting image.
         $currvalue = $GLOBALS['web_root'] . '/sites/' . $_SESSION['site_id'] . '/images/' . $matches[1];
       }
-      else {
-        $currvalue = 'blank'; // special value meaning there is no image.
-      }
     }
+    echo "<div id='form_$field_id_esc'></div>";
+    // Hidden form field exists to send updated data to the server at submit time.
+    echo "<input type='hidden' name='form_$field_id_esc' value='' />";
+    // Hidden image exists to support initialization of the canvas.
     echo "<img src='" . attr($currvalue) . "' id='form_{$field_id_esc}_img' style='display:none'>";
     // $date_init is a misnomer but it's the place for browser-side setup logic.
-    // lbfCanvasSetup() to be defined in options.js.php.
-    $date_init .= " lbfCanvasSetup('form_$field_id_esc');\n";
+    $date_init .= " lbfCanvasSetup('form_$field_id_esc', $canWidth, $canHeight);\n";
   }
 
 }
@@ -2625,9 +2612,8 @@ function generate_layout_validation($form_id) {
       $fldid = addslashes("form_$field_id");
       // Move canvas image data to its hidden form field so the server will get it.
       echo
-      " var canvas = document.getElementById('$fldid');\n" .
       " var canfld = f['$fldid'];\n" .
-      " if (canvas && canfld) canfld.value = canvas.toDataURL();\n";
+      " if (canfld) canfld.value = lbfCanvasGetData('$fldid');\n";
       continue;
     }
 
@@ -2990,6 +2976,47 @@ function lbf_current_value($frow, $formid, $encounter) {
     if (function_exists($deffname)) $currvalue = call_user_func($deffname);
   }
   return $currvalue;
+}
+
+// This returns stuff that needs to go into the <head> section of a caller using
+// the drawable image field type in a form.
+//
+function lbf_canvas_head() {
+  return <<<EOD
+<link  href="{$GLOBALS['webroot']}/library/js/literallycanvas/css/literallycanvas.css" rel="stylesheet" />
+<script src="{$GLOBALS['webroot']}/library/js/react/build/react-with-addons.min.js"></script>
+<script src="{$GLOBALS['webroot']}/library/js/react/build/react-dom.min.js"></script>
+<script src="{$GLOBALS['webroot']}/library/js/literallycanvas/js/literallycanvas.min.js"></script>
+<style>
+/* Custom LiterallyCanvas styling.
+ * This makes the widget 25% less tall and adjusts some other things accordingly.
+ */
+.literally {
+  min-height:292px;min-width:300px;        /* Was 400, unspecified */
+}
+.literally .lc-picker .toolbar-button {
+  width:20px;height:20px;line-height:20px; /* Was 26, 26, 26 */
+}
+.literally .color-well {
+  font-size:8px;width:49px;                /* Was 10, 60 */
+}
+.literally .color-well-color-container {
+  width:21px;height:21px;                  /* Was 28, 28 */
+}
+.literally .lc-picker {
+  width:50px;                              /* Was 61 */
+}
+.literally .lc-drawing.with-gui {
+  left:50px;                               /* Was 61 */
+}
+.literally .lc-options {
+  left:50px;                               /* Was 61 */
+}
+.literally .color-picker-popup {
+  left:49px;bottom:0px;                   /* Was 60, 31 */
+}
+</style>
+EOD;
 }
 
 ?>

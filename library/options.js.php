@@ -129,53 +129,31 @@ function checkSkipConditions() {
 // Image canvas support starts here.
 ///////////////////////////////////////////////////////////////////////
 
-// An indicator of whether the mouse button is down.
-var lbfCanvasDragging = false;
+var lbfCanvases = {}; // contains the LC instance for each canvas.
 
-// Initialize the canvas image data.
-function lbfCanvasSetup(canid) {
- var canvas = document.getElementById(canid);
- var image = document.getElementById(canid + '_img');
- // We use src='blank' to mean no image is present.
- if (image.src.substr(-5) != 'blank') canvas.getContext('2d').drawImage(image, 0, 0);
+// Initialize the drawing widget.
+// canid is the id of the div that will contain the canvas, and the image
+// element used for initialization should have an id of canid + '_img'.
+//
+function lbfCanvasSetup(canid, canWidth, canHeight) {
+  var tmpImage = document.getElementById(canid + '_img');
+  var shape = LC.createShape('Image', {x: 0, y: 0, image: tmpImage});
+  var lc = LC.init(document.getElementById(canid), {
+    imageSize: {width: canWidth, height: canHeight},
+    defaultStrokeWidth: 2,
+    // backgroundShapes: [shape],
+    imageURLPrefix: '<?php echo $GLOBALS['webroot'] ?>/library/js/literallycanvas/img'
+  });
+  lc.saveShape(shape);       // alternative to the above backgroundShapes
+  lbfCanvases[canid] = lc;
 }
 
-// Handle the mouse down event on the canvas.
-// This may also be a good place to save data for an "undo" feature.
-function lbfCanvasMousedown(argevt, obj) {
- var evt = argevt ? argevt : window.event;
- var x = evt.layerX ? evt.layerX : (evt.offsetX ? evt.offsetX : 0);
- var y = evt.layerY ? evt.layerY : (evt.offsetY ? evt.offsetY : 0);
- lbfCanvasDragging = true;
-
- var context = obj.getContext('2d');
- context.beginPath();
- context.moveTo(x, y);
-
- return false;
-}
-
-// Handle the mouse up event on the canvas.
-function lbfCanvasMouseup(argevt, obj) {
- lbfCanvasDragging = false;
- // Copying to the hidden form field is now handled by generate_layout_validation().
- // document.forms[0][obj.id].value = obj.toDataURL();
- return false;
-}
-
-// Handle the mouse move event on the canvas.
-function lbfCanvasMousemove(argevt, obj) {
- if (!lbfCanvasDragging) return false;
-
- var evt = argevt ? argevt : window.event;
- var x = evt.layerX ? evt.layerX : (evt.offsetX ? evt.offsetX : 0);
- var y = evt.layerY ? evt.layerY : (evt.offsetY ? evt.offsetY : 0);
-
- var context = obj.getContext('2d');
- context.lineTo(x, y);
- context.stroke();
-
- return false;
+// This returns a standard "Data URL" string representing the image data.
+// It will typically be a few kilobytes. Here's a truncated example:
+// data:image/png;base64,iVBORw0K ...
+//
+function lbfCanvasGetData(canid) {
+  return lbfCanvases[canid].getImage().toDataURL();
 }
 
 </script>
