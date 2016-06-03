@@ -872,7 +872,6 @@ echo " </tr>\n";
 
 <?php
 $justinit = "var f = document.forms[0];\n";
-$hasCharges = false;
 
 // Generate lines for items already in the billing table for this encounter,
 // and also set the rendering provider if we come across one.
@@ -1239,7 +1238,7 @@ if (true) {
 <?php if ($rapid_data_entry) echo " style='background-color:#cc0000';color:#ffffff'"; ?>
 />
 <?php if ($GLOBALS['ippf_specific']) { // start ippf-only stuff ?>
-<?php if ($hasCharges) { // unbilled with charges ?>
+<?php if ($fs->hasCharges) { // unbilled with charges ?>
 <input type='submit' name='bn_save_close' value='<?php echo xla('Save and Checkout'); ?>' />
 <?php } else { // unbilled with no charges ?>
 <input type='submit' name='bn_save_close' value='<?php echo xla('Save and Close'); ?>' />
@@ -1250,7 +1249,7 @@ if (true) {
 value='<?php echo xla('Refresh');?>'>
 &nbsp;
 <?php } else { // visit is billed ?>
-<?php if ($hasCharges) { // billed with charges ?>
+<?php if ($fs->hasCharges) { // billed with charges ?>
 <input type='button' value='<?php echo xla('Show Receipt'); ?>'
  onclick="top.restoreSession();location='../../patient_file/pos_checkout.php?framed=1<?php
  echo "&ptid={$fs->pid}&enc={$fs->encounter}"; ?>'" />
@@ -1267,7 +1266,7 @@ value='<?php echo xla('Refresh');?>'>
  value='<?php echo xla('Add More Items'); ?>' />
 &nbsp;
 <?php } // end billed ?>
-<input type='hidden' name='form_has_charges' value='<?php echo $hasCharges ? 1 : 0; ?>' />
+<input type='hidden' name='form_has_charges' value='<?php echo $fs->hasCharges ? 1 : 0; ?>' />
 <input type='hidden' name='form_checksum' value='<?php echo $current_checksum; ?>' />
 <input type='hidden' name='form_alertmsg' value='<?php echo attr($alertmsg); ?>' />
 

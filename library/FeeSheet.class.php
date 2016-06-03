@@ -846,7 +846,7 @@ class FeeSheet {
     // directly from the Fee Sheet, if there are no charges.
     if ($mark_as_closed) {
       $tmp1 = sqlQuery("SELECT SUM(ABS(fee)) AS sum FROM drug_sales WHERE " .
-        "pid = ? AND encounter = ?",
+        "pid = ? AND encounter = ? AND billed = 0",
         array($this->pid, $this->encounter));
       $tmp2 = sqlQuery("SELECT SUM(ABS(fee)) AS sum FROM billing WHERE " .
         "pid = ? AND encounter = ? AND billed = 0 AND activity = 1",
