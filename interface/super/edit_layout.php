@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2015 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2014-2016 Rod Roark <rod@sunsetsystems.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -63,11 +63,11 @@ $datatypes = array(
   "14" => xl("Organizations"),
   "15" => xl("Billing codes"),
   "18" => xl("Visit Categories"),
-  "21" => xl("Checkbox list"),
+  "21" => xl("Checkbox(es)"),
   "22" => xl("Textbox list"),
   "23" => xl("Exam results"),
   "24" => xl("Patient allergies"),
-  "25" => xl("Checkbox w/text"),
+  "25" => xl("Checkboxes w/text"),
   "26" => xl("List box w/add"),
   "27" => xl("Radio buttons"),
   "28" => xl("Lifestyle status"),
