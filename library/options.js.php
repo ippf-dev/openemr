@@ -140,11 +140,12 @@ function lbfCanvasSetup(canid, canWidth, canHeight) {
   var shape = LC.createShape('Image', {x: 0, y: 0, image: tmpImage});
   var lc = LC.init(document.getElementById(canid), {
     imageSize: {width: canWidth, height: canHeight},
+    strokeWidths: [1, 2, 3, 5, 8, 12],
     defaultStrokeWidth: 2,
-    // backgroundShapes: [shape],
+    backgroundShapes: [shape],
     imageURLPrefix: '<?php echo $GLOBALS['webroot'] ?>/library/js/literallycanvas/img'
   });
-  lc.saveShape(shape);       // alternative to the above backgroundShapes
+  // lc.saveShape(shape);       // alternative to the above backgroundShapes
   lbfCanvases[canid] = lc;
 }
 
