@@ -309,7 +309,12 @@ div.section {
 <?php echo lbf_canvas_head(); ?>
 
 <script language="JavaScript">
+
+// Support for beforeunload handler.
+var somethingChanged = false;
+
 $(document).ready(function() {
+
   // fancy box
   if (window.enable_modals) {
     enable_modals();
@@ -331,6 +336,19 @@ $(document).ready(function() {
     // add drag and drop functionality to fancybox
     $("#fancy_outer").easydrag();
   });
+
+  // Support for beforeunload handler.
+  $('.lbfdata input, .lbfdata select, .lbfdata textarea').change(function() {
+    somethingChanged = true;
+  });
+  window.addEventListener("beforeunload", function (e) {
+    if (somethingChanged) {
+      var msg = "<?php echo xls('You have unsaved changes.'); ?>";
+      e.returnValue = msg;     // Gecko, Trident, Chrome 34+
+      return msg;              // Gecko, WebKit, Chrome <34
+    }
+  });
+
 });
 
 var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
@@ -426,6 +444,7 @@ function validate(f) {
  //
  // if (window.jsLineItemValidation && !jsLineItemValidation(f)) return false;
 
+ somethingChanged = false; // turn off "are you sure you want to leave"
  top.restoreSession();
  return true;
 }
@@ -878,7 +897,7 @@ function warehouse_changed(sel) {
       }
 
       $group_table_active = true;
-      echo " <table border='0' cellspacing='0' cellpadding='0'>\n";
+      echo " <table border='0' cellspacing='0' cellpadding='0' class='lbfdata'>\n";
       $display_style = 'none';
 
       // Initialize historical data array and write date headers.
