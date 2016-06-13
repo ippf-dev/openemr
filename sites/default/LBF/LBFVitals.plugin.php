@@ -205,34 +205,34 @@ function LBFVitals_javascript_onload() {
   echo "
 var f = document.forms[0];
 if (f.form_VIT_Weight_lb && f.form_VIT_Weight_kg) {
- // Set onchange handlers to convert kg to lbs and vice versa.
- f.form_VIT_Weight_lb.onchange = function () { Vitals_weight_lbs_changed(); };
- f.form_VIT_Weight_kg.onchange  = function () { Vitals_weight_kg_changed() ; };
+ // Set change event handlers to convert kg to lbs and vice versa.
+ f.form_VIT_Weight_lb.addEventListener('change', function () {Vitals_weight_lbs_changed();});
+ f.form_VIT_Weight_kg.addEventListener('change', function () {Vitals_weight_kg_changed() ;});
 }
 if (f.form_VIT_Height_in && f.form_VIT_Height_cm) {
- // Set onchange handlers to convert centimeters to inches and vice versa.
- f.form_VIT_Height_in.onchange = function () { Vitals_height_in_changed(); };
- f.form_VIT_Height_cm.onchange = function () { Vitals_height_cm_changed(); };
+ // Set change event handlers to convert centimeters to inches and vice versa.
+ f.form_VIT_Height_in.addEventListener('change', function () {Vitals_height_in_changed();});
+ f.form_VIT_Height_cm.addEventListener('change', function () {Vitals_height_cm_changed();});
 }
 if (f.form_VIT_TempF && f.form_VIT_TempC) {
- // Set onchange handlers to convert centigrade to farenheit and vice versa.
- f.form_VIT_TempF.onchange = function () { Vitals_temperature_f_changed(); };
- f.form_VIT_TempC.onchange = function () { Vitals_temperature_c_changed(); };
+ // Set change event handlers to convert centigrade to farenheit and vice versa.
+ f.form_VIT_TempF.addEventListener('change', function () {Vitals_temperature_f_changed();});
+ f.form_VIT_TempC.addEventListener('change', function () {Vitals_temperature_c_changed();});
 }
 if (f.form_VIT_Head_circum_in && f.form_VIT_Head_circum_cm) {
- // Set onchange handlers to convert centimeters to inches and vice versa.
- f.form_VIT_Head_circum_in.onchange = function () { Vitals_Head_circum_in_changed(); };
- f.form_VIT_Head_circum_cm.onchange = function () { Vitals_Head_circum_cm_changed(); };
+ // Set change event handlers to convert centimeters to inches and vice versa.
+ f.form_VIT_Head_circum_in.addEventListener('change', function () {Vitals_Head_circum_in_changed();});
+ f.form_VIT_Head_circum_cm.addEventListener('change', function () {Vitals_Head_circum_cm_changed();});
 }
 if (f.form_VIT_Waist_circum_in && f.form_VIT_Waist_circum_cm) {
- // Set onchange handlers to convert centimeters to inches and vice versa.
- f.form_VIT_Waist_circum_in.onchange = function () { Vitals_Waist_circum_in_changed(); };
- f.form_VIT_Waist_circum_cm.onchange = function () { Vitals_Waist_circum_cm_changed(); };
+ // Set change event handlers to convert centimeters to inches and vice versa.
+ f.form_VIT_Waist_circum_in.addEventListener('change', function () {Vitals_Waist_circum_in_changed();});
+ f.form_VIT_Waist_circum_cm.addEventListener('change', function () {Vitals_Waist_circum_cm_changed();});
 }
 if (f.form_VIT_Hip_circum_in && f.form_VIT_Hip_circum_cm) {
- // Set onchange handlers to convert centimeters to inches and vice versa.
- f.form_VIT_Hip_circum_in.onchange = function () { Vitals_Hip_circum_in_changed(); };
- f.form_VIT_Hip_circum_cm.onchange = function () { Vitals_Hip_circum_cm_changed(); };
+ // Set change event handlers to convert centimeters to inches and vice versa.
+ f.form_VIT_Hip_circum_in.addEventListener('change', function () {Vitals_Hip_circum_in_changed();});
+ f.form_VIT_Hip_circum_cm.addEventListener('change', function () {Vitals_Hip_circum_cm_changed();});
 }
 // Set computed fields to be readonly.
 if (f.form_VIT_BMI) {
