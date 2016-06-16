@@ -1720,7 +1720,7 @@ $(document).ready(function(){
     }
 
   // Support for beforeunload handler.
-  $('tbody input, tbody select, tbody textarea').change(function() {
+  $('tbody input, tbody select, tbody textarea').not('.selectfield').change(function() {
     somethingChanged = true;
   });
   window.addEventListener("beforeunload", function (e) {
