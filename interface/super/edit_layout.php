@@ -1018,7 +1018,7 @@ function mySubmit() {
 // Return true if that is OK.
 function myChangeCheck() {
   if (somethingChanged) {
-    if (!confirm('<?php echo xls('You have unsaved changes. Abandon them?'); ?>')) {
+    if (!confirm('<?php echo xls('You have unsaved changes. Discard them?'); ?>')) {
       return false;
     }
     // Do not set somethingChanged to false here because if they cancel the

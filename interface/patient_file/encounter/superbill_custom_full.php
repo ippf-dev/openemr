@@ -506,7 +506,7 @@ function code_type_changed() {
 <?php } ?>
    &nbsp;
   </td>
-  <td nowrap width='70%'>
+  <td nowrap>
    &nbsp;&nbsp;
    <input type='checkbox' name='active' value='1'<?php if (!empty($active) || ($mode == 'modify' && $active == NULL) ) echo ' checked'; ?> />
    <?php echo xlt('Active'); ?>

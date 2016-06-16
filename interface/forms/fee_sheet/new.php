@@ -853,7 +853,7 @@ echo " </tr>\n";
 <?php } ?>
 <?php if (fees_are_used()) { ?>
 <?php if ($price_levels_are_used) { ?>
-  <td class='billcell' align='center'><b><?php echo xlt('Level');?></b>&nbsp;</td>
+  <td class='billcell' align='center'><b><?php echo xlt('Price Level');?></b>&nbsp;</td>
 <?php } ?>
   <td class='billcell' align='right'><b><?php echo xlt('Price');?></b>&nbsp;</td>
   <td class='billcell' align='center'><b><?php echo xlt('Units');?></b></td>
@@ -1216,7 +1216,7 @@ $plres = sqlStatement("SELECT option_id, title FROM list_options " .
   "WHERE list_id = 'pricelevel' ORDER BY seq");
 if (true) {
   $pricelevel = $fs->getPriceLevel();
-  echo "   <span class='billcell'><b>" . xlt('Price Level') . ":</b></span>\n";
+  echo "   <span class='billcell'><b>" . xlt('Default Price Level') . ":</b></span>\n";
   echo "   <select name='pricelevel'";
   if ($isBilled) echo " disabled";
   echo ">\n";
