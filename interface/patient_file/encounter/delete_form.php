@@ -48,15 +48,18 @@ if ($_POST['confirm']) {
 <?php
 // output each GET variable as a hidden form input
 foreach ($_GET as $key => $value) {
-    echo '<input type="hidden" id="'.$key.'" name="'.$key.'" value="'.$value.'"/>'."\n";
+    echo '<input type="hidden" id="' . attr($key) . '" name="' . attr($key) . '" value="' . attr($value) . '"/>' . "\n";
 }
 ?>
 <input type="hidden" id="confirm" name="confirm" value="1"/>
 <p>
-You are about to delete the form '<?php echo $_GET['formname']; ?>' from <?php xl('This Encounter','e'); ?>.
+<?php
+$tmp = empty($_GET['formdesc']) ? $_GET['formname'] : $_GET['formdesc'];
+echo xls("You are about to delete the form") . " '$tmp' " . xls('from this visit.');
+?>
 </p>
-<input type="button" id="confirmbtn" name="confirmbtn" value="Yes, Delete this form">
-<input type="button" id="cancel" name="cancel" value="Cancel">
+<input type="button" id="confirmbtn" name="confirmbtn" value="<?php echo xla('Yes, Delete this form'); ?>">
+<input type="button" id="cancel" name="cancel" value="<?php echo xla('Cancel'); ?>">
 </form>
 
 </body>
@@ -70,7 +73,7 @@ $(document).ready(function(){
 });
 
 function ConfirmDelete() {
-    if (confirm("This action cannot be undone. Are you sure you wish to delete this form?")) {
+    if (confirm("<?php echo xla('This action cannot be undone. Are you sure you wish to delete this form?'); ?>")) {
         top.restoreSession();
         $("#my_form").submit();
         return true;

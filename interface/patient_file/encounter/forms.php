@@ -426,13 +426,14 @@ if ( $esign->isButtonViewable() ) {
                 echo "<a target='".
                     ($GLOBALS['concurrent_layout'] ? "Forms" : "Main") .
                     "' href='$rootdir/patient_file/encounter/delete_form.php?" .
-                    "formname=" . $formdir .
-                    "&id=" . $iter['id'] .
-                    "&encounter=". $encounter.
-                    "&pid=".$pid.
-                    "' class='css_button_small' title='" . xl('Delete this form') . "' onclick='top.restoreSession()'><span>" . xl('Delete') . "</span></a>";
+                    "formname="   . urlencode($formdir) .
+                    "&formdesc="  . urlencode($form_name) .
+                    "&id="        . urlencode($iter['id']) .
+                    "&encounter=" . urlencode($encounter) .
+                    "&pid="       . urlencode($pid) .
+                    "' class='css_button_small' title='" . xla('Delete this form') . "' onclick='top.restoreSession()'><span>" . xlt('Delete') . "</span></a>";
             } else {
-                ?><a href='javascript:;' class='css_button_small' style='color:gray'><span><?php xl('Delete','e'); ?></span></a><?php
+                ?><a href='javascript:;' class='css_button_small' style='color:gray'><span><?php echo xlt('Delete'); ?></span></a><?php
             }
         }
         echo "</div>\n"; // Added as bug fix.
