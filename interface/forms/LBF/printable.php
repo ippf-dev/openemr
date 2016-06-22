@@ -142,12 +142,16 @@ div.section td.stuff {
 <?php } ?>
 }
 
-td.lcols1 { width: 20%; }
-td.lcols2 { width: 50%; }
-td.lcols3 { width: 70%; }
-td.dcols1 { width: 30%; }
-td.dcols2 { width: 50%; }
-td.dcols3 { width: 80%; }
+<?php
+// Generate widths for the various numbers of label columns and data columns.
+for ($lcols = 1; $lcols < $CPR; ++$lcols) {
+  $dcols = $CPR - $lcols;
+  $lpct = intval(100 * $lcols / $CPR);
+  $dpct = 100 - $lpct;
+  echo "td.lcols$lcols { width: $lpct%; }\n";
+  echo "td.dcols$dcols { width: $dpct%; }\n";
+}
+?>
 
 .mainhead {
  font-weight: bold;
@@ -326,8 +330,12 @@ while ($frow = sqlFetchArray($fres)) {
     echo "<p class='grpheader'>" . text(xl_layout_label(substr($gname, 1))) . "</p>\n";
     echo "<div class='section'>\n";
     echo " <table border='0' cellpadding='0'>\n";
-    echo "  <tr><td class='lcols1'></td><td class='dcols1'></td><td class='lcols1'></td><td class='dcols1'></td></tr>\n";
-
+    echo "  <tr>";
+    for ($i = 1; $i <= $CPR; ++$i) {
+      $tmp = $i % 2 ? 'lcols1' : 'dcols1';
+      echo "<td class='$tmp'></td>";
+    }
+    echo "</tr>\n";
     $group_table_active = true;
   }
 

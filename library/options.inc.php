@@ -1684,7 +1684,7 @@ function generate_display_field($frow, $currvalue) {
   // a single checkbox or set of labeled checkboxes
   else if ($data_type == 21) {
     if (!$list_id) {
-      $s .= $currvalue ? xlt('Yes') : xlt('No');
+      $s .= $currvalue ? '[ x ]' : '[ &nbsp;&nbsp; ]';
     }
     else {
       $avalue = explode('|', $currvalue);
