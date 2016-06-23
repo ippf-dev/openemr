@@ -354,7 +354,8 @@ while ($frow = sqlFetchArray($fres)) {
     echo "<td colspan='$titlecols' ";
     echo "class='lcols$titlecols stuff " . (($frow['uor'] == 2) ? "required'" : "bold'");
     if ($cell_count == 2) echo " style='padding-left:10pt'";
-    echo " nowrap>";
+    // echo " nowrap>"; // html2pdf misbehaves with this.
+    echo ">";
     $cell_count += $titlecols;
   }
   ++$item_count;
@@ -368,10 +369,14 @@ while ($frow = sqlFetchArray($fres)) {
   // Handle starting of a new data cell.
   if ($datacols > 0) {
     end_cell();
-    echo "<td colspan='$datacols' class='dcols$datacols stuff under'";
+    echo "<td colspan='$datacols' class='dcols$datacols stuff under' style='";
 
-    if ($cell_count > 0) echo " style='padding-left:5pt;'";
-    echo ">";
+    if ($cell_count > 0) echo "padding-left:5pt;";
+    if (in_array($data_type, array(21,27))) {
+      // Omit underscore for checkboxes and radio buttons.
+      echo "border-width:0 0 0 0;";
+    }
+    echo "'>";
     $cell_count += $datacols;
   }
 

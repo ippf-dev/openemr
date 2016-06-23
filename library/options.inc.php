@@ -1550,8 +1550,8 @@ function generate_display_field($frow, $currvalue) {
   $s = '';
 
   // generic selection list or the generic selection list with add on the fly
-  // feature, or radio buttons
-  if ($data_type == 1 || $data_type == 26 || $data_type == 27 || $data_type == 33) {
+  // feature
+  if ($data_type == 1 || $data_type == 26 || $data_type == 33) {
     $lrow = sqlQuery("SELECT title FROM list_options " .
       "WHERE list_id = ? AND option_id = ?", array($list_id,$currvalue) );
       $s = htmlspecialchars(xl_list_label($lrow['title']),ENT_NOQUOTES);
@@ -1687,18 +1687,27 @@ function generate_display_field($frow, $currvalue) {
       $s .= $currvalue ? '[ x ]' : '[ &nbsp;&nbsp; ]';
     }
     else {
+      // In this special case, fld_length is the number of columns generated.
+      $cols = max(1, $frow['fld_length']);
       $avalue = explode('|', $currvalue);
       $lres = sqlStatement("SELECT * FROM list_options " .
-        "WHERE list_id = ? ORDER BY seq, title", array($list_id) );
-      $count = 0;
-      while ($lrow = sqlFetchArray($lres)) {
+        "WHERE list_id = ? ORDER BY seq, title", array($list_id));
+      $s .= "<table cellspacing='0' cellpadding='0'>";
+      for ($count = 0; $lrow = sqlFetchArray($lres); ++$count) {
         $option_id = $lrow['option_id'];
-        if (in_array($option_id, $avalue)) {
-          if ($count++) $s .= "<br />";
-          // Added 5-09 by BM - Translate label if applicable
-          $s .= htmlspecialchars(xl_list_label($lrow['title']),ENT_NOQUOTES);
+        $option_id_esc = text($option_id);
+        if ($count % $cols == 0) {
+          if ($count) $s .= "</tr>";
+          $s .= "<tr>";
         }
+        $s .= "<td>";
+        $checked = in_array($option_id, $avalue);
+        $s .= $checked ? '[ x ]' : '[ &nbsp;&nbsp; ]';
+        $s .= '&nbsp;' . text(xl_list_label($lrow['title'])). '&nbsp;&nbsp;';
+        $s .= "</td>";
       }
+      if ($count) $s .= "</tr>";
+      $s .= "</table>";
     }
   }
 
@@ -1798,6 +1807,33 @@ function generate_display_field($frow, $currvalue) {
       $s .= "<td class='text' valign='top'>" . htmlspecialchars($resnote,ENT_NOQUOTES) . "</td>";
       $s .= "</tr>";
     }
+    $s .= "</table>";
+  }
+
+  // a set of labeled radio buttons
+  else if ($data_type == 27) {
+    // In this special case, fld_length is the number of columns generated.
+    $cols = max(1, $frow['fld_length']);
+    $lres = sqlStatement("SELECT * FROM list_options " .
+      "WHERE list_id = ? ORDER BY seq, title", array($list_id));
+    $s .= "<table cellspacing='0' cellpadding='0'>";
+    // $tdpct = (int) (100 / $cols);
+    for ($count = 0; $lrow = sqlFetchArray($lres); ++$count) {
+      $option_id = $lrow['option_id'];
+      $option_id_esc = text($option_id);
+      if ($count % $cols == 0) {
+        if ($count) $s .= "</tr>";
+        $s .= "<tr>";
+      }
+      // $s .= "<td width='$tdpct%'>";
+      $s .= "<td>";
+      $checked = ((strlen($currvalue) == 0 && $lrow['is_default']) ||
+        (strlen($currvalue)  > 0 && $option_id == $currvalue));
+      $s .= $checked ? '[ x ]' : '[ &nbsp;&nbsp; ]';
+      $s .= '&nbsp;' . text(xl_list_label($lrow['title'])). '&nbsp;&nbsp;';
+      $s .= "</td>";
+    }
+    if ($count) $s .= "</tr>";
     $s .= "</table>";
   }
 
