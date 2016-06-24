@@ -148,7 +148,7 @@ for ($lcols = 1; $lcols < $CPR; ++$lcols) {
   $dcols = $CPR - $lcols;
   $lpct = intval(100 * $lcols / $CPR);
   $dpct = 100 - $lpct;
-  echo "td.lcols$lcols { width: $lpct%; }\n";
+  echo "td.lcols$lcols { width: $lpct%; text-align: right; }\n";
   echo "td.dcols$dcols { width: $dpct%; }\n";
 }
 ?>
