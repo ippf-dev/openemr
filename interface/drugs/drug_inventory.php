@@ -277,7 +277,7 @@ $(document).ready(function() {
  $encount = 0;
  $today = date('Y-m-d'); 
  while ($row = sqlFetchArray($res)) {
-  if ($is_user_restricted && !isWarehouseAllowed($row['facid'], $row['warehouse_id'])) {
+  if (!empty($row['inventory_id']) && $is_user_restricted && !isWarehouseAllowed($row['facid'], $row['warehouse_id'])) {
     continue;
   }
   if ($lastid != $row['drug_id']) {
