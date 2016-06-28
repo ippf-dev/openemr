@@ -87,8 +87,10 @@ else {
 
  // The OnClick handler for referral display.
  function show_referral(transid) {
-  dlgopen('../patient_file/transaction/print_referral.php?transid=' + transid,
-   '_blank', 550, 400);
+  // dlgopen('../patient_file/transaction/print_referral.php?transid=' + transid, '_blank', 550, 400);
+  // The above was modified to go to the referral form instead of displaying the PDF.
+  top.restoreSession();
+  top.RTop.document.location.href = "../patient_file/summary/demographics.php?set_form=" + transid;
   return false;
  }
 

@@ -391,6 +391,8 @@ if ( $esign->isButtonViewable() ) {
           "(<span id=spanid_$divnos class=\"indicator\">" . ($divnos == 1 ? xl('Collapse') : xl('Expand')) . "</span>)</a>";
         echo "</div>";
 
+        $mytarget = $GLOBALS['concurrent_layout'] ? "" : "target='Main'";
+
         // a link to edit the form
         echo "<div class='form_header_controls'>";
         // If the form is locked, it is no longer editable
@@ -399,7 +401,7 @@ if ( $esign->isButtonViewable() ) {
         } else {
             echo "<a class='css_button_small form-edit-button' " .
                     "id='form-edit-button-" . attr($formdir) . "-" . attr($iter['id']) . "' " .
-                    "target='" . ($GLOBALS['concurrent_layout'] ? "Forms" : "Main") . "' " .
+                    "$mytarget " .
                     "href='$rootdir/patient_file/encounter/view_form.php?" .
                     "formname=" . attr($formdir) . "&id=" . attr($iter['form_id']) . "' " .
                     "title='" . xla('Edit this form') . "' " .
@@ -423,9 +425,8 @@ if ( $esign->isButtonViewable() ) {
         if (acl_check('admin', 'super') ) {
             if ($formdir != 'newpatient') {
                 // a link to delete the form from the encounter
-                echo "<a target='".
-                    ($GLOBALS['concurrent_layout'] ? "Forms" : "Main") .
-                    "' href='$rootdir/patient_file/encounter/delete_form.php?" .
+                echo "<a $mytarget " .
+                    "href='$rootdir/patient_file/encounter/delete_form.php?" .
                     "formname="   . urlencode($formdir) .
                     "&formdesc="  . urlencode($form_name) .
                     "&id="        . urlencode($iter['id']) .

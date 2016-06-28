@@ -92,7 +92,7 @@ if ($formid && !$visitid) {
     "form_id = ? AND formdir = ? AND deleted = 0",
     array($formid, $formname));
   $visitid = intval($frow['encounter']);
-  if ($row['pid'] != $pid) die("Internal error: patient ID mismatch!");
+  if ($frow['pid'] != $pid) die("Internal error: patient ID mismatch!");
 }
 
 if (!$from_trend_form && !$visitid) {

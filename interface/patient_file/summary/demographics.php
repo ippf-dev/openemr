@@ -39,11 +39,31 @@ $fake_register_globals=false;
  require_once("$srcdir/edi.inc");
  require_once("$srcdir/invoice_summary.inc.php");
  require_once("$srcdir/clinical_rules.php");
+ require_once("$srcdir/pid.inc");
 
-  if ($GLOBALS['concurrent_layout'] && isset($_GET['set_pid'])) {
-  include_once("$srcdir/pid.inc");
-  setpid($_GET['set_pid']);
- }
+if ($GLOBALS['concurrent_layout']) {
+  // Support for loading a specified encounter form.
+  $formrow = FALSE;
+  if (isset($_GET['set_form'])) {
+    $formrow = sqlQuery("SELECT f.id, f.pid, f.encounter, f.form_id, f.formdir, fe.date " .
+      "FROM forms AS f, form_encounter AS fe WHERE " .
+      "f.id = ? AND fe.pid = f.pid AND fe.encounter = f.encounter",
+      array(intval($_GET['set_form'])));
+    if (empty($formrow['id'])) {
+      $formrow = FALSE;
+    }
+    else {
+      $_GET['set_pid'] = $formrow['pid'];
+      setpid($formrow['pid']);
+      $encounter = $formrow['encounter'];
+      $_SESSION['encounter'] = $encounter;
+    }
+  }
+  // Support for loading a specified patient.
+  else if (isset($_GET['set_pid'])) {
+    setpid($_GET['set_pid']);
+  }
+}
 
   $active_reminders = false;
   if ((!isset($_SESSION['alert_notify_pid']) || ($_SESSION['alert_notify_pid'] != $pid)) && isset($_GET['set_pid']) && acl_check('patients', 'med') && $GLOBALS['enable_cdr'] && $GLOBALS['enable_cdr_crp']) {
@@ -426,13 +446,9 @@ function setMyPatient() {
  var CalendarCategoryArray = new Array;
  var EncounterIdArray = new Array;
  var Count = 0;
-<?php if (isset($_REQUEST['is_new']))
-        {
-            ?>
-                    parent.left_nav.newEncounterForNewPatient();
-            <?php
-        }
-?>
+<?php if (isset($_REQUEST['is_new'])) { ?>
+ parent.left_nav.newEncounterForNewPatient();
+<?php } ?>
 <?php
   //Encounter details are stored to javacript as array.
   $result4 = sqlStatement("SELECT fe.encounter,fe.date,openemr_postcalendar_categories.pc_catname FROM form_encounter AS fe ".
@@ -452,6 +468,19 @@ function setMyPatient() {
 <?php } // end setting new pid ?>
  parent.left_nav.setRadio(window.name, 'dem');
  parent.left_nav.syncRadios();
+
+<?php
+  // Support for loading a specified encounter form.
+  if ($formrow) {
+    $datestr = oeFormatShortDate(substr($formrow['date'], 0, 10));
+    echo " var othername = window.name == 'RBot' ? 'RTop' : 'RBot';\n";
+    echo " parent.left_nav.setEncounter('$datestr', '$encounter', window.name);\n";
+    echo " parent.left_nav.setRadio(othername, 'enc');\n";
+    echo " parent.left_nav.loadFrame('enc2', othername, 'patient_file/encounter/view_form.php" .
+      "?formname={$formrow['formdir']}&id={$formrow['form_id']}');\n";
+  }
+?>
+
 <?php } // end concurrent layout ?>
 }
 
