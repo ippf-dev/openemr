@@ -117,14 +117,22 @@ $categories = array(
 $rptlines = array(
   xl('Screenings')
     => array('2.2', 'screenings' , ''          ),
+
   xl('First time screenings')
     => array('2.3', 'firsttime'  , 'screenings'),
   xl('Screenings of HIV+ clients')
     => array('2.3', 'hiv'        , 'screenings'),
+
   xl('Screenings testing positive')
     => array('2.4', 'pos'        , 'screenings'),
   xl('Screenings testing positive and eligible for cryotherapy')
     => array('2.4', 'posecryo'   , 'pos'       ),
+
+  xl('Treated  with cryotherapy by same network provider')
+    => array('3.2', 'thisorgcryo', 'pos'       ),
+  xl('Treated  with LEEP by same network provider')
+    => array('3.2', 'thisorgleep', 'pos'       ),
+
   xl('Screenings testing positive referred to same organisation provider for cryotherapy')
     => array('2.5', 'cryoiref'   , 'pos'       ),
   xl('Screenings testing positive referred to external provider for cryotherapy')
@@ -133,22 +141,25 @@ $rptlines = array(
     => array('2.5', 'leepiref'   , 'pos'       ),
   xl('Screenings testing positive referred to external provider for LEEP or higher')
     => array('2.5', 'leep+xref'  , 'pos'       ),
-  xl('Treated  with cryotherapy by same network provider')
-    => array('3.2', 'thisorgcryo', 'pos'       ),
-  xl('Treated  with LEEP by same network provider')
-    => array('3.2', 'thisorgleep', 'pos'       ),
+
+  // 2016-06-27 CV requested removal of 3.3 and positioning 2.5 after 3.2.
+  /********************************************************************
   xl('Referred to external provider and treated with cryotherapy')
     => array('3.3', 'xrefcryo'   , 'pos'       ),
   xl('Referred to external provider and treated with LEEP or higher')
     => array('3.3', 'xrefleep+'  , 'pos'       ),
   xl('Referred to external provider and treated with any method')
     => array('3.3', 'xrefany'    , 'pos'       ),
+  ********************************************************************/
+
   xl('Treated with cryotherapy by any provider')
     => array('3.4', 'anycryo'    , 'pos'       ),
   xl('Treated with other methods by any provider')
     => array('3.4', 'anynoncryo' , 'pos'       ),
+
   // xl('Eligible for cryotherapy and treated by any provider')
   //   => array('4',   'ecryoany'   , 'posecryo'  ),
+
   // TBD: 4.x ?
 );
 

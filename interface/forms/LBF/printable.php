@@ -340,7 +340,8 @@ while ($frow = sqlFetchArray($fres)) {
   }
 
   // Handle starting of a new row.
-  if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0) {
+  // if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0) {
+  if (($cell_count + $titlecols + $datacols) > $CPR || $cell_count == 0) {
     end_row();
     // echo "  <tr style='height:30pt'>";
     echo "  <tr>";
