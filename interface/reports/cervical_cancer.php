@@ -180,7 +180,13 @@ $to_date   = fixDate($_POST['form_to_date'], date('Y-m-d'));
 $query = "SELECT " .
   "fe.pid, fe.encounter, fe.date AS encdate, " .
   "pd.sex, pd.DOB, fcc.form_id AS cc_form_id, " .
-  "d1.field_value AS isfirst, d2.field_value AS ishivpos, d3.field_value AS ccresult " .
+  "d1.field_value AS isfirst, " .
+  "d2.field_value AS ishivpos, " .
+  "d3.field_value AS ccresult, " .
+  "v1.field_value AS CC_PrevScreen, " .
+  "v2.field_value AS HA_HIVStatus, " .
+  "v3.field_value AS VIA_Results, " .
+  "v4.field_value AS VIA_CryoEligible " .
   "FROM form_encounter AS fe " .
   "JOIN patient_data AS pd ON pd.pid = fe.pid " .
   "JOIN forms AS f ON f.pid = fe.pid AND f.encounter = fe.encounter AND " .
@@ -190,6 +196,10 @@ $query = "SELECT " .
   "LEFT JOIN lbf_data AS d1 ON d1.form_id = fcc.form_id AND d1.field_id = 'isfirst' " .
   "LEFT JOIN lbf_data AS d2 ON d2.form_id = fcc.form_id AND d2.field_id = 'ishivpos' " .
   "LEFT JOIN lbf_data AS d3 ON d3.form_id = fcc.form_id AND d3.field_id = 'ccresult' " .
+  "LEFT JOIN shared_attributes AS v1 ON v1.pid = fe.pid AND v1.encounter = fe.encounter AND v1.field_id = 'CC_PrevScreen' " .
+  "LEFT JOIN shared_attributes AS v2 ON v1.pid = fe.pid AND v2.encounter = fe.encounter AND v2.field_id = 'HA_HIVStatus' " .
+  "LEFT JOIN shared_attributes AS v3 ON v1.pid = fe.pid AND v3.encounter = fe.encounter AND v3.field_id = 'VIA_Results' " .
+  "LEFT JOIN shared_attributes AS v4 ON v1.pid = fe.pid AND v4.encounter = fe.encounter AND v4.field_id = 'VIA_CryoEligible' " .
   "WHERE fe.date >= ? AND fe.date <= ? " .
   "ORDER BY fe.pid, fe.encounter, fcc.form_id DESC";
 $res = sqlStatement($query, array("$from_date 00:00:00", "$to_date 23:59:59"));
@@ -203,6 +213,12 @@ while ($row = sqlFetchArray($res)) {
   $encdate      = substr($row['encdate'], 0, 10);
   $positive     = false;
   $local_treatment = false;
+
+  // Translate new VIA Screening Form results, if present, to values from the old form.
+  if ($row['CC_PrevScreen'   ] == 'NO' ) $row['isfirst' ] = 1;
+  if ($row['HA_HIVStatus'    ] == 'Pos') $row['ishivpos'] = 1;
+  if ($row['VIA_Results'     ] == 'Pos') $row['ccresult'] = 'pos';
+  if ($row['VIA_CryoEligible'] == 'YES') $row['ccresult'] = 'poscryo';
 
   // Client age at screening.
   $age = getAge($row['DOB'], $encdate);
