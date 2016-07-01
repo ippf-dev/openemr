@@ -2978,12 +2978,13 @@ function lbf_current_value($frow, $formid, $encounter) {
     if (isset($pdrow)) $currvalue = $pdrow['field_value'];
   }
   else if ($source == 'E') {
+    $sarow = FALSE;
     if ($encounter) {
       // Get value from shared_attributes of the current encounter.
       $sarow = sqlQuery("SELECT field_value FROM shared_attributes WHERE " .
         "pid = ? AND encounter = ? AND field_id = ?",
         array($pid, $encounter, $field_id));
-      if (isset($sarow)) $currvalue = $sarow['field_value'];
+      if (!empty($sarow)) $currvalue = $sarow['field_value'];
     }
     else if ($formid) {
       // Get from shared_attributes of the encounter that this form is linked to.
@@ -2997,6 +2998,10 @@ function lbf_current_value($frow, $formid, $encounter) {
     }
     else {
       // New form and encounter not available, this should not happen.
+    }
+    if (empty($sarow) && !$formid) {
+      // New form, see if there is a custom default from a plugin.
+      if (function_exists($deffname)) $currvalue = call_user_func($deffname);
     }
   }
   else if ($source == 'V') {
@@ -3028,8 +3033,6 @@ function lbf_current_value($frow, $formid, $encounter) {
   }
   else {
     // New form, see if there is a custom default from a plugin.
-    // This logic does not apply to shared attributes because they do not
-    // have a "new form" concept.
     if (function_exists($deffname)) $currvalue = call_user_func($deffname);
   }
   return $currvalue;
