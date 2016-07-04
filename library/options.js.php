@@ -136,6 +136,27 @@ var lbfCanvases = {}; // contains the LC instance for each canvas.
 // element used for initialization should have an id of canid + '_img'.
 //
 function lbfCanvasSetup(canid, canWidth, canHeight) {
+  LC.localize({
+    "stroke"    : "<?php echo xls('stroke'    ); ?>",
+    "fill"      : "<?php echo xls('fill'      ); ?>",
+    "bg"        : "<?php echo xls('bg'        ); ?>",
+    "Clear"     : "<?php echo xls('Clear'     ); ?>",
+    // The following are tooltip translations, however they do not work due to
+    // a bug in LiterallyCanvas 0.4.13.  We'll leave them here pending a fix.
+    "Eraser"    : "<?php echo xls('Eraser'    ); ?>",
+    "Pencil"    : "<?php echo xls('Pencil'    ); ?>",
+    "Line"      : "<?php echo xls('Line'      ); ?>",
+    "Rectangle" : "<?php echo xls('Rectangle' ); ?>",
+    "Ellipse"   : "<?php echo xls('Ellipse'   ); ?>",
+    "Text"      : "<?php echo xls('Text'      ); ?>",
+    "Polygon"   : "<?php echo xls('Polygon'   ); ?>",
+    "Pan"       : "<?php echo xls('Pan'       ); ?>",
+    "Eyedropper": "<?php echo xls('Eyedropper'); ?>",
+    "Undo"      : "<?php echo xls('Undo'      ); ?>",
+    "Redo"      : "<?php echo xls('Redo'      ); ?>",
+    "Zoom out"  : "<?php echo xls('Zoom out'  ); ?>",
+    "Zoom in"   : "<?php echo xls('Zoom in'   ); ?>",
+  });
   var tmpImage = document.getElementById(canid + '_img');
   var shape = LC.createShape('Image', {x: 0, y: 0, image: tmpImage});
   var lc = LC.init(document.getElementById(canid), {
