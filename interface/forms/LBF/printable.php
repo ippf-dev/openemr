@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -34,6 +34,20 @@ $formid = empty($_REQUEST['formid']) ? 0 : (0 + $_REQUEST['formid']);
 
 // True if to display as a form to complete, false to display as information.
 $isform = empty($_REQUEST['isform']) ? 0 : 1;
+
+// Referral form is a special case that has its own print script.
+if ($formname == 'LBFref') {
+  $transid = 0;
+  if ($formid) {
+    $trow = sqlQuery("SELECT id FROM forms WHERE form_id = ? AND formdir = ? AND deleted = 0",
+      array($formid, $formname));
+    if (!empty($trow['id'])) $transid = $trow['id'];
+  }
+  $_REQUEST['transid'   ] = $transid;
+  $_REQUEST['patient_id'] = $patientid;
+  include($GLOBALS['fileroot'] . '/interface/patient_file/transaction/print_referral.php');
+  exit;
+}
 
 // Html2pdf fails to generate checked checkboxes properly, so write plain HTML
 // if we are doing a visit-specific form to be completed.
