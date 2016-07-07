@@ -669,7 +669,7 @@ function clearactive() {
    setRadio('rb_top', 'cal');
   }
   if (botName.length > 3 && botName.substring(3) > '0' && frname != 'RBot') {
-   loadFrame('ens0','RBot', '<?php echo $primary_docs['ens'][2]; ?>');
+   loadFrame('ens1','RBot', '<?php echo $primary_docs['ens'][2]; ?>');
    setRadio('rb_bot', 'ens');
   }
  }
@@ -760,13 +760,14 @@ function clearactive() {
   $(encounter_block).hide();
 
   // zero out the encounter frame, replace it with the encounter list frame
+  // but only if top and bottom frames are both open
   var f = document.forms[0];
   if ( f.cb_top.checked && f.cb_bot.checked ) {
-      var encounter_frame = getEncounterTargetFrame('enc');
-      if ( encounter_frame != undefined )  {
-          loadFrame('ens0',encounter_frame, '<?php echo $primary_docs['ens'][2]; ?>');
-          setRadio(encounter_frame, 'ens');
-      }
+   var encounter_frame = getEncounterTargetFrame('enc');
+   if ( encounter_frame != undefined )  {
+    loadFrame('ens1',encounter_frame, '<?php echo $primary_docs['ens'][2]; ?>');
+    setRadio(encounter_frame, 'ens');
+   }
   }
 
   reloadIssues(pid);

@@ -439,9 +439,10 @@ function setMyPatient() {
   return;
  }
 <?php if (isset($_GET['set_pid'])) { ?>
- parent.left_nav.setPatient(<?php echo "'" . htmlspecialchars(($result['fname']) . " " . ($result['lname']),ENT_QUOTES) .
-   "'," . htmlspecialchars($pid,ENT_QUOTES) . ",'" . htmlspecialchars(($result['pubpid']),ENT_QUOTES) .
-   "','', ' " . htmlspecialchars(xl('DOB') . ": " . oeFormatShortDate($result['DOB_YMD']) . " " . xl('Age') . ": " . getPatientAgeDisplay($result['DOB_YMD']), ENT_QUOTES) . "'"; ?>);
+ parent.left_nav.setPatient(<?php echo "'" . attr($result['fname'] . " " . $result['lname']) .
+   "', " . attr($pid) . ", '" . attr($result['pubpid']) .
+   "', window.name, '" . attr(xl('DOB') . ": " . oeFormatShortDate($result['DOB_YMD']) . " " .
+   xl('Age') . ": " . getPatientAgeDisplay($result['DOB_YMD'])) . "'"; ?>);
  var EncounterDateArray = new Array;
  var CalendarCategoryArray = new Array;
  var EncounterIdArray = new Array;
@@ -603,6 +604,10 @@ if ($GLOBALS['patient_id_category_name']) {
 |
 <a href="../transaction/transactions.php" class='iframe large_modal' onclick='top.restoreSession()'>
 <?php echo htmlspecialchars(xl('Transactions{{Patient}}'),ENT_NOQUOTES); ?></a>
+|
+<a href="../../reports/referrals_report.php?patient_id=<?php echo $pid; ?>"
+ class='iframe large_modal' onclick='top.restoreSession()'>
+<?php echo xlt('Referrals'); ?></a>
 |
 <a href="stats_full.php?active=all" onclick='top.restoreSession()'>
 <?php echo htmlspecialchars(xl('Issues'),ENT_NOQUOTES); ?></a>
@@ -1024,12 +1029,14 @@ expand_collapse_widget($widgetTitle, $widgetLabel, $widgetButtonLabel,
   // supports charting.  The form ID is used as the "widget label".
   //
   $gfres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-    "list_id = 'lbfnames' AND option_value > 0 ORDER BY seq, title");
+    "list_id = 'lbfnames' AND " .
+    "option_value > 0 " .
+    "ORDER BY seq, title");
   while($gfrow = sqlFetchArray($gfres)) {
 ?>
     <tr>
      <td width='650px'>
-<?php // vitals expand collapse widget
+<?php // LBF expand collapse widget
     $vitals_form_id = $gfrow['option_id'];
     $widgetTitle = xl($gfrow['title']);
     $widgetLabel = $vitals_form_id;
