@@ -1679,14 +1679,16 @@ $(document).ready(function(){
 
     // show the popup choice of lists
     var ShowLists = function(btnObj) {
-        window.open("./show_lists_popup.php", "lists", "width=300,height=500,scrollbars=yes");
+        window.open('../patient_file/encounter/find_code_dynamic.php?what=lists',
+          'lists', 'width=600,height=600,scrollbars=yes');
         selectedfield = btnObj;
     };
     
     // show the popup choice of groups
     var ShowGroups = function(btnObj) {
         if (!myChangeCheck()) return;
-        window.open("./show_groups_popup.php?layout_id=<?php echo $layout_id;?>", "groups", "width=300,height=300,scrollbars=yes");
+        window.open('../patient_file/encounter/find_code_dynamic.php?what=groups&layout_id=<?php echo $layout_id;?>',
+          'groups', 'width=600,height=600,scrollbars=yes');
     };
     
     // Show context DD for NationNotes
@@ -1775,8 +1777,8 @@ function FieldIDClicked(elem) {
   // If the field ID is for the local form, allow direct entry.
   if (srcval == 'F') return;
   // Otherwise pop up the selection window.
-  window.open('./field_id_popup.php?source=' + srcval, 'fields',
-    'width=600,height=600,scrollbars=yes');
+  window.open('../patient_file/encounter/find_code_dynamic.php?what=fields&source='
+    + srcval, 'fields', 'width=600,height=600,scrollbars=yes');
 <?php } ?>
 }
 
