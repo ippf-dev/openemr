@@ -92,6 +92,22 @@ function datekeyup(e, defcc, withtime) {
  }
 }
 
+// Display an error message and optionally clear or refocus to the input element.
+// Works around a Gecko bug that defeats focus() in a blur handler.
+//
+function dateBlurError(elem, msgkey) {
+ var w = window;
+ while (w.opener) w = w.opener;
+ if (w.top.errorMessage) msgkey = w.top.errorMessage(msgkey);
+ if (confirm(msgkey)) {
+  window.my_blurred_element = elem;
+  setTimeout('window.my_blurred_element.focus()', 1);
+  return true;
+ }
+ elem.value = '';
+ return false;
+}
+
 // Onblur handler to avoid incomplete entry of dates.
 //
 function dateblur(e, defcc, withtime) {
@@ -109,7 +125,8 @@ function dateblur(e, defcc, withtime) {
   } else if (c == '-' || c == '/' || c == ' ' || c == ':') {
    arr[++ix] = 0;
   } else {
-   alert('Invalid character in date!');
+   // This should not happen because datekeyup would have dealt with it.
+   dateBlurError(e, 'date bad char');
    return;
   }
  }
@@ -128,15 +145,19 @@ function dateblur(e, defcc, withtime) {
  }
 
  if ((!withtime && ix != 2) || (withtime && ix < 2) || arr[0] != 4 || arr[1] != 2 || arr[2] < 1) {
-  if (confirm('Date entry is incomplete! Try again?'))
-   e.focus();
-  else
-   e.value = '';
+  dateBlurError(e, 'date incomplete');
   return;
  }
 
  if (arr[2] == 1) {
-  e.value = v.substring(0, 8) + '0' + v.substring(8);
+  e.value = v = v.substring(0, 8) + '0' + v.substring(8);
+ }
+
+ var darr = v.substring(0,10).split('-');
+ var dobj = new Date(darr[0], darr[1]-1, darr[2]);
+ if (dobj.getFullYear() != darr[0] || dobj.getMonth() != darr[1]-1 || dobj.getDate() != darr[2]) {
+  dateBlurError(e, 'date invalid');
+  return;
  }
 }
 

@@ -132,6 +132,15 @@ function allFramesLoaded() {
  // Change this number if more frames participate in reporting.
  return loadedFrameCount >= 2;
 }
+
+// Call this from a .js file for string translation.
+function errorMessage(key) {
+  if (key == 'date bad char'  ) return '<?php echo xla('Invalid character in date!'); ?>';
+  if (key == 'date incomplete') return '<?php echo xla('Date entry is incomplete! Try again?'); ?>';
+  if (key == 'date invalid'   ) return '<?php echo xla('Year, month or day is not valid! Try again?'); ?>';
+  return key;
+}
+
 </script>
 
 </head>
