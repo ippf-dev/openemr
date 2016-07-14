@@ -179,6 +179,12 @@ td { font-size:10pt; }
     return false;
   }
 
+  // Check for missing expiration date on a purchase or simple update.
+  if (f.form_expiration.value == '' && f.form_trans_type.value <= '2') {
+   if (!confirm('<?php echo xls('Warning: Most lots should have an expiration date. Continue anyway?'); ?>'))
+    return false;
+  }
+
   return true;
  }
 
