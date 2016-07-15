@@ -1089,19 +1089,19 @@ ALTER TABLE patient_data ADD ippfconmeth varchar(255) NOT NULL DEFAULT '';
 
 INSERT INTO list_options (list_id,option_id,title,seq,option_value) VALUES ('lbfnames','LBFccicon','Contraception',1,5);
 DELETE FROM layout_options WHERE form_id = 'LBFccicon';
-INSERT INTO layout_options VALUES ('LBFccicon', 'newmauser', '1', 'First contraceptive at this clinic?',
+INSERT INTO layout_options (form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length, list_id, titlecols, datacols, default_value, edit_options, description) VALUES ('LBFccicon', 'newmauser', '1', 'First contraceptive at this clinic?',
   1,  1, 2, 0, 0, 'boolean'    , 1, 3, '', '', 'Is this the first contraceptive accepted at this clinic?');
-INSERT INTO layout_options VALUES ('LBFccicon', 'curmethod', '1', 'Current Method',
+INSERT INTO layout_options (form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length, list_id, titlecols, datacols, default_value, edit_options, description) VALUES ('LBFccicon', 'curmethod', '1', 'Current Method',
   2,  1, 1, 0, 0, 'contrameth' , 1, 3, '', '', 'Method in use at start of visit');
-INSERT INTO layout_options VALUES ('LBFccicon', 'pastmodern','1', 'Previous modern contraceptive use?',
+INSERT INTO layout_options (form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length, list_id, titlecols, datacols, default_value, edit_options, description) VALUES ('LBFccicon', 'pastmodern','1', 'Previous modern contraceptive use?',
   3,  1, 1, 0, 0, 'boolean'    , 1, 3, '', '', 'Was a modern contraceptive method used at some time in the past?');
-INSERT INTO layout_options VALUES ('LBFccicon', 'reqmethod', '1', 'Requested Method',
+INSERT INTO layout_options (form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length, list_id, titlecols, datacols, default_value, edit_options, description) VALUES ('LBFccicon', 'reqmethod', '1', 'Requested Method',
   4,  1, 1, 0, 0, 'contrameth' , 1, 3, '', '', 'Method requested by the client');
-INSERT INTO layout_options VALUES ('LBFccicon', 'newmethod', '1', 'Adopted Method',
+INSERT INTO layout_options (form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length, list_id, titlecols, datacols, default_value, edit_options, description) VALUES ('LBFccicon', 'newmethod', '1', 'Adopted Method',
   5,  1, 1, 0, 0, 'ippfconmeth', 1, 3, '', '', 'Method adopted in this visit');
-INSERT INTO layout_options VALUES ('LBFccicon', 'provider' , '1', 'Service Provider',
+INSERT INTO layout_options (form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length, list_id, titlecols, datacols, default_value, edit_options, description) VALUES ('LBFccicon', 'provider' , '1', 'Service Provider',
   6, 10, 1, 0, 0, ''           , 1, 3, '', '', 'Provider of this initial consultation');
-INSERT INTO layout_options VALUES ('LBFccicon', 'mcreason' , '1', 'Reason for Method Change',
+INSERT INTO layout_options (form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length, list_id, titlecols, datacols, default_value, edit_options, description) VALUES ('LBFccicon', 'mcreason' , '1', 'Reason for Method Change',
   7,  1, 1, 0, 0, 'mcreason'   , 1, 3, '', '', 'Reason for method change');
 
 # This section creates LBFccicon visit forms to replace contraception dates/methods in demographics.
@@ -2938,6 +2938,14 @@ INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_Waist_circum_in','1Vitals','Waist Circumference (in)',190,2,1,10,255,'',1,3,'','G','Waist circumference (in)',0,'F','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_Weight_kg','1Vitals','Weight (kg)',15,2,1,10,255,'',1,3,'','G','Weight (kgs)',0,'F','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_Weight_lb','1Vitals','Weight (lb)',10,2,1,10,10,'',1,3,'','G','Weight (lbs)',0,'F','');
+
+#IfMissingColumn forms issue_id
+ALTER TABLE `forms` ADD COLUMN `issue_id` bigint(20) NOT NULL default 0 COMMENT 'references lists.id to identify a case';
+#EndIf
+
+#IfMissingColumn forms provider_id
+ALTER TABLE `forms` ADD COLUMN `provider_id` bigint(20) NOT NULL default 0 COMMENT 'references users.id to identify a provider';
+#EndIf
 
 # Create new forms table entries cloned from those for the old vitals form.
 INSERT INTO forms (date, encounter, form_name, form_id, pid, user, groupname, authorized, formdir, issue_id, provider_id)
