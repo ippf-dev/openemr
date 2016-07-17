@@ -437,7 +437,11 @@ function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping=''
 
   echo "  <td align='center' class='optcell'>";
   echo "<input type='text' name='opt[$opt_line_no][notes]' value='" .
-      htmlspecialchars($notes, ENT_QUOTES) . "' size='25' maxlength='255' class='optin' />";
+      htmlspecialchars($notes, ENT_QUOTES) . "' size='25' maxlength='255' class='optin' ";
+  if ($list_id == 'lbfnames') {
+    echo "onclick='edit_layout_props($opt_line_no)' ";
+  }
+  echo "/>";
   echo "</td>\n";
 
   echo "  <td align='center' class='optcell'>";
@@ -736,6 +740,12 @@ function select_clin_term_code(e) {
  current_sel_name = '';
  current_sel_clin_term = e.name;
  dlgopen('../patient_file/encounter/find_code_dynamic.php?codetype=<?php echo attr(collect_codetypes("clinical_term","csv")) ?>', '_blank', 900, 600);
+}
+
+// This invokes the popup to edit properties in the "notes" column.
+function edit_layout_props(lineno) {
+ var layoutid = document.forms[0]['opt[' + lineno + '][id]'].value;
+ dlgopen('edit_layout_props.php?layout_id=' + layoutid + '&lineno=' + lineno, '_blank', 600, 300);
 }
 
 // This is for callback by the find-code popup.
