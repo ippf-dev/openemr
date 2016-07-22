@@ -2676,7 +2676,7 @@ function generate_layout_validation($form_id) {
 
     if ($frow['uor'] < 2) continue;
 
-    echo " if (!f.$fldname.disabled) {\n";    
+    echo " if (f.$fldname && !f.$fldname.disabled) {\n";
     switch($data_type) {
       case  1:
       case 11:

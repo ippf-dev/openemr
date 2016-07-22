@@ -435,6 +435,20 @@ function trimlen(s) {
  return j + 1 - i;
 }
 
+// This capitalizes the first letter of each word in the passed input
+// element.  It also strips out extraneous spaces.
+function capitalizeMe(elem) {
+ var a = elem.value.split(' ');
+ var s = '';
+ for(var i = 0; i < a.length; ++i) {
+  if (a[i].length > 0) {
+   if (s.length > 0) s += ' ';
+   s += a[i].charAt(0).toUpperCase() + a[i].substring(1);
+  }
+ }
+ elem.value = s;
+}
+
 // Validation logic for form submission.
 function validate(f) {
 <?php generate_layout_validation($formname); ?>

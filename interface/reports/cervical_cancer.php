@@ -192,7 +192,7 @@ $query = "SELECT " .
   "JOIN forms AS f ON f.pid = fe.pid AND f.encounter = fe.encounter AND " .
   "f.formdir = 'newpatient' AND f.form_id = fe.id AND f.deleted = 0 " .
   "JOIN forms AS fcc ON fcc.pid = fe.pid AND fcc.encounter = fe.encounter AND " .
-  "fcc.formdir = 'LBFcercan' AND fcc.deleted = 0 " .
+  "(fcc.formdir = 'LBFcercan' OR fcc.formdir = 'LBFVIA') AND fcc.deleted = 0 " .
   "LEFT JOIN lbf_data AS d1 ON d1.form_id = fcc.form_id AND d1.field_id = 'isfirst' " .
   "LEFT JOIN lbf_data AS d2 ON d2.form_id = fcc.form_id AND d2.field_id = 'ishivpos' " .
   "LEFT JOIN lbf_data AS d3 ON d3.form_id = fcc.form_id AND d3.field_id = 'ccresult' " .
@@ -272,7 +272,7 @@ while ($row = sqlFetchArray($res)) {
               increment_counter('anycryo'    , $age);
               $local_treatment = true;
             }
-            else if ($code === '2143230302402') {
+            else if ($code === '2143230302402' || $code === '2143230302501') {
               // Gynaecology - Management - Surgical – Cauterisation
               // Per JG 2014-06-26 this means LEEP.
               increment_counter('thisorgleep', $age);
@@ -341,7 +341,7 @@ while ($row = sqlFetchArray($res)) {
             increment_counter('cryoiref', $age);
           }
         }
-        else if ($refercode === '2143230302402') {
+        else if ($refercode === '2143230302402' || $refercode === '2143230302501') {
           // Gynaecology - Management - Surgical – Cauterisation
           // Per JG 2014-06-26 this means LEEP.
           if ($external) {
@@ -375,7 +375,7 @@ while ($row = sqlFetchArray($res)) {
           }
           increment_counter('anycryo', $age);
         }
-        else if ($replycode === '2143230302402') {
+        else if ($replycode === '2143230302402' || $replycode === '2143230302501') {
           // Gynaecology - Management - Surgical – Cauterisation
           // Per JG 2014-06-26 this means LEEP.
           if ($external) {
