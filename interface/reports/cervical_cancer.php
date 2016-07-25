@@ -245,7 +245,7 @@ while ($row = sqlFetchArray($res)) {
 
   if ($positive) {
     // Process services in this and subsequent encounters up to 90 days forward.
-    $bres = sqlQuery("SELECT c.related_code " .
+    $bres = sqlStatement("SELECT c.related_code " .
       "FROM form_encounter AS fe, billing AS b, codes AS c WHERE " .
       "fe.pid = ? AND " .
       "fe.date >= ? AND " .
