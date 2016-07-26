@@ -73,8 +73,29 @@ function LBFref_javascript_onload() {
   echo "
 external_changed(false);
 var f = document.forms[0];
-f.form_refer_external.onchange = function () { external_changed(true); };
+
+f.form_refer_external.onchange = function () {
+  external_changed(true);
+};
 ";
+  // This part restricts requested service code type for IPPF referrals and
+  // replaces the onclick handler assigned by options.inc.php.
+  if ($GLOBALS['ippf_specific']) echo "
+f.form_refer_related_code.onclick = function () {
+  var codetype = this.form.form_refer_external.value == '2' ? 'REF' : 'MA';
+  sel_related(this, codetype);
+};
+";
+}
+
+// Generate default for referral date.
+//
+function LBFref_default_refer_date() {
+  global $pid, $encounter;
+  // Use the date of this visit.
+  $encrow = sqlQuery("SELECT date FROM form_encounter WHERE " .
+    "pid = '$pid' AND encounter = '$encounter'");
+  return substr($encrow['date'], 0, 10);
 }
 
 ?>
