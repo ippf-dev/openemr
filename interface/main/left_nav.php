@@ -932,7 +932,7 @@ function removeOptionSelected(EncounterId)
  // Pop up a report.
  function repPopup(aurl) {
   top.restoreSession();
-  window.open('<?php echo "$web_root/interface/reports/" ?>' + aurl, '_blank', 'width=750,height=550,resizable=1,scrollbars=1');
+  window.open('<?php echo "$web_root/interface/reports/" ?>' + aurl, '_blank', 'width=900,height=650,resizable=1,scrollbars=1');
   return false;
  }
 

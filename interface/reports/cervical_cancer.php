@@ -16,6 +16,8 @@ require_once("../../custom/code_types.inc.php");
 $thisauth = acl_check('acct', 'rep');
 if (!$thisauth) die(xl('Not authorized'));
 
+$form_facility = isset($_POST['form_facility']) ? $_POST['form_facility'] : '';
+
 // Compute age in years given a DOB and "as of" date.
 //
 function getAge($dob, $asof='') {
@@ -200,8 +202,11 @@ $query = "SELECT " .
   "LEFT JOIN shared_attributes AS v2 ON v1.pid = fe.pid AND v2.encounter = fe.encounter AND v2.field_id = 'HA_HIVStatus' " .
   "LEFT JOIN shared_attributes AS v3 ON v1.pid = fe.pid AND v3.encounter = fe.encounter AND v3.field_id = 'VIA_Results' " .
   "LEFT JOIN shared_attributes AS v4 ON v1.pid = fe.pid AND v4.encounter = fe.encounter AND v4.field_id = 'VIA_CryoEligible' " .
-  "WHERE fe.date >= ? AND fe.date <= ? " .
-  "ORDER BY fe.pid, fe.encounter, fcc.form_id DESC";
+  "WHERE fe.date >= ? AND fe.date <= ? ";
+if ($form_facility) {
+  $query .= "AND fe.facility_id = '$form_facility' ";
+}
+$query .= "ORDER BY fe.pid, fe.encounter, fcc.form_id DESC";
 $res = sqlStatement($query, array("$from_date 00:00:00", "$to_date 23:59:59"));
 
 $encounter_id = 0;
@@ -258,7 +263,7 @@ while ($row = sqlFetchArray($res)) {
       "ORDER BY fe.encounter, b.id",
       array($patient_id, $encdate, $encdate, 'MA', '12'));
     while ($brow = sqlFetchArray($bres)) {
-      // echo "<!-- from service: '{$brow['related_code']}' -->\n"; // debugging
+      // echo "<!-- patient '$patient_id' encdate '$encdate' from service: '{$brow['related_code']}' -->\n"; // debugging
       if (!empty($brow['related_code'])) {
         $relcodes = explode(';', $brow['related_code']);
         foreach ($relcodes as $codestring) {
@@ -466,7 +471,7 @@ a, a:visited, a:hover { color:#0000cc; }
   <td class='title'>
    <?php xl('Cervical Cancer Statistics','e'); ?>
   </td>
-  <td class='text' align='right'>
+  <td class='text' align='right' nowrap>
    <?php echo xlt('From'); ?>
    <input type='text' name='form_from_date' id='form_from_date' size='10' value='<?php echo $from_date ?>'
     onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='Start date yyyy-mm-dd'>
@@ -479,6 +484,22 @@ a, a:visited, a:hover { color:#0000cc; }
    <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
     id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
     title='<?php xl('Click here to choose a date','e'); ?>'>&nbsp;
+<?php
+ // Build a drop-down list of facilities.
+ //
+ $query = "SELECT id, name FROM facility ORDER BY name";
+ $fres = sqlStatement($query);
+ echo "   <select name='form_facility'>\n";
+ echo "    <option value=''>-- " . xlt('All Facilities') . " --</option>\n";
+ while ($frow = sqlFetchArray($fres)) {
+  $facid = $frow['id'];
+  echo "    <option value='$facid'";
+  if ($facid == $form_facility) echo " selected";
+  echo ">" . $frow['name'] . "</option>\n";
+ }
+ echo "   </select>\n";
+?>
+   <br />
    <input type="submit" value="<?php xl('Refresh','e'); ?>" />&nbsp;
    <input type="submit" name="form_csvexport" value="<?php echo xl('Export to CSV'); ?>">&nbsp;
    <input type="button" value="<?php xl('Print','e'); ?>" onclick="window.print()" />
