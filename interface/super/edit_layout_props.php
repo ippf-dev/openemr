@@ -35,48 +35,6 @@ $thisauth = acl_check('admin', 'super');
 if (!$thisauth) die(xl('Not authorized'));
 
 $opt_line_no = intval($_GET['lineno']);
-
-$layout_id = $_GET['layout_id'];
-$lrow = sqlQuery("SELECT notes FROM list_options " .
-  "WHERE list_id = 'lbfnames' AND option_id = ?",
-  array($layout_id));
-if (empty($lrow)) die(xlt('Invalid layout ID!'));
-
-$form_services = false;
-$form_services_list = '';
-if (preg_match('/\\bservices=([a-zA-Z0-9_-]*)/', $lrow['notes'], $matches)) {
-  $form_services = true;
-  $form_services_list = $matches[1];
-}
-
-$form_products = false;
-$form_products_list = '';
-if (preg_match('/\\bproducts=([a-zA-Z0-9_-]*)/', $lrow['notes'], $matches)) {
-  $form_products = true;
-  $form_products_list = $matches[1];
-}
-
-$form_diags = false;
-$form_diags_list = '';
-if (preg_match('/\\bdiags=([a-zA-Z0-9_-]*)/', $lrow['notes'], $matches)) {
-  $form_diags = true;
-  $form_diags_list = $matches[1];
-}
-
-$form_size = '';
-if (preg_match('/\\bsize=([0-9]*)/', $lrow['notes'], $matches)) {
-  $form_size = intval($matches[1]);
-}
-
-$form_columns = '4';
-if (preg_match('/\\bcolumns=([0-9]*)/', $lrow['notes'], $matches)) {
-  $form_columns = intval($matches[1]);
-}
-
-$form_issue = '';
-if (preg_match('/\\bissue=([a-zA-Z0-9_-]*)/', $lrow['notes'], $matches)) {
-  $form_issue = $matches[1];
-}
 ?>
 <html>
 <head>
@@ -88,57 +46,103 @@ if (preg_match('/\\bissue=([a-zA-Z0-9_-]*)/', $lrow['notes'], $matches)) {
 td { font-size:10pt; }
 </style>
 
-<style  type="text/css">@import url(../../library/dynarch_calendar.css);</style>
 <script type="text/javascript" src="../../library/textformat.js"></script>
-<script type="text/javascript" src="../../library/dynarch_calendar.js"></script>
-<?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
-<script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/jquery.js"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script language="JavaScript">
 
+<?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
+
 var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
+var target = opener.document.forms[0]['opt[<?php echo $opt_line_no; ?>][notes]'];
 
-// used when selecting a list-name for a field
-var selectedfield;
+$(document).ready(function () {
+  var f = document.forms[0];
+  var jobj = {};
+  if (target.value.length) {
+    try {
+      jobj = JSON.parse(target.value);
+    }
+    catch (e) {
+      alert('<?php echo xls('Invalid data, will be ignored and replaced.'); ?>');
+    }
+  }
+  if (jobj['size'    ]) f.form_size.value     = jobj['size'];
+  if (jobj['columns' ]) f.form_columns.value  = jobj['columns'];
+  if (jobj['issue'   ]) f.form_issue.value    = jobj['issue'];
+  if (jobj.hasOwnProperty('services')) {
+    f.form_services.checked = true;
+    f.form_services_codes.value = jobj['services'];
+  }
+  if (jobj.hasOwnProperty('products')) {
+    f.form_products.checked = true;
+    f.form_products_codes.value = jobj['products'];
+  }
+  if (jobj.hasOwnProperty('diags')) {
+    f.form_diags.checked = true;
+    f.form_diags_codes.value = jobj['diags'];
+  }
+});
 
-// show the popup choice of lists
-function ShowLists(btnObj) {
-  window.open('../patient_file/encounter/find_code_dynamic.php?what=lists',
-    'lists', 'width=600,height=600,scrollbars=yes');
-  selectedfield = btnObj;
-};
+// The name of the input element to receive a found code.
+var current_sel_name = '';
 
-// Called back from find_code_dynamic.php to set the selected list.
-function SetList(listid) {
-  $(selectedfield).val(listid);
+// This invokes the "dynamic" find-code popup.
+function sel_related(elem, codetype) {
+ current_sel_name = elem ? elem.name : '';
+ var url = '<?php echo $rootdir ?>/patient_file/encounter/find_code_dynamic.php';
+ if (codetype) url += '?codetype=' + codetype;
+ dlgopen(url, '_blank', 800, 500);
+}
+
+// This is for callback by the find-code popup.
+// Appends to or erases the current list of related codes.
+function set_related(codetype, code, selector, codedesc) {
+ var f = document.forms[0];
+ // frc will be the input element containing the codes.
+ var frc = f[current_sel_name];
+ var s = frc.value;
+ if (code) {
+  if (s.length > 0) {
+   s  += ';';
+  }
+  s  += codetype + ':' + code;
+ } else {
+  s  = '';
+ }
+ frc.value = s;
+ return '';
+}
+
+// This is for callback by the find-code popup.
+// Deletes the specified codetype:code from the active input element.
+function del_related(s) {
+  var f = document.forms[0];
+  my_del_related(s, f[current_sel_name], false);
+}
+
+// This is for callback by the find-code popup.
+// Returns the array of currently selected codes with each element in codetype:code format.
+function get_related() {
+  var f = document.forms[0];
+  if (current_sel_name) {
+    return f[current_sel_name].value.split(';');
+  }
+  return new Array();
 }
 
 // Onclick handler for Submit button.
 function submitProps() {
   var f = document.forms[0];
-  var target = opener.document.forms[0]['opt[<?php echo $opt_line_no; ?>][notes]'];
-  var s = '';
-  if (f.form_size.value) {
-    s += 'size=' + f.form_size.value + ' ';
-  }
-  if (f.form_columns.value) {
-    s += 'columns=' + f.form_columns.value + ' ';
-  }
-  if (f.form_issue.value) {
-    s += 'issue=' + f.form_issue.value + ' ';
-  }
-  if (f.form_services.checked) {
-    s += 'services=' + f.form_services_list.value + ' ';
-  }
-  if (f.form_products.checked) {
-    s += 'products=' + f.form_products_list.value + ' ';
-  }
-  if (f.form_diags.checked) {
-    s += 'diags=' + f.form_diags_list.value + ' ';
-  }
-  if (s.length) s = s.substr(0, s.length - 1);
-  target.value = s;
+  var jobj = {};
+  if (f.form_size.value          ) jobj['size'    ] = f.form_size.value;
+  if (f.form_columns.value != '4') jobj['columns' ] = f.form_columns.value;
+  if (f.form_issue.value         ) jobj['issue'   ] = f.form_issue.value;
+  if (f.form_services.checked    ) jobj['services'] = f.form_services_codes.value;
+  if (f.form_products.checked    ) jobj['products'] = f.form_products_codes.value;
+  if (f.form_diags.checked       ) jobj['diags'   ] = f.form_diags_codes.value;
+  target.value = JSON.stringify(jobj);
   window.close();
 }
 
@@ -162,7 +166,7 @@ function submitProps() {
 <?php
   for ($cols = 2; $cols <= 10; ++$cols) {
     echo "<option value='$cols'";
-    if ($cols == $form_columns) echo " selected";
+    if ($cols == 4) echo " selected";
     echo ">$cols</option>\n";
   }
 ?>
@@ -180,7 +184,6 @@ function submitProps() {
   echo "<option value=''>" . xlt('Default') . "</option>\n";
   for ($size = 5; $size <= 15; ++$size) {
     echo "<option value='$size'";
-    if ($size == $form_size) echo " selected";
     echo ">$size</option>\n";
   }
 ?>
@@ -201,7 +204,6 @@ function submitProps() {
     array($GLOBALS['ippf_specific'] ? 'ippf_specific' : 'default'));
   while ($itrow = sqlFetchArray($itres)) {
     echo "<option value='" . attr($itrow['type']) . "'";
-    if ($itrow['type'] == $form_issue) echo " selected";
     echo ">" . xls($itrow['singular']) . "</option>\n";
   }
 ?>
@@ -211,34 +213,31 @@ function submitProps() {
 
  <tr>
   <td valign='top' width='1%' nowrap>
-   <input type='checkbox' name='form_services' <?php if ($form_services) echo 'checked'; ?> />
+   <input type='checkbox' name='form_services' />
    <?php echo xls('Show Services Section'); ?>
   </td>
   <td>
-   <input type='text' size='40' name='form_services_list' maxlength='30'
-    value='<?php echo attr($form_services_list); ?>' onclick='ShowLists(this)' />
+   <input type='text' size='40' name='form_services_codes' onclick='sel_related(this, "MA")' />
   </td>
  </tr>
 
  <tr>
   <td valign='top' width='1%' nowrap>
-   <input type='checkbox' name='form_products' <?php if ($form_products) echo 'checked'; ?> />
+   <input type='checkbox' name='form_products' />
    <?php echo xls('Show Products Section'); ?>
   </td>
   <td>
-   <input type='text' size='40' name='form_products_list' maxlength='30'
-    value='<?php echo attr($form_products_list); ?>' onclick='ShowLists(this)' />
+   <input type='text' size='40' name='form_products_codes' onclick='sel_related(this, "PROD")' />
   </td>
  </tr>
 
  <tr>
   <td valign='top' width='1%' nowrap>
-   <input type='checkbox' name='form_diags' <?php if ($form_diags) echo 'checked'; ?> />
+   <input type='checkbox' name='form_diags' />
    <?php echo xls('Show Diagnoses Section'); ?>
   </td>
   <td>
-   <input type='text' size='40' name='form_diags_list' maxlength='30'
-    value='<?php echo attr($form_diags_list); ?>' onclick='ShowLists(this)' />
+   <input type='text' size='40' name='form_diags_codes' onclick='sel_related(this, "ICD10")' />
   </td>
  </tr>
 

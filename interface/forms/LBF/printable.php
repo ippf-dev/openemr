@@ -69,27 +69,12 @@ $tmp = sqlQuery("SELECT title, notes FROM list_options WHERE " .
   "list_id = 'lbfnames' AND option_id = ? LIMIT 1", array($formname) );
 $formtitle = $tmp['title'];
 
-// Notes can be used to specify number of columns in the form.
-if (preg_match('/columns=([0-9]+)/', $tmp['notes'], $matches)) {
-  if ($matches[1] > 0 && $matches[1] < 13) $CPR = intval($matches[1]);
-}
-
-if (preg_match('/size=([0-9]+)/', $tmp['notes'], $matches)) {
-  if ($matches[1] > 0 && $matches[1] < 19) $FONTSIZE = intval($matches[1]);
-}
-
-if (preg_match('/\\bservices=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
-  // Note if this is defined then we will make a Services section on the page.
-  $LBF_SERVICES_SECTION = $matches[1];
-}
-if (preg_match('/\\bproducts=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
-  // Note if this is defined then we will make a Products section on the page.
-  $LBF_PRODUCTS_SECTION = $matches[1];
-}
-if (preg_match('/\\bdiags=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
-  // Note if this is defined then we will make a Diagnoses section on the page.
-  $LBF_DIAGS_SECTION = $matches[1];
-}
+$jobj = json_decode($tmp['notes'], true);
+if (!empty($jobj['columns'])) $CPR = intval($jobj['columns']);
+if (!empty($jobj['size'   ])) $FONTSIZE = intval($jobj['size']);
+if (isset($jobj['services'])) $LBF_SERVICES_SECTION = $jobj['services'];
+if (isset($jobj['products'])) $LBF_PRODUCTS_SECTION = $jobj['products'];
+if (isset($jobj['diags'   ])) $LBF_DIAGS_SECTION = $jobj['diags'];
 
 if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION)) {
   require_once("$srcdir/FeeSheetHtml.class.php");

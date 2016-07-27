@@ -104,26 +104,13 @@ $tmp = sqlQuery("SELECT title, option_value, notes FROM list_options WHERE " .
   "list_id = 'lbfnames' AND option_id = ?", array($formname) );
 $formtitle = $tmp['title'];
 $formhistory = 0 + $tmp['option_value'];
-if (preg_match('/columns=([0-9]+)/', $tmp['notes'], $matches)) {
-  if ($matches[1] > 0 && $matches[1] < 13) $CPR = intval($matches[1]);
-}
-if (preg_match('/\\bservices=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
-  // Note if this is defined then we will make a Services section on the page.
-  $LBF_SERVICES_SECTION = $matches[1];
-}
-if (preg_match('/\\bproducts=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
-  // Note if this is defined then we will make a Products section on the page.
-  $LBF_PRODUCTS_SECTION = $matches[1];
-}
-if (preg_match('/\\bdiags=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
-  // Note if this is defined then we will make a Diagnoses section on the page.
-  $LBF_DIAGS_SECTION = $matches[1];
-}
 
-if (preg_match('/\\bissue=([a-zA-Z0-9_-]*)/', $tmp['notes'], $matches)) {
-  // Note if defined this is an issue type associated with the LBF.
-  $LBF_ISSUE_TYPE = $matches[1];
-}
+$jobj = json_decode($tmp['notes'], true);
+if (!empty($jobj['columns'])) $CPR = intval($jobj['columns']);
+if (!empty($jobj['issue'  ])) $LBF_ISSUE_TYPE = $jobj['issue'];
+if (isset($jobj['services'])) $LBF_SERVICES_SECTION = $jobj['services'];
+if (isset($jobj['products'])) $LBF_PRODUCTS_SECTION = $jobj['products'];
+if (isset($jobj['diags'   ])) $LBF_DIAGS_SECTION = $jobj['diags'];
 
 if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION) || isset($LBF_DIAGS_SECTION)) {
   $fs = new FeeSheetHtml($pid, $visitid);
@@ -1061,17 +1048,17 @@ function warehouse_changed(sel) {
     echo "<center>\n";
     $display_style = 'none';
 
-    // If there is an associated list, generate a checkbox for each service in the list.
+    // If there are associated codes, generate a checkbox for each one.
     if ($LBF_SERVICES_SECTION) {
-      $lres = sqlStatement("SELECT * FROM list_options " .
-        "WHERE list_id = ? ORDER BY seq, title", array($LBF_SERVICES_SECTION));
       echo "<table cellpadding='0' cellspacing='0' width='100%'>\n";
       $cols = 3;
       $tdpct = (int) (100 / $cols);
-      for ($count = 0; $lrow = sqlFetchArray($lres); ++$count) {
-        $codes = $lrow['codes'];
-        $codes_esc = htmlspecialchars($codes, ENT_QUOTES);
-        $cbval = $fs->genCodeSelectorValue($codes);
+      $count = 0;
+      $relcodes = explode(';', $LBF_SERVICES_SECTION);
+      foreach ($relcodes as $codestring) {
+        if ($codestring === '') continue;
+        $codes_esc = htmlspecialchars($codestring, ENT_QUOTES);
+        $cbval = $fs->genCodeSelectorValue($codestring);
         if ($count % $cols == 0) {
           if ($count) echo " </tr>\n";
           echo " <tr>\n";
@@ -1080,9 +1067,15 @@ function warehouse_changed(sel) {
         echo "<input type='checkbox' id='form_fs_services[$codes_esc]' " .
           "onclick='fs_service_clicked(this)' value='" . attr($cbval) . "'";
         if ($fs->code_is_in_fee_sheet) echo " checked";
-        $title = empty($lrow['title']) ? $lrow['option_id'] : xl_list_label($lrow['title']);
+        list($codetype, $code) = explode(':', $codestring);
+        $crow = sqlQuery("SELECT code_text FROM codes WHERE " .
+          "code_type = ? AND code = ? AND active = 1 " .
+          "ORDER BY id LIMIT 1",
+          array($code_types[$codetype]['id'], $code));
+        $title = empty($crow['code_text']) ? $code : xl_list_label($crow['code_text']);
         echo " />" . htmlspecialchars($title, ENT_NOQUOTES);
         echo "</td>\n";
+        ++$count;
       }
       if ($count) echo " </tr>\n";
       echo "</table>\n";
@@ -1141,17 +1134,17 @@ function warehouse_changed(sel) {
     echo "<center>\n";
     $display_style = 'none';
 
-    // If there is an associated list, generate a checkbox for each product in the list.
+    // If there are associated codes, generate a checkbox for each one.
     if ($LBF_PRODUCTS_SECTION) {
-      $lres = sqlStatement("SELECT * FROM list_options " .
-        "WHERE list_id = ? ORDER BY seq, title", array($LBF_PRODUCTS_SECTION));
       echo "<table cellpadding='0' cellspacing='0' width='100%'>\n";
       $cols = 3;
       $tdpct = (int) (100 / $cols);
-      for ($count = 0; $lrow = sqlFetchArray($lres); ++$count) {
-        $codes = $lrow['codes'];
-        $codes_esc = htmlspecialchars($codes, ENT_QUOTES);
-        $cbval = $fs->genCodeSelectorValue($codes);
+      $count = 0;
+      $relcodes = explode(';', $LBF_PRODUCTS_SECTION);
+      foreach ($relcodes as $codestring) {
+        if ($codestring === '') continue;
+        $codes_esc = htmlspecialchars($codestring, ENT_QUOTES);
+        $cbval = $fs->genCodeSelectorValue($codestring);
         if ($count % $cols == 0) {
           if ($count) echo " </tr>\n";
           echo " <tr>\n";
@@ -1160,9 +1153,14 @@ function warehouse_changed(sel) {
         echo "<input type='checkbox' id='form_fs_products[$codes_esc]' " .
           "onclick='fs_product_clicked(this)' value='" . attr($cbval) . "'";
         if ($fs->code_is_in_fee_sheet) echo " checked";
-        $title = empty($lrow['title']) ? $lrow['option_id'] : xl_list_label($lrow['title']);
+        list($codetype, $code) = explode(':', $codestring);
+        $crow = sqlQuery("SELECT name FROM drugs WHERE " .
+          "drug_id = ? ORDER BY drug_id LIMIT 1",
+          array($code));
+        $title = empty($crow['name']) ? $code : xl_list_label($crow['name']);
         echo " />" . htmlspecialchars($title, ENT_NOQUOTES);
         echo "</td>\n";
+        ++$count;
       }
       if ($count) echo " </tr>\n";
       echo "</table>\n";
@@ -1220,17 +1218,17 @@ function warehouse_changed(sel) {
     echo "<center>\n";
     $display_style = 'none';
 
-    // If there is an associated list, generate a checkbox for each diagnosis in the list.
+    // If there are associated codes, generate a checkbox for each one.
     if ($LBF_DIAGS_SECTION) {
-      $lres = sqlStatement("SELECT * FROM list_options " .
-        "WHERE list_id = ? ORDER BY seq, title", array($LBF_DIAGS_SECTION));
       echo "<table cellpadding='0' cellspacing='0' width='100%'>\n";
       $cols = 3;
       $tdpct = (int) (100 / $cols);
-      for ($count = 0; $lrow = sqlFetchArray($lres); ++$count) {
-        $codes = $lrow['codes'];
-        $codes_esc = htmlspecialchars($codes, ENT_QUOTES);
-        $cbval = $fs->genCodeSelectorValue($codes);
+      $count = 0;
+      $relcodes = explode(';', $LBF_DIAGS_SECTION);
+      foreach ($relcodes as $codestring) {
+        if ($codestring === '') continue;
+        $codes_esc = htmlspecialchars($codestring, ENT_QUOTES);
+        $cbval = $fs->genCodeSelectorValue($codestring);
         if ($count % $cols == 0) {
           if ($count) echo " </tr>\n";
           echo " <tr>\n";
@@ -1239,9 +1237,15 @@ function warehouse_changed(sel) {
         echo "<input type='checkbox' id='form_fs_diags[$codes_esc]' " .
           "onclick='fs_diag_clicked(this)' value='" . attr($cbval) . "'";
         if ($fs->code_is_in_fee_sheet) echo " checked";
-        $title = empty($lrow['title']) ? $lrow['option_id'] : xl_list_label($lrow['title']);
+        list($codetype, $code) = explode(':', $codestring);
+        $crow = sqlQuery("SELECT code_text FROM codes WHERE " .
+          "code_type = ? AND code = ? AND active = 1 " .
+          "ORDER BY id LIMIT 1",
+          array($code_types[$codetype]['id'], $code));
+        $title = empty($crow['code_text']) ? $code : xl_list_label($crow['code_text']);
         echo " />" . htmlspecialchars($title, ENT_NOQUOTES);
         echo "</td>\n";
+        ++$count;
       }
       if ($count) echo " </tr>\n";
       echo "</table>\n";
@@ -1279,7 +1283,7 @@ function warehouse_changed(sel) {
     echo "</center>\n";
     echo "</div>\n";
 
-  } // End Services Section
+  } // End Diagnoses Section
 
 ?>
 

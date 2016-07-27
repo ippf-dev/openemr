@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009, 2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -21,9 +21,8 @@ function lbf_report($pid, $encounter, $cols, $id, $formname) {
   $CPR = 4;
   $tmp = sqlQuery("SELECT notes FROM list_options WHERE " .
     "list_id = 'lbfnames' AND option_id = ?", array($formname) );
-  if (preg_match('/columns=([0-9]+)/', $tmp['notes'], $matches)) {
-    if ($matches[1] > 0 && $matches[1] < 13) $CPR = intval($matches[1]);
-  }
+  $jobj = json_decode($tmp['notes'], true);
+  if (!empty($jobj['columns'])) $CPR = intval($jobj['columns']);
   //
   $arr = array();
   $shrow = getHistoryData($pid);

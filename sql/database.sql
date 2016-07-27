@@ -2658,7 +2658,7 @@ CREATE TABLE `list_options` (
   `is_default` tinyint(1) NOT NULL default '0',
   `option_value` float NOT NULL default '0',
   `mapping` varchar(31) NOT NULL DEFAULT '',
-  `notes` varchar(255) NOT NULL DEFAULT '',
+  `notes` varchar(4095) NOT NULL DEFAULT '',
   `codes` varchar(255) NOT NULL DEFAULT '',
   PRIMARY KEY  (`list_id`,`option_id`)
 ) ENGINE=MyISAM;

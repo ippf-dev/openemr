@@ -533,3 +533,7 @@ ALTER TABLE `forms` ADD COLUMN `issue_id` bigint(20) NOT NULL default 0 COMMENT 
 #IfMissingColumn forms provider_id
 ALTER TABLE `forms` ADD COLUMN `provider_id` bigint(20) NOT NULL default 0 COMMENT 'references users.id to identify a provider';
 #EndIf
+
+#IfNotColumnType list_options notes VARCHAR(4095)
+ALTER TABLE `list_options` CHANGE `notes` `notes` VARCHAR(4095) NOT NULL DEFAULT '';
+#EndIf
