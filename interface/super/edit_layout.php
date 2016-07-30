@@ -264,7 +264,7 @@ if ($_POST['formaction'] == "save" && $layout_id) {
         if ($field_id) {
             sqlStatement("UPDATE layout_options SET " .
                 "source = '"        . formTrim($iter['source'])    . "', " .
-                "title = '"         . formTrim($iter['title'])     . "', " .
+                "title = '"         . formDataCore($iter['title'])     . "', " .
                 "group_name = '"    . formTrim($iter['group'])     . "', " .
                 "seq = '"           . formTrim($iter['seq'])       . "', " .
                 "uor = '"           . formTrim($iter['uor'])       . "', " .
@@ -297,7 +297,7 @@ else if ($_POST['formaction'] == "addfield" && $layout_id) {
       "'"  . formTrim($_POST['layout_id']      ) . "'" .
       ",'" . formTrim($_POST['newsource']      ) . "'" .
       ",'" . formTrim($_POST['newid']          ) . "'" .
-      ",'" . formTrim($_POST['newtitle']       ) . "'" .
+      ",'" . formDataCore($_POST['newtitle']   ) . "'" .
       ",'" . formTrim($_POST['newfieldgroupid']) . "'" .
       ",'" . formTrim($_POST['newseq']         ) . "'" .
       ",'" . formTrim($_POST['newuor']         ) . "'" .
@@ -365,7 +365,7 @@ else if ($_POST['formaction'] == "addgroup" && $layout_id) {
       "'"  . formTrim($_POST['layout_id']      ) . "'" .
       ",'" . formTrim($_POST['gnewsource']      ) . "'" .
       ",'" . formTrim($_POST['gnewid']          ) . "'" .
-      ",'" . formTrim($_POST['gnewtitle']       ) . "'" .
+      ",'" . formDataCore($_POST['gnewtitle']   ) . "'" .
       ",'" . formTrim($newgroupid)                . "'" .
       ",'" . formTrim($_POST['gnewseq']         ) . "'" .
       ",'" . formTrim($_POST['gnewuor']         ) . "'" .
@@ -1250,7 +1250,7 @@ foreach ($datatypes as $key=>$value) {
 <td><input type="textbox" name="gnewdatacols" id="gnewdatacols" value="" size="3" maxlength="3"> </td>
 <td><input type="textbox" name="gnewedit_options" id="gnewedit_options" value="" size="3" maxlength="36">
     <input type="hidden"  name="gnewdefault" id="gnewdefault" value="" /> </td>
-<td><input type="textbox" name="gnewdesc" id="gnewdesc" value="" size="30" maxlength="63"> </td>
+<td><input type="textbox" name="gnewdesc" id="gnewdesc" value="" size="30"> </td>
 </tr>
 </tbody>
 </table>
@@ -1331,7 +1331,7 @@ foreach ($datatypes as $key=>$value) {
    <td><input type="textbox" name="newdatacols" id="newdatacols" value="" size="3" maxlength="3"> </td>
    <td><input type="textbox" name="newedit_options" id="newedit_options" value="" size="3" maxlength="36">
        <input type="hidden"  name="newdefault" id="newdefault" value="" /> </td>
-   <td><input type="textbox" name="newdesc" id="newdesc" value="" size="30" maxlength="63"> </td>
+   <td><input type="textbox" name="newdesc" id="newdesc" value="" size="30"> </td>
   </tr>
   <tr>
    <td colspan="9">
@@ -1483,11 +1483,13 @@ $(document).ready(function(){
             alert("<?php xl('DataCols must be a number between 1 and 999','e'); ?>");
             return false;
         }
+        /**************************************************************
         // some fields cannot be blank
         if ($("#gnewtitle").val() == "") {
             alert("<?php xl('Label cannot be blank','e'); ?>");
             return false;
         }
+        **************************************************************/
         // the id field can only have letters, numbers and underscores
         if ($("#gnewid").val() == "") {
             alert("<?php xl('ID cannot be blank', 'e'); ?>");
@@ -1650,11 +1652,13 @@ $(document).ready(function(){
             alert("<?php xl('DataCols must be a number between 1 and 999','e'); ?>");
             return false;
         }
+        /**************************************************************
         // some fields cannot be blank
         if ($("#newtitle").val() == "") {
             alert("<?php xl('Label cannot be blank','e'); ?>");
             return false;
         }
+        **************************************************************/
         // the id field can only have letters, numbers and underscores
         var validid = $("#newid").val().replace(/(\s|\W)/g, "_"); // match any non-word characters and replace them
         $("#newid").val(validid);
