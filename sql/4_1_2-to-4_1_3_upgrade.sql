@@ -537,3 +537,8 @@ ALTER TABLE `forms` ADD COLUMN `provider_id` bigint(20) NOT NULL default 0 COMME
 #IfNotColumnType list_options notes VARCHAR(4095)
 ALTER TABLE `list_options` CHANGE `notes` `notes` VARCHAR(4095) NOT NULL DEFAULT '';
 #EndIf
+
+#IfNotRow2D issue_types category ippf_specific type cervical_cancer
+INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES
+  ('65','ippf_specific','cervical_cancer','Cervical Cancer','Cervical Cancer','CC','0','0');
+#EndIf
