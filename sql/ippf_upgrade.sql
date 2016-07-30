@@ -2878,6 +2878,14 @@ DELETE FROM codes WHERE code_type = '31' AND code = '2150000000000';
 DELETE FROM lang_definitions WHERE lang_id = 1 AND definition LIKE 'Referrals%';
 #EndIf
 
+#IfMissingColumn forms issue_id
+ALTER TABLE `forms` ADD COLUMN `issue_id` bigint(20) NOT NULL default 0 COMMENT 'references lists.id to identify a case';
+#EndIf
+
+#IfMissingColumn forms provider_id
+ALTER TABLE `forms` ADD COLUMN `provider_id` bigint(20) NOT NULL default 0 COMMENT 'references users.id to identify a provider';
+#EndIf
+
 #IfNotRow2D list_options list_id lbfnames option_id LBFVitals
 
 # This came from an export of the new LBF Vital Signs form and its dependent lists.
@@ -2912,7 +2920,7 @@ INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`
 DELETE FROM layout_options WHERE form_id = 'LBFVitals';
 DELETE FROM list_options WHERE list_id = 'lbfnames' AND option_id = 'LBFVitals';
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('lbfnames','LBFVitals','Vital Signs',100,0,5,'Clinical','','');
-INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','DOB','1Vitals','DOB',165,4,2,0,255,'',1,3,'','DNA0','',0,'D','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','DOB','1Vitals','DOB',165,4,0,0,255,'',1,3,'','DNA0','',0,'D','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_AppearGen','1Vitals','General Appearance',100,21,1,1,255,'VIT_GenAppear',1,3,'','','General Appearance',0,'F','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_BMI','1Vitals','BMI',80,2,1,10,255,'',1,3,'','G','BMI',0,'F','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_BMI_status','1Vitals','BMI Status',85,2,1,0,255,'',1,3,'','','BMI status',0,'F','');
@@ -2938,14 +2946,6 @@ INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_Waist_circum_in','1Vitals','Waist Circumference (in)',190,2,1,10,255,'',1,3,'','G','Waist circumference (in)',0,'F','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_Weight_kg','1Vitals','Weight (kg)',15,2,1,10,255,'',1,3,'','G','Weight (kgs)',0,'F','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_Weight_lb','1Vitals','Weight (lb)',10,2,1,10,10,'',1,3,'','G','Weight (lbs)',0,'F','');
-
-#IfMissingColumn forms issue_id
-ALTER TABLE `forms` ADD COLUMN `issue_id` bigint(20) NOT NULL default 0 COMMENT 'references lists.id to identify a case';
-#EndIf
-
-#IfMissingColumn forms provider_id
-ALTER TABLE `forms` ADD COLUMN `provider_id` bigint(20) NOT NULL default 0 COMMENT 'references users.id to identify a provider';
-#EndIf
 
 # Create new forms table entries cloned from those for the old vitals form.
 INSERT INTO forms (date, encounter, form_name, form_id, pid, user, groupname, authorized, formdir, issue_id, provider_id)
@@ -2996,5 +2996,59 @@ UPDATE forms SET deleted = 1, form_name = CONCAT('DELETED ', form_name) WHERE fo
 
 # Disable the old vitals form so they dont continue to use it.
 UPDATE registry SET state = 0 WHERE directory = 'vitals';
+
+#EndIf
+
+#IfRow2D registry directory vitalsM state 1
+
+# Create new forms table entries cloned from those for the old vitalsM form.
+INSERT INTO forms (date, encounter, form_name, form_id, pid, user, groupname, authorized, formdir, issue_id, provider_id)
+  SELECT date, encounter, 'Vital Signs Converted from Metric', form_id, pid, user, groupname, authorized, '#LBFVitals#', issue_id, provider_id
+  FROM forms AS f WHERE formdir = 'vitalsM' AND deleted = 0;
+
+# Generate form_id values by creating one lbf_data entry per form.
+INSERT INTO lbf_data (field_id, field_value)
+  SELECT '#LBFVitals#', id FROM forms WHERE formdir = '#LBFVitals#' AND deleted = 0;
+
+# Copy in data values. Note the old form_vitalsM table stores only metric units of measurement.
+# VIT_AppearGen omitted.
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_BMI'            , v.BMI               FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.BMI               != 0.0       AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_BMI_status'     , v.BMI_status        FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.BMI_status        IS NOT NULL  AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_BPDiast'        , v.bpd               FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.bpd IS NOT NULL AND v.bpd != 0 AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_BPSyst'         , v.bps               FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.bps IS NOT NULL AND v.bps != 0 AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+# VIT_Glucose omitted.
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_Head_circum_cm' , v.head_circ         FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.head_circ         != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_Head_circum_in' , v.head_circ / 2.54  FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.head_circ         != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_Height_cm'      , v.height            FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.height            != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_Height_in'      , v.height / 2.54     FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.height            != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+# VIT_HR omitted, might be removed.
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_O2_Satur'       , v.oxygen_saturation FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.oxygen_saturation != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_Othernotes'     , v.note              FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.note              IS NOT NULL  AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_Pulse'          , v.pulse             FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.pulse             != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_RespRate'       , v.respiration       FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.respiration       != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_TempF'   , v.temperature * 9 / 5 + 32 FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.temperature       != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_TempC'          , v.temperature       FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.temperature       != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_TempLoc'        , v.temp_method       FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.temp_method       IS NOT NULL  AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_Waist_circum_cm', v.waist_circ        FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.waist_circ        != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_Waist_circum_in', v.waist_circ / 2.54 FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.waist_circ        != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+# VIT_Waist_index omitted.
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_Weight_kg'      , v.weight            FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.weight            != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+INSERT INTO lbf_data SELECT d.form_id, 'VIT_Weight_lb'    , v.weight / 0.45359237 FROM forms AS f, form_vitalsM AS v, lbf_data AS d WHERE v.weight            != 0.00      AND f.formdir = '#LBFVitals#' AND f.deleted = 0 AND v.id = f.form_id AND d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+# VIT_Hip_circum_cm omitted.
+# VIT_Hip_circum_in omitted.
+
+# Replace the form_id values in the forms table with the new values.
+UPDATE forms AS f, lbf_data AS d
+  SET f.form_id = d.form_id, f.formdir = 'LBFVitals' WHERE
+  d.field_id = '#LBFVitals#' AND d.field_value = f.id;
+
+# Remove the dummy lbf_data rows.
+DELETE FROM lbf_data WHERE field_id = '#LBFVitals#';
+
+# Mark the old vitalsM forms as deleted to avoid any confusion. This leaves enough info to recover them if necessary.
+UPDATE forms SET deleted = 1, form_name = CONCAT('DELETED ', form_name) WHERE formdir = 'vitalsM' and deleted = 0;
+
+# Disable the old vitalsM form so they dont continue to use it.
+UPDATE registry SET state = 0 WHERE directory = 'vitalsM';
 
 #EndIf
