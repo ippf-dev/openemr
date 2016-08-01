@@ -27,27 +27,28 @@ require_once("$srcdir/log.inc");
 require_once("$srcdir/formdata.inc.php");
 
 $layouts = array(
-  'DEM' => xl('Demographics'),
-  'HIS' => xl('History'),
-  'FACUSR' => xl('Facility Specific User Information')
+  'DEM'    => array(xl('Core'), xl('Demographics')),
+  'HIS'    => array(xl('Core'), xl('History')),
+  'FACUSR' => array(xl('Core'), xl('Facility Specific User Information'))
 );
 if ($GLOBALS['ippf_specific']) {
-  $layouts['GCA'] = xl('Abortion Issues');
-  $layouts['CON'] = xl('Contraception Issues');
+  $layouts['GCA'] = array(xl('Core'), xl('Abortion Issues'));
+  $layouts['CON'] = array(xl('Core'), xl('Contraception Issues'));
 }
 
 // Include Layout Based Transaction Forms.
 $lres = sqlStatement("SELECT * FROM list_options " .
   "WHERE list_id = 'transactions' ORDER BY seq, title");
 while ($lrow = sqlFetchArray($lres)) {
-  $layouts[$lrow['option_id']] = $lrow['title'];
+  $layouts[$lrow['option_id']] = array(xl('Transactions'), $lrow['title']);
 }
 
 // Include Layout Based Encounter Forms.
 $lres = sqlStatement("SELECT * FROM list_options " .
-  "WHERE list_id = 'lbfnames' ORDER BY seq, title");
+  "WHERE list_id = 'lbfnames' ORDER BY mapping, seq, title");
 while ($lrow = sqlFetchArray($lres)) {
-  $layouts[$lrow['option_id']] = $lrow['title'];
+  if (empty($lrow['mapping'])) $lrow['mapping'] = 'LBF (No Group)';
+  $layouts[$lrow['option_id']] = array($lrow['mapping'], $lrow['title']);
 }
 
 // array of the data_types of the fields
@@ -1054,11 +1055,18 @@ function myChangeCheck() {
 <select name='layout_id' id='layout_id'>
  <option value=''>-- <?php echo xl('Select') ?> --</option>
 <?php
+$lastgroup = '';
 foreach ($layouts as $key => $value) {
-  echo " <option value='$key'";
+  if ($value[0] != $lastgroup) {
+    if ($lastgroup) echo " </optgroup>\n";
+    echo " <optgroup label='" . attr($value[0]) . "'>\n";
+    $lastgroup = $value[0];
+  }
+  echo "  <option value='" . attr($key) . "'";
   if ($key == $layout_id) echo " selected";
-  echo ">$value</option>\n";
+  echo ">" . text($value[1]) . "</option>\n";
 }
+if ($lastgroup) echo " </optgroup>\n";
 ?>
 </select>
 &nbsp;

@@ -1060,8 +1060,10 @@ if ($list_id) {
     }
   }  
   else {
+    // lbfnames only is sorted by group name.
     $res = sqlStatement("SELECT * FROM list_options WHERE " .
-      "list_id = '$list_id' ORDER BY seq,title");
+      "list_id = '$list_id' ORDER BY " .
+      ($list_id == 'lbfnames' ? "mapping, seq, title" : "seq, title"));
     while ($row = sqlFetchArray($res)) {
       writeOptionLine($row['option_id'], $row['title'], $row['seq'],
         $row['is_default'], $row['option_value'], $row['mapping'],
