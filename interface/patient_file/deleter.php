@@ -4,7 +4,7 @@
  *
  * Called from many different pages.
  *
- *  Copyright (C) 2005-2013 Rod Roark <rod@sunsetsystems.com>
+ *  Copyright (C) 2005-2016 Rod Roark <rod@sunsetsystems.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -101,12 +101,20 @@ function delete_drug_sales($patient_id, $encounter_id=0) {
   }
 }
 
-// Delete a form's data from its form-specific table.
+// Delete a form's data that is specific to that form.
 //
-function form_delete($formdir, $formid) {
+function form_delete($formdir, $formid, $patient_id, $encounter_id) {
   $formdir = ($formdir == 'newpatient') ? 'encounter' : $formdir;
   if (substr($formdir,0,3) == 'LBF') {
     row_delete("lbf_data", "form_id = '$formid'");
+    // Delete the visit's "source=visit" attributes that are not used by any other form.
+    $where = "pid = '$patient_id' AND encounter = '$encounter_id' AND field_id NOT IN (" .
+      "SELECT lo.field_id FROM forms AS f, layout_options AS lo WHERE " .
+      "f.pid = '$patient_id' AND f.encounter = '$encounter_id' AND f.formdir LIKE 'LBF%' AND " .
+      "f.deleted = 0 AND f.form_id != '$formid' AND " .
+      "lo.form_id = f.formdir AND lo.source = 'E' AND lo.uor > 0)";
+    // echo "<!-- $where -->\n"; // debugging
+    row_delete("shared_attributes", $where);
   }
   else if ($formdir == 'procedure_order') {
     $tres = sqlStatement("SELECT procedure_report_id FROM procedure_report " .
@@ -204,7 +212,7 @@ function popup_close() {
 
    $res = sqlStatement("SELECT * FROM forms WHERE pid = '$patient'");
    while ($row = sqlFetchArray($res)) {
-    form_delete($row['formdir'], $row['form_id']);
+    form_delete($row['formdir'], $row['form_id'], $row['pid'], $row['encounter']);
    }
    row_delete("forms", "pid = '$patient'");
 
@@ -236,7 +244,7 @@ function popup_close() {
    row_delete("issue_encounter", "encounter = '$encounterid'");
    $res = sqlStatement("SELECT * FROM forms WHERE encounter = '$encounterid'");
    while ($row = sqlFetchArray($res)) {
-    form_delete($row['formdir'], $row['form_id']);
+    form_delete($row['formdir'], $row['form_id'], $row['pid'], $row['encounter']);
    }
    row_delete("forms", "encounter = '$encounterid'");
   }
@@ -245,7 +253,7 @@ function popup_close() {
    $row = sqlQuery("SELECT * FROM forms WHERE id = '$formid'");
    $formdir = $row['formdir'];
    if (! $formdir) die("There is no form with id '$formid'");
-   form_delete($formdir, $row['form_id']);
+   form_delete($formdir, $row['form_id'], $row['pid'], $row['encounter']);
    row_delete("forms", "id = '$formid'");
   }
   else if ($issue) {
