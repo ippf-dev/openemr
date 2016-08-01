@@ -78,10 +78,14 @@ f.form_refer_external.onchange = function () {
   external_changed(true);
 };
 ";
-  // This part restricts requested service code type for IPPF referrals and
-  // replaces the onclick handler assigned by options.inc.php.
+  // This part restricts requested and performed service code type for IPPF
+  // referrals and replaces the onclick handler assigned by options.inc.php.
   if ($GLOBALS['ippf_specific']) echo "
 f.form_refer_related_code.onclick = function () {
+  var codetype = this.form.form_refer_external.value == '2' ? 'REF' : 'MA';
+  sel_related(this, codetype);
+};
+f.form_reply_related_code.onclick = function () {
   var codetype = this.form.form_refer_external.value == '2' ? 'REF' : 'MA';
   sel_related(this, codetype);
 };

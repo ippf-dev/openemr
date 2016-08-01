@@ -2921,7 +2921,7 @@ DELETE FROM layout_options WHERE form_id = 'LBFVitals';
 DELETE FROM list_options WHERE list_id = 'lbfnames' AND option_id = 'LBFVitals';
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('lbfnames','LBFVitals','Vital Signs',100,0,5,'Clinical','','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','DOB','1Vitals','DOB',165,4,0,0,255,'',1,3,'','DNA0','',0,'D','');
-INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_AppearGen','1Vitals','General Appearance',100,21,1,1,255,'VIT_GenAppear',1,3,'','','General Appearance',0,'F','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_AppearGen','1Vitals','General Appearance',100,21,0,1,255,'VIT_GenAppear',1,3,'','','General Appearance',0,'F','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_BMI','1Vitals','BMI',80,2,1,10,255,'',1,3,'','G','BMI',0,'F','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_BMI_status','1Vitals','BMI Status',85,2,1,0,255,'',1,3,'','','BMI status',0,'F','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFVitals','VIT_BPDiast','1Vitals','BP Diastolic',40,2,1,10,255,'',1,3,'','G','Blood pressure diastolic',0,'F','');
@@ -2949,7 +2949,7 @@ INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq
 
 # Create new forms table entries cloned from those for the old vitals form.
 INSERT INTO forms (date, encounter, form_name, form_id, pid, user, groupname, authorized, formdir, issue_id, provider_id)
-  SELECT date, encounter, 'Vital Signs Converted', form_id, pid, user, groupname, authorized, '#LBFVitals#', issue_id, provider_id
+  SELECT date, encounter, 'Vital Signs', form_id, pid, user, groupname, authorized, '#LBFVitals#', issue_id, provider_id
   FROM forms AS f WHERE formdir = 'vitals' AND deleted = 0;
 
 # Generate form_id values by creating one lbf_data entry per form.
@@ -3003,7 +3003,7 @@ UPDATE registry SET state = 0 WHERE directory = 'vitals';
 
 # Create new forms table entries cloned from those for the old vitalsM form.
 INSERT INTO forms (date, encounter, form_name, form_id, pid, user, groupname, authorized, formdir, issue_id, provider_id)
-  SELECT date, encounter, 'Vital Signs Converted from Metric', form_id, pid, user, groupname, authorized, '#LBFVitals#', issue_id, provider_id
+  SELECT date, encounter, 'Vital Signs', form_id, pid, user, groupname, authorized, '#LBFVitals#', issue_id, provider_id
   FROM forms AS f WHERE formdir = 'vitalsM' AND deleted = 0;
 
 # Generate form_id values by creating one lbf_data entry per form.
