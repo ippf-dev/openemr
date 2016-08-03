@@ -21,6 +21,7 @@ function VitalsComputeBMI() {
  var f = document.forms[0];
  var bmi = 0;
  var stat = '';
+ if (!f.form_VIT_Height_in || !f.form_VIT_Weight_lb) return;
  var height = parseFloat(f.form_VIT_Height_in.value);
  var weight = parseFloat(f.form_VIT_Weight_lb.value);
  if(isNaN(height) || isNaN(weight) || height <= 0 || weight <= 0) {
@@ -62,6 +63,7 @@ function VitalsComputeWI() {
  echo "// Some measurement in inches has changed.
 function Vitals_in_changed(field) {
  var f = document.forms[0];
+ if (!f['form_' + field + '_cm']) return;
  var inch = f['form_' + field + '_in'].value;
  if (inch == parseFloat(inch)) {
   cm = inch * 2.54;
@@ -76,6 +78,7 @@ function Vitals_in_changed(field) {
   echo "// Some measurement in cm has changed.
 function Vitals_cm_changed(field) {
  var f = document.forms[0];
+ if (!f['form_' + field + '_in']) return;
  var cm = f['form_' + field + '_cm'].value;
  if (cm == parseFloat(cm)) {
   inch = cm / 2.54;
@@ -105,12 +108,14 @@ function Vitals_height_in_changed() {
 function Vitals_weight_kg_changed() {
  var f = document.forms[0];
  var kg = f.form_VIT_Weight_kg.value;
- if (kg == parseFloat(kg)) {
-  lbs = kg / 0.45359237;
-  f.form_VIT_Weight_lb.value = lbs.toFixed(2);
- }
- else {
-  f.form_VIT_Weight_lb.value = '';
+ if (f.form_VIT_Weight_lb) {
+  if (kg == parseFloat(kg)) {
+   lbs = kg / 0.45359237;
+   f.form_VIT_Weight_lb.value = lbs.toFixed(2);
+  }
+  else {
+   f.form_VIT_Weight_lb.value = '';
+  }
  }
  VitalsComputeBMI();
 }
@@ -120,12 +125,14 @@ function Vitals_weight_kg_changed() {
 function Vitals_weight_lbs_changed() {
  var f = document.forms[0];
  var lbs = f.form_VIT_Weight_lb.value;
- if (lbs == parseFloat(lbs)) {
-  kg = lbs * 0.45359237;
-  f.form_VIT_Weight_kg.value = kg.toFixed(2);
- }
- else {
-  f.form_VIT_Weight_kg.value = '';
+ if (f.form_VIT_Weight_kg) {
+  if (lbs == parseFloat(lbs)) {
+   kg = lbs * 0.45359237;
+   f.form_VIT_Weight_kg.value = kg.toFixed(2);
+  }
+  else {
+   f.form_VIT_Weight_kg.value = '';
+  }
  }
  VitalsComputeBMI();
 }
@@ -135,12 +142,14 @@ function Vitals_weight_lbs_changed() {
 function Vitals_temperature_c_changed() {
  var f = document.forms[0];
  var tc = f.form_VIT_TempC.value;
- if (tc == parseFloat(tc)) {
-  tf = tc * 9 / 5 + 32;
-  f.form_VIT_TempF.value = tf.toFixed(2);
- }
- else {
-  f.form_VIT_TempF.value = '';
+ if (f.form_VIT_TempF) {
+  if (tc == parseFloat(tc)) {
+   tf = tc * 9 / 5 + 32;
+   f.form_VIT_TempF.value = tf.toFixed(2);
+  }
+  else {
+   f.form_VIT_TempF.value = '';
+  }
  }
 }
 ";
@@ -149,12 +158,14 @@ function Vitals_temperature_c_changed() {
 function Vitals_temperature_f_changed() {
  var f = document.forms[0];
  var tf = f.form_VIT_TempF.value;
- if (tf == parseFloat(tf)) {
-  tc = (tf - 32) * 5 / 9;
-  f.form_VIT_TempC.value = tc.toFixed(2);
- }
- else {
-  f.form_VIT_TempC.value = '';
+ if (f.form_VIT_TempC) {
+  if (tf == parseFloat(tf)) {
+   tc = (tf - 32) * 5 / 9;
+   f.form_VIT_TempC.value = tc.toFixed(2);
+  }
+  else {
+   f.form_VIT_TempC.value = '';
+  }
  }
 }
 ";
@@ -204,34 +215,40 @@ function LBFVitals_javascript_onload() {
 
   echo "
 var f = document.forms[0];
-if (f.form_VIT_Weight_lb && f.form_VIT_Weight_kg) {
- // Set change event handlers to convert kg to lbs and vice versa.
+if (f.form_VIT_Weight_lb) {
  f.form_VIT_Weight_lb.addEventListener('change', function () {Vitals_weight_lbs_changed();});
+}
+if (f.form_VIT_Weight_kg) {
  f.form_VIT_Weight_kg.addEventListener('change', function () {Vitals_weight_kg_changed() ;});
 }
-if (f.form_VIT_Height_in && f.form_VIT_Height_cm) {
- // Set change event handlers to convert centimeters to inches and vice versa.
+if (f.form_VIT_Height_in) {
  f.form_VIT_Height_in.addEventListener('change', function () {Vitals_height_in_changed();});
+}
+if (f.form_VIT_Height_cm) {
  f.form_VIT_Height_cm.addEventListener('change', function () {Vitals_height_cm_changed();});
 }
-if (f.form_VIT_TempF && f.form_VIT_TempC) {
- // Set change event handlers to convert centigrade to farenheit and vice versa.
+if (f.form_VIT_TempF) {
  f.form_VIT_TempF.addEventListener('change', function () {Vitals_temperature_f_changed();});
+}
+if (f.form_VIT_TempC) {
  f.form_VIT_TempC.addEventListener('change', function () {Vitals_temperature_c_changed();});
 }
-if (f.form_VIT_Head_circum_in && f.form_VIT_Head_circum_cm) {
- // Set change event handlers to convert centimeters to inches and vice versa.
+if (f.form_VIT_Head_circum_in) {
  f.form_VIT_Head_circum_in.addEventListener('change', function () {Vitals_Head_circum_in_changed();});
+}
+if (f.form_VIT_Head_circum_cm) {
  f.form_VIT_Head_circum_cm.addEventListener('change', function () {Vitals_Head_circum_cm_changed();});
 }
-if (f.form_VIT_Waist_circum_in && f.form_VIT_Waist_circum_cm) {
- // Set change event handlers to convert centimeters to inches and vice versa.
+if (f.form_VIT_Waist_circum_in) {
  f.form_VIT_Waist_circum_in.addEventListener('change', function () {Vitals_Waist_circum_in_changed();});
+}
+if (f.form_VIT_Waist_circum_cm) {
  f.form_VIT_Waist_circum_cm.addEventListener('change', function () {Vitals_Waist_circum_cm_changed();});
 }
-if (f.form_VIT_Hip_circum_in && f.form_VIT_Hip_circum_cm) {
- // Set change event handlers to convert centimeters to inches and vice versa.
+if (f.form_VIT_Hip_circum_in) {
  f.form_VIT_Hip_circum_in.addEventListener('change', function () {Vitals_Hip_circum_in_changed();});
+}
+if (f.form_VIT_Hip_circum_cm) {
  f.form_VIT_Hip_circum_cm.addEventListener('change', function () {Vitals_Hip_circum_cm_changed();});
 }
 // Set computed fields to be readonly.
