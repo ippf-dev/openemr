@@ -245,8 +245,9 @@ if ($_POST['formaction'] == "save" && $layout_id) {
     for ($lino = 1; isset($fld[$lino]['id']); ++$lino) {
         $iter = $fld[$lino];
         $field_id = formTrim($iter['id']);
-        $data_type = formTrim($iter['data_type']);
-        $listval = $data_type == 34 ? formTrim($iter['contextName']) : formTrim($iter['list_id']);
+        $field_id_original = formTrim($iter['originalid']);
+        $data_type = formTrim($iter['datatype']);
+        $listval = $data_type == 34 ? formTrim($iter['contextName']) : formTrim($iter['listid']);
 
         // Skip conditions for the line are stored as a serialized array.
         $condarr = array();
@@ -264,6 +265,7 @@ if ($_POST['formaction'] == "save" && $layout_id) {
 
         if ($field_id) {
             sqlStatement("UPDATE layout_options SET " .
+                "field_id = '"      . formDataCore($field_id)      . "', " .
                 "source = '"        . formTrim($iter['source'])    . "', " .
                 "title = '"         . formDataCore($iter['title'])     . "', " .
                 "group_name = '"    . formTrim($iter['group'])     . "', " .
@@ -280,7 +282,7 @@ if ($_POST['formaction'] == "save" && $layout_id) {
                 "default_value = '" . formTrim($iter['default'])   . "', " .
                 "description = '"   . formTrim($iter['desc'])      . "', " .
                 "conditions = '"    . add_escape_custom($conditions) . "' " .
-                "WHERE form_id = '$layout_id' AND field_id = '$field_id'");
+                "WHERE form_id = '$layout_id' AND field_id = '$field_id_original'");
         }
     }
 }
@@ -493,6 +495,9 @@ function writeFieldLine($linedata) {
     // tuck the group_name INPUT in here
     echo "<input type='hidden' name='fld[$fld_line_no][group]' value='" .
          htmlspecialchars($linedata['group_name'], ENT_QUOTES) . "' class='optin' />";
+    // Original field ID.
+    echo "<input type='hidden' name='fld[$fld_line_no][originalid]' value='" .
+         attr($linedata['field_id']) . "' />";
 
     echo "<input type='checkbox' class='selectfield' ".
             "name='".$linedata['group_name']."~".$linedata['field_id']."' ".
@@ -505,7 +510,7 @@ function writeFieldLine($linedata) {
     echo "</td>\n";
 
     echo "  <td align='center' class='optcell' $lbfonly style='width:3%'>";
-    echo "<select name='fld[$fld_line_no][source]' class='optin noselect' $lbfonly>";
+    echo "<select name='fld[$fld_line_no][source]' class='optin' $lbfonly>";
     foreach ($sources as $key => $value) {
         echo "<option value='$key'";
         if ($key == $linedata['source']) echo " selected";
@@ -516,9 +521,9 @@ function writeFieldLine($linedata) {
 
     echo "  <td align='left' class='optcell' style='width:12%'>";
     echo "<input type='text' name='fld[$fld_line_no][id]' value='" .
-         htmlspecialchars($linedata['field_id'], ENT_QUOTES) . "' size='15' maxlength='63'
-         class='optin noselect' style='width:100%' />";
-         // class='optin noselect' onclick='FieldIDClicked(this)' />";
+         htmlspecialchars($linedata['field_id'], ENT_QUOTES) . "' size='15' maxlength='63' " .
+         // "class='optin noselect' style='width:100%' />";
+         "class='optin' style='width:100%' onclick='FieldIDClicked(this)' />";
     /*
     echo "<input type='hidden' name='fld[$fld_line_no][id]' value='" .
          htmlspecialchars($linedata['field_id'], ENT_QUOTES) . "' />";
@@ -547,7 +552,7 @@ function writeFieldLine($linedata) {
     echo "</td>\n";
   
     echo "  <td align='center' class='optcell' style='width:8%'>";
-    echo "<select name='fld[$fld_line_no][data_type]' id='fld[$fld_line_no][data_type]' onchange=NationNotesContext('".$fld_line_no."',this.value)>";
+    echo "<select name='fld[$fld_line_no][datatype]' id='fld[$fld_line_no][datatype]' onchange=NationNotesContext('".$fld_line_no."',this.value)>";
     echo "<option value=''></option>";
     GLOBAL $datatypes;
     foreach ($datatypes as $key=>$value) {
@@ -609,7 +614,7 @@ function writeFieldLine($linedata) {
         $type = "style='display:none'";
         $disp = "";
       }
-      echo "<input type='text' name='fld[$fld_line_no][list_id]'  id='fld[$fld_line_no][list_id]' value='" .
+      echo "<input type='text' name='fld[$fld_line_no][listid]'  id='fld[$fld_line_no][listid]' value='" .
         htmlspecialchars($linedata['list_id'], ENT_QUOTES) . "'".$type.
         " size='6' maxlength='30' class='optin listid' style='width:100%;cursor:pointer'".
         "title='". xl('Choose list') . "' />";
@@ -626,7 +631,7 @@ function writeFieldLine($linedata) {
     }
     else {
       // all other data_types
-      echo "<input type='hidden' name='fld[$fld_line_no][list_id]' value=''>";
+      echo "<input type='hidden' name='fld[$fld_line_no][listid]' value=''>";
     }
     echo "</td>\n";
 
@@ -976,8 +981,8 @@ function setListItemOptions(lino, seq, init) {
   var current = init ? f[target].value : '';
   f[target].options.length = 0;
   // Get the corresponding data type and list ID.
-  var data_type = f['fld[' + i + '][data_type]'].value;
-  var list_id   = f['fld[' + i + '][list_id]'].value;
+  var data_type = f['fld[' + i + '][datatype]'].value;
+  var list_id   = f['fld[' + i + '][listid]'].value;
   // WARNING: If new data types are defined the following test may need enhancing.
   // We're getting out if the type does not generate multiple fields with different names.
   if (data_type != '21' && data_type != '22' && data_type != '23' && data_type != '25') {
@@ -1434,8 +1439,18 @@ $(document).ready(function(){
 
     // Save the changes made to the form
     var SaveChanges = function () {
-        $("#formaction").val("save");
-        mySubmit();
+      var f = document.forms[0];
+      for (var i = 1; f['fld['+i+'][id]']; ++i) {
+        var ival = f['fld['+i+'][id]'].value;
+        for (var j = i + 1; f['fld['+j+'][id]']; ++j) {
+          if (ival == f['fld['+j+'][id]'].value || ival == f['fld['+j+'][originalid]'].value) {
+            alert('<?php echo xls('Error: Duplicated field ID'); ?>: ' + ival);
+            return;
+          }
+        }
+      }
+      $("#formaction").val("save");
+      mySubmit();
     }
 
     /****************************************************/
@@ -1750,13 +1765,13 @@ $(document).ready(function(){
 function NationNotesContext(lineitem,val){
   if(val==34){
     document.getElementById("fld["+lineitem+"][contextName]").style.display='';
-    document.getElementById("fld["+lineitem+"][list_id]").style.display='none';
-    document.getElementById("fld["+lineitem+"][list_id]").value='';
+    document.getElementById("fld["+lineitem+"][listid]").style.display='none';
+    document.getElementById("fld["+lineitem+"][listid]").value='';
   }
   else{
-    document.getElementById("fld["+lineitem+"][list_id]").style.display='';
+    document.getElementById("fld["+lineitem+"][listid]").style.display='';
     document.getElementById("fld["+lineitem+"][contextName]").style.display='none';
-    document.getElementById("fld["+lineitem+"][list_id]").value='';
+    document.getElementById("fld["+lineitem+"][listid]").value='';
   }
 }
 
