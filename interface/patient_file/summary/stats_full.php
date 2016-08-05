@@ -130,22 +130,22 @@ foreach ($ISSUE_TYPES as $focustype => $focustitles) {
   echo " <table style='margin-bottom:1em;text-align:center'>";
   ?>
   <tr class='head'>
-    <th><?php echo htmlspecialchars( xl('Title'), ENT_NOQUOTES); ?></th>
-    <th><?php echo htmlspecialchars( xl('Begin'), ENT_NOQUOTES); ?></th>
-    <th><?php echo htmlspecialchars( xl('End'), ENT_NOQUOTES); ?></th>
-    <th><?php echo htmlspecialchars( xl('Diag'), ENT_NOQUOTES); ?></th>
-    <th><?php echo htmlspecialchars(xl('Status'),ENT_NOQUOTES); ?></th>
-    <th><?php echo htmlspecialchars( xl('Occurrence'), ENT_NOQUOTES); ?></th>
+    <th><?php echo xlt('Title'      ); ?></th>
+    <th><?php echo xlt('Begin'      ); ?></th>
+    <th><?php echo xlt('End'        ); ?></th>
+    <th><?php echo xlt('Diag'       ); ?></th>
+    <th><?php echo xlt('Status'     ); ?></th>
+    <th><?php echo xlt('Occurrence' ); ?></th>
     <?php if ($focustype == "allergy") { ?>
-      <th><?php echo htmlspecialchars( xl('Reaction'), ENT_NOQUOTES); ?></th>
+    <th><?php echo xlt('Reaction'   ); ?></th>
     <?php } ?>
     <?php if ($GLOBALS['athletic_team']) { ?>
-      <th><?php echo htmlspecialchars( xl('Missed'), ENT_NOQUOTES); ?></th>
+    <th><?php echo xlt('Missed'     ); ?></th>
     <?php } else { ?>
-      <th><?php echo htmlspecialchars( xl('Referred By'), ENT_NOQUOTES); ?></th>
+    <th><?php echo xlt('Referred By'); ?></th>
     <?php } ?>
-    <th><?php echo htmlspecialchars( xl('Comments'), ENT_NOQUOTES); ?></th>
-    <th><?php echo htmlspecialchars( xl('Enc'), ENT_NOQUOTES); ?></th>
+    <th><?php echo xlt('Comments'   ); ?></th>
+    <th><?php echo xlt('Encounters' ); ?></th>
     </tr>
   <?php
 
