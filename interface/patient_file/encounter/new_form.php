@@ -140,83 +140,12 @@ function findPosX(id)
 </head>
 <body class="bgcolor2">
 <dl>
-<?php //DYNAMIC FORM RETREIVAL
+<?php
+//DYNAMIC FORM RETREIVAL
 include_once("$srcdir/registry.inc");
-
-function myGetRegistered($state="1", $limit="unlimited", $offset="0") {
-  $sql = "SELECT category, nickname, name, state, directory, id, sql_run, " .
-    "unpackaged, date, priority FROM registry WHERE " .
-    "state LIKE \"$state\" ORDER BY category, priority, name";
-  if ($limit != "unlimited") $sql .= " limit $limit, $offset";
-  $res = sqlStatement($sql);
-  if ($res) {
-    for($iter=0; $row=sqlFetchArray($res); $iter++) {
-      // Skip fee_sheet from list of registered forms, since redundant with Direct Link Provided
-      if($row['directory']!='fee_sheet')
-      {
-          // Flag this entry as not LBF
-          $row['LBF']=false;
-          $all[$iter] = $row;      
-      }
-    }
-  }
-  else {
-    return false;
-  }
-  return $all;
-}
-
-function addLBFToRegistry(&$reg)
-{
-    // Merge any LBF entries into the registry array of forms.
-    // Note that the mapping value is used as the category name.
-    //
-    $lres = sqlStatement("SELECT * FROM list_options " .
-    "WHERE list_id = 'lbfnames' ORDER BY mapping, seq, title");
-    if (sqlNumRows($lres)) {
-        while ($lrow = sqlFetchArray($lres)) {
-            $rrow = array();
-            $rrow['category'] = $lrow['mapping'] ? $lrow['mapping'] : 'Clinical';
-            $rrow['name'] = $lrow['title'];
-            $rrow['nickname'] = $lrow['title'];
-            $rrow['directory'] = $lrow['option_id']; // should start with LBF
-            $rrow['priority'] = $lrow['seq'];
-            $rrow['LBF']=true; // Flag this form as LBF so we can prioritze 
-            $reg[] = $rrow;
-        }
-    }
-    // Sort by category.
-    usort($reg, 'cmp_forms');
-
-}
-// usort comparison function for $reg table.
-function cmp_forms($a, $b) {
-if ($a['category'] == $b['category']) {
-    if ($a['priority'] == $b['priority']) {
-        if($a['LBF']==$b['LBF'])
-        {
-            $name1 = $a['nickname'] ? $a['nickname'] : $a['name'];
-            $name2 = $b['nickname'] ? $b['nickname'] : $b['name'];
-            if ($name1 == $name2) return 0;
-            return $name1 < $name2 ? -1 : 1;        
-        }
-        else
-        {
-            // Sort LBF with the same priority after standard forms
-            return $b['LBF'] ? -1 : 1;
-        }
-}
-return $a['priority'] < $b['priority'] ? -1 : 1;
-}
-return $a['category'] < $b['category'] ? -1 : 1;
-}
-
-$reg = myGetRegistered();
-addLBFToRegistry($reg);
-
+$reg = getFormsByCategory();
 $old_category = '';
-
-  $DivId=1;
+$DivId = 1;
 
 // To see if the encounter is locked. If it is, no new forms can be created
 $encounterLocked = false;

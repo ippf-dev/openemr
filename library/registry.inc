@@ -99,4 +99,60 @@ function isRegistered ( $directory, $state = 1)
     return false;
 }
 
+// This gets an array including both standard and LBF visit form types,
+// one row per form type, sorted by category, priority, is lbf, name.
+//
+function getFormsByCategory($state="1") {
+  $all = array();
+  // First get the traditional form types from the registry table.
+  $sql = "SELECT category, nickname, name, state, directory, id, sql_run, " .
+    "unpackaged, date, priority FROM registry WHERE " .
+    "state LIKE ? ORDER BY category, priority, name";
+  $res = sqlStatement($sql, array($state));
+  if ($res) {
+    while ($row = sqlFetchArray($res)) {
+      // Skip fee_sheet from list of registered forms.
+      if ($row['directory'] != 'fee_sheet') {
+        // Flag this entry as not LBF
+        $row['LBF'] = false;
+        $all[] = $row;      
+      }
+    }
+  }
+  // Merge LBF form types into the registry array of form types.
+  // Note that the mapping value is used as the category name.
+  $lres = sqlStatement("SELECT * FROM list_options " .
+  "WHERE list_id = 'lbfnames' ORDER BY mapping, seq, title");
+  while ($lrow = sqlFetchArray($lres)) {
+    $rrow = array();
+    $rrow['category']  = $lrow['mapping'] ? $lrow['mapping'] : 'Clinical';
+    $rrow['name']      = $lrow['title'];
+    $rrow['nickname']  = $lrow['title'];
+    $rrow['directory'] = $lrow['option_id']; // should start with LBF
+    $rrow['priority']  = $lrow['seq'];
+    $rrow['LBF']       = true; // Flag this form as LBF
+    $all[] = $rrow;
+  }
+  // Sort by category, priority, is lbf, name.
+  usort($all, function ($a, $b) {
+    // Anonymous functions supported as of PHP 5.3. Yay!
+    if ($a['category'] == $b['category']) {
+      if ($a['priority'] == $b['priority']) {
+        if($a['LBF'] == $b['LBF']) {
+          $name1 = $a['nickname'] ? $a['nickname'] : $a['name'];
+          $name2 = $b['nickname'] ? $b['nickname'] : $b['name'];
+          if ($name1 == $name2) return 0;
+          return $name1 < $name2 ? -1 : 1;        
+        }
+        else {
+          // Sort LBF with the same priority after standard forms
+          return $b['LBF'] ? -1 : 1;
+        }
+      }
+      return $a['priority'] < $b['priority'] ? -1 : 1;
+    }
+    return $a['category'] < $b['category'] ? -1 : 1;
+  });
+  return $all;
+}
 ?>

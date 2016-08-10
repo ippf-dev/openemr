@@ -90,6 +90,7 @@ use ESign\Api;
  require_once($GLOBALS['fileroot']."/custom/code_types.inc.php");
  require_once($GLOBALS['fileroot']."/library/patient.inc");
  require_once($GLOBALS['fileroot']."/library/lists.inc");
+ require_once($GLOBALS['fileroot']."/library/registry.inc");
  require_once $GLOBALS['srcdir'].'/ESign/Api.php';
 
  // This array defines the list of primary documents that may be
@@ -962,6 +963,7 @@ $(document).ready(function(){
   if(3 == <?php echo $GLOBALS['concurrent_layout'] ?>){
     $("#navigation-slide > li > a.collapsed + ul").slideToggle("medium");
     $("#navigation-slide > li > ul > li > a.collapsed_lv2 + ul").slideToggle("medium");
+    $("#navigation-slide > li > ul > li > ul > li > a.collapsed_lv3 + ul").slideToggle("medium");
     $("#navigation-slide > li > a.expanded").click(function() {
       $("#navigation-slide > li > a.expanded").not(this).toggleClass("expanded").toggleClass("collapsed").parent().find('> ul').slideToggle("medium");
       $(this).toggleClass("expanded").toggleClass("collapsed").parent().find('> ul').slideToggle("medium");
@@ -974,16 +976,27 @@ $(document).ready(function(){
       $("#navigation-slide > li > a.expanded").next("ul").find("li > a.expanded_lv2").not(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
       $(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
     });
+    $("#navigation-slide > li  > ul > li  > ul > li > a.expanded_lv3").click(function() {
+      $("#navigation-slide > li > ul > li > a.expanded").next("ul").find("li > a.expanded_lv3").not(this).toggleClass("expanded_lv3").toggleClass("collapsed_lv3").parent().find('> ul').slideToggle("medium");
+      $(this).toggleClass("expanded_lv3").toggleClass("collapsed_lv3").parent().find('> ul').slideToggle("medium");
+    });
     $("#navigation-slide > li  > ul > li > a.collapsed_lv2").click(function() {
       $("#navigation-slide > li > a.expanded").next("ul").find("li > a.expanded_lv2").not(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
       $(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
     });
-
+    $("#navigation-slide > li  > ul > li  > ul > li > a.collapsed_lv3").click(function() {
+      $("#navigation-slide > li  > ul > li > a.expanded").next("ul").find("li > a.expanded_lv3").not(this).toggleClass("expanded_lv3").toggleClass("collapsed_lv3").parent().find('> ul').slideToggle("medium");
+      $(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
+    });
     $("#navigation-slide > li > ul > li > ul > li> a.collapsed_lv2 + ul").slideToggle("medium");    
     $("#navigation-slide > li > ul > li > ul > li> a.collapsed_lv2").click(function() {
       //$("#navigation-slide > li > a.expanded").next("ul").find("li > a.expanded_lv2").not(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
       // Need to figure out how to toggle 3rd level siblings correctly, but this works for now.
       $(this).toggleClass("expanded_lv2").toggleClass("collapsed_lv2").parent().find('> ul').slideToggle("medium");
+    });    
+    $("#navigation-slide > li > ul > li > ul > li > ul > li > a.collapsed_lv3 + ul").slideToggle("medium");    
+    $("#navigation-slide > li > ul > li > ul > li > ul > li > a.collapsed_lv3").click(function() {
+      $(this).toggleClass("expanded_lv3").toggleClass("collapsed_lv3").parent().find('> ul').slideToggle("medium");
     });    
     $("#navigation-slide > li  > a#cal0").prepend('<img src="../../images/calendar.png" class="nav-menu-img" />');
     $("#navigation-slide > li  > a#msg0").prepend('<img src="../../images/messages.png" class="nav-menu-img" />');
@@ -1006,8 +1019,10 @@ $(document).ready(function(){
     //Remove the links (used by the sliding menu) that will break treeview
     $('a.collapsed').each(function() { $(this).replaceWith('<span>'+$(this).text()+'</span>'); });
     $('a.collapsed_lv2').each(function() { $(this).replaceWith('<span>'+$(this).text()+'</span>'); });
+    $('a.collapsed_lv3').each(function() { $(this).replaceWith('<span>'+$(this).text()+'</span>'); });
     $('a.expanded').each(function() { $(this).replaceWith('<span>'+$(this).text()+'</span>'); });
     $('a.expanded_lv2').each(function() { $(this).replaceWith('<span>'+$(this).text()+'</span>'); });
+    $('a.expanded_lv3').each(function() { $(this).replaceWith('<span>'+$(this).text()+'</span>'); });
 
     // Initiate treeview
     $("#navigation").treeview({
@@ -1233,33 +1248,25 @@ if ($GLOBALS['athletic_team']) {
       <li><a class="collapsed_lv2"><span><?php xl('Visit Forms','e') ?></span></a>
         <ul>
 <?php
-// Generate the items for visit forms, both traditional and LBF.
-//
-
-$lres = sqlStatement("SELECT * FROM list_options " .
-  "WHERE list_id = 'lbfnames' ORDER BY seq, title");
-if (sqlNumRows($lres)) {
-  while ($lrow = sqlFetchArray($lres)) {
-    $option_id = $lrow['option_id']; // should start with LBF
-    $title = $lrow['title'];
-    genMiscLink('RBot','cod','2',xl_form_title($title),
-      "patient_file/encounter/load_form.php?formname=$option_id");
-  }
-}
-include_once("$srcdir/registry.inc");
-$reg = getRegistered();
-if (!empty($reg)) {
-  foreach ($reg as $entry) {
+  // Generate the items for visit forms, both traditional and LBF.
+  //
+  $reglastcat = '';
+  $regrows = getFormsByCategory(); // defined in register.inc
+  foreach ($regrows as $entry) {
     $option_id = $entry['directory'];
-	  $title = trim($entry['nickname']);
+    $title = trim($entry['nickname']);
     if ($option_id == 'fee_sheet' ) continue;
     if ($option_id == 'newpatient') continue;
-	  if (empty($title)) $title = $entry['name'];
+    if (empty($title)) $title = $entry['name'];
+    if ($entry['category'] != $reglastcat) {
+      if ($reglastcat) echo "        </ul></li>\n";
+      echo "        <li><a class='collapsed_lv3'><span>" . xlt($entry['category']) . "</span></a><ul>\n";
+      $reglastcat = $entry['category'];
+    }
     genMiscLink('RBot','cod','2',xl_form_title($title),
-      "patient_file/encounter/load_form.php?formname=" .
-      urlencode($option_id));
+      "patient_file/encounter/load_form.php?formname=" . urlencode($option_id));
   }
-}
+  if ($reglastcat) echo "        </ul></li>\n";
 ?>
         </ul>
       </li>
