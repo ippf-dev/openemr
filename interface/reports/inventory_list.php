@@ -243,8 +243,20 @@ function write_report_line(&$row) {
   if (empty($monthly)) $monthly = $emptyvalue;
   if (empty($stock_months)) $stock_months = $emptyvalue;
 
+  $relcodes = '';
+  $tmp = explode(';', $row['related_code']);
+  foreach ($tmp as $codestring) {
+    if ($codestring === '') continue;
+    list($codetype, $code) = explode(':', $codestring);
+    // For IPPF just the IPPFCM codes are wanted.
+    if ($GLOBALS['ippf_specific'] && $codetype !== 'IPPFCM') continue;
+    if ($relcodes) $relcodes .= ';';
+    $relcodes .= $codestring;
+  }
+
   if (!empty($_POST['form_csvexport'])) {
     echo '"' . output_csv($row['name'])                          . '",';
+    echo '"' . output_csv($relcodes)                             . '",';
     echo '"' . output_csv($row['ndc_number'])                    . '",';
     echo '"' . output_csv($row['active'] ? xl('Yes') : xl('No')) . '",';
     echo '"' . output_csv(generate_display_field(array(
@@ -269,10 +281,11 @@ function write_report_line(&$row) {
   else {
     echo " <tr class='detail' bgcolor='$bgcolor'>\n";
     if ($drug_id == $wrl_last_drug_id) {
-      echo "  <td colspan='4'>&nbsp;</td>\n";
+      echo "  <td colspan='5'>&nbsp;</td>\n";
     }
     else {
       echo "  <td>" . htmlspecialchars($row['name'])                       . "</td>\n";
+      echo "  <td>" . htmlspecialchars($relcodes)                          . "</td>\n";
       echo "  <td>" . htmlspecialchars($row['ndc_number'])                 . "</td>\n";
       echo "  <td>" . ($row['active'] ? xl('Yes') : xl('No'))              . "</td>\n";
       echo "  <td>" . generate_display_field(array('data_type'=>'1',
@@ -378,6 +391,7 @@ if (!empty($_POST['form_csvexport'])) {
 
   // CSV headers:
   echo '"' . xl('Name'        ) . '",';
+  echo '"' . xl('Relates To'  ) . '",';
   echo '"' . xl('NDC'         ) . '",';
   echo '"' . xl('Active'      ) . '",';
   echo '"' . xl('Form'        ) . '",';
@@ -484,16 +498,16 @@ $(document).ready(function() {
   }
   echo "   </select>&nbsp;\n";
 ?>
-   <?php xl('For the past','e'); ?>
+   <?php echo xlt('For the past'); ?>
    <input type="input" name="form_days" size='3' value="<?php echo $form_days; ?>" />
-   <?php xl('days','e'); ?>&nbsp;
+   <?php echo xlt('days'); ?>&nbsp;
    <input type='checkbox' name='form_inactive' value='1'<?php if ($form_inactive) echo " checked"; ?>
-   /><?php xl('Include Inactive','e'); ?>&nbsp;
+   /><?php echo xlt('Include Inactive'); ?>&nbsp;
    <input type='checkbox' name='form_details' value='1'<?php if ($form_details) echo " checked"; ?>
-   /><?php xl('Details','e'); ?>&nbsp;
-   <input type="submit" value="<?php xl('Refresh','e'); ?>" />&nbsp;
-   <input type="submit" name="form_csvexport" value="<?php echo xl('Export to CSV'); ?>">&nbsp;
-   <input type="button" value="<?php xl('Print','e'); ?>" onclick="window.print()" />
+   /><?php echo xlt('Details'); ?>&nbsp;
+   <input type="submit" value="<?php echo xla('Refresh'); ?>" />&nbsp;
+   <input type="submit" name="form_csvexport" value="<?php echo xla('Export to CSV'); ?>">&nbsp;
+   <input type="button" value="<?php echo xla('Print'); ?>" onclick="window.print()" />
   </td>
  </tr>
 </table>
@@ -502,20 +516,21 @@ $(document).ready(function() {
 <table width='98%' id='mymaintable' class='mymaintable'>
  <thead style='display:table-header-group'>
   <tr class='head'>
-   <th><?php  xl('Name','e'); ?></th>
-   <th><?php  xl('NDC','e'); ?></th>
-   <th><?php  xl('Active','e'); ?></th>
-   <th><?php  xl('Form','e'); ?></th>
+   <th><?php echo xlt('Name'      ); ?></th>
+   <th><?php echo xlt('Relates To'); ?></th>
+   <th><?php echo xlt('NDC'       ); ?></th>
+   <th><?php echo xlt('Active'    ); ?></th>
+   <th><?php echo xlt('Form'      ); ?></th>
 <?php if ($form_details) { ?>
-   <th><?php  xl('Warehouse','e'); ?></th>
+   <th><?php echo xlt('Warehouse' ); ?></th>
 <?php } ?>
    <th align='right'><?php echo "$mmtype " . xl('Min'); ?></th>
    <th align='right'><?php echo "$mmtype " . xl('Max'); ?></th>
-   <th align='right'><?php  xl('QOH','e'); ?></th>
-   <th align='right'><?php  xl('Avg Monthly','e'); ?></th>
-   <th align='right'><?php  xl('Stock Months','e'); ?></th>
-   <th align='right'><?php  xl('Reorder Qty','e'); ?></th>
-   <th><?php xl('Warnings','e'); ?></th>
+   <th align='right'><?php echo xlt('QOH'         ); ?></th>
+   <th align='right'><?php echo xlt('Avg Monthly' ); ?></th>
+   <th align='right'><?php echo xlt('Stock Months'); ?></th>
+   <th align='right'><?php echo xlt('Reorder Qty' ); ?></th>
+   <th><?php echo xlt('Warnings'); ?></th>
   </tr>
  </thead>
  <tbody>
