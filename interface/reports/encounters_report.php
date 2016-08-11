@@ -41,6 +41,7 @@ $form_facility  = $_POST['form_facility'];
 $form_details   = $_POST['form_details'] ? true : false;
 $form_new_patients = $_POST['form_new_patients'] ? true : false;
 $form_related_code = $_POST['form_related_code'];
+$form_open_only = !empty($_POST['form_open_only']);
 
 $form_orderby = $ORDERHASH[$_REQUEST['form_orderby']] ?
   $_REQUEST['form_orderby'] : 'doctor';
@@ -52,8 +53,21 @@ $query = "SELECT " .
   "fe.encounter, fe.date, fe.reason, fe.provider_id, " .
   "f.formdir, f.form_name, " .
   "p.fname, p.mname, p.lname, p.pid, p.pubpid, " .
-  "u.lname AS ulname, u.fname AS ufname, u.mname AS umname " .
-  "FROM ( form_encounter AS fe, forms AS f ) " .
+  "u.lname AS ulname, u.fname AS ufname, u.mname AS umname";
+if ($form_open_only) {
+  $query .= ", " .
+    "(SELECT IFNULL(MIN(bm.billed), -1) " .
+    "FROM billing AS bm, code_types WHERE " .
+    "bm.pid = fe.pid AND " .
+    "bm.encounter = fe.encounter AND " .
+    "bm.activity = 1 AND " .
+    "code_types.ct_key = bm.code_type AND " .
+    "code_types.ct_fee = 1) AS billbmin, " .
+    "(SELECT IFNULL(MIN(ds.billed), -1) FROM drug_sales AS ds WHERE " .
+    "ds.pid = fe.pid AND ds.encounter = fe.encounter) AS prodbmin ";
+}
+$query .=
+  " FROM ( form_encounter AS fe, forms AS f ) " .
   "LEFT OUTER JOIN patient_data AS p ON p.pid = fe.pid " .
   "LEFT OUTER JOIN users AS u ON u.id = fe.provider_id " .
   "WHERE f.pid = fe.pid AND f.encounter = fe.encounter AND f.formdir = 'newpatient' ";
@@ -317,6 +331,10 @@ $(document).ready(function() {
    <?php  xl('New','e'); ?>
 
    &nbsp;
+   <input type='checkbox' name='form_open_only'<?php  if ($form_open_only) echo ' checked'; ?>>
+   <?php  echo xlt('Open/Empty Only'); ?>
+
+   &nbsp;
    <input type='checkbox' name='form_details'<?php  if ($form_details) echo ' checked'; ?>>
    <?php  xl('Details','e'); ?>
 
@@ -380,6 +398,13 @@ if ($res) {
   $doc_encounters = 0;
   $total_encounters = 0;
   while ($row = sqlFetchArray($res)) {
+    if ($form_open_only) {
+      // Open visit means no chargeable items at all, or at least one unbilled.
+      // With this option we skip all others.
+      if ($row['billbmin'] != '0' && $row['prodbmin'] != '0' &&
+        ($row['billbmin'] == '1' || $row['prodbmin'] == '1'))
+        continue;
+    }
     $patient_id = $row['pid'];
     $def_provider_id = 0 + $row['provider_id'];
 
