@@ -76,7 +76,7 @@ if (isset($jobj['services'])) $LBF_SERVICES_SECTION = $jobj['services'];
 if (isset($jobj['products'])) $LBF_PRODUCTS_SECTION = $jobj['products'];
 if (isset($jobj['diags'   ])) $LBF_DIAGS_SECTION = $jobj['diags'];
 
-if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION)) {
+if ($visitid && (isset($LBF_SERVICES_SECTION) || isset($LBF_DIAGS_SECTION) || isset($LBF_PRODUCTS_SECTION))) {
   require_once("$srcdir/FeeSheetHtml.class.php");
   $fs = new FeeSheetHtml($pid, $encounter);
 }
@@ -404,11 +404,12 @@ while (count($group_levels)) {
   echo "</nobreak>\n";
 }
 
-if (isset($LBF_SERVICES_SECTION) || isset($LBF_DIAGS_SECTION)) {
+$fs = false;
+if ($fs && (isset($LBF_SERVICES_SECTION) || isset($LBF_DIAGS_SECTION))) {
   $fs->loadServiceItems();
 }
 
-if (isset($LBF_SERVICES_SECTION)) {
+if ($fs && isset($LBF_SERVICES_SECTION)) {
   $s = '';
   foreach ($fs->serviceitems as $lino => $li) {
     // Skip diagnoses; those would be in the Diagnoses section below.
@@ -430,7 +431,7 @@ if (isset($LBF_SERVICES_SECTION)) {
   }
 } // End Services Section
 
-if (isset($LBF_PRODUCTS_SECTION)) {
+if ($fs && isset($LBF_PRODUCTS_SECTION)) {
   $s = '';
   $fs->loadProductItems();
   foreach ($fs->productitems as $lino => $li) {
@@ -451,7 +452,7 @@ if (isset($LBF_PRODUCTS_SECTION)) {
   }
 } // End Products Section
 
-if (isset($LBF_DIAGS_SECTION)) {
+if ($fs && isset($LBF_DIAGS_SECTION)) {
   $s = '';
   foreach ($fs->serviceitems as $lino => $li) {
     // Skip anything that is not a diagnosis; those are in the Services section above.
