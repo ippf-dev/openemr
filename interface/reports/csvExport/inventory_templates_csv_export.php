@@ -40,7 +40,7 @@
         $("#jsonData").val(JSON.stringify(json_data));
         $("#generate_csv").get(0).submit();
     }
-    var print_button=$("input[value='Print']");
+    var print_button = $("#the_print_button");
     var export_button=$("<input type='button'/>");
     export_button.val("<?php echo xla("Export to CSV"); ?>");
     export_button.click(export_to_csv);

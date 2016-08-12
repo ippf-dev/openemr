@@ -78,7 +78,7 @@ $(document).ready(function() {
    <input type='checkbox' name='form_inactive' value='1'<?php if ($form_inactive) echo " checked"; ?>
    /><?php xl('Include Inactive','e'); ?>&nbsp;
    <input type="submit" value="<?php xl('Refresh','e'); ?>" />&nbsp;
-   <input type="button" value="<?php xl('Print','e'); ?>" onclick="window.print()" />
+   <input type="button" id="the_print_button" value="<?php echo xla('Print'); ?>" onclick="window.print()" />
   </td>
  </tr>
 </table>
@@ -160,10 +160,6 @@ while ($row = sqlFetchArray($res)) {
 </table>
 
 </center>
-
-<script language="JavaScript">
-facchanged();
-</script>
 
 <?php require_once($webserver_root."/interface/reports/csvExport/inventory_templates_csv_export.php"); ?>
 </body>
