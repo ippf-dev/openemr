@@ -217,7 +217,7 @@ function submitProps() {
    <?php echo xls('Show Services Section'); ?>
   </td>
   <td>
-   <input type='text' size='40' name='form_services_codes' onclick='sel_related(this, "MA")' />
+   <input type='text' size='40' name='form_services_codes' onclick='sel_related(this, "MA")' style='width:100%' />
   </td>
  </tr>
 
@@ -227,7 +227,7 @@ function submitProps() {
    <?php echo xls('Show Products Section'); ?>
   </td>
   <td>
-   <input type='text' size='40' name='form_products_codes' onclick='sel_related(this, "PROD")' />
+   <input type='text' size='40' name='form_products_codes' onclick='sel_related(this, "PROD")' style='width:100%' />
   </td>
  </tr>
 
@@ -237,7 +237,7 @@ function submitProps() {
    <?php echo xls('Show Diagnoses Section'); ?>
   </td>
   <td>
-   <input type='text' size='40' name='form_diags_codes' onclick='sel_related(this, "ICD10")' />
+   <input type='text' size='40' name='form_diags_codes' onclick='sel_related(this, "ICD10")' style='width:100%' />
   </td>
  </tr>
 
