@@ -1729,17 +1729,28 @@ function get_patient_balance($pid, $with_insurance=false) {
 }
 
 function get_patient_balance_excluding($pid, $excluded = -1) {
-  
-    $brow = sqlQuery("SELECT SUM(fee) AS amount FROM billing WHERE " .
-      "pid = '$pid' AND encounter != 0 AND encounter != '$excluded' AND activity = 1");
-    $srow = sqlQuery("SELECT SUM(fee) AS amount FROM drug_sales WHERE " .
-      "pid = '$pid' AND encounter != 0 AND encounter != '$excluded'");
-    $drow = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
-      "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
-      "pid = '$pid' AND encounter != '$excluded'");
-    return sprintf('%01.2f', $brow['amount'] + $srow['amount']
-      - $drow['payments'] - $drow['adjustments']);
-  }
+  // We join form_encounter here to make sure we only count amounts for
+  // encounters that exist.  We've had some trouble before with encounters
+  // that were deleted but leaving line items in the database.
+  $brow = sqlQuery("SELECT SUM(b.fee) AS amount " .
+    "FROM billing AS b, form_encounter AS fe WHERE " .
+    "b.pid = ? AND b.encounter != 0 AND b.encounter != ? AND b.activity = 1 AND " .
+    "fe.pid = b.pid AND fe.encounter = b.encounter",
+    array($pid, $excluded));
+  $srow = sqlQuery("SELECT SUM(s.fee) AS amount " .
+    "FROM drug_sales AS s, form_encounter AS fe WHERE " .
+    "s.pid = ? AND s.encounter != 0 AND s.encounter != ? AND " .
+    "fe.pid = s.pid AND fe.encounter = s.encounter",
+    array($pid, $excluded));
+  $drow = sqlQuery("SELECT SUM(a.pay_amount) AS payments, " .
+    "SUM(a.adj_amount) AS adjustments " .
+    "FROM ar_activity AS a, form_encounter AS fe WHERE " .
+    "a.pid = ? AND a.encounter != 0 AND a.encounter != ? AND " .
+    "fe.pid = a.pid AND fe.encounter = a.encounter",
+    array($pid, $excluded));
+  return sprintf('%01.2f', $brow['amount'] + $srow['amount']
+    - $drow['payments'] - $drow['adjustments']);
+}
 
 // Function to check if patient is deceased.
 //  Param:
