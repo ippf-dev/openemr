@@ -102,20 +102,22 @@ function isRegistered ( $directory, $state = 1)
 // This gets an array including both standard and LBF visit form types,
 // one row per form type, sorted by category, priority, is lbf, name.
 //
-function getFormsByCategory($state="1") {
+function getFormsByCategory($state='1', $lbfonly=false) {
   $all = array();
-  // First get the traditional form types from the registry table.
-  $sql = "SELECT category, nickname, name, state, directory, id, sql_run, " .
-    "unpackaged, date, priority FROM registry WHERE " .
-    "state LIKE ? ORDER BY category, priority, name";
-  $res = sqlStatement($sql, array($state));
-  if ($res) {
-    while ($row = sqlFetchArray($res)) {
-      // Skip fee_sheet from list of registered forms.
-      if ($row['directory'] != 'fee_sheet') {
-        // Flag this entry as not LBF
-        $row['LBF'] = false;
-        $all[] = $row;      
+  if (!$lbfonly) {
+    // First get the traditional form types from the registry table.
+    $sql = "SELECT category, nickname, name, state, directory, id, sql_run, " .
+      "unpackaged, date, priority FROM registry WHERE " .
+      "state LIKE ? ORDER BY category, priority, name";
+    $res = sqlStatement($sql, array($state));
+    if ($res) {
+      while ($row = sqlFetchArray($res)) {
+        // Skip fee_sheet from list of registered forms.
+        if ($row['directory'] != 'fee_sheet') {
+          // Flag this entry as not LBF
+          $row['LBF'] = false;
+          $all[] = $row;      
+        }
       }
     }
   }

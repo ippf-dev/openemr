@@ -1493,17 +1493,29 @@ if ($GLOBALS['athletic_team']) {
 <?php } // end ippf-specific ?>
       <li><a class="collapsed_lv2"><span><?php xl('Blank Forms','e') ?></span></a>
         <ul>
-          <?php genPopLink(xl('Demographics'),'../patient_file/summary/demographics_print.php'); ?>
-          <?php genPopLink(xl('Superbill/Fee Sheet'),'../patient_file/printed_fee_sheet.php'); ?>
-          <?php genPopLink(xl('Referral'),'../patient_file/transaction/print_referral.php'); ?>
 <?php
-  $lres = sqlStatement("SELECT * FROM list_options " .
-  "WHERE list_id = 'lbfnames' ORDER BY seq, title");
-  while ($lrow = sqlFetchArray($lres)) {
-    $option_id = $lrow['option_id']; // should start with LBF
-    $title = $lrow['title'];
-    genPopLink($title, "../forms/LBF/printable.php?formname=$option_id");
+  echo "        <li><a class='collapsed_lv3'><span>" . xlt('Core') . "</span></a><ul>\n";
+  genPopLink(xl('Demographics'),'../patient_file/summary/demographics_print.php');
+  genPopLink(xl('Superbill/Fee Sheet'),'../patient_file/printed_fee_sheet.php');
+  // genPopLink(xl('Referral'),'../patient_file/transaction/print_referral.php');
+  echo "        </ul></li>\n";
+
+  // Generate the blank form items for LBF visit forms.
+  //
+  $reglastcat = '';
+  $regrows = getFormsByCategory('1', true); // defined in register.inc
+  foreach ($regrows as $entry) {
+    $option_id = $entry['directory'];
+    $title = trim($entry['nickname']);
+    if (empty($title)) $title = $entry['name'];
+    if ($entry['category'] != $reglastcat) {
+      if ($reglastcat) echo "        </ul></li>\n";
+      echo "        <li><a class='collapsed_lv3'><span>" . xlt($entry['category']) . "</span></a><ul>\n";
+      $reglastcat = $entry['category'];
+    }
+    genPopLink(xl_form_title($title), "../forms/LBF/printable.php?formname=" . urlencode($option_id));
   }
+  if ($reglastcat) echo "        </ul></li>\n";
 ?>
         </ul>
       </li>
