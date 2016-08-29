@@ -627,3 +627,7 @@ INSERT INTO list_options (list_id,option_id,title,seq) VALUES ('patient_flow_boa
 INSERT INTO list_options (list_id,option_id,title,seq) VALUES ('patient_flow_board_rooms', '2', 'Room 2', 20);
 INSERT INTO list_options (list_id,option_id,title,seq) VALUES ('patient_flow_board_rooms', '3', 'Room 3', 30);
 #EndIf
+
+#IfNotColumnType user_settings setting_label varchar(100)
+ALTER TABLE `user_settings` CHANGE `setting_label` `setting_label` varchar(100) NOT NULL;
+#EndIf
