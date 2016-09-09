@@ -81,7 +81,7 @@ deleteDisclosure($deletelid);
 	<span class="title"><a href="../summary/demographics.php" onclick="top.restoreSession()"><?php echo htmlspecialchars(getPatientName($pid),ENT_NOQUOTES); ?></a></span>
 </div>
 <div>
-	<a href="record_disclosure.php" class="css_button iframe" onclick="top.restoreSession()"><span><?php echo htmlspecialchars(xl('Record'),ENT_NOQUOTES); ?></span></a>
+	<a href="record_disclosure.php" class="css_button iframe" onclick="top.restoreSession()"><span><?php echo xlt('Add'); ?></span></a>
 </div>
 <div>
 	<a href="demographics.php" <?php if (!$GLOBALS['concurrent_layout']) echo "target='Main'"; ?>

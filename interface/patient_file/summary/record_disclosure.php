@@ -80,7 +80,7 @@ function submitform()
 <div style='float: left; margin-right: 10px'>
 <div style='float: left; margin-right: 5px'><?php if($editlid) {?><!--Edit the disclosures-->
 <span class="title"><?php echo htmlspecialchars(xl('Edit Disclosure'),ENT_NOQUOTES); ?></span><?php }
-else {?> <span class="title"><?php echo htmlspecialchars(xl('Record Disclosure'),ENT_NOQUOTES); ?></span><?php }?>
+else {?> <span class="title"><?php echo xlt('Add Disclosure'); ?></span><?php }?>
 </div>
 <div><a onclick="return submitform()" class="css_button large_button"
 	name='form_save' id='form_save' href='#'> <span
