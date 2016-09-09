@@ -19,6 +19,7 @@ require_once("$srcdir/acl.inc");
 require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/options.inc.php");
+require_once("../../custom/code_types.inc.php");
 
 if (!empty($_POST['form_pdf'])) {
   require_once("$srcdir/tcpdf_min/tcpdf.php");
@@ -405,8 +406,11 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
 
     // Get service items.
     $query = "SELECT " .
-      "b.id, b.code_text, b.units, b.fee " .
+      "b.id, b.code_text, b.units, b.fee, c.code_text_short " .
       "FROM billing AS b " .
+      "LEFT JOIN code_types AS ct ON ct.ct_key = b.code_type " .
+      "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND " .
+      "c.code = b.code AND c.modifier = b.modifier " .
       "JOIN ar_activity AS a ON a.pid = b.pid AND a.encounter = b.encounter AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = b.code_type AND a.code = b.code ) ) " .
@@ -425,13 +429,17 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       // Skip any extra adjustment matches for the same line item.
       if ($brow['id'] == $last_billing_id) continue;
 
+      // Client wants to use the short code description. We do that when there is one, otherwise
+      // it's possible a code has no short description, or perhaps was used and then deleted.
+      $code_text = empty($brow['code_text_short']) ? $brow['code_text'] : $brow['code_text_short'];
+
       // for ($i = 0; $i < 60; ++$i) { // debugging
 
       tblStartRow();
       tblCell(oeFormatShortDate(substr($row['date'], 0, 10)), 0, $item_count);
       tblCell($ptname                                       , 1, $item_count);
       tblCell($row['usertext8']                             , 2, $item_count);
-      tblCell($brow['code_text']                            , 3);
+      tblCell($code_text                                    , 3);
       tblCell(oeFormatMoney($brow['fee'])                   , 4);
       tblEndRow();
 
