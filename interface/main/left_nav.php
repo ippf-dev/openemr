@@ -1227,6 +1227,7 @@ if ($GLOBALS['athletic_team']) {
         if (acl_check('admin', 'super') && (!empty($GLOBALS['code_types']['IPPF']) || !empty($GLOBALS['code_types']['IPPF2']))) {
           genMiscLink('RTop','adm','0',xl('Legacy Export'),'main/ippf_export.php');
           genMiscLink('RTop','adm','0',xl('Export for data.ippf.org'),'reports/ippf_dhis2_export.php');
+          genMiscLink('RTop','adm','0',xl('Export GCACI/CCSPT'),'reports/ippf_indicators_export.php');
         }
       ?>
       <li><a class="collapsed_lv2"><span><?php xl('Other','e') ?></span></a>
