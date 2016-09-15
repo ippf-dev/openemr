@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009-2011 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -73,7 +73,7 @@ function generate_print_field_msi($frow, $currvalue) {
     $tmp = '';
     if ($currvalue) {
       $lrow = sqlQuery("SELECT title FROM list_options " .
-        "WHERE list_id = '$list_id' AND option_id = '$currvalue'");
+        "WHERE list_id = '$list_id' AND option_id = '$currvalue' AND activity = 1");
       $tmp = xl_list_label($lrow['title']);
       if (empty($tmp)) $tmp = "($currvalue)";
     }
@@ -172,7 +172,7 @@ function generate_print_field_msi($frow, $currvalue) {
     $cols = max(1, $fld_length);
     $avalue = explode('|', $currvalue);
     $lres = sqlStatement("SELECT * FROM list_options " .
-      "WHERE list_id = '$list_id' ORDER BY seq, title");
+      "WHERE list_id = '$list_id' AND activity = 1 ORDER BY seq, title");
     $s .= "<table cellpadding='0' cellspacing='0' width='100%'>";
     $tdpct = (int) (100 / $cols);
     for ($count = 0; $lrow = sqlFetchArray($lres); ++$count) {
@@ -207,7 +207,7 @@ function generate_print_field_msi($frow, $currvalue) {
       }
     }
     $lres = sqlStatement("SELECT * FROM list_options " .
-      "WHERE list_id = '$list_id' ORDER BY seq, title");
+      "WHERE list_id = '$list_id' AND activity = 1 ORDER BY seq, title");
     $s .= "<table cellpadding='0' cellspacing='0'>";
     while ($lrow = sqlFetchArray($lres)) {
       $option_id = $lrow['option_id'];
@@ -235,7 +235,7 @@ function generate_print_field_msi($frow, $currvalue) {
     $maxlength = empty($frow['max_length']) ? 255 : $frow['max_length'];
     $fldlength = empty($fld_length) ?  20 : $fld_length;
     $lres = sqlStatement("SELECT * FROM list_options " .
-      "WHERE list_id = '$list_id' ORDER BY seq, title");
+      "WHERE list_id = '$list_id' AND activity = 1 ORDER BY seq, title");
     $s .= "<table cellpadding='0' cellspacing='0'>";
     $s .= "<tr><td>&nbsp;</td><td class='bold'>" . xl('N/A') .
       "&nbsp;</td><td class='bold'>" . xl('Nor') . "&nbsp;</td>" .
@@ -287,7 +287,7 @@ function generate_print_field_msi($frow, $currvalue) {
     $maxlength = empty($frow['max_length']) ? 255 : $frow['max_length'];
     $fldlength = empty($fld_length) ?  20 : $fld_length;
     $lres = sqlStatement("SELECT * FROM list_options " .
-      "WHERE list_id = '$list_id' ORDER BY seq, title");
+      "WHERE list_id = '$list_id' AND activity = 1 ORDER BY seq, title");
     $s .= "<table cellpadding='0' cellspacing='0'>";
     while ($lrow = sqlFetchArray($lres)) {
       $option_id = $lrow['option_id'];
@@ -312,7 +312,7 @@ function generate_print_field_msi($frow, $currvalue) {
     // In this special case, fld_length is the number of columns generated.
     $cols = max(1, $frow['fld_length']);
     $lres = sqlStatement("SELECT * FROM list_options " .
-      "WHERE list_id = '$list_id' ORDER BY seq, title");
+      "WHERE list_id = '$list_id' AND activity = 1 ORDER BY seq, title");
     $s .= "<table cellpadding='0' cellspacing='0' width='100%'>";
     $tdpct = (int) (100 / $cols);
     for ($count = 0; $lrow = sqlFetchArray($lres); ++$count) {
@@ -511,7 +511,7 @@ if ($encounter && $patientid == $pid) {
   $erow = sqlQuery("SELECT fe.date, DATE_FORMAT(fe.date,'%d-%M-%Y') AS date_fmtd, c.pc_catname, lrs.title " .
     "FROM form_encounter AS fe " .
     "LEFT JOIN openemr_postcalendar_categories AS c ON c.pc_catid = fe.pc_catid " .
-    "LEFT JOIN list_options AS lrs ON lrs.list_id = 'refsource' AND lrs.option_id = fe.referral_source " .
+    "LEFT JOIN list_options AS lrs ON lrs.list_id = 'refsource' AND lrs.option_id = fe.referral_source AND lrs.activity = 1 " .
     "WHERE fe.pid = '$pid' AND fe.encounter = '$encounter'");
   if (!empty($erow['date']))$encdate = $erow['date'];
 }

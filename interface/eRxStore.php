@@ -123,7 +123,7 @@ class eRxStore {
 	public function selectOptionIdByTitle($listId, $title) {
 		$return = sqlQuery('SELECT option_id
 			FROM list_options
-			WHERE list_id = ?
+			WHERE list_id = ? AND activity = 1
 				AND title = ?;',
 			array(
 				$listId,
@@ -145,7 +145,7 @@ class eRxStore {
 	public function selectOptionIdsByListId($listId) {
 		$return = sqlQuery('SELECT option_id
 			FROM list_options
-			WHERE list_id = ?
+			WHERE list_id = ? AND activity = 1
 			ORDER BY ABS(option_id) DESC
 			LIMIT 1;',
 			array($listId)

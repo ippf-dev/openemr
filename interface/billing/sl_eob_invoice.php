@@ -1,5 +1,5 @@
 <?php
-  // Copyright (C) 2005-2010 Rod Roark <rod@sunsetsystems.com>
+  // Copyright (C) 2005-2010, 2016 Rod Roark <rod@sunsetsystems.com>
   //
   // This program is free software; you can redistribute it and/or
   // modify it under the terms of the GNU General Public License
@@ -303,7 +303,7 @@ function updateFields(payField, adjField, balField, coPayField, isFirstProcCode)
         $reason_type = '1';
         if ($reason) {
           $tmp = sqlQuery("SELECT option_value FROM list_options WHERE " .
-            "list_id = 'adjreason' AND " .
+            "list_id = 'adjreason' AND activity = 1 AND " .
             "option_id = '" . add_escape_custom($reason) . "'");
           if (empty($tmp['option_value'])) {
             // This should not happen but if it does, apply old logic.
@@ -849,7 +849,7 @@ function updateFields(payField, adjField, balField, coPayField, isFirstProcCode)
 // Adjustment reasons are now taken from the list_options table.
 echo "    <option value=''></option>\n";
 $ores = sqlStatement("SELECT option_id, title, is_default FROM list_options " .
-  "WHERE list_id = 'adjreason'  ORDER BY seq, title");
+  "WHERE list_id = 'adjreason' AND activity = 1 ORDER BY seq, title");
 while ($orow = sqlFetchArray($ores)) {
   echo "    <option value='" . htmlspecialchars($orow['option_id'], ENT_QUOTES) . "'";
   if ($orow['is_default']) echo " selected";

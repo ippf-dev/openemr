@@ -38,14 +38,14 @@ if ($GLOBALS['ippf_specific']) {
 
 // Include Layout Based Transaction Forms.
 $lres = sqlStatement("SELECT * FROM list_options " .
-  "WHERE list_id = 'transactions' ORDER BY seq, title");
+  "WHERE list_id = 'transactions' AND activity = 1 ORDER BY seq, title");
 while ($lrow = sqlFetchArray($lres)) {
   $layouts[$lrow['option_id']] = array(xl('Transactions'), $lrow['title']);
 }
 
 // Include Layout Based Encounter Forms.
 $lres = sqlStatement("SELECT * FROM list_options " .
-  "WHERE list_id = 'lbfnames' ORDER BY mapping, seq, title");
+  "WHERE list_id = 'lbfnames' AND activity = 1 ORDER BY mapping, seq, title");
 while ($lrow = sqlFetchArray($lres)) {
   if (empty($lrow['mapping'])) $lrow['mapping'] = 'LBF (No Group)';
   $layouts[$lrow['option_id']] = array($lrow['mapping'], $lrow['title']);

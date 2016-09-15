@@ -14,7 +14,7 @@ class POSRef {
 
                 // Use POS codes from the database if they exist there.
                 $res = sqlStatement("SELECT option_id, title, notes FROM list_options " .
-                  "WHERE list_id = 'posref' ORDER BY seq, option_id");
+                  "WHERE list_id = 'posref' AND activity = 1 ORDER BY seq, option_id");
                 while ($row = sqlFetchArray($res)) {
                   $pos[] = array('code' => $row['option_id'], 'title' => xl_list_label($row['title']), 'description' => $row['notes']);
                 }

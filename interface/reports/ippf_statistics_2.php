@@ -306,7 +306,7 @@ function genEndRow() {
 
 function getListTitle($list, $option) {
   $row = sqlQuery("SELECT title FROM list_options WHERE " .
-    "list_id = '$list' AND option_id = '$option'");
+    "list_id = '$list' AND activity = 1 AND option_id = '$option'");
   if (empty($row['title'])) return $option;
   return xl_list_label($row['title']);
 }
@@ -425,7 +425,7 @@ function getContraceptiveMethod($code) {
 
   $row = sqlQuery("SELECT c.code_text, lo.title FROM codes AS c " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'contrameth' AND " .
-    "lo.option_id = c.code_text_short " .
+    "lo.option_id = c.code_text_short AND lo.activity = 1 " .
     "WHERE c.code_type = '32' AND c.code = '$code'");
   if (!empty($row['code_text'])) {
     $key = $row['code_text'];
@@ -577,7 +577,7 @@ function getGcacClientStatus($row) {
     "d.form_id = f.form_id AND " .
     "d.field_id = 'client_status' AND " .
     "lo.list_id = 'clientstatus' AND " .
-    "lo.option_id = d.field_value " .
+    "lo.option_id = d.field_value AND lo.activity = 1 " .
     "ORDER BY d.form_id DESC LIMIT 1";
   $irow = sqlQuery($query);
   if (!empty($irow['title'])) return xl_list_label($irow['title']);
@@ -1279,7 +1279,7 @@ function LBFgcac_title($form_id, $field_id, $list_id) {
     "d.form_id = '$form_id' AND " .
     "d.field_id = '$field_id' AND " .
     "lo.list_id = '$list_id' AND " .
-    "lo.option_id = d.field_value " .
+    "lo.option_id = d.field_value AND lo.activity = 1 " .
     "LIMIT 1";
   $row = sqlQuery($query);
   return empty($row['title']) ? '' : xl_list_label($row['title']);
@@ -1307,7 +1307,7 @@ function process_visit($row) {
       foreach ($a as $complid) {
         if (empty($complid)) continue;
         $crow = sqlQuery("SELECT title FROM list_options WHERE " .
-          "list_id = 'complication' AND option_id = '$complid'");
+          "list_id = 'complication' AND option_id = '$complid' AND activity = 1");
         $abtype = LBFgcac_title($drow['form_id'], 'in_ab_proc', 'in_ab_proc');
         if (empty($abtype)) $abtype = xl('Indeterminate');
         $key = "$abtype / " . xl_list_label($crow['title']);
@@ -2213,7 +2213,7 @@ if ($_POST['form_submit']) {
         "LEFT OUTER JOIN codes AS c ON c.code_type = ct.ct_id AND " .
         "c.code = b.code AND c.modifier = b.modifier " .
         "LEFT OUTER JOIN list_options AS lo ON " .
-        "lo.list_id = 'superbill' AND lo.option_id = c.superbill " .
+        "lo.list_id = 'superbill' AND lo.option_id = c.superbill AND lo.activity = 1 " .
         "WHERE fe.date >= '$from_date 00:00:00' AND " .
         "fe.date <= '$to_date 23:59:59' ";
 

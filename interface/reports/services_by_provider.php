@@ -544,7 +544,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "LEFT JOIN users AS u ON (b.provider_id = 0 AND fe.provider_id = u.id) OR (b.provider_id != 0 AND b.provider_id = u.id) " .
     "LEFT JOIN code_types AS ct ON ct.ct_key = b.code_type " .
     "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
-    "LEFT JOIN list_options AS lo ON lo.list_id = 'superbill' AND lo.option_id = c.superbill " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'superbill' AND lo.option_id = c.superbill AND lo.activity = 1 " .
     "WHERE b.code_type != 'COPAY' AND b.activity = 1 AND " .
     "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
 

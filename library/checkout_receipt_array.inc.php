@@ -14,7 +14,7 @@
 // Get a list item's title, translated if appropriate.
 function getAdjustTitle($option) {
   $row = sqlQuery("SELECT title FROM list_options WHERE " .
-    "list_id = 'adjreason' AND option_id = '$option'");
+    "list_id = 'adjreason' AND option_id = '$option' AND activity = 1");
   if (empty($row['title'])) return $option;
   return xl_list_label($row['title']);
 }

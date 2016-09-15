@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013-2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -263,7 +263,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "FROM form_encounter AS fe " .
     "JOIN patient_data AS pd ON pd.pid = fe.pid " .
     "LEFT JOIN openemr_postcalendar_categories AS opc ON opc.pc_catid = fe.pc_catid " .
-    "LEFT JOIN list_options AS lo ON lo.list_id = 'sex' AND lo.option_id = pd.sex " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'sex' AND lo.option_id = pd.sex AND lo.activity = 1 " .
     "WHERE fe.date >= '$form_from_date 00:00:00' AND fe.date <= '$form_to_date 23:59:59'";
   // If a facility was specified.
   if ($form_facility) {

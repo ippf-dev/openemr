@@ -37,7 +37,9 @@ require_once("$srcdir/sql.inc");
  */
 function getDisclosureByDate($pid,$limit)
 {
-	$r1=sqlStatement("select event,recipient,description,date from extended_log where patient_id=? AND event in (select option_id from list_options where list_id='disclosure_type') order by date desc limit 0,$limit", array($pid) );
+	$r1 = sqlStatement("select event,recipient,description,date from extended_log where patient_id = ? AND " .
+    "event in (select option_id from list_options where list_id = 'disclosure_type' AND activity = 1) " .
+    "order by date desc limit 0, $limit", array($pid));
 	$result2 = array();
 	for ($iter = 0;$frow = sqlFetchArray($r1);$iter++)
 		$result2[$iter] = $frow;

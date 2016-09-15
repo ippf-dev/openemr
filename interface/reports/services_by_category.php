@@ -162,7 +162,7 @@ foreach ($sexarray as $key => $value) {
 if ($_POST['form_submit'] || $_POST['form_csvexport']) {
 
   $pres = sqlStatement("SELECT title FROM list_options " . 
-    "WHERE list_id = 'pricelevel' ORDER BY seq");
+    "WHERE list_id = 'pricelevel' AND activity = 1 ORDER BY seq");
 
   if ($_POST['form_csvexport']) {
     // CSV headers:
@@ -219,7 +219,7 @@ if ($_POST['form_submit'] || $_POST['form_csvexport']) {
 
   $res = sqlStatement("SELECT c.*, lo.title FROM codes AS c " .
     "LEFT OUTER JOIN list_options AS lo ON lo.list_id = 'superbill' " .
-    "AND lo.option_id = c.superbill " .
+    "AND lo.option_id = c.superbill AND lo.activity = 1 " .
     "WHERE $where ORDER BY lo.title, c.code_type, c.code, c.modifier");
 
   $last_category = '';
@@ -270,7 +270,7 @@ if ($_POST['form_submit'] || $_POST['form_csvexport']) {
       "FROM list_options AS lo LEFT OUTER JOIN prices AS p ON " .
       "p.pr_id = '" . $row['id'] . "' AND p.pr_selector = '' " .
       "AND p.pr_level = lo.option_id " .
-      "WHERE list_id = 'pricelevel' ORDER BY lo.seq");
+      "WHERE lo.list_id = 'pricelevel' AND lo.activity = 1 ORDER BY lo.seq");
 
     if ($_POST['form_csvexport']) {
       echo '"' . addslashes(xl_list_label($category)) . '",';

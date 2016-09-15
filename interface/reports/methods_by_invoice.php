@@ -232,7 +232,7 @@ $aTaxNames = array();
 //
 $metharray = array();
 $mres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-  "list_id = 'paymethod' ORDER BY seq, title");
+  "list_id = 'paymethod' AND activity = 1 ORDER BY seq, title");
 while ($mrow = sqlFetchArray($mres)) {
   if ($mrow['option_id'] === '') continue;
   $metharray[$mrow['option_id']] = array('title' => $mrow['title'], 'paytotal' => 0);

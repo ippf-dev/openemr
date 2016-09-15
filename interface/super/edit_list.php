@@ -2,7 +2,7 @@
 /**
  * Administration Lists Module.
  *
- * Copyright (C) 2007-2015 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2007-2016 Rod Roark <rod@sunsetsystems.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -214,6 +214,7 @@ if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
           $lrow['mapping'     ] = strip_escape_custom($iter['mapping']);
           $lrow['notes'       ] = strip_escape_custom($iter['notes'  ]);
           $lrow['codes'       ] = strip_escape_custom($iter['codes'  ]);
+          $lrow['activity'    ] = strip_escape_custom($iter['activity']);
           $sets = '';
           if (isset($larray[$id])) {
             // If the list item was already in the database, update or ignore it as appropriate.
@@ -330,10 +331,13 @@ function getCodeDescriptions($codes) {
 // Write one option line to the form.
 //
 function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping='', $notes='', $codes='') {
+
+function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping='', $notes='', $codes='', $active='') {
   global $opt_line_no, $list_id;
   ++$opt_line_no;
   $bgcolor = "#" . (($opt_line_no & 1) ? "ddddff" : "ffdddd");
   $checked = $default ? " checked" : "";
+  $checked_active = $active ? " checked" : "";
 
   echo " <tr bgcolor='$bgcolor'>\n";
 
@@ -360,6 +364,11 @@ function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping=''
   echo "  <td align='center' class='optcell'>";
   echo "<input type='checkbox' name='opt[$opt_line_no][default]' value='1' " .
     "onclick='defClicked($opt_line_no)' class='optin'$checked />";
+  echo "</td>\n";
+
+  echo "  <td align='center' class='optcell'>";
+  echo "<input type='checkbox' name='opt[$opt_line_no][activity]' value='1' " .
+       " class='optin'$checked_active />";
   echo "</td>\n";
 
   // Tax rates, form names, contraceptive methods, adjustment reasons and facilities
@@ -999,6 +1008,7 @@ while ($row = sqlFetchArray($res)) {
   } ?>  
   <td><b><?php xl('Order'  ,'e'); ?></b></td>
   <td><b><?php xl('Default','e'); ?></b></td>
+  <td><b><?php echo xlt('Active'); ?></b></td>
 <?php if ($list_id == 'taxrate') { ?>
   <td><b><?php xl('Rate'   ,'e'); ?></b></td>
 <?php } else if ($list_id == 'contrameth') { ?>
@@ -1067,7 +1077,7 @@ if ($list_id) {
     while ($row = sqlFetchArray($res)) {
       writeOptionLine($row['option_id'], $row['title'], $row['seq'],
         $row['is_default'], $row['option_value'], $row['mapping'],
-        $row['notes'],$row['codes']);
+        $row['notes'],$row['codes'],$row['activity']);
     }
     for ($i = 0; $i < 3; ++$i) {
       writeOptionLine('', '', '', '', 0);

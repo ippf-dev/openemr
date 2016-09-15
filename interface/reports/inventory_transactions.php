@@ -439,7 +439,7 @@ if ($form_action) { // if submit or export
     "JOIN drugs AS d ON d.drug_id = s.drug_id " .
     "LEFT JOIN patient_data AS p ON p.pid = s.pid " .
     "LEFT JOIN drug_inventory AS di ON di.inventory_id = s.inventory_id OR di.inventory_id = s.xfer_inventory_id " .
-    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND lo.option_id = di.warehouse_id " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "LEFT JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter " .
     "WHERE s.sale_date >= ? AND s.sale_date <= ? AND " .
     "( s.pid = 0 OR s.inventory_id != 0 ) ";

@@ -1,6 +1,6 @@
 <?php
 /* $Id$ */
-// Copyright (C) 2008-2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2008-2014, 2016 Rod Roark <rod@sunsetsystems.com>
 // Adapted for cross-platform operation by Bill Cernansky (www.mi-squared.com)
 //
 // This program is free software; you can redistribute it and/or
@@ -341,7 +341,7 @@ if ($form_step == 101) {
   echo "<b>" . xlt('Lists') . "</b><br />\n";
   echo "<select multiple name='form_sel_lists[]' size='15'>";
   $lres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-    "list_id = 'lists' ORDER BY title, seq");
+    "list_id = 'lists' AND activity = 1 ORDER BY title, seq");
   while ($lrow = sqlFetchArray($lres)) {
     $key = $lrow['option_id'];
     echo "<option value='$key'";
@@ -358,7 +358,7 @@ if ($form_step == 101) {
   echo "<option value='REF'   >" . xlt('Referrals'             ) . "</option>\n";
   echo "<option value='FACUSR'>" . xlt('Facility User Settings') . "</option>\n";
   $lres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-    "list_id = 'lbfnames' ORDER BY title, seq");
+    "list_id = 'lbfnames' AND activity = 1 ORDER BY title, seq");
   while ($lrow = sqlFetchArray($lres)) {
     $key = $lrow['option_id'];
     echo "<option value='$key'";

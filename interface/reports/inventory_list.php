@@ -95,7 +95,7 @@ function write_report_line(&$row) {
       "FROM drug_sales AS s " .
       "LEFT JOIN drug_inventory AS di ON di.inventory_id = s.inventory_id " .
       "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-      "lo.option_id = di.warehouse_id " .
+      "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
       "WHERE " .
       "s.drug_id = '$drug_id' AND " .
       "di.warehouse_id = '$warehouse_id' AND " .
@@ -110,7 +110,7 @@ function write_report_line(&$row) {
       "FROM drug_sales AS s " .
       "LEFT JOIN drug_inventory AS di ON di.inventory_id = s.inventory_id " .
       "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-      "lo.option_id = di.warehouse_id " .
+      "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
       "WHERE " .
       "s.drug_id = '$drug_id' AND " .
       "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
@@ -185,7 +185,7 @@ function write_report_line(&$row) {
       "FROM drug_sales AS s " .
       "LEFT JOIN drug_inventory AS di ON di.drug_id = s.drug_id " .
       "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-      "lo.option_id = di.warehouse_id " .
+      "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
       "WHERE " .
       "s.drug_id = '$drug_id' AND " .
       "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
@@ -200,7 +200,7 @@ function write_report_line(&$row) {
   $ires = sqlStatement("SELECT di.* " .
     "FROM drug_inventory AS di " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-    "lo.option_id = di.warehouse_id " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "WHERE " .
     "di.drug_id = '$drug_id' AND " .
     "di.on_hand > 0 AND " .
@@ -354,7 +354,7 @@ if ($form_details) {
     // "AND di.on_hand != 0 AND di.destroy_date IS NULL " .
     "AND di.destroy_date IS NULL " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-    "lo.option_id = di.warehouse_id " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "LEFT JOIN product_warehouse AS pw ON pw.pw_drug_id = d.drug_id AND " .
     "pw.pw_warehouse = di.warehouse_id " .
     "WHERE 1 = 1 $fwcond$actcond " .
@@ -369,7 +369,7 @@ else {
     "AND di.destroy_date IS NULL " .
     // Join with list_options needed to support facility filter ($fwcond).
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-    "lo.option_id = di.warehouse_id " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "WHERE 1 = 1 $fwcond$actcond " .
     "GROUP BY d.name, d.drug_id ORDER BY d.name, d.drug_id";
 }
@@ -487,7 +487,7 @@ $(document).ready(function() {
   echo "   <select name='form_warehouse'>\n";
   echo "    <option value=''>" . xl('All Warehouses') . "</option>\n";
   $lres = sqlStatement("SELECT * FROM list_options " .
-    "WHERE list_id = 'warehouse' ORDER BY seq, title");
+    "WHERE list_id = 'warehouse' AND activity = 1 ORDER BY seq, title");
   while ($lrow = sqlFetchArray($lres)) {
     echo "    <option value='" . $lrow['option_id'] . "/" . $lrow['option_value'] . "'";
     echo " id='fac" . $lrow['option_value'] . "'";

@@ -360,7 +360,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
     "lo.title AS insname, f.name AS facname " .
     "FROM form_encounter AS fe " .
     "JOIN patient_data AS pd ON pd.pid = fe.pid " .
-    "LEFT JOIN list_options AS lo ON lo.list_id = 'userlist4' AND lo.option_id = pd.userlist4 " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'userlist4' AND lo.option_id = pd.userlist4 AND lo.activity = 1 " .
     "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "WHERE fe.date >= ? AND fe.date <= ?";
   $qparms = array("$form_from_date 00:00:00", "$form_to_date 23:59:59");
@@ -414,7 +414,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       "JOIN ar_activity AS a ON a.pid = b.pid AND a.encounter = b.encounter AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = b.code_type AND a.code = b.code ) ) " .
-      "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo " .
+      "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 " .
       "AND lo.notes LIKE '%=Ins%' WHERE " .
       "b.pid = ? AND b.encounter = ? AND b.activity = 1 " .
       "ORDER BY b.code_text, b.id";
@@ -458,7 +458,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = 'PROD' AND a.code = s.drug_id ) ) " .
       "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND " .
-      "lo.notes LIKE '%=Ins%' " .
+      "lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
       "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
       "WHERE s.pid = ? AND s.encounter = ? " .
       "ORDER BY d.name, s.sale_id";

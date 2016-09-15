@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -92,7 +92,7 @@ function sellDrug($drug_id, $quantity, $fee, $patient_id=0, $encounter_id=0,
   $query = "SELECT di.*, lo.option_id, lo.seq " .
     "FROM drug_inventory AS di " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-    "lo.option_id = di.warehouse_id " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "WHERE " .
     "di.drug_id = '$drug_id' AND di.destroy_date IS NULL ";
   if ($GLOBALS['SELL_FROM_ONE_WAREHOUSE'] && $default_warehouse) $query .=

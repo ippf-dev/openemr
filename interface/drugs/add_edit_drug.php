@@ -66,7 +66,7 @@ function writeTemplateLine($selector, $dosage, $period, $quantity, $refills, $pr
     echo "</td>\n";
   }
   $pres = sqlStatement("SELECT option_id FROM list_options " .
-    "WHERE list_id = 'taxrate' ORDER BY seq");
+    "WHERE list_id = 'taxrate' AND activity = 1 ORDER BY seq");
   while ($prow = sqlFetchArray($pres)) {
     echo "  <td class='tmplcell'>";
     echo "<input type='checkbox' name='form_tmpl[$tmpl_line_no][taxrate][" . attr($prow['option_id']) . "]' value='1'";
@@ -422,7 +422,7 @@ else {
     "LEFT JOIN product_warehouse AS pw ON " .
     "pw.pw_drug_id = ? AND " .
     "pw.pw_warehouse = lo.option_id WHERE " .
-    "lo.list_id = 'warehouse' ORDER BY lo.seq, lo.title",
+    "lo.list_id = 'warehouse' AND lo.activity = 1 ORDER BY lo.seq, lo.title",
     array($drug_id));
   while ($pwrow = sqlFetchArray($pwres)) {
     $pwarr[] = $pwrow;
@@ -541,7 +541,7 @@ else {
   // for new template lines.
   $emptyPrices = array();
   $pres = sqlStatement("SELECT option_id, title FROM list_options " .
-    "WHERE list_id = 'pricelevel' ORDER BY seq");
+    "WHERE list_id = 'pricelevel' AND activity = 1 ORDER BY seq");
   while ($prow = sqlFetchArray($pres)) {
     $emptyPrices[$prow['option_id']] = '';
     echo "     <td><b>" .
@@ -550,7 +550,7 @@ else {
   }
   // Show a heading for each tax rate.
   $pres = sqlStatement("SELECT option_id, title FROM list_options " .
-    "WHERE list_id = 'taxrate' ORDER BY seq");
+    "WHERE list_id = 'taxrate' AND activity = 1 ORDER BY seq");
   while ($prow = sqlFetchArray($pres)) {
     echo "     <td><b>" .
 	 generate_display_field(array('data_type'=>'1','list_id'=>'taxrate'), $prow['option_id']) .
@@ -570,7 +570,7 @@ else {
         "FROM list_options AS lo LEFT OUTER JOIN prices AS p ON " .
         "p.pr_id = ? AND p.pr_selector = ? AND " .
         "p.pr_level = lo.option_id " .
-        "WHERE list_id = 'pricelevel' ORDER BY lo.seq",
+        "WHERE lo.list_id = 'pricelevel' AND lo.activity = 1 ORDER BY lo.seq",
         array($drug_id, $selector));
       while ($prow = sqlFetchArray($pres)) {
         $prices[$prow['option_id']] = $prow['pr_price'];

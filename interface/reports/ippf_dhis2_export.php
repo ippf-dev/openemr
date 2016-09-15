@@ -555,7 +555,7 @@ echo "   " . xlt('Channel') . ":\n";
 echo "   <select name='form_channel' onchange='channel_changed()'>\n";
 echo "    <option value='0'>-- " . xlt('All') . " --</option>\n";
 $lres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-  "list_id = 'posref' ORDER BY seq, option_id, title");
+  "list_id = 'posref' AND activity = 1 ORDER BY seq, option_id, title");
 while ($lrow = sqlFetchArray($lres)) {
   $key = $lrow['option_id'];
   echo "    <option value='" . attr($key) . "'";

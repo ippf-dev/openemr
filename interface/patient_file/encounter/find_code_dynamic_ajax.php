@@ -262,7 +262,7 @@ else if ($what == 'fields') {
 else if ($what == 'lists') {
   $sellist = "li.option_id AS code, li.title AS description";
   $from = "list_options AS li";
-  $where1 = "WHERE li.list_id LIKE 'lists'";
+  $where1 = "WHERE li.list_id LIKE 'lists' AND li.activity = 1";
   if (isset($_GET['sSearch']) && $_GET['sSearch'] !== "") {
     $sSearch = add_escape_custom($_GET['sSearch']);
     $where2 = "AND (li.list_id LIKE '%$sSearch%' OR li.title LIKE '%$sSearch%')";

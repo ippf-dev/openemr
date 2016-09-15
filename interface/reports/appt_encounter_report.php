@@ -316,7 +316,7 @@ $(document).ready(function() {
   $ippf_gcac_applies = false;
   if ($GLOBALS['ippf_specific']) {
     $grow = sqlQuery("SELECT COUNT(*) AS count FROM list_options " .
-      "WHERE list_id = 'lbfnames' AND option_id = 'LBFgcac'");
+      "WHERE list_id = 'lbfnames' AND option_id = 'LBFgcac' AND activity = 1");
     $ippf_gcac_applies = !empty($grow['count']);
   }
 

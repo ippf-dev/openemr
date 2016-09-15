@@ -66,7 +66,7 @@ $CPR = 4; // cells per row
 
 // Collect some top-level information about this layout.
 $tmp = sqlQuery("SELECT title, notes FROM list_options WHERE " .
-  "list_id = 'lbfnames' AND option_id = ? LIMIT 1", array($formname) );
+  "list_id = 'lbfnames' AND option_id = ? AND activity = 1 LIMIT 1", array($formname) );
 $formtitle = $tmp['title'];
 
 $jobj = json_decode($tmp['notes'], true);

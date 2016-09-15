@@ -29,7 +29,7 @@ function display_html($s) {
 // Get a list item's title, translated if appropriate.
 function getListTitle($list, $option) {
   $row = sqlQuery("SELECT title FROM list_options WHERE " .
-    "list_id = ? AND option_id = ?", array($list, $option));
+    "list_id = ? AND option_id = ? AND activity = 1", array($list, $option));
   if (empty($row['title'])) return $option;
   return xl_list_label($row['title']);
 }
@@ -39,7 +39,7 @@ function getListTitles($list, $option) {
   $s = '';
   $avalue = explode('|', $option);
   $lres = sqlStatement("SELECT * FROM list_options " .
-    "WHERE list_id = ? ORDER BY seq, title", array($list));
+    "WHERE list_id = ? AND activity = 1 ORDER BY seq, title", array($list));
   while ($lrow = sqlFetchArray($lres)) {
     $option_id = $lrow['option_id'];
     if (in_array($option_id, $avalue)) {

@@ -2660,6 +2660,7 @@ CREATE TABLE `list_options` (
   `mapping` varchar(31) NOT NULL DEFAULT '',
   `notes` varchar(4095) NOT NULL DEFAULT '',
   `codes` varchar(255) NOT NULL DEFAULT '',
+  `activity` TINYINT DEFAULT 1 NOT NULL,
   PRIMARY KEY  (`list_id`,`option_id`)
 ) ENGINE=MyISAM;
 

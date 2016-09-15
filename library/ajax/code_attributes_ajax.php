@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2015 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2015-2016 Rod Roark <rod@sunsetsystems.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -51,7 +51,7 @@ if ($codetype == 'PROD') {
   $price = empty($crow['pr_price']) ? 0 : (0 + $crow['pr_price']);
   //
   $lres = sqlStatement("SELECT * FROM list_options " .
-    "WHERE list_id = 'warehouse' ORDER BY seq, title");
+    "WHERE list_id = 'warehouse' AND activity = 1 ORDER BY seq, title");
   $wh .= "<option value=''></option>";
   while ($lrow = sqlFetchArray($lres)) {
     $wh .= "<option value='" . $lrow['option_id'] . "'";

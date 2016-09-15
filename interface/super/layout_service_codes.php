@@ -107,7 +107,7 @@ if (!empty($_POST['bn_upload'])) {
     // Now zap the found service codes into the parameters for each layout.
     foreach ($thecodes as $layoutid => $arr) {
       $lorow = sqlQuery("SELECT notes FROM list_options WHERE " .
-        "list_id = 'lbfnames' AND option_id = ? LIMIT 1",
+        "list_id = 'lbfnames' AND option_id = ? AND activity = 1 LIMIT 1",
         array($layoutid));
       if (empty($lorow)) {
         echo "<p style='color:red'>" . xlt('There is no layout') . " '$layoutid'.</p>\n";
@@ -187,7 +187,7 @@ if (!empty($_POST['bn_upload'])) {
 $lastcat = '';
 $lastlayout = '';
 $res = sqlStatement("SELECT option_id, title, mapping, notes FROM list_options " .
-  "WHERE list_id = 'lbfnames' AND notes != '' ORDER BY mapping, title, option_id");
+  "WHERE list_id = 'lbfnames' AND notes != '' AND activity = 1 ORDER BY mapping, title, option_id");
 while ($row = sqlFetchArray($res)) {
   $jobj = json_decode($row['notes'], true);
   if (!isset($jobj['services'])) continue;

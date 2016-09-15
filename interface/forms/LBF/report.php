@@ -20,7 +20,7 @@ function lbf_report($pid, $encounter, $cols, $id, $formname) {
   // specifying it in the form's list item.
   $CPR = 4;
   $tmp = sqlQuery("SELECT notes FROM list_options WHERE " .
-    "list_id = 'lbfnames' AND option_id = ?", array($formname) );
+    "list_id = 'lbfnames' AND option_id = ? AND activity = 1", array($formname) );
   $jobj = json_decode($tmp['notes'], true);
   if (!empty($jobj['columns'])) $CPR = intval($jobj['columns']);
   //

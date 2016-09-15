@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013, 2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -38,7 +38,7 @@ function display_html($s) {
 // Get a list item's title, translated if appropriate.
 function getListTitle($list, $option) {
   $row = sqlQuery("SELECT title FROM list_options WHERE " .
-    "list_id = '$list' AND option_id = '$option'");
+    "list_id = '$list' AND option_id = '$option' AND activity = 1");
   if (empty($row['title'])) return $option;
   return xl_list_label($row['title']);
 }
@@ -46,7 +46,7 @@ function getListTitle($list, $option) {
 // Get a list item's mapping value.
 function getListMapping($list, $option) {
   $row = sqlQuery("SELECT mapping FROM list_options WHERE " .
-    "list_id = '$list' AND option_id = '$option'");
+    "list_id = '$list' AND option_id = '$option' AND activity = 1");
   return $row['mapping'];
 }
 

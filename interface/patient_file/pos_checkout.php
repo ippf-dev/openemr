@@ -73,7 +73,7 @@ function formatMoneyNumber($value, $extradecimals=0) {
 //
 function getListTitle($list, $option) {
   $row = sqlQuery("SELECT title FROM list_options WHERE " .
-    "list_id = '$list' AND option_id = '$option'");
+    "list_id = '$list' AND option_id = '$option' AND activity = 1");
   if (empty($row['title'])) return $option;
   return xl_list_label($row['title']);
 }
@@ -96,7 +96,7 @@ function load_adjustments($patient_id, $encounter_id) {
     "a.payer_type, a.adj_amount, a.memo, a.code_type, a.code, a.post_time, " .
     "s.session_id, s.reference, s.check_date, lo.title AS memotitle " .
     "FROM ar_activity AS a " .
-    "LEFT JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
     "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND " .
     "( a.adj_amount != 0 OR a.pay_amount = 0 ) " .
@@ -1070,7 +1070,7 @@ function markTaxes($taxrates) {
 // (description, rate, indicator).  Indicator seems to be unused.
 $taxes = array();
 $pres = sqlStatement("SELECT option_id, title, option_value " .
-  "FROM list_options WHERE list_id = 'taxrate' ORDER BY seq, title, option_id");
+  "FROM list_options WHERE list_id = 'taxrate' AND activity = 1 ORDER BY seq, title, option_id");
 while ($prow = sqlFetchArray($pres)) {
   $taxes[$prow['option_id']] = array($prow['title'], $prow['option_value'], 0);
 }
@@ -1507,7 +1507,7 @@ while ($urow = sqlFetchArray($ures)) {
   // applied before taxes are computed. option_value 1 indicates that the
   // "After Taxes" checkbox is checked for an adjustment type.
   $tmpres = sqlStatement("SELECT option_id FROM list_options WHERE " .
-    "list_id = 'adjreason' AND option_value = 1");
+    "list_id = 'adjreason' AND option_value = 1 AND activity = 1");
   while ($tmprow = sqlFetchArray($tmpres)) {
     echo "    && adjreason != '" . addslashes($tmprow['option_id']) . "'\n";
   }
@@ -2164,7 +2164,7 @@ if ($alertmsg) {
 if ($gcac_related_visit && !$gcac_service_provided) {
   // Skip this warning if the GCAC visit form is not allowed.
   $grow = sqlQuery("SELECT COUNT(*) AS count FROM list_options " .
-    "WHERE list_id = 'lbfnames' AND option_id = 'LBFgcac'");
+    "WHERE list_id = 'lbfnames' AND option_id = 'LBFgcac' AND activity = 1");
   if (!empty($grow['count'])) { // if gcac is used
     // Skip this warning if referral or abortion in TS.
     $grow = sqlQuery("SELECT COUNT(*) AS count FROM transactions " .

@@ -100,7 +100,7 @@ $(document).ready(function() {
   // Show a heading for each price level.
   $numprices = 0;
   $pres = sqlStatement("SELECT option_id, title FROM list_options " .
-    "WHERE list_id = 'pricelevel' ORDER BY seq, title");
+    "WHERE list_id = 'pricelevel' AND activity = 1 ORDER BY seq, title");
   while ($prow = sqlFetchArray($pres)) {
     ++$numprices;
     echo "   <th align='right'>" .
@@ -145,7 +145,7 @@ while ($row = sqlFetchArray($res)) {
   $pres = sqlStatement("SELECT pr.pr_price FROM list_options AS lo " .
     "LEFT JOIN prices AS pr ON pr.pr_id = '$drug_id' AND " .
     "pr.pr_selector = '$selector' AND pr.pr_level = lo.option_id " .
-    "WHERE lo.list_id = 'pricelevel' ORDER BY lo.seq, lo.title");
+    "WHERE lo.list_id = 'pricelevel' AND lo.activity = 1 ORDER BY lo.seq, lo.title");
   while ($prow = sqlFetchArray($pres)) {
     echo "  <td align='right'>";
     echo empty($prow['pr_price']) ? "&nbsp;" : oeFormatMoney($prow['pr_price']);

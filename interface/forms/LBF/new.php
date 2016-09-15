@@ -101,7 +101,7 @@ if (!$from_trend_form && !$visitid) {
 
 // Get some info about this form.
 $tmp = sqlQuery("SELECT title, option_value, notes FROM list_options WHERE " .
-  "list_id = 'lbfnames' AND option_id = ?", array($formname) );
+  "list_id = 'lbfnames' AND option_id = ? AND activity = 1", array($formname));
 $formtitle = $tmp['title'];
 $formhistory = 0 + $tmp['option_value'];
 

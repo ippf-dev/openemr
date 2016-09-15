@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2008-2012 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2008-2012, 2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -114,7 +114,7 @@ function getTextListValue($string, $key) {
 function mappedOption($list_id, $option_id, $default='9') {
   if ($option_id === '') return $default;
   $row = sqlQuery("SELECT mapping FROM list_options WHERE " .
-    "list_id = '$list_id' AND option_id = '$option_id' LIMIT 1");
+    "list_id = '$list_id' AND option_id = '$option_id' AND activity = 1 LIMIT 1");
   if (empty($row)) return $option_id; // should not happen
   // return ($row['mapping'] === '') ? $option_id : $row['mapping'];
   $maparr = explode(':', $row['mapping']);
@@ -126,7 +126,7 @@ function mappedOption($list_id, $option_id, $default='9') {
 function describedOption($list_id, $option_id, $default='9') {
   if ($option_id === '') return $default;
   $row = sqlQuery("SELECT title FROM list_options WHERE " .
-    "list_id = '$list_id' AND option_id = '$option_id' LIMIT 1");
+    "list_id = '$list_id' AND option_id = '$option_id' AND activity = 1 LIMIT 1");
   if (empty($row)) return $option_id; // should not happen
   $maparr = explode(':', $row['title']);
   return ($maparr[0] === '') ? $option_id : $maparr[0];
@@ -148,7 +148,7 @@ function mappedFieldOption($form_id, $field_id, $option_id) {
   $row = sqlQuery("SELECT mapping FROM " .
     "list_options WHERE " .
     "list_id = '$list_id' AND " .
-    "option_id = '$option_id' " .
+    "option_id = '$option_id' AND activity = 1 " .
     "LIMIT 1");
   if (empty($row)) return $option_id; // should not happen
   // return ($row['mapping'] === '') ? $option_id : $row['mapping'];

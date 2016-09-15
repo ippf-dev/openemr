@@ -84,7 +84,7 @@ function c3_query($pid, $encounter, $fldname, $listname='') {
     "FROM forms AS f " .
     "JOIN form_encounter AS fe ON fe.pid = f.pid AND fe.encounter = f.encounter " .
     "JOIN lbf_data AS d ON d.form_id = f.form_id AND d.field_id = '$fldname' " .
-    "LEFT JOIN list_options AS l1 ON l1.list_id = '$listname' AND l1.option_id = d.field_value " .
+    "LEFT JOIN list_options AS l1 ON l1.list_id = '$listname' AND l1.option_id = d.field_value AND l1.activity = 1 " .
     "WHERE f.pid = '$pid' AND " .
     "f.encounter = '$encounter' AND " .
     "f.formdir = 'LBFc3' AND " .
@@ -254,11 +254,11 @@ if ($_POST['form_submit']) {
     "FROM form_encounter AS fe " .
     "JOIN patient_data AS pd ON pd.pid = fe.pid " .
     "LEFT JOIN facility AS fy ON fy.id = fe.facility_id " .
-    "LEFT JOIN list_options AS l1 ON l1.list_id = 'userlist5'    AND l1.option_id = pd.userlist5 " .
-    "LEFT JOIN list_options AS l2 ON l2.list_id = 'country'      AND l2.option_id = pd.country_code " .
-    "LEFT JOIN list_options AS l3 ON l3.list_id = 'userlist2'    AND l3.option_id = pd.userlist2 " .
-    "LEFT JOIN list_options AS l4 ON l4.list_id = 'occupations'  AND l4.option_id = pd.occupation " .
-    "LEFT JOIN list_options AS l5 ON l5.list_id = 'refsource'    AND l5.option_id = pd.referral_source " .
+    "LEFT JOIN list_options AS l1 ON l1.activity = 1 AND l1.list_id = 'userlist5'    AND l1.option_id = pd.userlist5 " .
+    "LEFT JOIN list_options AS l2 ON l2.activity = 1 AND l2.list_id = 'country'      AND l2.option_id = pd.country_code " .
+    "LEFT JOIN list_options AS l3 ON l3.activity = 1 AND l3.list_id = 'userlist2'    AND l3.option_id = pd.userlist2 " .
+    "LEFT JOIN list_options AS l4 ON l4.activity = 1 AND l4.list_id = 'occupations'  AND l4.option_id = pd.occupation " .
+    "LEFT JOIN list_options AS l5 ON l5.activity = 1 AND l5.list_id = 'refsource'    AND l5.option_id = pd.referral_source " .
     "WHERE fe.date >= '$from_date 00:00:00' AND " .
     "fe.date <= '$to_date 23:59:59' ";
 

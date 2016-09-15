@@ -124,7 +124,7 @@ function getFormsByCategory($state='1', $lbfonly=false) {
   // Merge LBF form types into the registry array of form types.
   // Note that the mapping value is used as the category name.
   $lres = sqlStatement("SELECT * FROM list_options " .
-  "WHERE list_id = 'lbfnames' ORDER BY mapping, seq, title");
+  "WHERE list_id = 'lbfnames' AND activity = 1 ORDER BY mapping, seq, title");
   while ($lrow = sqlFetchArray($lres)) {
     $rrow = array();
     $rrow['category']  = $lrow['mapping'] ? $lrow['mapping'] : 'Clinical';

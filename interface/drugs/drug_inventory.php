@@ -74,10 +74,10 @@ $dion = $form_show_empty ? "" : "AND di.on_hand != 0";
   "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
   "AND di.destroy_date IS NULL $dion " .
   "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-  "lo.option_id = di.warehouse_id " .
+  "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
   "LEFT JOIN facility AS f ON f.id = lo.option_value " .         
   "LEFT JOIN list_options AS lof ON lof.list_id = 'drug_form' AND " .
-  "lof.option_id = d.form " .
+  "lof.option_id = d.form AND lof.activity = 1 " .
   "$where ORDER BY $orderby");
 ?>
 <html>
@@ -182,7 +182,7 @@ $(document).ready(function() {
   echo "   <select name='form_warehouse'>\n";
   echo "    <option value=''>" . xl('All Warehouses') . "</option>\n";
   $lres = sqlStatement("SELECT * FROM list_options " .
-    "WHERE list_id = 'warehouse' ORDER BY seq, title");
+    "WHERE list_id = 'warehouse' AND activity = 1 ORDER BY seq, title");
   while ($lrow = sqlFetchArray($lres)) {
     $whid  = $lrow['option_id'];
     $facid = $lrow['option_value'];

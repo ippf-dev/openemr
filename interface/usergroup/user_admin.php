@@ -381,7 +381,7 @@ if ($fres) {
       // Does not apply if the site does not use inventory.
       if ($GLOBALS['inhouse_pharmacy']) {
         $lres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-          "list_id = ? AND option_value = ? ORDER BY seq, title",
+          "list_id = ? AND option_value = ? AND activity = 1 ORDER BY seq, title",
           array('warehouse', $frow['id']));
         while ($lrow = sqlFetchArray($lres)) {
           echo "    <option";

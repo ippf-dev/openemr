@@ -992,7 +992,7 @@ function &postcalendar_userapi_pcQueryEvents($args)
     "LEFT JOIN users as u ON a.pc_aid = u.id " .
     "LEFT JOIN users as u2 ON a.pc_aid = u2.id " .
     "LEFT JOIN patient_data as pd ON a.pc_pid = pd.pid " .
-    "LEFT JOIN list_options AS lo ON lo.list_id = 'apptstat' AND lo.option_id = a.pc_apptstatus " .          
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'apptstat' AND lo.option_id = a.pc_apptstatus AND lo.activity = 1 " .          
     "WHERE  a.pc_eventstatus = $eventstatus " .
     "AND ((a.pc_endDate >= '$start' AND a.pc_eventDate <= '$end') OR " .
     "(a.pc_endDate = '0000-00-00' AND a.pc_eventDate >= '$start' AND " .

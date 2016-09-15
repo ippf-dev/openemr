@@ -370,7 +370,7 @@ $(document).ready(function(){
 <?php
   // Initialize for each applicable LBF form.
   $gfres = sqlStatement("SELECT option_id FROM list_options WHERE " .
-    "list_id = 'lbfnames' AND option_value > 0 ORDER BY seq, title");
+    "list_id = 'lbfnames' AND option_value > 0 AND activity = 1 ORDER BY seq, title");
   while($gfrow = sqlFetchArray($gfres)) {
 ?>
     $("#<?php echo $gfrow['option_id']; ?>_ps_expand").load("lbf_fragment.php?formname=<?php echo $gfrow['option_id']; ?>");
@@ -1030,7 +1030,7 @@ expand_collapse_widget($widgetTitle, $widgetLabel, $widgetButtonLabel,
   //
   $gfres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
     "list_id = 'lbfnames' AND " .
-    "option_value > 0 " .
+    "option_value > 0 AND activity = 1 " .
     "ORDER BY seq, title");
   while($gfrow = sqlFetchArray($gfres)) {
 ?>
@@ -1222,7 +1222,7 @@ expand_collapse_widget($widgetTitle, $widgetLabel, $widgetButtonLabel,
 	  echo "   <span class='bold'>Fitness to Play:</span><br />\n";
 	  echo "   <select name='form_fitness' style='background-color:$fitcolor'>\n";
 	  $res = sqlStatement("SELECT * FROM list_options WHERE " .
-		"list_id = 'fitness' ORDER BY seq");
+		"list_id = 'fitness' AND activity = 1 ORDER BY seq");
 	  while ($row = sqlFetchArray($res)) {
 		$key = $row['option_id'];
 		echo "    <option value='" . htmlspecialchars($key,ENT_QUOTES) . "'";

@@ -542,3 +542,7 @@ ALTER TABLE `list_options` CHANGE `notes` `notes` VARCHAR(4095) NOT NULL DEFAULT
 INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbreviation`,`style`,`force_show`) VALUES
   ('65','ippf_specific','cervical_cancer','Cervical Cancer','Cervical Cancer','CC','0','0');
 #EndIf
+
+#IfMissingColumn list_options activity
+ALTER TABLE `list_options` ADD COLUMN `activity` TINYINT DEFAULT 1 NOT NULL;
+#EndIf

@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -158,7 +158,7 @@ function calcTaxes($row, $amount) {
   foreach ($arates as $value) {
     if (empty($value)) continue;
     $trow = sqlQuery("SELECT option_value FROM list_options WHERE " .
-      "list_id = 'taxrate' AND option_id = '$value' LIMIT 1");
+      "list_id = 'taxrate' AND option_id = '$value' AND activity = 1 LIMIT 1");
     if (empty($trow['option_value'])) {
       echo "<!-- Missing tax rate '$value'! -->\n";
       continue;
@@ -182,7 +182,7 @@ function postPayment($form_pid, $enc, $form_method, $form_source, $amount, $post
 
 function getListTitle($list, $option) {
   $row = sqlQuery("SELECT title FROM list_options WHERE " .
-    "list_id = '$list' AND option_id = '$option'");
+    "list_id = '$list' AND option_id = '$option' AND activity = 1");
   if (empty($row['title'])) return $option;
   return xl_list_label($row['title']);
 }

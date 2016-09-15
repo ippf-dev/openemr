@@ -514,8 +514,8 @@ function create_sortable_header($text,$field,$width)
 $query = "SELECT u.*, f.name AS facname, l1.title AS whname, l2.title AS irnpname " .
   "FROM users AS u " .
   "LEFT JOIN facility AS f ON f.id = u.facility_id " .
-  "LEFT JOIN list_options AS l1 ON l1.list_id = 'warehouse' AND l1.option_id = u.default_warehouse " .
-  "LEFT JOIN list_options AS l2 ON l2.list_id = 'irnpool'   AND l2.option_id = u.irnpool " .
+  "LEFT JOIN list_options AS l1 ON l1.list_id = 'warehouse' AND l1.option_id = u.default_warehouse AND l1.activity = 1 " .
+  "LEFT JOIN list_options AS l2 ON l2.list_id = 'irnpool'   AND l2.option_id = u.irnpool AND l2.activity = 1 " .
   "WHERE username != '' ";
 if (!$form_inactive) $query .= "AND u.active = '1' ";
 $query .= "ORDER BY u.username";

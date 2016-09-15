@@ -203,7 +203,7 @@ foreach (array(1 => xl('Screen'), 2 => xl('Printer'), 3 => xl('Export File')) as
 if ($_POST['form_submit']) {
 
   $lores = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-    "list_id = 'contrameth' ORDER BY title");
+    "list_id = 'contrameth' AND activity = 1 ORDER BY title");
   while ($lorow = sqlFetchArray($lores)) {
     $areport[$lorow['option_id']] = array($lorow['title'],
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
@@ -258,7 +258,7 @@ if ($_POST['form_submit']) {
           $crow = sqlQuery("SELECT lo.option_id, lo.title " .
             "FROM codes AS c " .
             "JOIN list_options AS lo ON lo.list_id = 'contrameth' AND " .
-            "lo.option_id = c.code_text_short " .
+            "lo.option_id = c.code_text_short AND lo.activity = 1 " .
             "WHERE c.code_type = '32' AND c.code = ?",
             array($methodid));
           if (!empty($crow['option_id'])) {

@@ -207,7 +207,7 @@ echo "   </select>&nbsp;\n";
    "FROM drug_inventory AS i " .
    "LEFT JOIN drugs AS d ON d.drug_id = i.drug_id " .
    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-   "lo.option_id = i.warehouse_id " .
+   "lo.option_id = i.warehouse_id AND lo.activity = 1 " .
    "LEFT JOIN facility AS f ON f.id = lo.option_value " .
    "WHERE $where " .
    "ORDER BY $orderby";

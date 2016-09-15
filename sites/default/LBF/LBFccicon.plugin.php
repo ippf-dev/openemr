@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2012-2014 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2012-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -31,7 +31,7 @@ function LBFccicon_javascript() {
   // Create a hash to map contrameth list IDs to an indicator of whether it is a modern method.
   echo "var contraMapping = new Object();\n";
   $res = sqlStatement("SELECT option_id, option_value FROM list_options WHERE " .
-    "list_id = 'contrameth' ORDER BY seq, title");
+    "list_id = 'contrameth' AND activity = 1 ORDER BY seq, title");
   while ($row = sqlFetchArray($res)) {
     $mapping = $row['option_value'] ? '1' : '0';
     echo "contraMapping['" . $row['option_id'] . "'] = '$mapping';\n";
