@@ -3052,3 +3052,12 @@ UPDATE forms SET deleted = 1, form_name = CONCAT('DELETED ', form_name) WHERE fo
 UPDATE registry SET state = 0 WHERE directory = 'vitalsM';
 
 #EndIf
+
+#IfNotRow2D list_options list_id lbfnames option_id LBFVNote
+INSERT INTO list_options (list_id,option_id,title,seq,option_value) VALUES ('lbfnames','LBFVNote','Visit Notes',1,5);
+DELETE FROM layout_options WHERE form_id = 'LBFVNote';
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`)
+  VALUES ('LBFVNote','Notes','1Visit Notes','Notes',20,3,1,50,255,'',1,3,'','','',10,'F','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`)
+  VALUES ('LBFVNote','Provider','1Visit Notes','Provider',10,10,1,0,0,'',1,3,'','','',0,'F','');
+#EndIf
