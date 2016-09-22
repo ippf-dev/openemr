@@ -352,16 +352,11 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
   $last_insid = '';
   $last_insname = '';
 
-  // Main loop is on visits.
-  // We get facility name here but will probably do away with that.
-  $query = "SELECT " .
-    "fe.pid, fe.encounter, fe.date, " .
-    "pd.lname, pd.fname, pd.mname, pd.pubpid, pd.usertext8, pd.userlist4, " .
-    "lo.title AS insname, f.name AS facname " .
+  // Main loop is on insurer.
+  $query = "SELECT DISTINCT lo.title AS insname, pd.userlist4 AS insid " .
     "FROM form_encounter AS fe " .
     "JOIN patient_data AS pd ON pd.pid = fe.pid " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'userlist4' AND lo.option_id = pd.userlist4 AND lo.activity = 1 " .
-    "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "WHERE fe.date >= ? AND fe.date <= ?";
   $qparms = array("$form_from_date 00:00:00", "$form_to_date 23:59:59");
   // If an insurer was specified.
@@ -375,56 +370,62 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
     $qparms[] = $form_facility;
   }
   // Sort by insurer, client and visit date.
-  $query .= " ORDER BY insname, userlist4, pd.lname, pd.fname, fe.pid, fe.date, fe.encounter";
-
-  // echo "<!-- $query -->\n"; // debugging
-  // echo "<!--\n"; print_r($qparms); echo " -->\n"; // debugging
+  $query .= " ORDER BY insname";
 
   $res = sqlStatement($query, $qparms);
   while ($row = sqlFetchArray($res)) {
 
-    // echo "<!--\n"; print_r($row); echo " -->\n"; // debugging
+    $insid      = $row['insid'];
+    $insname    = $row['insname'];
 
-    $item_count = 0; // number of line items displayed for this invoice
-    $insid = $row['userlist4'];
+    // echo "<!-- ins id = '$insid', name = '$insname' -->\n"; // debugging
 
     if ($insid != $last_insid) {
       if ($last_insid !== '') {
         tblEndInsurer($last_insname, $instotal);
       }
       $last_insid = $insid;
-      $last_insname = $row['insname'];
+      $last_insname = $insname;
       $instotal = 0;
       tblStartInsurer($last_insname);
     }
 
-    $ptname = $row['lname'];
-    if ($row['fname'] || $row['mname']) {
-      $ptname .= ', ' . $row['fname'];
-      if ($row['mname']) $ptname .= ' ' . $row['mname'];
-    }
-
     // Get service items.
     $query = "SELECT " .
+      "fe.pid, fe.encounter, fe.date, " .
+      "pd.lname, pd.fname, pd.mname, pd.pubpid, pd.usertext8, pd.userlist4, " .
+      "f.name AS facname, " .
       "b.id, b.code_text, b.units, b.fee, c.code_text_short " .
-      "FROM billing AS b " .
-      "LEFT JOIN code_types AS ct ON ct.ct_key = b.code_type " .
-      "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND " .
-      "c.code = b.code AND c.modifier = b.modifier " .
+      "FROM form_encounter AS fe " .
+      "JOIN patient_data AS pd ON pd.pid = fe.pid AND pd.userlist4 = ? " .
+      "JOIN billing AS b ON b.pid = fe.pid AND b.encounter = fe.encounter AND b.activity = 1 AND b.fee != 0.00 " .
       "JOIN ar_activity AS a ON a.pid = b.pid AND a.encounter = b.encounter AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = b.code_type AND a.code = b.code ) ) " .
-      "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 " .
-      "AND lo.notes LIKE '%=Ins%' WHERE " .
-      "b.pid = ? AND b.encounter = ? AND b.activity = 1 " .
-      "ORDER BY b.code_text, b.id";
+      "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 AND lo.notes LIKE '%=Ins%' " .
+      "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
+      "LEFT JOIN code_types AS ct ON ct.ct_key = b.code_type " .
+      "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
+      "WHERE " .
+      "fe.date >= ? AND fe.date <= ?";
+    $qparms = array($insid, "$form_from_date 00:00:00", "$form_to_date 23:59:59");
+    // If a facility was specified.
+    if ($form_facility) {
+      $query .= " AND fe.facility_id IS NOT NULL AND fe.facility_id = ?";
+      $qparms[] = $form_facility;
+    }
+    $query .= " ORDER BY b.code_text, b.id, pd.lname, pd.fname, fe.pid, fe.date, fe.encounter";
 
+    $bres = sqlStatement($query, $qparms);
     $last_billing_id = 0;
-    $bres = sqlStatement($query, array($row['pid'], $row['encounter']));
 
     while ($brow = sqlFetchArray($bres)) {
 
-      // echo "<!--\n"; print_r($brow); echo " -->\n"; // debugging
+      $ptname = $brow['lname'];
+      if ($brow['fname'] || $brow['mname']) {
+        $ptname .= ', ' . $brow['fname'];
+        if ($brow['mname']) $ptname .= ' ' . $brow['mname'];
+      }
 
       // Skip any extra adjustment matches for the same line item.
       if ($brow['id'] == $last_billing_id) continue;
@@ -433,54 +434,66 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       // it's possible a code has no short description, or perhaps was used and then deleted.
       $code_text = empty($brow['code_text_short']) ? $brow['code_text'] : $brow['code_text_short'];
 
-      // for ($i = 0; $i < 60; ++$i) { // debugging
-
       tblStartRow();
-      tblCell(oeFormatShortDate(substr($row['date'], 0, 10)), 0, $item_count);
-      tblCell($ptname                                       , 1, $item_count);
-      tblCell($row['usertext8']                             , 2, $item_count);
-      tblCell($code_text                                    , 3);
-      tblCell(oeFormatMoney($brow['fee'])                   , 4);
+      tblCell(oeFormatShortDate(substr($brow['date'], 0, 10)), 0);
+      tblCell($ptname                                        , 1);
+      tblCell($brow['usertext8']                             , 2);
+      tblCell($code_text                                     , 3);
+      tblCell(oeFormatMoney($brow['fee'])                    , 4);
       tblEndRow();
-
-      // } // debugging
 
       $instotal += $brow['fee'];
       $last_billing_id = 0 + $brow['id'];
-      ++$item_count;
     }
 
     // Products.
     $query = "SELECT " .
+      "fe.pid, fe.encounter, fe.date, " .
+      "pd.lname, pd.fname, pd.mname, pd.pubpid, pd.usertext8, pd.userlist4, " .
+      "f.name AS facname, " .
       "s.fee, s.quantity, s.sale_id, d.name " .
-      "FROM drug_sales AS s " .
+      "FROM form_encounter AS fe " .
+      "JOIN patient_data AS pd ON pd.pid = fe.pid AND pd.userlist4 = ? " .
+      "JOIN drug_sales AS s ON s.pid = fe.pid AND s.encounter = fe.encounter " .
       "JOIN ar_activity AS a ON a.pid = s.pid AND a.encounter = s.encounter AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = 'PROD' AND a.code = s.drug_id ) ) " .
-      "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND " .
-      "lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
+      "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 AND lo.notes LIKE '%=Ins%' " .
       "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
-      "WHERE s.pid = ? AND s.encounter = ? " .
-      "ORDER BY d.name, s.sale_id";
+      "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
+      "WHERE " .
+      "fe.date >= ? AND fe.date <= ?";
+    $qparms = array($insid, "$form_from_date 00:00:00", "$form_to_date 23:59:59");
+    // If a facility was specified.
+    if ($form_facility) {
+      $query .= " AND fe.facility_id IS NOT NULL AND fe.facility_id = ?";
+      $qparms[] = $form_facility;
+    }
+    $query .= " ORDER BY d.name, s.drug_id, pd.lname, pd.fname, fe.pid, fe.date, fe.encounter";
 
+    $sres = sqlStatement($query, $qparms);
     $last_sale_id = 0;
-    $sres = sqlStatement($query, array($row['pid'], $row['encounter']));
 
     while ($srow = sqlFetchArray($sres)) {
       // Skip any extra adjustment matches for the same line item.
       if ($srow['sale_id'] == $last_sale_id) continue;
 
+      $ptname = $srow['lname'];
+      if ($srow['fname'] || $srow['mname']) {
+        $ptname .= ', ' . $srow['fname'];
+        if ($srow['mname']) $ptname .= ' ' . $srow['mname'];
+      }
+
       tblStartRow();
-      tblCell(oeFormatShortDate(substr($row['date'], 0, 10)), 0, $item_count);
-      tblCell($ptname                                       , 1, $item_count);
-      tblCell($row['usertext8']                             , 2, $item_count);
-      tblCell($srow['name']                                 , 3);
-      tblCell(oeFormatMoney($srow['fee'])                   , 4);
+      tblCell(oeFormatShortDate(substr($srow['date'], 0, 10)), 0);
+      tblCell($ptname                                        , 1);
+      tblCell($srow['usertext8']                             , 2);
+      tblCell($srow['name']                                  , 3);
+      tblCell(oeFormatMoney($srow['fee'])                    , 4);
       tblEndRow();
 
       $instotal += $srow['fee'];
       $last_sale_id = 0 + $srow['sale_id'];
-      ++$item_count;
     }
   }
 
