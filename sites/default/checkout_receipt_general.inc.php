@@ -22,7 +22,7 @@ require_once($GLOBALS['fileroot'] . '/library/html2pdf/_tcpdf_5.0.002/tcpdf.php'
       Phone:XXX-XXXX  Fax:XXX-XXXX 
              www.grpagy.com
 
-  Bill To: xxxxx
+  Bill To: xxxxx           xxxxxxxxxxx   (Client name and ID)
   Cashier: xxxxx
 
   Item Name                  Ext.Price
@@ -132,15 +132,47 @@ function gcrHeader(&$aReceipt, &$pdf, $patient_id, $encounter_id, $billtime='') 
   gcrWriteCell($pdf, $GCR_TOP_WIDTH_1, $GCR_TOP_WIDTH_2, 'R', xl('Sales Receipt') . " # $irn");
   $pdf->Ln($GCR_LINE_HEIGHT);
 
+  $header_text_pos = 0;
+  $header_text_width = $GCR_PAGE_WIDTH;
+  $logo_bottom = $pdf->getY();
+
+  // If there is a logo, write it and recompute positioning for name/address lines.
+  $ma_receipt_logo = $GLOBALS['webserver_root'] . "/sites/" . $_SESSION['site_id'] . "/images/ma_receipt_logo.png";
+  if (is_file($ma_receipt_logo)) {
+    $w = $h = $GCR_PAGE_WIDTH / 4;
+    $tmp = getimagesize($ma_receipt_logo);
+    if ($tmp[0] && $tmp[1]) {
+      $h = $w * $tmp[1] / $tmp[0];
+    }
+    $logo_bottom += $h;
+    $pdf->Image(
+      $ma_receipt_logo,  // file path
+      0, '',             // x, y
+      $w, $h,            // resizing to this width and height
+      '',                // file type inferred from file extension
+      '',                // link
+      'T',               // after this operation pointer will be at top right of image
+      true,              // no resize
+      150,               // dpi for resize
+      '',                // L, C, R or '' (horizontal alignment of image on current line)
+      false,             // not a mask
+      false,             // not imgmask
+      0,                 // no border
+      false              // not fitbox
+    );
+    $header_text_pos   += $w;
+    $header_text_width -= $w;
+  }
+
   // Write the organization name line.
-  gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'C', $aReceipt['organization_name']);
+  gcrWriteCell($pdf, $header_text_pos, $header_text_width, 'C', $aReceipt['organization_name']);
 
   // End bold.
   $pdf->SetFont($GCR_FONT, '', $GCR_FONTSIZE);
 
   // Write the clinic name line if it's different.
   if ($aReceipt['facility_name'] != $aReceipt['organization_name']) {
-    gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'C', $aReceipt['facility_name']);
+    gcrWriteCell($pdf, $header_text_pos, $header_text_width, 'C', $aReceipt['facility_name']);
   }
 
   // Write the clinic address/city line unless both are empty.
@@ -148,7 +180,7 @@ function gcrHeader(&$aReceipt, &$pdf, $patient_id, $encounter_id, $billtime='') 
   if ($tmp && $aReceipt['facility_city']) $tmp .= ', ';
   $tmp .= $aReceipt['facility_city'];
   if ($tmp) {
-    gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'C', $tmp);
+    gcrWriteCell($pdf, $header_text_pos, $header_text_width, 'C', $tmp);
   }
 
   // Write the clinic phone/fax line unless both are empty.
@@ -158,21 +190,29 @@ function gcrHeader(&$aReceipt, &$pdf, $patient_id, $encounter_id, $billtime='') 
   }
   if ($aReceipt['facility_fax']) {
     if ($tmp) $tmp .= '  ';
-    $tmp = xl('Fax') . ': ' . $aReceipt['facility_fax'];
+    $tmp .= xl('Fax') . ': ' . $aReceipt['facility_fax'];
   }
   if ($tmp) {
-    gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'C', $tmp);
+    gcrWriteCell($pdf, $header_text_pos, $header_text_width, 'C', $tmp);
   }
 
   // Write the clnic URL line if there is one.
   if ($aReceipt['facility_url']) {
-    gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'C', $aReceipt['facility_url']);
+    gcrWriteCell($pdf, $header_text_pos, $header_text_width, 'C', $aReceipt['facility_url']);
   }
 
-  // Blank line, "Bill To:" line, "Cashier:" line.
+  // Make sure next line clears the logo.
+  if ($pdf->getY() < $logo_bottom) $pdf->setY($logo_bottom);
+
+  // End of logo and address lines.
+
+  // Blank line, "Bill To:" line including right-aligned client ID.
   $pdf->Ln($GCR_LINE_HEIGHT);
   $ptname = trim(trim($aReceipt['patient_fname'] . ' ' . $aReceipt['patient_mname']) . ' ' . $aReceipt['patient_lname']);
-  gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'L', xl('Bill To') . ': ' . $ptname);
+  gcrWriteCell($pdf, 0, $GCR_DESC_WIDTH, 'L', xl('Bill To') . ': ' . $ptname, FALSE);
+  gcrWriteCell($pdf, $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH, 'R', $aReceipt['patient_pubpid']);
+
+  // "Cashier:" line.
   gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'L', xl('Cashier') . ': ' . $aReceipt['userlogin']);
 
   // Blank line.
@@ -246,6 +286,8 @@ function generateCheckoutReceipt($patient_id, $encounter_id, $billtime='') {
   // Loop for detail lines.
   foreach ($aReceipt['items'] as $item) {
     if ($item['code_type'] == 'TAX') continue;
+    // Next line is for Surinam and shouldn't matter for others.
+    if (!empty($item['insurer'])) continue;
     // Insert a charge line unless this is only an adjustment.
     if ($item['charge'] != 0.00) {
       gcrLine($aReceipt, $pdf, $item['code'], $item['description'],
@@ -309,6 +351,11 @@ function generateCheckoutReceipt($patient_id, $encounter_id, $billtime='') {
 
   // Payment lines.
   foreach ($aReceipt['payments'] as $item) {
+
+    // This is specific to Surinam.
+    // TBD: We'll need a global setting for this.
+    if ('Insurance' == $item['method'] || 'Private' == $item['method']) continue;
+
     gcrFootLine($aReceipt, $pdf, $item['method'] . ' ' . xl('Payment'), $item['amount']);
     $subtotal -= $item['amount'];
   }

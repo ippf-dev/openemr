@@ -12,9 +12,10 @@
 // data comes from.
 
 // Get a list item's title, translated if appropriate.
-function getAdjustTitle($option) {
-  $row = sqlQuery("SELECT title FROM list_options WHERE " .
+function getAdjustTitle($option, &$insurer) {
+  $row = sqlQuery("SELECT title, notes FROM list_options WHERE " .
     "list_id = 'adjreason' AND option_id = '$option' AND activity = 1");
+  $insurer = $insurer || (strpos($row['notes'], '=Ins') !== false);
   if (empty($row['title'])) return $option;
   return xl_list_label($row['title']);
 }
@@ -24,6 +25,11 @@ function getAdjustTitle($option) {
 function receiptArrayDetailLine(&$aReceipt, $code_type, $code, $description, $quantity, $charge, $billtime='') {
   $adjust = 0;
   $adjreason = '';
+
+  // This supports Surinam insurers.  It is set to true when an adjustment reason for
+  // an adjustment matching this charge has "=Insurer" in its list_options.notes.
+  // Note these adjustments can have a zero amount.
+  $insurer = false;
 
   // If an invoice level adjustment, get it into the right column.
   if ($code_type === '') {
@@ -37,12 +43,11 @@ function receiptArrayDetailLine(&$aReceipt, $code_type, $code, $description, $qu
       for ($i = 0; $i < count($aReceipt['_adjusts']); ++$i) {
         if ($aReceipt['_adjusts'][$i]['code_type'] == $code_type &&
           $aReceipt['_adjusts'][$i]['code'] == $code &&
-          $aReceipt['_adjusts'][$i]['post_time'] == $billtime &&
-          $aReceipt['_adjusts'][$i]['adj_amount'] != 0)
+          $aReceipt['_adjusts'][$i]['post_time'] == $billtime)
         {
           $adjust += $aReceipt['_adjusts'][$i]['adj_amount'];
           if ($aReceipt['_adjusts'][$i]['memo']) {
-            $adjreason = getAdjustTitle($aReceipt['_adjusts'][$i]['memo']);
+            $adjreason = getAdjustTitle($aReceipt['_adjusts'][$i]['memo'], $insurer);
           }
           $aReceipt['_adjusts'][$i]['adj_amount'] = 0;
         }
@@ -67,6 +72,7 @@ function receiptArrayDetailLine(&$aReceipt, $code_type, $code, $description, $qu
     'adjustment'  => sprintf('%01.2f', $adjust),
     'adjreason'   => $adjreason,
     'total'       => $total,
+    'insurer'     => $insurer,
   );
 
   $aReceipt['total_price']       = sprintf('%01.2f', $aReceipt['total_price'      ] + $price   );
@@ -235,7 +241,8 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     "s.session_id, s.reference, s.check_date " .
     "FROM ar_activity AS a " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
-    "a.pid = '$patient_id' AND a.encounter = '$encounter' AND a.adj_amount != 0");
+    "a.pid = '$patient_id' AND a.encounter = '$encounter' AND " .
+    "(a.adj_amount != 0 || a.pay_amount = 0)");
   while ($arow = sqlFetchArray($ares)) {
     if ($billtime && $arow['post_time'] != $billtime) continue;
     $aReceipt['_adjusts'][] = $arow;
@@ -253,15 +260,19 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
       $inrow['quantity'], $inrow['fee'], $inrow['bill_date']);
   }
 
-  // Service items.
-  $inres = sqlStatement("SELECT * FROM billing WHERE " .
-    "pid = '$patient_id' AND encounter = '$encounter' AND " .
-    "code_type != 'COPAY' AND code_type != 'TAX' AND activity = 1 " .
-    "ORDER BY id");
+  // Service items. Use short code description when available.
+  $inres = sqlStatement("SELECT b.*, c.code_text_short FROM billing AS b " .
+    "LEFT JOIN code_types AS ct ON ct.ct_key = b.code_type " .
+    "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
+    "WHERE " .
+    "b.pid = '$patient_id' AND b.encounter = '$encounter' AND " .
+    "b.code_type != 'COPAY' AND b.code_type != 'TAX' AND b.activity = 1 " .
+    "ORDER BY b.id");
   while ($inrow = sqlFetchArray($inres)) {
     if ($billtime && $inrow['bill_date'] != $billtime) continue;
+    $code_text = empty($inrow['code_text_short']) ? $inrow['code_text'] : $inrow['code_text_short'];
     receiptArrayDetailLine($aReceipt, $inrow['code_type'], $inrow['code'],
-      $inrow['code_text'], $inrow['units'], $inrow['fee'], $inrow['bill_date']);
+      $code_text, $inrow['units'], $inrow['fee'], $inrow['bill_date']);
   }
 
   // Write any adjustments left in the aAdjusts array.
@@ -269,8 +280,9 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     if ($arow['adj_amount'] == 0) continue;
     if ($billtime && $arow['post_time'] != $billtime) continue;
     // $payer = empty($arow['payer_type']) ? 'Pt' : ('Ins' . $arow['payer_type']);
+    $insurer = false;
     receiptArrayDetailLine($aReceipt, '', xl('Adjustment'),
-      getAdjustTitle($arow['memo']), 1, 0 - $arow['adj_amount']);
+      getAdjustTitle($arow['memo'], $insurer), 1, 0 - $arow['adj_amount']);
   }
 
   // Tax items.
