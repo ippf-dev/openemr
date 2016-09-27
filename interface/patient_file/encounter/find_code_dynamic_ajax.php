@@ -271,7 +271,7 @@ else if ($what == 'lists') {
 else if ($what == 'groups') {
   $sellist .= "DISTINCT lo.group_name AS code, SUBSTRING(lo.group_name, 2) AS description";
   $from = "layout_options AS lo";
-  $where1 = "WHERE lo.form_id LIKE '$layout_id' AND lo.uor > 0";
+  $where1 = "WHERE lo.form_id LIKE '$layout_id'";
   if (isset($_GET['sSearch']) && $_GET['sSearch'] !== "") {
     $sSearch = add_escape_custom($_GET['sSearch']);
     $where2 = "AND lo.group_name LIKE '%$sSearch%'";
