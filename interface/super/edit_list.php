@@ -330,7 +330,7 @@ function getCodeDescriptions($codes) {
 
 // Write one option line to the form.
 //
-function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping='', $notes='', $codes='', $active='') {
+function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping='', $notes='', $codes='', $active='1') {
   global $opt_line_no, $list_id;
   ++$opt_line_no;
   $bgcolor = "#" . (($opt_line_no & 1) ? "ddddff" : "ffdddd");
