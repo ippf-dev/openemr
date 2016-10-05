@@ -1297,7 +1297,8 @@ function postcalendar_admin_categories($msg='',$e='',$args)
     $tpl->assign('_PC_CAT_DELETE',_PC_CAT_DELETE);
     $tpl->assign('_PC_CAT_DUR',_PC_CAT_DUR);
     $tpl->assign('_PC_COLOR_PICK_TITLE',_PC_COLOR_PICK_TITLE);
-    
+    $tpl->assign('css_header',$GLOBALS['css_header']);
+
     //=================================================================
     //  Repeating Information
     //=================================================================
