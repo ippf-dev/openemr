@@ -8,14 +8,14 @@ $GLOBALS['form_exit_url'] = $GLOBALS['concurrent_layout'] ?
 
 function getFormById ($id, $cols = "*")
 {
-	$sql = "select $cols from forms where id='$id' order by date DESC limit 0,1";
+	$sql = "select $cols from forms where id='$id' and deleted = 0 order by date DESC limit 0,1";
 	//echo $sql . "<br />";
 	return sqlQuery($sql);
 }
 
 function getFormInfoById ($id, $cols = "*")
 {
-	$sql = "select $cols from forms where id='$id' order by date DESC limit 0,1";
+	$sql = "select $cols from forms where id = '$id' and deleted = 0 order by date DESC limit 0,1";
 	//echo $sql . "<br />";
 	$result =  sqlQuery($sql);
 	if ($result['formdir'] == "newpatient") {
@@ -30,14 +30,14 @@ function getFormInfoById ($id, $cols = "*")
 
 function getFormsByPid ($pid, $cols = "*")
 {
-	return sqlQuery("select $cols from forms where pid ='$pid'");
+	return sqlQuery("select $cols from forms where pid ='$pid' and deleted = 0");
 }
 
 function getFormByEncounter($pid,$encounter, $cols="form_id, form_name", $name="",
   $orderby="FIND_IN_SET(formdir,'vitals') DESC, date DESC")
 {
  	$arraySqlBind = array();
-	$sql = "select $cols from forms where encounter = ? and pid = ? ";
+	$sql = "select $cols from forms where encounter = ? and pid = ? and deleted = 0 ";
 	array_push($arraySqlBind,$encounter,$pid);
 	if(!empty($name)){
 		$sql .= "and form_name = ? ";
@@ -78,7 +78,7 @@ function addForm($encounter, $form_name, $form_id, $formdir, $pid,
 
 function authorizeForm($id, $authorized = "1")
 {
-	sqlQuery("update forms set authorized = '$authorized' where id = '$id'");
+	sqlQuery("update forms set authorized = '$authorized' where id = '$id' and deleted = 0");
 }
 
 function getEncounters($pid,$dateStart='',$dateEnd='',$encounterRuleType='')
@@ -139,17 +139,17 @@ function getProviderIdOfEncounter($encounter)
 
 function getFormNameByFormdirAndFormid ($formdir,$form_id)
 {
-        return sqlQuery("select form_name from forms where formdir='$formdir' and form_id='$form_id'");
+        return sqlQuery("select form_name from forms where formdir = '$formdir' and form_id = '$form_id' and deleted = 0");
 }
 
 function getFormIdByFormdirAndFormid ($formdir,$form_id)
 {
-    $result = sqlQuery("select id from forms where formdir = ? and form_id =? ", array( $formdir, $form_id ) );
+    $result = sqlQuery("select id from forms where formdir = ? and form_id = ? and deleted = 0 ", array( $formdir, $form_id ) );
     return $result['id'];
 }
 
 function getFormNameByFormdir ($formdir)
 {
-	return sqlQuery("select form_name from forms where formdir='$formdir'");
+	return sqlQuery("select form_name from forms where formdir='$formdir' and deleted = 0");
 }
 ?>
