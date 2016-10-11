@@ -376,19 +376,9 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
   while ($row = sqlFetchArray($res)) {
 
     $insid      = $row['insid'];
-    $insname    = $row['insname'];
+    $insname    = empty($row['insname']) ? "($insid)" : $row['insname'];
 
     // echo "<!-- ins id = '$insid', name = '$insname' -->\n"; // debugging
-
-    if ($insid != $last_insid) {
-      if ($last_insid !== '') {
-        tblEndInsurer($last_insname, $instotal);
-      }
-      $last_insid = $insid;
-      $last_insname = $insname;
-      $instotal = 0;
-      tblStartInsurer($last_insname);
-    }
 
     // Get service items.
     $query = "SELECT " .
@@ -420,6 +410,15 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
     $last_billing_id = 0;
 
     while ($brow = sqlFetchArray($bres)) {
+      if ($insid != $last_insid) {
+        if ($last_insid !== '') {
+          tblEndInsurer($last_insname, $instotal);
+        }
+        $last_insid = $insid;
+        $last_insname = $insname;
+        $instotal = 0;
+        tblStartInsurer($last_insname);
+      }
 
       $ptname = $brow['lname'];
       if ($brow['fname'] || $brow['mname']) {
@@ -454,7 +453,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       "s.fee, s.quantity, s.sale_id, d.name " .
       "FROM form_encounter AS fe " .
       "JOIN patient_data AS pd ON pd.pid = fe.pid AND pd.userlist4 = ? " .
-      "JOIN drug_sales AS s ON s.pid = fe.pid AND s.encounter = fe.encounter " .
+      "JOIN drug_sales AS s ON s.pid = fe.pid AND s.encounter = fe.encounter AND s.fee != 0.00 " .
       "JOIN ar_activity AS a ON a.pid = s.pid AND a.encounter = s.encounter AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = 'PROD' AND a.code = s.drug_id ) ) " .
@@ -475,6 +474,16 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
     $last_sale_id = 0;
 
     while ($srow = sqlFetchArray($sres)) {
+      if ($insid != $last_insid) {
+        if ($last_insid !== '') {
+          tblEndInsurer($last_insname, $instotal);
+        }
+        $last_insid = $insid;
+        $last_insname = $insname;
+        $instotal = 0;
+        tblStartInsurer($last_insname);
+      }
+
       // Skip any extra adjustment matches for the same line item.
       if ($srow['sale_id'] == $last_sale_id) continue;
 
