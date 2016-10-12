@@ -55,6 +55,8 @@ $query = "SELECT " .
   "p.fname, p.mname, p.lname, p.pid, p.pubpid, " .
   "u.lname AS ulname, u.fname AS ufname, u.mname AS umname";
 if ($form_open_only) {
+  // billbmin and prodbmin will be -1 if no (service or product respectively) items,
+  // 1 if all items are billed, 0 if there is at least one unbilled item.
   $query .= ", " .
     "(SELECT IFNULL(MIN(bm.billed), -1) " .
     "FROM billing AS bm, code_types WHERE " .
@@ -401,6 +403,7 @@ if ($res) {
     if ($form_open_only) {
       // Open visit means no chargeable items at all, or at least one unbilled.
       // With this option we skip all others.
+      // "Skip if there are no unbilled items and at least one billed item."
       if ($row['billbmin'] != '0' && $row['prodbmin'] != '0' &&
         ($row['billbmin'] == '1' || $row['prodbmin'] == '1'))
         continue;
@@ -482,7 +485,7 @@ if ($res) {
       }
 
       // Compute billing status.
-      if ($billed_count && $unbilled_count) $status = xl('Mixed' );
+      if ($billed_count && $unbilled_count) $status = xl('Open'  ); // was "Mixed"
       else if ($billed_count              ) $status = xl('Closed');
       else if ($unbilled_count            ) $status = xl('Open'  );
       else                                  $status = xl('Empty' );
