@@ -164,24 +164,30 @@ $orderby = "lname ASC, fname ASC";
 
 $today = date('Y-m-d');
 if ($GLOBALS['patient_search_results_sort']) {
-  // Here "open visits" are visits that do not have any billed service or product,
-  // excluding certain visits that were manufactured artificially.
-  // So this includes visits with an empty fee sheet, but does not include visits
-  // that have some billed and some unbilled line items (should not happen but in
-  // the past copays have ended up as unbilled).
+  // Here "open visits" are visits that have at least one unbilled service or product or that
+  // have no line items at all, excluding certain visits that were manufactured artificially.
   $given .=
-    ", (SELECT COUNT(fe.id) " .
-    "FROM form_encounter AS fe " .
-    "LEFT JOIN billing AS b ON " .
-    "b.pid = fe.pid AND b.encounter = fe.encounter AND b.activity = 1 AND b.billed = 1 " .
-    "LEFT JOIN drug_sales AS s ON " .
-    "s.pid = fe.pid AND s.encounter = fe.encounter AND s.billed = 1 " .
-    "WHERE fe.pid = patient_data.pid AND fe.reason != 'PreOpenEMR Data' AND " .
-    "b.id IS NULL AND s.sale_id IS NULL) " .
-    "AS openvisits";
-  // Open visits will sort first because "openvisits = 0" will evaluate to false,
-  // and in SQL false is 0 and true is 1.
-  $orderby = "openvisits = 0, $orderby";
+    ", (SELECT COUNT(fe1.id) " .
+    "FROM form_encounter AS fe1 " .
+    "LEFT JOIN billing AS b1 ON " .
+    "b1.pid = fe1.pid AND b1.encounter = fe1.encounter AND b1.activity = 1 AND b1.billed = 0 " .
+    "LEFT JOIN drug_sales AS s1 ON " .
+    "s1.pid = fe1.pid AND s1.encounter = fe1.encounter AND s1.billed = 0 " .
+    "WHERE fe1.pid = patient_data.pid AND fe1.reason != 'PreOpenEMR Data' AND " .
+    "(b1.id IS NOT NULL OR s1.sale_id IS NOT NULL)) " .
+    "AS unbilledvisits" .
+    ", (SELECT COUNT(fe2.id) " .
+    "FROM form_encounter AS fe2 " .
+    "LEFT JOIN billing AS b2 ON " .
+    "b2.pid = fe2.pid AND b2.encounter = fe2.encounter AND b2.activity = 1 " .
+    "LEFT JOIN drug_sales AS s2 ON " .
+    "s2.pid = fe2.pid AND s2.encounter = fe2.encounter " .
+    "WHERE fe2.pid = patient_data.pid AND fe2.reason != 'PreOpenEMR Data' AND " .
+    "b2.id IS NULL AND s2.sale_id IS NULL) " .
+    "AS emptyvisits";
+  // Open visits will sort first because for those the compound condition here will
+  // evaluate as false, and in SQL false is 0 and true is 1.
+  $orderby = "unbilledvisits = 0 AND emptyvisits = 0, $orderby";
 }
 
 $search_service_code = strip_escape_custom(trim($_POST['search_service_code']));
@@ -377,7 +383,7 @@ else {
 <?php
 if ($result) {
     foreach ($result as $iter) {
-        $extcls = !empty($iter['openvisits']) ? ' srIsOpen' : '';
+        $extcls = (!empty($iter['unbilledvisits']) || !empty($iter['emptyvisits'])) ? ' srIsOpen' : '';
         echo "<tr class='oneresult' id='".htmlspecialchars( $iter['pid'], ENT_QUOTES)."'>";
         echo  "<td class='srName$extcls'>" . htmlspecialchars($iter['lname'] . ", " . $iter['fname']) . "</td>\n";
         //other phone number display setup for tooltip
@@ -530,4 +536,3 @@ else {
 
 </body>
 </html>
-
