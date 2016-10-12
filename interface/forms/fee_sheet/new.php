@@ -277,6 +277,9 @@ function echoProductLines() {
     $warehouse_id = $li['warehouse'];
     $rx           = $li['rx'];
 
+    $description = $li['code_text'];
+    if ($selector !== $description) $description .= ' / ' . $selector;
+
     $strike1 = ($sale_id && $del) ? "<strike>" : "";
     $strike2 = ($sale_id && $del) ? "</strike>" : "";
 
@@ -294,7 +297,7 @@ function echoProductLines() {
 
     echo "  <td class='billcell'>$strike1" . text($drug_id) . "$strike2</td>\n";
 
-    echo "  <td class='billcell'>$strike1" . text($li['code_text']) . "$strike2</td>\n";
+    echo "  <td class='billcell'>$strike1" . text($description) . "$strike2</td>\n";
 
     if (modifiers_are_used(true)) {
       echo "  <td class='billcell'>&nbsp;</td>\n";
@@ -838,6 +841,44 @@ echo " </tr>\n";
   </td>
  </tr>
 </table>
+
+<table>
+ <tr>
+  <td>
+<?php
+// Choose rendering and supervising providers.
+echo "<span class='billcell'><b>\n";
+echo xlt('Providers') . ": &nbsp;";
+echo "&nbsp;" . xlt('Rendering') . "\n";
+echo $fs->genProviderSelect('ProviderID', '-- '.xl("Please Select").' --', $fs->provider_id, $isBilled);
+if (!$GLOBALS['ippf_specific']) {
+  echo "&nbsp;" . xlt('Supervising') . "\n";
+  echo $fs->genProviderSelect('SupervisorID', '-- '.xl("N/A").' --', $fs->supervisor_id, $isBilled);
+}
+
+// Allow the patient price level to be fixed here.
+$plres = sqlStatement("SELECT option_id, title FROM list_options " .
+  "WHERE list_id = 'pricelevel' AND activity = 1 ORDER BY seq, title");
+$pricelevel = $fs->getPriceLevel();
+echo "&nbsp;" . xlt('Default Price Level') . ":\n";
+echo "<select name='pricelevel'";
+if ($isBilled) echo " disabled";
+echo ">\n";
+while ($plrow = sqlFetchArray($plres)) {
+  $key = $plrow['option_id'];
+  $val = $plrow['title'];
+  echo "<option value='" . attr($key) . "'";
+  if ($key == $pricelevel) echo ' selected';
+  echo ">" . text(xl_list_label($val)) . "</option>\n";
+}
+echo "</select>\n";
+
+echo "</b></span>\n";
+?>
+  </td>
+ </tr>
+</table>
+
 </p>
 <p style='margin-top:16px;margin-bottom:8px'>
 
@@ -1141,24 +1182,6 @@ echoProductLines();
 <br />
 &nbsp;
 
-<?php
-// Choose rendering and supervising providers.
-echo "<span class='billcell'><b>\n";
-echo xlt('Providers') . ": &nbsp;";
-
-echo "&nbsp;&nbsp;" . xlt('Rendering') . "\n";
-echo $fs->genProviderSelect('ProviderID', '-- '.xl("Please Select").' --', $fs->provider_id, $isBilled);
-
-if (!$GLOBALS['ippf_specific']) {
-  echo "&nbsp;&nbsp;" . xlt('Supervising') . "\n";
-  echo $fs->genProviderSelect('SupervisorID', '-- '.xl("N/A").' --', $fs->supervisor_id, $isBilled);
-}
-
-echo "<input type='button' value='" . xl('New Appointment') . "' onclick='newEvt()' />\n";
-
-echo "</b></span>\n";
-?>
-
 <p>
 &nbsp;
 
@@ -1210,28 +1233,7 @@ if ($fs->contraception_code && !$isBilled) {
     }
   }
 }
-
-// Allow the patient price level to be fixed here.
-$plres = sqlStatement("SELECT option_id, title FROM list_options " .
-  "WHERE list_id = 'pricelevel' AND activity = 1 ORDER BY seq, title");
-if (true) {
-  $pricelevel = $fs->getPriceLevel();
-  echo "   <span class='billcell'><b>" . xlt('Default Price Level') . ":</b></span>\n";
-  echo "   <select name='pricelevel'";
-  if ($isBilled) echo " disabled";
-  echo ">\n";
-  while ($plrow = sqlFetchArray($plres)) {
-    $key = $plrow['option_id'];
-    $val = $plrow['title'];
-    echo "    <option value='" . attr($key) . "'";
-    if ($key == $pricelevel) echo ' selected';
-    echo ">" . text(xl_list_label($val)) . "</option>\n";
-  }
-  echo "   </select>\n";
-}
 ?>
-
-&nbsp; &nbsp; &nbsp;
 
 <?php if (!$isBilled) { // visit is not yet billed ?>
 <input type='submit' name='bn_save' value='<?php echo xla('Save');?>' 
