@@ -2328,7 +2328,7 @@ INSERT INTO codes (code_type,code,modifier,cyp_factor,code_text_short,code_text)
 INSERT INTO codes (code_type,code,modifier,cyp_factor,code_text_short,code_text) VALUES (32,'4610','', 0.000000,'fab','Awareness-Based Methods - SDM');
 INSERT INTO codes (code_type,code,modifier,cyp_factor,code_text_short,code_text) VALUES (32,'4620','', 0.050000,'ec' ,'Emergency Contraception (progestin only pills)');
 
-# Assign related codes to IPPFCM codes for statistical reporting purposes.
+-- Assign related codes to IPPFCM codes for statistical reporting purposes.
 UPDATE codes SET related_code = 'IPPF:111101110;IPPF2:1121120000000' WHERE code_type = 32 AND code = '4360';
 UPDATE codes SET related_code = 'IPPF:111101110;IPPF2:1121120000000' WHERE code_type = 32 AND code = '4361';
 UPDATE codes SET related_code = 'IPPF:111111110;IPPF2:1122120000000' WHERE code_type = 32 AND code = '4370';
@@ -2350,7 +2350,7 @@ UPDATE codes SET related_code = 'IPPF:121181000;IPPF2:1141130000800' WHERE code_
 UPDATE codes SET related_code = 'IPPF:122182000;IPPF2:1142030000800' WHERE code_type = 32 AND code = '4570';
 UPDATE codes SET related_code = 'IPPF:145212000;IPPF2:1151020000000' WHERE code_type = 32 AND code = '4620';
 
-# This came from an export of the new LBF Vital Signs form and its dependent lists.
+-- This came from an export of the new LBF Vital Signs form and its dependent lists.
 DELETE FROM list_options WHERE list_id = 'VIT_GenAppear';
 DELETE FROM list_options WHERE list_id = 'lists' AND option_id = 'VIT_GenAppear';
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('lists','VIT_GenAppear','VIT_GenAppear',404,1,0,'','','');
@@ -2414,3 +2414,59 @@ INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq
   VALUES ('LBFVNote','Notes','1Visit Notes','Notes',20,3,1,50,255,'',1,3,'','','',10,'F','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`)
   VALUES ('LBFVNote','Provider','1Visit Notes','Provider',10,10,1,0,0,'',1,3,'','','',0,'F','');
+
+-- Form and associated list added 2016-10-18:
+
+DELETE FROM list_options WHERE list_id = 'lists' AND option_id = 'Relation_to_Client';
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('lists','Relation_to_Client','Relation to Client',298,1,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Aunt','Aunt',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Bfriend','Boyfriend',0,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','BfriendLive','Boyfriend- LiveIn',0,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','BIL','Brother in Law',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Cousin','Cousin',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Daughter','Daughter',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Ex','Ex-Partner',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','FamFriend','Friend of Family',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Father','Father',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','FIL','Father in Law',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Gfriend','Girlfriend',0,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','GfriendLive','Girlfriend - LiveIn',0,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Godfather','Godfather',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Godmother','Godmother',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Grandfather','Grandfather',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Grandmother','Grandmother',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Husband','Husband',0,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','MIL','Mother in Law',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Mother','Mother',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Nephew','Nephew',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Niece','Niece',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Other','Other',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','SIL','Sister in Law',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Son','Son',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Stepdaugh','Step-Daughter',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','StepFather','Step-Father',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','StepMother','Step-Mother',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Stepson','Step-Son',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Uncle','Uncle',1,0,0,'','','');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`) VALUES ('Relation_to_Client','Wife','Wife',0,0,0,'','','');
+
+INSERT INTO list_options (list_id,option_id,title,seq,option_value) VALUES ('lbfnames','LBFGBV','GBV Screening',1,5);
+DELETE FROM layout_options WHERE form_id = 'LBFGBV';
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Child','1GBV Screening','Were you ever touched inappropriately as a child?',40,1,1,0,0,'yesno',1,3,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Child_When','1GBV Screening','___If so, when?',41,2,1,20,0,'',0,0,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Child_Who','1GBV Screening','___By Whom?',42,1,1,0,0,'Relation_to_Client',0,0,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Emotional','1GBV Screening','Have you ever been emotionally/psychologically  abused?',10,1,2,0,0,'yesno',1,3,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Emotional_When','1GBV Screening','___If so, when?',11,2,1,20,0,'',0,0,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Emotional_Who','1GBV Screening','___By Whom?',12,1,1,0,0,'Relation_to_Client',0,0,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Fear','1GBV Screening','Are you afraid of being harmed?',71,1,1,0,0,'yesno',1,3,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Fear_Who','1GBV Screening','___By Whom?',72,1,1,0,0,'Relation_to_Client',0,0,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Physical','1GBV Screening','Have you ever been physically abused?',20,1,2,0,0,'yesno',1,3,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Physical_When','1GBV Screening','___If so, when?',21,2,1,20,0,'',0,0,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Physical_Who','1GBV Screening','___By Whom?',22,1,1,0,0,'Relation_to_Client',0,0,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Pregnancy','1GBV Screening','Have you been abused since you''ve been pregnant?',60,1,1,0,0,'yesno',1,3,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Preg_When','1GBV Screening','___If so, when?',61,2,1,20,0,'',0,0,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Preg_Who','1GBV Screening','___By Whom?',62,1,1,0,0,'Relation_to_Client',0,0,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_SafeHome','1GBV Screening','Will you be safe when you go home?',70,1,1,0,0,'yesno',1,3,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Sexual','1GBV Screening','Have you ever been sexually abused?',30,1,1,0,0,'yesno',1,3,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Sexual_When','1GBV Screening','___If so, when?',31,2,1,20,0,'',0,0,'','','',0,'E','');
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Sexual_Who','1GBV Screening','___By Whom?',32,1,1,0,0,'Relation_to_Client',0,0,'','','',0,'E','');
