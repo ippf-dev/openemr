@@ -360,7 +360,7 @@ if ($_POST['form_refresh'] || $_POST['form_orderby']) {
 				if($pc_apptstatus != ""){
 					$frow['data_type']=1;
 					$frow['list_id']='apptstat';
-					generate_print_field($frow, $pc_apptstatus);
+					echo generate_display_field($frow, $pc_apptstatus);
 				}
 			?>
 		</td>
