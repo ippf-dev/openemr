@@ -275,6 +275,7 @@ else {
 
 <script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
 <script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
+<script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script language="JavaScript">
 
@@ -285,6 +286,11 @@ function checkAll(checked) {
   if (ename.indexOf('form_cb[') == 0)
    f.elements[i].checked = checked;
  }
+}
+
+function doinvopen(ptid,encid) {
+ dlgopen('../patient_file/pos_checkout.php?ptid=' + ptid + '&enc=' + encid, '_blank', 750, 550);
+ return false;
 }
 
 $(document).ready(function() {
@@ -1088,8 +1094,18 @@ if ($_POST['form_refresh'] || $_POST['form_export'] || $_POST['form_csvexport'])
       }
 ?>
   <td class="detail">
-   &nbsp;<a href="../billing/sl_eob_invoice.php?id=<?php echo $row['id'] ?>"
-    target="_blank"><?php echo empty($row['irnumber']) ? $row['invnumber'] : $row['irnumber']; ?></a>
+   &nbsp;
+<?php
+      if ($GLOBALS['ippf_specific']) {
+        // IPPF wants the checkout receipt.
+        echo "   <a href='#' onclick='doinvopen($pid, $encounter)'>\n";
+      }
+      else {
+        // Otherwise pop up the EOB.
+        echo "   <a href='../billing/sl_eob_invoice.php?id={$row['id']}' target='_blank'>\n";
+      }
+      echo empty($row['irnumber']) ? $row['invnumber'] : $row['irnumber'] . "</a>\n";
+?>
   </td>
   <td class="detail">
    &nbsp;<?php echo oeFormatShortDate($row['dos']); ?>
