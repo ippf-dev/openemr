@@ -53,6 +53,7 @@ $details = (!isset($_GET['details']) || !empty($_GET['details'])) ? 1 : 0;
 
 $patient_id   = empty($_GET['ptid']) ? $pid : intval($_GET['ptid']);
 $encounter_id = empty($_GET['enid']) ?    0 : intval($_GET['enid']);
+$checkout_id  = empty($_GET['coid']) ?   '' : $_GET['coid']; // timestamp of checkout
 
 // This flag comes from the Fee Sheet form and perhaps later others.
 $rapid_data_entry = empty($_GET['rde']) ? 0 : 1;
@@ -384,10 +385,10 @@ body, td {
 <?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
 
  // Process click on Print button.
- function printme() {
+ function printme(checkout_id) {
 <?php if (!empty($GLOBALS['gbl_custom_receipt'])) { ?>
   // Custom checkout receipt needs to be sent as a PDF in a new window or tab.
-  window.open('pos_checkout.php?<?php echo "ptid=$patient_id&enc=$encounter&pdf=1"; ?>',
+  window.open('pos_checkout.php?<?php echo "ptid=$patient_id&enc=$encounter&pdf=1&coid="; ?>' + encodeURIComponent(checkout_id),
    '_blank', 'width=750,height=550,resizable=1,scrollbars=1');
 <?php } else { ?>
   var divstyle = document.getElementById('hideonprint').style;
@@ -771,7 +772,25 @@ body, td {
 <div id='hideonprint'>
 <p>
 &nbsp;
-<a href='#' onclick='return printme();'><?php xl('Print','e'); ?></a>
+
+<?php
+  if (count($checkout_times) > 1 && !empty($GLOBALS['gbl_custom_receipt'])) {
+    // Multiple checkouts so allow selection of the one to print.
+    // This is only applicable for custom checkout receipts.
+    echo "<select onchange='printme(this.value)' >\n";
+    echo " <option value=''>" . xlt('Print Checkout') . "</option>\n";
+    $i = 0;
+    foreach ($checkout_times AS $tmp) {
+      ++$i;
+      echo " <option value='$tmp'>$i: $tmp</option>\n";
+    }
+    echo "</select>\n";
+  }
+  else {
+    echo "<a href='#' onclick='return printme(\"\");'>" . xlt('Print') . "</a>\n";
+  }
+?>
+
 <?php if (acl_check('acct','disc')) { ?>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href='#' onclick='return voidme("regen");'><?php echo xl('Reprint with New Receipt'); ?></a>
@@ -809,7 +828,7 @@ if ($alertmsg) {
 
 <?php if (!empty($GLOBALS['gbl_custom_receipt'])) { ?>
  // Custom checkout receipt needs to be sent as a PDF in a new window or tab.
- printme();
+ // printme(''); // No longer printing by default as of 2016-10-20.
 <?php } ?>
 
 </script>
@@ -1344,10 +1363,13 @@ if ($patient_id && !empty($_GET['enc'])) {
   else {
     // PDF receipt is requested. In this case we are probably in a new window.
     require_once($GLOBALS['OE_SITE_DIR'] . "/" . $GLOBALS['gbl_custom_receipt']);
-    // The custom receipt might want to print just the last of multiple checkouts,
-    // so compute and pass the timestamp of that.
-    $checkout_times = craGetTimestamps($patient_id, $_GET['enc']);
-    $billtime = empty($checkout_times) ? '' : $checkout_times[count($checkout_times) - 1];
+    // $checkout_id is an optional specified checkout timestamp.
+    $billtime = $checkout_id;
+    if (!$billtime) {
+      // No timestamp specified so use the last one.
+      $checkout_times = craGetTimestamps($patient_id, $_GET['enc']);
+      $billtime = empty($checkout_times) ? '' : $checkout_times[count($checkout_times) - 1];
+    }
     generateCheckoutReceipt($patient_id, $_GET['enc'], $billtime);
   }
   exit();
