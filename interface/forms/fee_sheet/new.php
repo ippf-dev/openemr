@@ -660,6 +660,18 @@ function pricelevel_changed(sel) {
  }
 }
 
+// Invoked when the default price level changes and sets all unbilled line items to that level.
+function defaultPriceLevelChanged(sel) {
+ var f = document.forms[0];
+ for (var i = 0; i < f.elements.length; ++i) {
+  var elem = f.elements[i];
+  if (elem.name.indexOf('[pricelevel]') > 0) {
+    elem.selectedIndex = sel.selectedIndex + 1;
+    pricelevel_changed(elem);
+  }
+ }
+}
+
 </script>
 </head>
 
@@ -841,27 +853,22 @@ echo " </tr>\n";
   </td>
  </tr>
 </table>
+</p>
 
+<p style='margin-top:16px;margin-bottom:0px'>
 <table>
  <tr>
   <td>
 <?php
 // Choose rendering and supervising providers.
 echo "<span class='billcell'><b>\n";
-echo xlt('Providers') . ": &nbsp;";
-echo "&nbsp;" . xlt('Rendering') . "\n";
-echo $fs->genProviderSelect('ProviderID', '-- '.xl("Please Select").' --', $fs->provider_id, $isBilled);
-if (!$GLOBALS['ippf_specific']) {
-  echo "&nbsp;" . xlt('Supervising') . "\n";
-  echo $fs->genProviderSelect('SupervisorID', '-- '.xl("N/A").' --', $fs->supervisor_id, $isBilled);
-}
 
 // Allow the patient price level to be fixed here.
 $plres = sqlStatement("SELECT option_id, title FROM list_options " .
   "WHERE list_id = 'pricelevel' AND activity = 1 ORDER BY seq, title");
 $pricelevel = $fs->getPriceLevel();
-echo "&nbsp;" . xlt('Default Price Level') . ":\n";
-echo "<select name='pricelevel'";
+echo xlt('Default Price Level') . ":\n";
+echo "<select name='pricelevel' onchange='defaultPriceLevelChanged(this)'";
 if ($isBilled) echo " disabled";
 echo ">\n";
 while ($plrow = sqlFetchArray($plres)) {
@@ -873,13 +880,22 @@ while ($plrow = sqlFetchArray($plres)) {
 }
 echo "</select>\n";
 
+echo "&nbsp;";
+echo xlt('Providers') . ":";
+echo "&nbsp;" . xlt('Rendering') . "\n";
+echo $fs->genProviderSelect('ProviderID', '-- '.xl("Please Select").' --', $fs->provider_id, $isBilled);
+if (!$GLOBALS['ippf_specific']) {
+  echo "&nbsp;" . xlt('Supervising') . "\n";
+  echo $fs->genProviderSelect('SupervisorID', '-- '.xl("N/A").' --', $fs->supervisor_id, $isBilled);
+}
+
 echo "</b></span>\n";
 ?>
   </td>
  </tr>
 </table>
-
 </p>
+
 <p style='margin-top:16px;margin-bottom:8px'>
 
 <?php } // end encounter not billed ?>
