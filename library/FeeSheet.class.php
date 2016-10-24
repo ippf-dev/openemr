@@ -852,12 +852,13 @@ class FeeSheet {
         "pid = ? AND encounter = ? AND billed = 0 AND activity = 1",
         array($this->pid, $this->encounter));
       if ($tmp1['sum'] + $tmp2['sum'] == 0) {
-        sqlStatement("update drug_sales SET billed = 1 WHERE " .
+        $this_bill_date = date('Y-m-d H:i:s');
+        sqlStatement("update drug_sales SET billed = 1, bill_date = ? WHERE " .
           "pid = ? AND encounter = ? AND billed = 0",
-          array($this->pid, $this->encounter));
-        sqlStatement("UPDATE billing SET billed = 1, bill_date = NOW() WHERE " .
+          array($this_bill_date, $this->pid, $this->encounter));
+        sqlStatement("UPDATE billing SET billed = 1, bill_date = ? WHERE " .
           "pid = ? AND encounter = ? AND billed = 0 AND activity = 1",
-          array($this->pid, $this->encounter));
+          array($this_bill_date, $this->pid, $this->encounter));
       }
       else {
         // Would be good to display an error message here... they clicked
