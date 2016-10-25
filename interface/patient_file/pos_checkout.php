@@ -1429,6 +1429,12 @@ while ($urow = sqlFetchArray($ures)) {
   $arr_users[$urow['id']] = '1';
 }
 
+// Determine if this site uses adjustment reasons to indicate if insurance applies
+// to a charge item.  Currently this is specific to some but not all IPPF sites.
+$tmp = sqlQuery("SELECT option_id FROM list_options WHERE " .
+  "list_id = 'adjreason' AND activity = 1 AND notes LIKE '%=Ins%' LIMIT 1");
+$adjustments_indicate_insurance = !empty($tmp['option_id']);
+
 // Now write a data entry form:
 // List unbilled billing items (cpt, hcpcs, copays) for the patient.
 // List unbilled product sales for the patient.
@@ -1744,14 +1750,27 @@ foreach ($aCellHTML as $ix => $html) {
 
  function validate() {
   var f = document.forms[0];
+  var missingtypeamt = false;
+  var missingtypeany = false;
   for (lino = 0; f['line[' + lino + '][memo]']; ++lino) {
-   if (f['line[' + lino + '][memo]'].selectedIndex == 0 &&
-    f['line[' + lino + '][billtime]'].value == '' &&
-    parseFloat(f['line[' + lino + '][adjust]'].value) != 0) {
-    alert('<?php echo xl('Adjustment type is required for each line with an adjustment.') ?>');
-    return false;
+   if (f['line[' + lino + '][memo]'].selectedIndex == 0 && f['line[' + lino + '][billtime]'].value == '') {
+    missingtypeany = true;
+    if (parseFloat(f['line[' + lino + '][adjust]'].value) != 0) {
+     missingtypeamt = true;
+    }
    }
   }
+<?php if ($adjustments_indicate_insurance) { ?>
+  if (missingtypeany) {
+   alert('<?php echo xls('Adjustment type is required for every line item.') ?>');
+   return false;
+  }
+<?php } else { ?>
+  if (missingtypeamt) {
+   alert('<?php echo xls('Adjustment type is required for each line with an adjustment.') ?>');
+   return false;
+  }
+<?php } ?>
   top.restoreSession();
   return true;
  }
