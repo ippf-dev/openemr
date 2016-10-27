@@ -35,6 +35,28 @@ $formid = empty($_REQUEST['formid']) ? 0 : (0 + $_REQUEST['formid']);
 // True if to display as a form to complete, false to display as information.
 $isform = empty($_REQUEST['isform']) ? 0 : 1;
 
+$CPR = 4; // cells per row
+
+// Collect some top-level information about this layout.
+$tmp = sqlQuery("SELECT title, notes FROM list_options WHERE " .
+  "list_id = 'lbfnames' AND option_id = ? AND activity = 1 LIMIT 1", array($formname) );
+$formtitle = $tmp['title'];
+
+$jobj = json_decode($tmp['notes'], true);
+if (!empty($jobj['columns'])) $CPR = intval($jobj['columns']);
+if (!empty($jobj['size'   ])) $FONTSIZE = intval($jobj['size']);
+if (isset($jobj['services'])) $LBF_SERVICES_SECTION = $jobj['services'];
+if (isset($jobj['products'])) $LBF_PRODUCTS_SECTION = $jobj['products'];
+if (isset($jobj['diags'   ])) $LBF_DIAGS_SECTION = $jobj['diags'];
+
+// Check access control.
+if (!empty($jobj['aco'])) $LBF_ACO = explode('|', $jobj['aco']);
+if (!acl_check('admin', 'super') && !empty($LBF_ACO)) {
+  if (!acl_check($LBF_ACO[0], $LBF_ACO[1])) {
+    die(xlt('Access denied'));
+  }
+}
+
 // Referral form is a special case that has its own print script.
 if ($formname == 'LBFref') {
   $transid = 0;
@@ -61,20 +83,6 @@ if ($PDF_OUTPUT) {
   $pdf->pdf->SetDisplayMode('real');
   ob_start();
 }
-
-$CPR = 4; // cells per row
-
-// Collect some top-level information about this layout.
-$tmp = sqlQuery("SELECT title, notes FROM list_options WHERE " .
-  "list_id = 'lbfnames' AND option_id = ? AND activity = 1 LIMIT 1", array($formname) );
-$formtitle = $tmp['title'];
-
-$jobj = json_decode($tmp['notes'], true);
-if (!empty($jobj['columns'])) $CPR = intval($jobj['columns']);
-if (!empty($jobj['size'   ])) $FONTSIZE = intval($jobj['size']);
-if (isset($jobj['services'])) $LBF_SERVICES_SECTION = $jobj['services'];
-if (isset($jobj['products'])) $LBF_PRODUCTS_SECTION = $jobj['products'];
-if (isset($jobj['diags'   ])) $LBF_DIAGS_SECTION = $jobj['diags'];
 
 if ($visitid && (isset($LBF_SERVICES_SECTION) || isset($LBF_DIAGS_SECTION) || isset($LBF_PRODUCTS_SECTION))) {
   require_once("$srcdir/FeeSheetHtml.class.php");

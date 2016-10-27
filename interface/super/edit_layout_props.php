@@ -27,6 +27,7 @@ require_once("../globals.php");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/htmlspecialchars.inc.php");
+require_once("$phpgacl_location/gacl_api.class.php");
 
 $info_msg = "";
 
@@ -71,6 +72,7 @@ $(document).ready(function () {
   if (jobj['size'    ]) f.form_size.value     = jobj['size'];
   if (jobj['columns' ]) f.form_columns.value  = jobj['columns'];
   if (jobj['issue'   ]) f.form_issue.value    = jobj['issue'];
+  if (jobj['aco'     ]) f.form_aco.value      = jobj['aco'];
   if (jobj.hasOwnProperty('services')) {
     f.form_services.checked = true;
     f.form_services_codes.value = jobj['services'];
@@ -139,6 +141,7 @@ function submitProps() {
   if (f.form_size.value          ) jobj['size'    ] = f.form_size.value;
   if (f.form_columns.value != '4') jobj['columns' ] = f.form_columns.value;
   if (f.form_issue.value         ) jobj['issue'   ] = f.form_issue.value;
+  if (f.form_aco.value           ) jobj['aco'     ] = f.form_aco.value;
   if (f.form_services.checked    ) jobj['services'] = f.form_services_codes.value;
   if (f.form_products.checked    ) jobj['products'] = f.form_products_codes.value;
   if (f.form_diags.checked       ) jobj['diags'   ] = f.form_diags_codes.value;
@@ -205,6 +208,37 @@ function submitProps() {
   while ($itrow = sqlFetchArray($itres)) {
     echo "<option value='" . attr($itrow['type']) . "'";
     echo ">" . xls($itrow['singular']) . "</option>\n";
+  }
+?>
+   </select>
+  </td>
+ </tr>
+
+ <tr>
+  <td valign='top' nowrap>
+   <?php echo xlt('Access Control'); ?>
+  </td>
+  <td>
+   <select name='form_aco'>
+    <option value=''></option>
+<?php
+  $gacl = new gacl_api();
+  // collect and sort all aco objects
+  $list_aco_objects = $gacl->get_objects(NULL, 0, 'ACO');
+  ksort($list_aco_objects);
+  foreach ($list_aco_objects as $seckey => $dummy) {
+    if (empty($dummy)) continue;
+    asort($list_aco_objects[$seckey]);
+    $aco_section_data = $gacl->get_section_data($seckey, 'ACO');
+    $aco_section_title = $aco_section_data[3];
+    echo " <optgroup label='" . xls($aco_section_title) . "'>\n";
+    foreach($list_aco_objects[$seckey] as $acokey) {
+      $aco_id = $gacl->get_object_id($seckey, $acokey,'ACO');
+      $aco_data = $gacl->get_object_data($aco_id, 'ACO');
+      $aco_title = $aco_data[0][3];
+      echo "  <option value='" . attr("$seckey|$acokey") . "'>" . xls($aco_title) . "</option>\n";
+    }
+    echo " </optgroup>\n";
   }
 ?>
    </select>

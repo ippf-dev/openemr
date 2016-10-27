@@ -23,7 +23,13 @@ function lbf_report($pid, $encounter, $cols, $id, $formname) {
     "list_id = 'lbfnames' AND option_id = ? AND activity = 1", array($formname) );
   $jobj = json_decode($tmp['notes'], true);
   if (!empty($jobj['columns'])) $CPR = intval($jobj['columns']);
-  //
+  // Check access control.
+  if (!empty($jobj['aco'])) $LBF_ACO = explode('|', $jobj['aco']);
+  if (!acl_check('admin', 'super') && !empty($LBF_ACO)) {
+    if (!acl_check($LBF_ACO[0], $LBF_ACO[1])) {
+      die(xlt('Access denied'));
+    }
+  }
   $arr = array();
   $shrow = getHistoryData($pid);
   $fres = sqlStatement("SELECT * FROM layout_options " .

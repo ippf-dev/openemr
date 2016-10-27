@@ -108,9 +108,20 @@ $formhistory = 0 + $tmp['option_value'];
 $jobj = json_decode($tmp['notes'], true);
 if (!empty($jobj['columns'])) $CPR = intval($jobj['columns']);
 if (!empty($jobj['issue'  ])) $LBF_ISSUE_TYPE = $jobj['issue'];
+if (!empty($jobj['aco'    ])) $LBF_ACO = explode('|', $jobj['aco']);
 if (isset($jobj['services'])) $LBF_SERVICES_SECTION = $jobj['services'];
 if (isset($jobj['products'])) $LBF_PRODUCTS_SECTION = $jobj['products'];
 if (isset($jobj['diags'   ])) $LBF_DIAGS_SECTION = $jobj['diags'];
+
+// Check access control.
+if (!acl_check('admin', 'super') && !empty($LBF_ACO)) {
+  $auth_aco_write   = acl_check($LBF_ACO[0], $LBF_ACO[1], '', 'write'  );
+  $auth_aco_addonly = acl_check($LBF_ACO[0], $LBF_ACO[1], '', 'addonly');
+  // echo "\n<!-- '$auth_aco_write' '$auth_aco_addonly' -->\n"; // debugging
+  if (!$auth_aco_write && !($auth_aco_addonly && !$formid)) {
+    die(xlt('Access denied'));
+  }
+}
 
 if (isset($LBF_SERVICES_SECTION) || isset($LBF_PRODUCTS_SECTION) || isset($LBF_DIAGS_SECTION)) {
   $fs = new FeeSheetHtml($pid, $visitid);
