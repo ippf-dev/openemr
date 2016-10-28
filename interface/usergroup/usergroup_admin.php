@@ -469,7 +469,7 @@ function dosort(orderby) {
 	  </tr>
 	</table>
     </div>
-    <div style="width:650px;">
+    <div>
         <div>
 
 <form name='userlist' method='post' action='usergroup_admin.php' onsubmit='return top.restoreSession()'>
@@ -486,24 +486,24 @@ if ($show_message == 1){
  echo "<font class='alert'>".xl('Emergency Login activation email will be circulated only if following settings in the interface/globals.php file are configured:')." \$GLOBALS['Emergency_Login_email'], \$GLOBALS['Emergency_Login_email_id']</font>";
 }
 function create_sortable_header($text,$field,$width)
-{?>
-    <th class="bold" width="<?php echo $width;?>" valign="top">
-        <a href="#" onclick="return dosort('<?php echo $field;?>')"
-        <?php if ($form_orderby == '<?php echo $field;?>') echo " style='color:#00cc00'"; ?>>
+{
+  global $form_orderby;
+?>
+    <th class="bold" valign="top">
+        <a href="#" onclick="return dosort('<?php echo $field; ?>')"
+        <?php if ($form_orderby == $field) echo " style='color:#00cc00'"; ?>>
         <?php echo $text; ?></a>
     </th>  
 <?php
 }
 ?>
-<table cellpadding="1" cellspacing="0" class="showborder">
+<table cellpadding="1" cellspacing="0" class="showborder" style="width:auto; max-width:100%">
 	<tbody><tr height="22" class="showborder_head">
                 <?php 
                     create_sortable_header(xlt("Username"),"username","12%"); 
                     create_sortable_header(xlt("Real Name"),"realnamelf","12%"); 
                     create_sortable_header(xlt("Job Description"),"specialty","16%"); 
-                ?>
-                    <th class="bold" valign="top" width="12%"><?php echo xl('Provider'); ?>?</th>
-                <?php
+                    create_sortable_header(xlt("Provider"),"authorized","12%"); 
                     create_sortable_header(xlt("Facility"),"facname","12%"); 
                     create_sortable_header(xlt("Warehouse"),"whname","12%"); 
                     create_sortable_header(xlt("Invoice Pool"),"irnpname","12%"); 
@@ -557,9 +557,9 @@ foreach ($result4 as $iter) {
     "<td class='text' valign='top'>" . attr_nbsp($iter["specialty"]) . "</td>" .
     "<td class='text' valign='top'>" . ($iter["authorized"] ? xl('Yes') : '&nbsp;') . "</td>" .
     "<td class='text' valign='top'>" . attr_nbsp($iter['facname']) . "</td>" .
-    "<td class='text' valign='top'>" . attr_nbsp($iter['whname']) . "</td>" .
-    "<td class='text' valign='top'>" . attr_nbsp($iter['irnpname']) . "</td>" .
-    "<td class='text' valign='top'>" . $iter['acl_groups'] . "</td>";
+    "<td class='text' valign='top' nowrap>" . attr_nbsp($iter['whname']) . "</td>" .
+    "<td class='text' valign='top' nowrap>" . attr_nbsp($iter['irnpname']) . "</td>" .
+    "<td class='text' valign='top' nowrap>" . $iter['acl_groups'] . "</td>";
   // print "<td><!--<a href='usergroup_admin.php?mode=delete&id=" . $iter{"id"} .
   //   "' class='link_submit'>[Delete]</a>--></td>";
   print "</tr>\n";
