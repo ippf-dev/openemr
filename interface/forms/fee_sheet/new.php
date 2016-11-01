@@ -956,7 +956,8 @@ if ($billresult) {
     // Also preserve other items from the form, if present.
     if ($bline['id'] && !$iter["billed"]) {
       $modifier   = trim($bline['mod']);
-      $units      = max(1, intval(trim($bline['units'])));
+      $units      = intval(trim($bline['units']));
+      if (!$units) $units = 1;
       $fee        = formatMoneyNumber((0 + trim($bline['price'])) * $units);
       $authorized = $bline['auth'];
       $ndc_info   = '';
@@ -1024,7 +1025,8 @@ if ($_POST['bill']) {
       $ndc_info = 'N4' . trim($iter['ndcnum']) . '   ' . $iter['ndcuom'] .
       trim($iter['ndcqty']);
     }
-    $units = max(1, intval(trim($iter['units'])));
+    $units = intval(trim($iter['units']));
+    if (!$units) $units = 1;
     $fee = formatMoneyNumber((0 + trim($iter['price'])) * $units);
     //the date is passed as $ndc_info, since this variable is not applicable in the case of copay.
     $ndc_info = '';
@@ -1073,7 +1075,8 @@ while ($srow = sqlFetchArray($sres)) {
   $warehouse_id  = $srow['warehouse_id'];  
   // Also preserve other items from the form, if present and unbilled.
   if ($pline['sale_id'] && !$srow['billed']) {
-    $units = max(1, intval(trim($pline['units'])));
+    $units = intval(trim($pline['units']));
+    if (!$units) $units = 1;
     $fee   = formatMoneyNumber((0 + trim($pline['price'])) * $units);
     $rx    = !empty($pline['rx']);
   }
@@ -1098,7 +1101,8 @@ if ($_POST['prod']) {
   foreach ($_POST['prod'] as $key => $iter) {
     if ($iter["sale_id"])  continue; // skip if it came from the database
     if ($iter["del"]) continue; // skip if Delete was checked
-    $units = max(1, intval(trim($iter['units'])));
+    $units = intval(trim($iter['units']));
+    if (!$units) $units = 1;
     $fee   = formatMoneyNumber((0 + trim($iter['price'])) * $units);
     $rx    = !empty($iter['rx']); // preserve Rx if checked
     $warehouse_id = empty($iter['warehouse_id']) ? '' : $iter['warehouse_id'];
@@ -1157,7 +1161,8 @@ if ($_POST['newcodes'] && !$alertmsg) {
         "FROM drug_templates AS dt, drugs AS d WHERE " .
         "dt.drug_id = ? AND dt.selector = ? AND " .
         "d.drug_id = dt.drug_id",array($newcode,$newsel));
-      $units = max(1, intval($result['quantity']));
+      $units = intval($result['quantity']);
+      if (!$units) $units = 1;
       // By default create a prescription if drug route is set.
       $rx = !empty($result['route']);
       $fs->addProductLineItem(array(

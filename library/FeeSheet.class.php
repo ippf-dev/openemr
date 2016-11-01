@@ -242,8 +242,7 @@ class FeeSheet {
     $code        = $args['code'];
     $modifier    = isset($args['modifier']) ? $args['modifier'] : '';
     $code_text   = isset($args['code_text']) ? $args['code_text'] : '';
-    $units       = isset($args['units']) ? $args['units'] : 0;
-    $units       = max(1, intval($units));
+    $units       = intval(isset($args['units']) ? $args['units'] : 0);
     $billed      = !empty($args['billed']);
     $auth        = !empty($args['auth']);
     $id          = isset($args['id']) ? intval($args['id']) : 0;
@@ -278,7 +277,7 @@ class FeeSheet {
 
     if (!$code_text) {
       $code_text = $result['code_text'];
-      if (empty($units)) $units = max(1, intval($result['units']));
+      if (empty($units)) $units = intval($result['units']);
       if (!isset($args['fee'])) {
         // Fees come from the prices table now.
         $query = "SELECT pr_price FROM prices WHERE " .
@@ -289,6 +288,7 @@ class FeeSheet {
         $fee = empty($prrow) ? 0 : $prrow['pr_price'];
       }
     }
+    if (!$units) $units = 1;
     $fee = sprintf('%01.2f', $fee);
 
     $li['hidden']['code_type'] = $codetype;
@@ -385,8 +385,8 @@ class FeeSheet {
     $drug_id      = $args['drug_id'];
     $selector     = isset($args['selector']) ? $args['selector'] : '';
     $sale_id      = isset($args['sale_id']) ? intval($args['sale_id']) : 0;
-    $units        = isset($args['units']) ? $args['units'] : 0;
-    $units        = max(1, intval($units));
+    $units        = intval(isset($args['units']) ? $args['units'] : 0);
+    if (!$units) $units = 1;
     $billed       = !empty($args['billed']);
     $rx           = !empty($args['rx']);
     $del          = !empty($args['del']);
@@ -696,7 +696,8 @@ class FeeSheet {
       $drug_id   = $iter['drug_id'];
       $selector  = empty($iter['selector']) ? '' : $iter['selector'];
       $sale_id   = $iter['sale_id']; // present only if already saved
-      $units     = max(1, intval(trim($iter['units'])));
+      $units     = intval(trim($iter['units']));
+      if (!$units) $units = 1;
       $price     = empty($iter['price']) ? 0 : (0 + trim($iter['price']));
       $pricelevel = empty($iter['pricelevel']) ? '' : $iter['pricelevel'];
       $fee       = sprintf('%01.2f', $price * $units);
