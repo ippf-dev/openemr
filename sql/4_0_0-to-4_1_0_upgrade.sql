@@ -992,7 +992,9 @@ CREATE TABLE `amc_misc_data` (
 #EndIf
 
 #IfNotRow2D layout_options form_id DEM field_id allow_patient_portal
-INSERT INTO `layout_options` VALUES ('DEM', 'allow_patient_portal', '3Choices', 'Allow Patient Portal', 12, 1, 1, 0, 0, 'yesno', 1, 1, '', '', '');
+INSERT INTO `layout_options` (
+ `form_id`, `field_id`, `group_name` , `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`
+ ) VALUES ('DEM', 'allow_patient_portal', '3Choices', 'Allow Patient Portal', 12, 1, 1, 0, 0, 'yesno', 1, 1, '', '', '');
 #EndIf
 
 #IfMissingColumn patient_data allow_patient_portal

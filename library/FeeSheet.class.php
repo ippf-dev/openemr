@@ -581,14 +581,23 @@ class FeeSheet {
       $code      = $iter['code'];
       $del       = !empty($iter['del']);
       $units     = empty($iter['units']) ? 1 : intval($iter['units']);
-      $price     = empty($iter['price']) ? 0 : (0 + trim($iter['price']));
       $pricelevel = empty($iter['pricelevel']) ? '' : $iter['pricelevel'];
       $modifier  = empty($iter['mod']) ? '' : trim($iter['mod']);
       $justify   = empty($iter['justify'  ]) ? '' : trim($iter['justify']);
       $notecodes = empty($iter['notecodes']) ? '' : trim($iter['notecodes']);
       $provid    = empty($iter['provid'   ]) ? 0 : intval($iter['provid']);
 
-      $fee       = sprintf('%01.2f', $price * $units);
+      $price = 0;
+      if (!empty($iter['price'])) {
+        if ($code_type == 'COPAY' || $this->pricesAuthorized()) {
+          $price = 0 + trim($iter['price']);
+        }
+        else {
+          $price = $this->getPrice($pricelevel, $code_type, $code);
+        }
+      }
+
+      $fee = sprintf('%01.2f', $price * $units);
 
       if(!$cod0 && $code_types[$code_type]['fee'] == 1) {
         $mod0 = $modifier;
@@ -698,13 +707,32 @@ class FeeSheet {
       $sale_id   = $iter['sale_id']; // present only if already saved
       $units     = intval(trim($iter['units']));
       if (!$units) $units = 1;
-      $price     = empty($iter['price']) ? 0 : (0 + trim($iter['price']));
       $pricelevel = empty($iter['pricelevel']) ? '' : $iter['pricelevel'];
-      $fee       = sprintf('%01.2f', $price * $units);
       $del       = !empty($iter['del']);
       $rxid      = 0;
       $warehouse_id = empty($iter['warehouse']) ? '' : $iter['warehouse'];
       $somechange = false;
+
+      $price = 0;
+      if (!empty($iter['price'])) {
+        if ($iter['price'] != 'X') {
+          // The price from the form is good.
+          $price = 0 + trim($iter['price']);
+        }
+        /*****
+        else if ($sale_id) {
+          // Not valid because price level might have changed.
+          $tmp = sqlQuery("SELECT fee FROM drug_sales WHERE sale_id = ?", array($sale_id));
+          $price = $tmp['fee'] / $units;
+        }
+        *****/
+        else {
+          // Otherwise get its price for the given price level and product.
+          $price = $this->getPrice($pricelevel, 'PROD', $drug_id, $selector);
+        }
+      }
+
+      $fee = sprintf('%01.2f', $price * $units);
 
       // If the item is already in the database...
       if ($sale_id) {
@@ -954,6 +982,32 @@ class FeeSheet {
     }
     $cbval = json_encode($cbarray);
     return $cbval;
+  }
+
+  // Get price for a charge item and its price level.
+  //
+  public function getPrice($pr_level, $codetype, $code, $selector='') {
+    global $code_types;
+    if ($codetype == 'PROD') {
+      $pr_id = $code;
+    }
+    else {
+      $crow = sqlQuery("SELECT id FROM codes WHERE code_type = ? AND code = ? " .
+        "ORDER BY modifier, id LIMIT 1",
+        array($code_types[$codetype]['id'], $code));
+      $pr_id = $crow['id'];
+      $selector = '';
+    }
+    $prow = sqlQuery("SELECT pr_price FROM prices WHERE " .
+      "pr_id = ? AND pr_selector = ? AND pr_level = ?",
+      array($pr_id, $selector, $pr_level));
+    return empty($prow['pr_price']) ? 0 : $prow['pr_price'];
+  }
+
+  // Determine if the current user is allowed to see prices.
+  //
+  public function pricesAuthorized() {
+    return acl_check('acct','disc') || acl_check('acct','bill');
   }
 
 }

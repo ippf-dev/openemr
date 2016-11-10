@@ -117,7 +117,14 @@ function echoServiceLines() {
           echo $fs->genPriceLevelSelect('', ' ', $li['hidden']['codes_id'], '', $pricelevel, true);
           echo "</td>\n";
         }
-        echo "  <td class='billcell' align='right'>" . text(oeFormatMoney($li['price'])) . "</td>\n";
+
+        // Price display is conditional.
+        if ($fs->pricesAuthorized()) {
+          echo "  <td class='billcell' align='right'>" . text(oeFormatMoney($li['price'])) . "</td>\n";
+        } else {
+          echo "  <td class='billcell' style='display:none'>&nbsp;</td>\n";
+        }
+
         if ($codetype != 'COPAY') {
           echo "  <td class='billcell' align='center'>" . text($li['units']) . "</td>\n";
         } else {
@@ -168,14 +175,19 @@ function echoServiceLines() {
             echo $fs->genPriceLevelSelect("bill[$lino][pricelevel]", ' ', $li['hidden']['codes_id'], '', $pricelevel);
             echo "</td>\n";
           }
-          echo "  <td class='billcell' align='right'>" .
-            "<input type='text' name='bill[$lino][price]' " .
-            "value='" . attr($li['price']) . "' size='6' onchange='setSaveAndClose()'";
-          if (acl_check('acct','disc'))
+
+          // Price display is conditional.
+          if ($fs->pricesAuthorized()) {
+            echo "  <td class='billcell' align='right'>" .
+              "<input type='text' name='bill[$lino][price]' " .
+              "value='" . attr($li['price']) . "' size='6' onchange='setSaveAndClose()'";
             echo " style='text-align:right'";
-          else
-            echo " style='text-align:right;background-color:transparent' readonly";
-          echo "></td>\n";
+            echo "></td>\n";
+          } else {
+            echo "  <td class='billcell' style='display:none'>" .
+              "<input type='text' name='bill[$lino][price]' " .
+              "value='" . ($li['price'] ? 'X' : '0') . "'></td>\n";
+          }
 
           echo "  <td class='billcell' align='center'>";
           if ($codetype != 'COPAY') {
@@ -310,7 +322,14 @@ function echoProductLines() {
           echo $fs->genPriceLevelSelect('', ' ', $drug_id, $selector, $pricelevel, true);
           echo "</td>\n";
         }
-        echo "  <td class='billcell' align='right'>" . text(oeFormatMoney($price)) . "</td>\n";
+
+        // Price display is conditional.
+        if ($fs->pricesAuthorized()) {
+          echo "  <td class='billcell' align='right'>" . text(oeFormatMoney($price)) . "</td>\n";
+        } else {
+          echo "  <td class='billcell' style='display:none'>&nbsp;</td>\n";
+        }
+
         echo "  <td class='billcell' align='center'>" . text($units) . "</td>\n";
       }
       if (justifiers_are_used()) { // KHY Evaluate proper position/usage of if justifiers
@@ -337,14 +356,20 @@ function echoProductLines() {
           echo $fs->genPriceLevelSelect("prod[$lino][pricelevel]", ' ', $drug_id, $selector, $pricelevel);
           echo "</td>\n";
         }
-        echo "  <td class='billcell' align='right'>" .
-          "<input type='text' name='prod[" . attr($lino) . "][price]' " .
-          "value='" . attr($price) . "' size='6' onchange='setSaveAndClose()'";
-        if (acl_check('acct','disc'))
+
+        // Price display is conditional.
+        if ($fs->pricesAuthorized()) {
+          echo "  <td class='billcell' align='right'>" .
+            "<input type='text' name='prod[" . attr($lino) . "][price]' " .
+            "value='" . attr($price) . "' size='6' onchange='setSaveAndClose()'";
           echo " style='text-align:right'";
-        else
-          echo " style='text-align:right;background-color:transparent' readonly";
-        echo "></td>\n";
+          echo "></td>\n";
+        } else {
+          echo "  <td class='billcell' style='display:none'>" .
+            "<input type='text' name='prod[$lino][price]' " .
+            "value='" . ($price ? 'X' : '0') . "'></td>\n";
+        }
+
         echo "  <td class='billcell' align='center'>";
         echo "<input type='text' name='prod[" . attr($lino) . "][units]' " .
           "value='" . attr($units) . "' size='2' style='text-align:right'>";
@@ -603,6 +628,7 @@ function hasCharges() {
  for (var i = 0; i < f.elements.length; ++i) {
   var elem = f.elements[i];
   if (elem.name.indexOf('[price]') > 0) {
+   if (elem.value == 'X') return true; // X means a nonzero price is undisclosed.
    var fee = Number(elem.value);
    if (!isNaN(fee) && fee != 0) return true;
   }
@@ -651,8 +677,11 @@ function pricelevel_changed(sel) {
  var f = document.forms[0];
  var prname = sel.name.replace('pricelevel', 'price');
  if (f[prname]) {
-  var price = parseFloat(sel.options[sel.selectedIndex].id.substring(4));
-  if (isNaN(price)) price = 0;
+  var price = sel.options[sel.selectedIndex].id.substring(4);
+  if (price != 'X') { // X means a nonzero price is undisclosed.
+   price = parseFloat(price);
+   if (isNaN(price)) price = 0;
+  }
   f[prname].value = price;
  }
  else {
@@ -912,7 +941,12 @@ echo "</b></span>\n";
 <?php if ($price_levels_are_used) { ?>
   <td class='billcell' align='center'><b><?php echo xlt('Price Level');?></b>&nbsp;</td>
 <?php } ?>
+  <!-- Price display is conditional. -->
+<?php if ($fs->pricesAuthorized()) { ?>
   <td class='billcell' align='right'><b><?php echo xlt('Price');?></b>&nbsp;</td>
+<?php } else { ?>
+  <td class='billcell' style='display:none'>&nbsp;</td>
+<?php } ?>
   <td class='billcell' align='center'><b><?php echo xlt('Units');?></b></td>
 <?php } ?>
 <?php if (justifiers_are_used()) { ?>
@@ -958,7 +992,10 @@ if ($billresult) {
       $modifier   = trim($bline['mod']);
       $units      = intval(trim($bline['units']));
       if (!$units) $units = 1;
-      $fee        = formatMoneyNumber((0 + trim($bline['price'])) * $units);
+      // Price display is conditional.
+      if ($fs->pricesAuthorized()) {
+        $fee = formatMoneyNumber((0 + trim($bline['price'])) * $units);
+      }
       $authorized = $bline['auth'];
       $ndc_info   = '';
       if ($bline['ndcnum']) {
@@ -1027,7 +1064,16 @@ if ($_POST['bill']) {
     }
     $units = intval(trim($iter['units']));
     if (!$units) $units = 1;
-    $fee = formatMoneyNumber((0 + trim($iter['price'])) * $units);
+
+    // Price display is conditional.
+    if ($iter['price'] != 'X') {
+      $fee = formatMoneyNumber((0 + trim($iter['price'])) * $units);
+    }
+    else {
+      $fee = $fs->getPrice($iter['pricelevel'], $iter['code_type'], $iter['code']);
+      $fee = formatMoneyNumber((0 + $fee) * $units);
+    }
+
     //the date is passed as $ndc_info, since this variable is not applicable in the case of copay.
     $ndc_info = '';
     if ($iter['code_type'] == 'COPAY'){
@@ -1077,7 +1123,10 @@ while ($srow = sqlFetchArray($sres)) {
   if ($pline['sale_id'] && !$srow['billed']) {
     $units = intval(trim($pline['units']));
     if (!$units) $units = 1;
-    $fee   = formatMoneyNumber((0 + trim($pline['price'])) * $units);
+    // Price display is conditional.
+    if ($fs->pricesAuthorized()) {
+      $fee = formatMoneyNumber((0 + trim($pline['price'])) * $units);
+    }
     $rx    = !empty($pline['rx']);
   }
   $fs->addProductLineItem(array(
@@ -1103,7 +1152,16 @@ if ($_POST['prod']) {
     if ($iter["del"]) continue; // skip if Delete was checked
     $units = intval(trim($iter['units']));
     if (!$units) $units = 1;
-    $fee   = formatMoneyNumber((0 + trim($iter['price'])) * $units);
+
+    // Price display is conditional.
+    if ($iter['price'] != 'X') {
+      $fee = formatMoneyNumber((0 + trim($iter['price'])) * $units);
+    }
+    else {
+      $fee = $fs->getPrice($iter['pricelevel'], 'PROD', $iter['drug_id'], $iter['selector']);
+      $fee = formatMoneyNumber((0 + $fee) * $units);
+    }
+
     $rx    = !empty($iter['rx']); // preserve Rx if checked
     $warehouse_id = empty($iter['warehouse_id']) ? '' : $iter['warehouse_id'];
     $fs->addProductLineItem(array(

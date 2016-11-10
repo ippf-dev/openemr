@@ -140,6 +140,10 @@ class FeeSheetHtml extends FeeSheet {
       array($pr_id, $pr_selector));
     while ($lrow = sqlFetchArray($lres)) {
       $price = empty($lrow['pr_price']) ? 0 : $lrow['pr_price'];
+      if ($price != 0 && !$this->pricesAuthorized()) {
+        // This user is not authorized to see nonzero prices.
+        $price = 'X';
+      }
       $s .= "<option value='" . attr($lrow['option_id']) . "'";
       $s .= " id='prc_$price'";
       if ((strlen($default) == 0 && $lrow['is_default'] && !$disabled) ||

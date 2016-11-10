@@ -2886,6 +2886,57 @@ ALTER TABLE `forms` ADD COLUMN `issue_id` bigint(20) NOT NULL default 0 COMMENT 
 ALTER TABLE `forms` ADD COLUMN `provider_id` bigint(20) NOT NULL default 0 COMMENT 'references users.id to identify a provider';
 #EndIf
 
+#IfMissingColumn list_options codes
+ALTER TABLE `list_options` ADD COLUMN `codes` varchar(255) NOT NULL DEFAULT '';
+UPDATE list_options SET `codes`='SNOMED-CT:449868002' WHERE list_id='smoking_status' AND option_id='1' AND title='Current every day smoker';
+UPDATE list_options SET `codes`='SNOMED-CT:428041000124106' WHERE list_id='smoking_status' AND option_id='2' AND title='Current some day smoker';
+UPDATE list_options SET `codes`='SNOMED-CT:8517006' WHERE list_id='smoking_status' AND option_id='3' AND title='Former smoker';
+UPDATE list_options SET `codes`='SNOMED-CT:266919005' WHERE list_id='smoking_status' AND option_id='4' AND title='Never smoker';
+UPDATE list_options SET `codes`='SNOMED-CT:77176002' WHERE list_id='smoking_status' AND option_id='5' AND title='Smoker, current status unknown';
+UPDATE list_options SET `codes`='SNOMED-CT:266927001' WHERE list_id='smoking_status' AND option_id='9' AND title='Unknown if ever smoked';
+#EndIf
+
+#IfMissingColumn layout_options fld_rows
+ALTER TABLE `layout_options` ADD COLUMN `fld_rows` int(11) NOT NULL default '0';
+UPDATE `layout_options` SET `fld_rows`=max_length WHERE `data_type`='3';
+UPDATE `layout_options` SET `max_length`='0' WHERE `data_type`='3';
+UPDATE `layout_options` SET `max_length`='0' WHERE `data_type`='34';
+UPDATE `layout_options` SET `max_length`='20' WHERE `field_id`='financial_review' AND `form_id`='DEM';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='history_father' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='history_mother' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='history_siblings' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='history_spouse' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='history_offspring' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='relatives_cancer' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='relatives_tuberculosis' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='relatives_diabetes' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='relatives_high_blood_pressure' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='relatives_heart_problems' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='relatives_stroke' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='relatives_epilepsy' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='relatives_mental_illness' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='relatives_suicide' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='coffee' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='tobacco' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='alcohol' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='recreational_drugs' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='counseling' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='exercise_patterns' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='hazardous_activities' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='sleep_patterns' AND `form_id`='HIS';
+UPDATE `layout_options` SET `max_length`='0' WHERE `field_id`='seatbelt_use' AND `form_id`='HIS';
+#EndIf
+
+#IfMissingColumn layout_options source
+ALTER TABLE `layout_options` ADD COLUMN `source` char(1) NOT NULL default 'F'
+  COMMENT 'F=Form, D=Demographics, H=History, E=Encounter';
+#EndIf
+
+#IfMissingColumn layout_options conditions
+ALTER TABLE `layout_options` ADD COLUMN
+  `conditions` text NOT NULL DEFAULT '' COMMENT 'serialized array of skip conditions';
+#EndIf
+
 #IfNotRow2D list_options list_id lbfnames option_id LBFVitals
 
 # This came from an export of the new LBF Vital Signs form and its dependent lists.

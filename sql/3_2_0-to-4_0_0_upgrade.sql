@@ -73,27 +73,45 @@ INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES (
 #EndIf
 
 #IfNotRow2D layout_options form_id DEM field_id vfc
-INSERT INTO `layout_options` VALUES ('DEM', 'vfc', '5Stats', 'VFC', 12, 1, 1, 20, 0, 'eligibility', 1, 1, '', '', 'Eligibility status for Vaccine for Children supplied vaccine');
+INSERT INTO `layout_options` (
+  form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length,
+  list_id, titlecols, datacols, default_value, edit_options, description
+  ) VALUES ('DEM', 'vfc', '5Stats', 'VFC', 12, 1, 1, 20, 0, 'eligibility', 1, 1, '', '', 'Eligibility status for Vaccine for Children supplied vaccine');
 #EndIf
 
 #IfNotRow2D layout_options form_id DEM field_id mothersname
-INSERT INTO `layout_options` VALUES ('DEM', 'mothersname', '2Contact', 'Mother''s Name', 6, 2, 1, 20, 63, '', 1, 1, '', '', '');
+INSERT INTO `layout_options` (
+  form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length,
+  list_id, titlecols, datacols, default_value, edit_options, description
+  ) VALUES ('DEM', 'mothersname', '2Contact', 'Mother''s Name', 6, 2, 1, 20, 63, '', 1, 1, '', '', '');
 #EndIf
 
 #IfNotRow2D layout_options form_id DEM field_id guardiansname
-INSERT INTO `layout_options` VALUES ('DEM', 'guardiansname', '2Contact', 'Guardian''s Name', 7, 2, 1, 20, 63, '', 1, 1, '', '', '');
+INSERT INTO `layout_options` (
+  form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length,
+  list_id, titlecols, datacols, default_value, edit_options, description
+  ) VALUES ('DEM', 'guardiansname', '2Contact', 'Guardian''s Name', 7, 2, 1, 20, 63, '', 1, 1, '', '', '');
 #EndIf
 
 #IfNotRow2D layout_options form_id DEM field_id allow_imm_reg_use
-INSERT INTO `layout_options` VALUES ('DEM', 'allow_imm_reg_use', '3Choices', 'Allow Immunization Registry Use', 9, 1, 1, 0, 0, 'yesno', 1, 1, '', '', '');
+INSERT INTO `layout_options` (
+  form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length,
+  list_id, titlecols, datacols, default_value, edit_options, description
+  ) VALUES ('DEM', 'allow_imm_reg_use', '3Choices', 'Allow Immunization Registry Use', 9, 1, 1, 0, 0, 'yesno', 1, 1, '', '', '');
 #EndIf
 
 #IfNotRow2D layout_options form_id DEM field_id allow_imm_info_share
-INSERT INTO `layout_options` VALUES ('DEM', 'allow_imm_info_share', '3Choices', 'Allow Immunization Info Sharing', 10, 1, 1, 0, 0, 'yesno', 1, 1, '', '', '');
+INSERT INTO `layout_options` (
+  form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length,
+  list_id, titlecols, datacols, default_value, edit_options, description
+  ) VALUES ('DEM', 'allow_imm_info_share', '3Choices', 'Allow Immunization Info Sharing', 10, 1, 1, 0, 0, 'yesno', 1, 1, '', '', '');
 #EndIf
 
 #IfNotRow2D layout_options form_id DEM field_id allow_health_info_ex
-INSERT INTO `layout_options` VALUES ('DEM', 'allow_health_info_ex', '3Choices', 'Allow Health Information Exchange', 11, 1, 1, 0, 0, 'yesno', 1, 1, '', '', '');
+INSERT INTO `layout_options` (
+  form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length,
+  list_id, titlecols, datacols, default_value, edit_options, description
+  ) VALUES ('DEM', 'allow_health_info_ex', '3Choices', 'Allow Health Information Exchange', 11, 1, 1, 0, 0, 'yesno', 1, 1, '', '', '');
 #EndIf
 
 #IfMissingColumn patient_data vfc
@@ -155,7 +173,10 @@ INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES (
 #EndIf
 
 #IfNotRow2D layout_options form_id DEM field_id referral_source
-INSERT INTO `layout_options` VALUES ('DEM', 'referral_source', '5Stats', 'Referral Source',10, 26, 1, 0, 0, 'refsource', 1, 1, '', '', 'How did they hear about us');
+INSERT INTO `layout_options` (
+  form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length,
+  list_id, titlecols, datacols, default_value, edit_options, description
+  ) VALUES ('DEM', 'referral_source', '5Stats', 'Referral Source',10, 26, 1, 0, 0, 'refsource', 1, 1, '', '', 'How did they hear about us');
 #EndIf
 
 #IfMissingColumn list_options notes
@@ -786,7 +807,10 @@ ALTER TABLE `patient_data` ADD `ethnicity` varchar(255) NOT NULL default '';
 #EndIf
 
 #IfNotRow2D layout_options field_id race form_id DEM
-INSERT INTO `layout_options` VALUES ('DEM', 'race', '5Stats', 'Race', 3, 33, 1, 0, 0, 'race', 1, 1, '', '', 'Race');
+INSERT INTO `layout_options` (
+  form_id, field_id, group_name, title, seq, data_type, uor, fld_length, max_length,
+  list_id, titlecols, datacols, default_value, edit_options, description
+  ) VALUES ('DEM', 'race', '5Stats', 'Race', 3, 33, 1, 0, 0, 'race', 1, 1, '', '', 'Race');
 #EndIf
 
 UPDATE layout_options SET data_type=33,list_id='ethnicity',field_id='ethnicity',title='Ethnicity',description='Ethnicity' WHERE form_id = 'DEM' AND field_id = 'ethnoracial';
