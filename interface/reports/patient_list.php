@@ -12,7 +12,9 @@
  require_once("../globals.php");
  require_once("$srcdir/patient.inc");
  require_once("$srcdir/formatting.inc.php");
-  require_once("$srcdir/options.inc.php");
+ require_once("$srcdir/options.inc.php");
+
+if (!acl_check('patients', 'demo')) die(xl("Unauthorized access."));
 
 // Prepare a string for CSV export.
 function qescape($str) {

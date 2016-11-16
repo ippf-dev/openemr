@@ -42,8 +42,13 @@ require_once($GLOBALS['srcdir'] . "/checkout_receipt_array.inc.php");
 
 $currdecimals = $GLOBALS['currency_decimals'];
 
-if ($GLOBALS['oer_config']['ws_accounting']['enabled'] !== 2)
+if ($GLOBALS['oer_config']['ws_accounting']['enabled'] !== 2) {
   die("SQL-Ledger not supported!");
+}
+
+if (!acl_check('admin', 'super') && !acl_check('acct', 'bill') && !acl_check('acct', 'disc')) {
+  die("Not authorized!");
+}
 
 // This will be used for SQL timestamps that we write.
 $this_bill_date = date('Y-m-d H:i:s');
@@ -1418,6 +1423,11 @@ if (!$encounter_id) {
   exit();
 }
 
+// Form requires billing permission.
+if (!acl_check('admin', 'super') && !acl_check('acct', 'bill')) {
+  die("Not authorized!");
+}
+
 // We have $patient_id and $encounter_id. Generate checksum if not already done.
 if (!$current_checksum) $current_checksum = invoiceChecksum($patient_id, $encounter_id);
 
@@ -2076,14 +2086,23 @@ if ($encounter_id) {
 echo " <tr>\n";
 echo "  <td colspan='" . ($GLOBALS['gbl_checkout_line_adjustments'] ? 6 : 3) .
      "' align='right'>";
-echo "<a href='#' onclick='return computeDiscount()'>[" . xl('Compute') ."]</a> <b>";
-echo xl('Discount/Adjustment') . "</b></td>\n";
-echo "  <td align='right' colspan='" .
-     (($GLOBALS['gbl_checkout_line_adjustments'] ? 2 : 1) + count($taxes)) .
-     "'><input type='text' name='form_discount' " .
-     "value='' size='6' maxlength='8' onkeyup='billingChanged()' " .
-     "style='text-align:right'";
-echo "></td>\n";
+if (acl_check('acct','disc') || acl_check('acct','super')) {
+  echo "<a href='#' onclick='return computeDiscount()'>[" . xl('Compute') ."]</a> <b>";
+  echo xl('Discount/Adjustment') . "</b></td>\n";
+  echo "  <td align='right' colspan='" .
+       (($GLOBALS['gbl_checkout_line_adjustments'] ? 2 : 1) + count($taxes)) .
+       "'><input type='text' name='form_discount' " .
+       "value='' size='6' maxlength='8' onkeyup='billingChanged()' " .
+       "style='text-align:right' />";
+}
+else {
+  echo "<b>" . xl('Discount/Adjustment') . "</b></td>\n";
+  echo "  <td align='right' colspan='" .
+       (($GLOBALS['gbl_checkout_line_adjustments'] ? 2 : 1) + count($taxes)) .
+       "'><input type='text' name='form_discount' value='' size='6' " .
+       "style='text-align:right;background-color:transparent' readonly />";
+}
+echo "</td>\n";
 echo " </tr>\n";
 
 // Line for Balance Due

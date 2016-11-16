@@ -6,9 +6,7 @@ include_once("../../library/patient.inc");
 include_once("../../library/acl.inc");
 include_once("../../custom/code_types.inc.php");
 
-// Might want something different here.
-//
-if (! acl_check('acct', 'rep')) die("Unauthorized access.");
+if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
 $from_date     = fixDate($_POST['form_from_date']);
 $form_facility = isset($_POST['form_facility']) ? $_POST['form_facility'] : '';

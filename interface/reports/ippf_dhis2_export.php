@@ -17,7 +17,7 @@ require_once("$srcdir/acl.inc");
 require_once("$srcdir/patient.inc");
 include_once("../../custom/code_types.inc.php");
 
-if (!acl_check('admin', 'super')) die("Not authorized!");
+if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
 $alertmsg = '';
 

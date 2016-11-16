@@ -128,7 +128,7 @@ function thisLineItem($patient_id, $encounter_id, $description, $transdate, $qty
   $grandqty     += $qty;
 } // end function
 
-if (! acl_check('acct', 'rep')) die(xl("Unauthorized access."));
+if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
 $form_from_date = fixDate($_POST['form_from_date'], date('Y-m-d'));
 $form_to_date   = fixDate($_POST['form_to_date']  , date('Y-m-d'));

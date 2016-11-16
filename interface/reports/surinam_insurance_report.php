@@ -191,7 +191,7 @@ function tblStartInsurer($insname) {
   }
 }
 
-if (! acl_check('acct', 'rep')) die(xl("Unauthorized access."));
+if (!acl_check('patients', 'med')) die(xl("Unauthorized access."));
 
 $form_from_date = fixDate(getPost('form_from_date'), date('Y-m-01'));
 $form_to_date   = fixDate(getPost('form_to_date'), date('Y-m-d'));

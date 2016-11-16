@@ -45,7 +45,7 @@ $grand_total_amt_adjustment  = 0;
 $grand_total_amt_balance  = 0;
 
 
-  if (! acl_check('acct', 'rep')) die(xlt("Unauthorized access."));
+  if (!acl_check('acct', 'rep_a')) die(xlt("Unauthorized access."));
 
   $INTEGRATED_AR = $GLOBALS['oer_config']['ws_accounting']['enabled'] === 2;
 

@@ -30,6 +30,10 @@ require_once("$srcdir/formatting.inc.php");
 require_once("../../custom/code_types.inc.php");
 require_once("$srcdir/billing.inc");
 
+if (!acl_check('patients', 'appt') || !acl_check('acct', 'rep_a')) {
+  die(xl("Unauthorized access."));
+}
+
  $errmsg  = "";
  $alertmsg = ''; // not used yet but maybe later
  $grand_total_charges    = 0;

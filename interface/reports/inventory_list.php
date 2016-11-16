@@ -11,9 +11,13 @@
  require_once("$srcdir/options.inc.php");
  require_once("$include_root/drugs/drugs.inc.php");
 
- // Check authorization.
- $thisauth = acl_check('admin', 'drugs');
- if (!$thisauth) die(xl('Not authorized'));
+// Check permission for this report.
+$auth_drug_reports = $GLOBALS['inhouse_pharmacy'] && (
+  acl_check('admin'    , 'drugs'      ) ||
+  acl_check('inventory', 'reporting'  ));
+if (!$auth_drug_reports) {
+  die(xl("Unauthorized access."));
+}
 
 function addWarning($msg) {
   global $warnings;

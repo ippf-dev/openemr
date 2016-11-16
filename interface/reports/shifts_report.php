@@ -14,6 +14,8 @@ require_once("$srcdir/billing.inc");
 require_once("$srcdir/patient.inc");
 require_once("$srcdir/formatting.inc.php");
 
+if (!acl_check('patients', 'med')) die(xl("Unauthorized access."));
+
 $alertmsg = ''; // not used yet but maybe later
 
 // For each sorting option, specify the ORDER BY argument.

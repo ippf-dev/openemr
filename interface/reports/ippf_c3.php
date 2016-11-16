@@ -5,9 +5,7 @@ include_once("../globals.php");
 include_once("../../library/patient.inc");
 include_once("../../library/acl.inc");
 
-// Might want something different here.
-//
-if (! acl_check('acct', 'rep')) die("Unauthorized access.");
+if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
 $from_date     = fixDate($_POST['form_from_date'], date('Y-m-d'));
 $to_date       = fixDate($_POST['form_to_date'], $from_date);

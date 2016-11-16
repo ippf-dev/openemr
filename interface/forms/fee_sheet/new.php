@@ -1318,7 +1318,8 @@ if ($fs->contraception_code && !$isBilled) {
 <input type='submit' name='bn_save' value='<?php echo xla('Save');?>' 
 <?php if ($rapid_data_entry) echo " style='background-color:#cc0000';color:#ffffff'"; ?>
 />
-<?php if ($GLOBALS['ippf_specific']) { // start ippf-only stuff ?>
+
+<?php if ($GLOBALS['ippf_specific'] && (acl_check('admin', 'super') || acl_check('acct', 'bill') || acl_check('acct', 'disc'))) { ?>
 <?php if ($fs->hasCharges) { // unbilled with charges ?>
 <input type='submit' name='bn_save_close' value='<?php echo xla('Save and Checkout'); ?>' />
 <?php } else { // unbilled with no charges ?>
@@ -1326,6 +1327,7 @@ if ($fs->contraception_code && !$isBilled) {
 <?php } // end no charges ?>
 &nbsp;
 <?php } // end ippf-only ?>
+
 <input type='submit' name='bn_refresh' onclick='return this.clicked = true;' 
 value='<?php echo xla('Refresh');?>'>
 &nbsp;

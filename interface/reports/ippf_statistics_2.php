@@ -18,9 +18,7 @@ require_once("../../custom/code_types.inc.php");
 
 $alertmsg = '';
 
-// Might want something different here.
-//
-if (! acl_check('acct', 'rep')) die("Unauthorized access.");
+if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
 /**
  * 

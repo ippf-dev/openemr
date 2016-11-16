@@ -17,6 +17,8 @@ require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/options.inc.php");
 include_once("../../custom/code_types.inc.php");
 
+if (!acl_check('patients', 'trans')) die(xl("Unauthorized access."));
+
 $patient_id = empty($_REQUEST['patient_id']) ? 0 : intval($_REQUEST['patient_id']);
 $from_date = fixDate($_POST['form_from_date'], $patient_id ? '0000-00-00' : date('Y-m-d'));
 $to_date   = fixDate($_POST['form_to_date'], date('Y-m-d'));

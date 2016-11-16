@@ -160,7 +160,7 @@ function payerCmp($a, $b) {
   return 0;
 }
 
-if (! acl_check('acct', 'rep')) die(xl("Unauthorized access."));
+if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
 $INTEGRATED_AR = $GLOBALS['oer_config']['ws_accounting']['enabled'] === 2;
 

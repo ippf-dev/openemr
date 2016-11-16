@@ -13,9 +13,7 @@
  include_once("../../library/acl.inc");
  require_once("../../library/formatting.inc.php");
 
- // Might want something different here.
- //
- // if (! acl_check('acct', 'rep')) die("Unauthorized access.");
+ if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
  $from_date = fixDate($_POST['form_from_date']);
  $to_date   = fixDate($_POST['form_to_date'], date('Y-m-d'));

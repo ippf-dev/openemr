@@ -18,6 +18,8 @@
  require_once("$srcdir/formatting.inc.php");
  require_once "$srcdir/formdata.inc.php";
 
+ if (!acl_check('patients', 'med')) die(xl("Unauthorized access."));
+
  $form_from_date  = fixDate($_POST['form_from_date'], date('Y-01-01'));
  $form_to_date    = fixDate($_POST['form_to_date']  , date('Y-m-d'));
  $form_patient_id = trim($_POST['form_patient_id']);

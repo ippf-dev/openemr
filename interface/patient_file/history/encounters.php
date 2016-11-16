@@ -43,7 +43,9 @@ require_once("$srcdir/formdata.inc.php");
 // case we only display encounters that are linked to the specified issue.
 $issue = empty($_GET['issue']) ? 0 : 0 + $_GET['issue'];
 
- $accounting_enabled = $GLOBALS['oer_config']['ws_accounting']['enabled'];
+$accounting_enabled = $GLOBALS['oer_config']['ws_accounting']['enabled'] &&
+  (acl_check('acct','disc') || acl_check('acct','bill'));
+
 $INTEGRATED_AR = true;
 
  //maximum number of encounter entries to display on this page:
@@ -538,8 +540,9 @@ $getStringForPage="&pagesize=".$pagesize."&pagestart=".$pagestart;
   <th><?php echo htmlspecialchars( xl('Provider'), ENT_NOQUOTES);    ?></th>
 <?php } ?>
 
-<?php if ($billing_view && $accounting_enabled) { ?>
+<?php if ($billing_view) { ?>
   <th><?php echo xl('Code','e'); ?></th>
+<?php if ($accounting_enabled) { // show money ?>
   <th class='right'><?php echo htmlspecialchars( xl('Charge'), ENT_NOQUOTES); ?></th>
   <th class='right'><?php echo htmlspecialchars( xl('Adj'), ENT_NOQUOTES); ?></th>
 <?php
@@ -549,13 +552,16 @@ $getStringForPage="&pagesize=".$pagesize."&pagestart=".$pagestart;
 ?>  
   <th class='right'><?php echo htmlspecialchars( xl('Paid'), ENT_NOQUOTES); ?></th>
   <th class='right'><?php echo htmlspecialchars( xl('Bal'), ENT_NOQUOTES); ?></th>
-<?php } else { ?>
-  <th colspan='<?php echo 5 + count($aTaxNames); ?>'>
-  <?php echo ($GLOBALS['phone_country_code'] == '1') ? xlt('Billing') : xlt('Coding'); ?></th>
+<?php } else { // billing view but no accounting, hide money ?>
+  <th colspan='<?php echo 4 + count($aTaxNames); ?>'>&nbsp;</th>
+<?php } ?>
+<?php if (!$GLOBALS['athletic_team'] && !$GLOBALS['ippf_specific']) { // add insurance column ?>
+  <th>&nbsp;<?php echo xlt($GLOBALS['weight_loss_clinic'] ? xl('Payment') : xl('Insurance')); ?></th>
 <?php } ?>
 
-<?php if (!$GLOBALS['athletic_team'] && !$GLOBALS['ippf_specific']) { ?>
-  <th>&nbsp;<?php echo htmlspecialchars( (($GLOBALS['weight_loss_clinic']) ? xl('Payment') : xl('Insurance')), ENT_NOQUOTES); ?></th>
+<?php } else { // not billing view ?>
+  <th colspan='<?php echo 5 + count($aTaxNames); ?>'>
+  <?php echo ($GLOBALS['phone_country_code'] == '1') ? xlt('Billing') : xlt('Coding'); ?></th>
 <?php } ?>
 
  </tr>

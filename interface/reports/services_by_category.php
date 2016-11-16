@@ -11,6 +11,8 @@ require_once("../../custom/code_types.inc.php");
 require_once("$srcdir/sql.inc");
 require_once("$srcdir/formatting.inc.php");
 
+if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
+
 $sexarray = array(4 => xl('All'), 1 => xl('Women Only'), 2 => xl('Men Only'));
 
 // Format dollars for display.

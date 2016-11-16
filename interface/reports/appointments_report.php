@@ -17,6 +17,8 @@ require_once "$srcdir/options.inc.php";
 require_once "$srcdir/formdata.inc.php";
 require_once "$srcdir/appointments.inc.php";
 
+if (!acl_check('patients', 'appt')) die(xl("Unauthorized access."));
+
 $alertmsg = ''; // not used yet but maybe later
 $patient = $_REQUEST['patient'];
 

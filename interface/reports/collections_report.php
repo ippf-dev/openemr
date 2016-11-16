@@ -15,6 +15,8 @@ require_once("../../library/formatting.inc.php");
 require_once "$srcdir/options.inc.php";
 require_once "$srcdir/formdata.inc.php";
 
+if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
+
 $INTEGRATED_AR = $GLOBALS['oer_config']['ws_accounting']['enabled'] === 2;
 
 $alertmsg = '';
