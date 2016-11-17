@@ -556,9 +556,9 @@ foreach ($result4 as $iter) {
     "<td class='text' valign='top' title='" . attr($iter['realnamelf']) . "'>" . attr_nbsp($iter['realname']) . "</td>" .
     "<td class='text' valign='top'>" . attr_nbsp($iter["specialty"]) . "</td>" .
     "<td class='text' valign='top'>" . ($iter["authorized"] ? xl('Yes') : '&nbsp;') . "</td>" .
-    "<td class='text' valign='top'>" . attr_nbsp($iter['facname']) . "</td>" .
-    "<td class='text' valign='top' nowrap>" . attr_nbsp($iter['whname']) . "</td>" .
-    "<td class='text' valign='top' nowrap>" . attr_nbsp($iter['irnpname']) . "</td>" .
+    "<td class='text' valign='top'>" . attr_nbsp($iter['facname']) . "&nbsp;</td>" .
+    "<td class='text' valign='top' nowrap>" . attr_nbsp($iter['whname']) . "&nbsp;</td>" .
+    "<td class='text' valign='top' nowrap>" . attr_nbsp($iter['irnpname']) . "&nbsp;</td>" .
     "<td class='text' valign='top' nowrap>" . $iter['acl_groups'] . "</td>";
   // print "<td><!--<a href='usergroup_admin.php?mode=delete&id=" . $iter{"id"} .
   //   "' class='link_submit'>[Delete]</a>--></td>";
