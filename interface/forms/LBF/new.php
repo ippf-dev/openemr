@@ -134,7 +134,7 @@ if (!$from_trend_form) {
 
 // If Save was clicked, save the info.
 //
-if (!empty($_POST['bn_save']) || !empty($_POST['bn_save_print'])) {
+if (!empty($_POST['bn_save']) || !empty($_POST['bn_save_print']) || !empty($_POST['bn_save_continue'])) {
   $newid = 0;
   if (!$formid) {
     // Creating a new form. Get the new form_id by inserting and deleting a dummy row.
@@ -241,14 +241,15 @@ if (!empty($_POST['bn_save']) || !empty($_POST['bn_save_print'])) {
     }
   }
 
-  if (!$alertmsg && !$from_issue_form) {
+  if (!$formid) $formid = $newid;
+
+  if (!$alertmsg && !$from_issue_form && empty($_POST['bn_save_continue'])) {
     // Support custom behavior at save time, such as going to another form.
     if (function_exists($formname . '_save_exit')) {
       if (call_user_func($formname . '_save_exit')) exit;
     }
     formHeader("Redirecting....");
     // If Save and Print, write the JavaScript to open a window for printing.
-    if (!$formid) $formid = $newid;
     if (!empty($_POST['bn_save_print'])) {
       echo "<script language='Javascript'>\n"            .
         "top.restoreSession();\n"                        .
@@ -1309,6 +1310,9 @@ function warehouse_changed(sel) {
   }
 ?>
 <input type='submit' name='bn_save' value='<?php echo xla('Save') ?>' />
+
+&nbsp;
+<input type='submit' name='bn_save_continue' value='<?php echo xla('Save and Continue') ?>' />
 
 <?php if (!$from_issue_form) { ?>
 
