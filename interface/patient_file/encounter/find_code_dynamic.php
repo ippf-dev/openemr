@@ -136,7 +136,7 @@ $(document).ready(function() {
 
 <?php if ($what == 'codes') { ?>
 
-// Pass info back to the opener and close this window.
+// Pass info back to the opener and close this window. Specific to billing/product codes.
 function selcode(codetype, code, selector, codedesc) {
  if (opener.closed || ! opener.set_related) {
   alert('<?php echo xls('The destination form was closed; I cannot act on your selection.'); ?>');
@@ -144,11 +144,11 @@ function selcode(codetype, code, selector, codedesc) {
  else {
   var msg = opener.set_related(codetype, code, selector, codedesc);
   if (msg) alert(msg);
-  window.close();
+  // window.close();
   return false;
  }
 }
-// Function to call the opener to delete all or one related code.
+// Function to call the opener to delete all or one related code. Specific to billing/product codes.
 function delcode() {
  if (opener.closed || ! opener.del_related) {
   alert('<?php echo xls('The destination form was closed; I cannot act on your selection.'); ?>');
@@ -156,7 +156,7 @@ function delcode() {
  else {
   var sel = document.forms[0].form_delcodes;
   opener.del_related(sel.value);
-  window.close();
+  // window.close();
   return false;
  }
 }
@@ -260,6 +260,8 @@ if ($what == 'codes') {
   echo "<select name='form_delcodes'>\n";
   echo " <option value=''>" . xlt('All') . "</option>\n";
   echo "</select>\n";
+  echo "&nbsp;&nbsp;\n";
+  echo "<input type='button' value='" . xla('Close') . "' onclick='window.close()' />\n";
 }
 if ($what == 'lists') {
   echo "<input type='button' value='" . xla('Delete') . "' onclick='SelectList({\"code\":\"\"})' />\n";

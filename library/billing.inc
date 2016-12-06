@@ -305,7 +305,7 @@ function updateInvoiceRefNumber() {
 // Common function for voiding a receipt or checkout.  When voiding a checkout you can specify
 // $time as a timestamp (yyyy-mm-dd hh:mm:ss) or 'all'; default is the last checkout.
 //
-function doVoid($patient_id, $encounter_id, $purge=false, $time='') {
+function doVoid($patient_id, $encounter_id, $purge=false, $time='', $reason='', $notes='') {
   $what_voided = $purge ? 'checkout' : 'receipt';
   $date_original = '';
   $adjustments = 0;
@@ -362,7 +362,9 @@ function doVoid($patient_id, $encounter_id, $purge=false, $time='') {
       "user_id = '" . add_escape_custom($_SESSION['authUserID']) . "', " .
       "amount1 = '" . $row['adjustments'] . "', " .
       "amount2 = '" . $row['payments'] . "', " .
-      "other_info = '" . add_escape_custom($old_invoice_refno) . "'");
+      "other_info = '" . add_escape_custom($old_invoice_refno) . "', " .
+      "reason = '" . add_escape_custom($reason) . "', " .
+      "notes = '" . add_escape_custom($notes) . "'");
   }
   if ($purge) {
     // Purge means delete adjustments and payments from the last checkout

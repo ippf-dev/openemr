@@ -1279,7 +1279,6 @@ if ($GLOBALS['athletic_team']) {
           <?php if (acl_check('acct', 'rep_a')) {
             genMiscLink('RTop','rep','0',xl('Services'), 'reports/services_by_category.php');
           } ?>
-          <?php genMiscLink('RTop','rep','0',xl('Re-Opened Visits'), 'reports/reopened_visits_report.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Syndromic Surveillance'),'reports/non_reported.php'); ?>
           <?php if ($GLOBALS['gbl_menu_shifts']) genPopLink(xl('Shifts Report'),'shifts_report.php'); ?>
         </ul>
@@ -1302,6 +1301,7 @@ if ($GLOBALS['athletic_team']) {
           <?php if ($GLOBALS['gbl_menu_surinam_insurance']) {
             genMiscLink('RTop','rep','0',xl('LOBI Insurers Report'),'reports/surinam_insurance_report.php');
           } ?>
+          <?php genMiscLink('RTop','rep','0',xl('Re-Opened Visits'), 'reports/reopened_visits_report.php'); ?>
         </ul>
       </li>
 <?php } ?>

@@ -148,10 +148,26 @@ class FeeSheet {
   }
 
   // Log a message that is easy for the Re-Opened Visits Report to interpret.
+  // The optional $logarr contains these line item attributes:
+  //    Code Type
+  //    Code
+  //    Selector    (for code type "PROD")
+  //    Price Level
+  //    Fee
+  //    Units
+  //    Provider
+  //    Warehouse
   //
-  public function logFSMessage($action) {
+  public function logFSMessage($action, $newvalue='', $logarr=null) {
+    $user_notes = $this->encounter;
+    if (is_array($logarr)) {
+      array_unshift($logarr, $newvalue);
+      foreach ($logarr as $tmp) {
+        $user_notes .= '|' . str_replace('|', '', $tmp);
+      }
+    }
     newEvent('fee-sheet', $_SESSION['authUser'], $_SESSION['authProvider'], 1,
-      $action, $this->pid, $this->encounter);
+      $action, $this->pid, $user_notes);
   }
 
   // Compute a current checksum of this encounter's Fee Sheet data from the database.
@@ -652,13 +668,20 @@ class FeeSheet {
 
       // If the item is already in the database...
       if ($id) {
+        // Get existing values from database.
+        $logarr = null;
+        $tmp = sqlQuery("SELECT * FROM billing WHERE id = ? AND billed = 0 AND activity = 1",
+          array($id));
+        if (!empty($tmp)) {
+          $logarr = array($tmp['code_type'], $tmp['code'], '', $tmp['pricelevel'],
+            $tmp['fee'], $tmp['units'], $tmp['provider_id'], '');
+        }
+        //
         if ($del) {
-          $this->logFSMessage(xl('Service deleted'));
+          $this->logFSMessage(xl('Item deleted'), '', $logarr);
           deleteBilling($id);
         }
         else {
-          $tmp = sqlQuery("SELECT * FROM billing WHERE id = ? AND billed = 0 AND activity = 1",
-            array($id));
           if (!empty($tmp)) {
             $tmparr = array('code' => $code, 'authorized' => $auth);
             if (isset($iter['units'    ])) $tmparr['units'      ] = $units;
@@ -671,9 +694,9 @@ class FeeSheet {
             if (isset($iter['notecodes'])) $tmparr['notecodes'  ] = $notecodes;
             foreach ($tmparr AS $key => $value) {
               if ($tmp[$key] != $value) {
-                if ('fee'         == $key) $this->logFSMessage(xl('Price changed'));
-                if ('units'       == $key) $this->logFSMessage(xl('Quantity changed'));
-                if ('provider_id' == $key) $this->logFSMessage(xl('Service provider changed'));
+                if ('fee'         == $key) $this->logFSMessage(xl('Price changed'           ), $value, $logarr);
+                if ('units'       == $key) $this->logFSMessage(xl('Quantity changed'        ), $value, $logarr);
+                if ('provider_id' == $key) $this->logFSMessage(xl('Service provider changed'), $value, $logarr);
                 sqlStatement("UPDATE billing SET `$key` = ? WHERE id = ?", array($value, $id));
               }
             }
@@ -682,7 +705,8 @@ class FeeSheet {
       }
       // Otherwise it's a new item...
       else if (!$del) {
-        $this->logFSMessage(xl('Service added'));
+        $logarr = array($code_type, $code, '', $pricelevel, $fee, $units, $provid, '');
+        $this->logFSMessage(xl('Item added'), '', $logarr);
         $code_text = lookup_code_descriptions($code_type.":".$code);
         addBilling($this->encounter, $code_type, $code, $code_text, $this->pid, $auth,
           $provid, $modifier, $units, $fee, $ndc_info, $justify, 0, $notecodes, $pricelevel);
@@ -736,16 +760,23 @@ class FeeSheet {
 
       // If the item is already in the database...
       if ($sale_id) {
+        // Get existing values from database.
         $tmprow = sqlQuery("SELECT ds.prescription_id, ds.quantity, ds.inventory_id, ds.fee, " .
-          "ds.sale_date, di.warehouse_id " .
+          "ds.sale_date, ds.drug_id, ds.selector, ds.pricelevel, di.warehouse_id " .
           "FROM drug_sales AS ds " .
           "LEFT JOIN drug_inventory AS di ON di.inventory_id = ds.inventory_id " .
           "WHERE ds.sale_id = ?", array($sale_id));
         $rxid = 0 + $tmprow['prescription_id'];
+        $logarr = null;
+        if (!empty($tmprow)) {
+          $logarr = array('PROD', $tmprow['drug_id'], $tmprow['selector'], $tmprow['pricelevel'],
+            $tmprow['fee'], $tmprow['quantity'], '', $tmprow['warehouse_id']);
+        }
+        //
         if ($del) {
           if (!empty($tmprow)) {
             // Delete this sale and reverse its inventory update.
-            $this->logFSMessage(xl('Product deleted'));
+            $this->logFSMessage(xl('Item deleted'), '', $logarr);
             sqlStatement("DELETE FROM drug_sales WHERE sale_id = ?", array($sale_id));
             if (!empty($tmprow['inventory_id'])) {
               sqlStatement("UPDATE drug_inventory SET on_hand = on_hand + ? WHERE inventory_id = ?",
@@ -768,10 +799,10 @@ class FeeSheet {
             ) AS $key => $value) {
               if ($tmprow[$key] != $value) {
                 $somechange = true;
-                if ('fee'        == $key) $this->logFSMessage(xl('Price changed'));
-                if ('pricelevel' == $key) $this->logFSMessage(xl('Price level changed'));
-                if ('selector'   == $key) $this->logFSMessage(xl('Template selector changed'));
-                if ('quantity'   == $key) $this->logFSMessage(xl('Quantity changed'));
+                if ('fee'        == $key) $this->logFSMessage(xl('Price changed'            ), $value, $logarr);
+                if ('pricelevel' == $key) $this->logFSMessage(xl('Price level changed'      ), $value, $logarr);
+                if ('selector'   == $key) $this->logFSMessage(xl('Template selector changed'), $value, $logarr);
+                if ('quantity'   == $key) $this->logFSMessage(xl('Quantity changed'         ), $value, $logarr);
                 sqlStatement("UPDATE drug_sales SET `$key` = ? WHERE sale_id = ?",
                   array($value, $sale_id));
                 if ($key == 'quantity' && $tmprow['inventory_id']) {
@@ -783,7 +814,7 @@ class FeeSheet {
             if ($tmprow['inventory_id'] && $warehouse_id && $warehouse_id != $tmprow['warehouse_id']) {
               // Changing warehouse.  Requires deleting and re-adding the sale.
               // Not setting $somechange because this alone does not affect a prescription.
-              $this->logFSMessage(xl('Warehouse changed'));
+              $this->logFSMessage(xl('Warehouse changed'), $warehouse_id, $logarr);
               sqlStatement("DELETE FROM drug_sales WHERE sale_id = ?", array($sale_id));
               sqlStatement("UPDATE drug_inventory SET on_hand = on_hand + ? WHERE inventory_id = ?",
                 array($units, $tmprow['inventory_id']));
@@ -804,7 +835,8 @@ class FeeSheet {
       // Otherwise it's a new item...
       else if (! $del) {
         $somechange = true;
-        $this->logFSMessage(xl('Product added'));
+        $logarr = array('PROD', $drug_id, $selector, $pricelevel, $fee, $units, '', $warehouse_id);
+        $this->logFSMessage(xl('Item added'), '', $logarr);
         $tmpnull = null;
         $sale_id = sellDrug($drug_id, $units, $fee, $this->pid, $this->encounter, 0,
           $this->visit_date, '', $warehouse_id, false, $tmpnull, $pricelevel, $selector);

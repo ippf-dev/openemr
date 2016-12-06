@@ -417,6 +417,7 @@ body, td {
   window.close();
  }
 
+ /*********************************************************************
  // Process click on a void option.
  function voidme(action) {
   if ((action == 'void' || action == 'voidall') &&
@@ -427,6 +428,36 @@ body, td {
   document.location.href = 'pos_checkout.php?ptid=<?php echo $patient_id; ?>&' + action +
     '=<?php echo $encounter; ?>' + '&form_checksum=<?php echo $current_checksum; ?>' +
     '<?php if (!empty($_GET['framed'])) echo '&framed=1'; ?>';
+  return false;
+ }
+ *********************************************************************/
+
+ var voidaction  = ''; // saves action argument from voidme()
+
+ // Submit the form to complete a void operation.
+ function voidwrap(form_reason, form_notes) {
+  top.restoreSession();
+  document.location.href = 'pos_checkout.php?ptid=<?php echo $patient_id; ?>&' + voidaction +
+    '=<?php echo $encounter; ?>' + '&form_checksum=<?php echo $current_checksum; ?>' +
+    '&form_reason=' + encodeURIComponent(form_reason) +
+    '&form_notes='  + encodeURIComponent(form_notes) +
+    '<?php if (!empty($_GET['framed'])) echo '&framed=1'; ?>';
+  return false;
+ }
+
+ // Process click on a void option.
+ // action can be 'regen', 'void' or 'voidall'.
+ function voidme(action) {
+  voidaction = action;
+  if (action == 'void' || action == 'voidall') {
+   if (!confirm('<?php echo xl('This will advance the receipt number. Please print the receipt if you have not already done so.'); ?>')) {
+     return false;
+   }
+   dlgopen('void_dialog.php', '_blank', 500, 450);
+   return false;
+  }
+  // TBD: Better defaults for void reason and notes.
+  voidwrap('', '');
   return false;
  }
 
@@ -1351,10 +1382,14 @@ if ($_POST['form_save'] && !$alertmsg) {
   exit();
 }
 
+// Void attributes.
+$form_reason = empty($_GET['form_reason']) ? '' : $_GET['form_reason'];
+$form_notes  = empty($_GET['form_notes' ]) ? '' : $_GET['form_notes'];
+
 // If "regen" encounter ID was given, then we must generate a new receipt ID.
 //
 if (!$alertmsg && $patient_id && !empty($_GET['regen'])) {
-  doVoid($patient_id, $encounter_id, false);
+  doVoid($patient_id, $encounter_id, false, '', $form_reason, $form_notes);
   $current_checksum = invoiceChecksum($patient_id, $encounter_id);
   $_GET['enc'] = $encounter_id;
 }
@@ -1384,11 +1419,11 @@ if ($patient_id && !empty($_GET['enc'])) {
 // Or for "voidall" undo all checkouts for the encounter.
 //
 if (!$alertmsg && $patient_id && !empty($_GET['void'])) {
-  doVoid($patient_id, $encounter_id, true);
+  doVoid($patient_id, $encounter_id, true, '', $form_reason, $form_notes);
   $current_checksum = invoiceChecksum($patient_id, $encounter_id);
 }
 else if (!$alertmsg && $patient_id && !empty($_GET['voidall'])) {
-  doVoid($patient_id, $encounter_id, true, 'all');
+  doVoid($patient_id, $encounter_id, true, 'all', $form_reason, $form_notes);
   $current_checksum = invoiceChecksum($patient_id, $encounter_id);
 }
 

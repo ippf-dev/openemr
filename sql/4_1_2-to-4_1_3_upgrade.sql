@@ -546,3 +546,21 @@ INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbrev
 #IfMissingColumn list_options activity
 ALTER TABLE `list_options` ADD COLUMN `activity` TINYINT DEFAULT 1 NOT NULL;
 #EndIf
+
+#IfMissingColumn voids reason
+ALTER TABLE `voids` ADD COLUMN `reason` VARCHAR(31) default '';
+#EndIf
+
+#IfMissingColumn voids notes
+ALTER TABLE `voids` ADD COLUMN `notes` VARCHAR(255) default '';
+#EndIf
+
+#IfNotRow2D list_options list_id lists option_id void_reasons
+INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('lists','void_reasons','Void Reasons', 1,0);
+INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('void_reasons','one'  ,'Reason 1',10,1);
+INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('void_reasons','two'  ,'Reason 2',20,0);
+#EndIf
+
+#IfNotIndex log patient_id
+CREATE INDEX `patient_id` ON `log` (`patient_id`);
+#EndIf

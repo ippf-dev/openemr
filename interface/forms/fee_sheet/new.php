@@ -480,8 +480,8 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
 
 // Handle reopen request.  In that case no other changes will be saved.
 // If there was a checkout this will undo it.
-if (!$alertmsg && $_POST['bn_reopen']) {
-  doVoid($fs->pid, $fs->encounter, true);
+if (!$alertmsg && ($_POST['bn_reopen'] || $_POST['form_reopen'])) {
+  doVoid($fs->pid, $fs->encounter, true, '', $_POST['form_reason'], $_POST['form_notes']);
   $current_checksum = $fs->visitChecksum();
   // Remove the line items so they are refreshed from the database on redisplay.
   unset($_POST['bill']);
@@ -555,6 +555,16 @@ function copayselect() {
 
 <?php echo $fs->jsLineItemValidation(); ?>
 
+// Submit the form to complete a void operation.
+function voidwrap(form_reason, form_notes) {
+  top.restoreSession();
+  var f = document.forms[0];
+  f.form_reason.value = form_reason;
+  f.form_notes.value  = form_notes;
+  f.form_reopen.value = '1';
+  f.submit();
+}
+
 function validate(f) {
  if (f.bn_reopen) {
   var reopening = f.bn_reopen.clicked;
@@ -565,6 +575,9 @@ function validate(f) {
     if (!confirm('<?php echo xls('Re-opening this visit will cause a void. Payment information will need to be re-entered. Do you want to proceed?'); ?>')) {
      return false;
     }
+    // Collect void reason and notes.
+    dlgopen('../../patient_file/void_dialog.php', '_blank', 500, 450);
+    return false;
    }
    top.restoreSession();
    return true;
@@ -1352,6 +1365,9 @@ value='<?php echo xla('Refresh');?>'>
 <input type='hidden' name='form_has_charges' value='<?php echo $fs->hasCharges ? 1 : 0; ?>' />
 <input type='hidden' name='form_checksum' value='<?php echo $current_checksum; ?>' />
 <input type='hidden' name='form_alertmsg' value='<?php echo attr($alertmsg); ?>' />
+<input type='hidden' name='form_reopen' value='' />
+<input type='hidden' name='form_reason' value='' />
+<input type='hidden' name='form_notes' value='' />
 
 <input type='button' value='<?php echo xla('Cancel');?>'
  onclick="top.restoreSession();location='<?php echo $GLOBALS['form_exit_url']; ?>'" />
