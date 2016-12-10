@@ -24,7 +24,7 @@ class line_on_show
 
 class line
 {
-	function line()
+	public function __construct()
 	{
 		$this->type      = "line";
 		$this->values    = array();
