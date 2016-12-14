@@ -266,7 +266,7 @@ function getCopay($patient_id, $encdate) {
 // Get the total co-pay amount paid by the patient for an encounter
 function getPatientCopay($patient_id, $encounter) {
         $resMoneyGot = sqlStatement("SELECT sum(pay_amount) as PatientPay FROM ar_activity where ".
-          "pid = ? and encounter = ? and payer_type=0 and account_code='PCP'",
+          "deleted IS NULL AND pid = ? and encounter = ? and payer_type=0 and account_code='PCP'",
           array($patient_id,$encounter));
          //new fees screen copay gives account_code='PCP'
         $rowMoneyGot = sqlFetchArray($resMoneyGot);
@@ -327,7 +327,7 @@ function doVoid($patient_id, $encounter_id, $purge=false, $time='', $reason='', 
   else if ($time == 'all') {
     $row = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
       "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
-      "pid = ? AND encounter = ?",
+      "deleted IS NULL AND pid = ? AND encounter = ?",
       array($patient_id, $encounter_id));
     $adjustments = $row['adjustments'];
     $payments = $row['payments'];
@@ -339,7 +339,7 @@ function doVoid($patient_id, $encounter_id, $purge=false, $time='', $reason='', 
   if ($date_original) {
     $row = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
       "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
-      "pid = ? AND encounter = ? AND post_time = ?",
+      "deleted IS NULL AND pid = ? AND encounter = ? AND post_time = ?",
       array($patient_id, $encounter_id, $date_original));
     $adjustments = $row['adjustments'];
     $payments = $row['payments'];
@@ -370,9 +370,9 @@ function doVoid($patient_id, $encounter_id, $purge=false, $time='', $reason='', 
     // Purge means delete adjustments and payments from the last checkout
     // and re-open the visit.
     if ($date_original) {
-      sqlStatement("DELETE FROM ar_activity WHERE " .
+      sqlStatement("UPDATE ar_activity SET deleted = NOW() WHERE " .
         "pid = '$patient_id' AND encounter = '$encounter_id' AND " .
-        "post_time = '$date_original'");
+        "deleted IS NULL AND post_time = '$date_original'");
       sqlStatement("UPDATE billing SET billed = 0, bill_date = NULL WHERE " .
         "pid = '$patient_id' AND encounter = '$encounter_id' AND activity = 1 AND " .
         "bill_date IS NOT NULL AND bill_date = '$date_original'");
@@ -382,8 +382,8 @@ function doVoid($patient_id, $encounter_id, $purge=false, $time='', $reason='', 
     }
     else {
       if ($time == 'all') {
-        sqlStatement("DELETE FROM ar_activity WHERE " .
-          "pid = '$patient_id' AND encounter = '$encounter_id'");
+        sqlStatement("UPDATE ar_activity SET deleted = NOW() WHERE " .
+          "deleted IS NULL AND pid = '$patient_id' AND encounter = '$encounter_id'");
       }
       sqlStatement("UPDATE billing SET billed = 0, bill_date = NULL WHERE " .
         "pid = '$patient_id' AND encounter = '$encounter_id' AND activity = 1");

@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -242,7 +242,7 @@ function doinvopen(ptid,encid) {
       "LEFT OUTER JOIN billing AS b ON b.pid = a.pid AND b.encounter = a.encounter AND " .
       "b.code = a.code AND b.modifier = a.modifier AND b.activity = 1 AND " .
       "b.code_type != 'COPAY' AND b.code_type != 'TAX' " .
-      "WHERE a.pay_amount != 0 AND ( " .
+      "WHERE a.deleted IS NULL AND a.pay_amount != 0 AND ( " .
       "a.post_time >= '$form_from_date 00:00:00' AND a.post_time <= '$form_to_date 23:59:59' " .
       "OR fe.date >= '$form_from_date 00:00:00' AND fe.date <= '$form_to_date 23:59:59' " .
       "OR s.deposit_date >= '$form_from_date' AND s.deposit_date <= '$form_to_date' )";

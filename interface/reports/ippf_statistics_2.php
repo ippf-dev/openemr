@@ -863,7 +863,7 @@ function get_adjustment_type($patient_id, $encounter_id, $code_type, $code) {
 
   $adjreason = '';
   $row = sqlQuery("SELECT memo FROM ar_activity WHERE " .
-    "pid = '$patient_id' AND encounter = '$encounter_id' AND " .
+    "pid = '$patient_id' AND encounter = '$encounter_id' AND deleted IS NULL AND " .
     "(code_type = '' OR (code_type = '$code_type' AND code = '$code')) AND " .
     "(adj_amount != 0.00 OR pay_amount = 0.00) AND memo != '' " .
     "ORDER BY code DESC, adj_amount DESC LIMIT 1");

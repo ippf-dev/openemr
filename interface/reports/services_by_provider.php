@@ -77,7 +77,7 @@ function ensureLineAmounts($patient_id, $encounter_id) {
   $tres = sqlStatement("SELECT " .
     "a.code_type, a.code, a.adj_amount, a.pay_amount " .
     "FROM ar_activity AS a WHERE " .
-    "a.pid = '$patient_id' AND a.encounter = '$encounter_id'");
+    "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND a.deleted IS NULL");
   while ($trow = sqlFetchArray($tres)) {
     $codekey = $trow['code_type'] . ':' . $trow['code'];
     if (isset($aItems[$invno][$codekey])) {

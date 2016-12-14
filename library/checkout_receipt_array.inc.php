@@ -169,7 +169,7 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
   $head_charges += $row['amount'];
   $row = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
     "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
-    "pid = '$patient_id' AND encounter = '$encounter'" .
+    "deleted IS NULL AND pid = '$patient_id' AND encounter = '$encounter'" .
     ($billtime ? " AND post_time <= '$billtime'" : ""));
   $head_charges -= $row['adjustments'];
   $head_payments = $row['payments'];
@@ -241,7 +241,7 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     "s.session_id, s.reference, s.check_date " .
     "FROM ar_activity AS a " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
-    "a.pid = '$patient_id' AND a.encounter = '$encounter' AND " .
+    "a.deleted IS NULL AND a.pid = '$patient_id' AND a.encounter = '$encounter' AND " .
     "(a.adj_amount != 0 || a.pay_amount = 0)");
   while ($arow = sqlFetchArray($ares)) {
     if ($billtime && $arow['post_time'] != $billtime) continue;
@@ -316,7 +316,7 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     "s.payer_id, s.reference, s.check_date, s.deposit_date " .
     "FROM ar_activity AS a " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
-    "a.pid = '$patient_id' AND a.encounter = '$encounter' AND " .
+    "a.deleted IS NULL AND a.pid = '$patient_id' AND a.encounter = '$encounter' AND " .
     "a.pay_amount != 0 " .
     "ORDER BY a.post_time, s.check_date, a.sequence_no");
   $payer = empty($inrow['payer_type']) ? 'Pt' : ('Ins' . $inrow['payer_type']);

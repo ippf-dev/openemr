@@ -104,7 +104,7 @@ function load_adjustments($patient_id, $encounter_id) {
     "FROM ar_activity AS a " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
-    "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND " .
+    "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND a.deleted IS NULL AND " .
     "( a.adj_amount != 0 OR a.pay_amount = 0 ) " .
     "ORDER BY s.check_date, a.sequence_no");
   while ($arow = sqlFetchArray($ares)) {
@@ -516,7 +516,7 @@ body, td {
   $head_charges += $row['amount'];
   $row = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
     "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
-    "pid = '$patient_id' AND encounter = '$encounter'");
+    "pid = '$patient_id' AND encounter = '$encounter' AND deleted IS NULL");
   $head_adjustments = $row['adjustments'];
   $head_payments = $row['payments'];
   $row = sqlQuery("SELECT SUM(fee) AS amount FROM billing WHERE " .
@@ -759,7 +759,7 @@ body, td {
     "s.payer_id, s.reference, s.check_date, s.deposit_date " .
     "FROM ar_activity AS a " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
-    "a.pid = '$patient_id' AND a.encounter = '$encounter' AND " .
+    "a.pid = '$patient_id' AND a.encounter = '$encounter' AND a.deleted IS NULL AND " .
     "a.pay_amount != 0 " .
     "ORDER BY s.check_date, a.sequence_no");
   $payer = empty($inrow['payer_type']) ? 'Pt' : ('Ins' . $inrow['payer_type']);
@@ -2063,7 +2063,7 @@ $ares = sqlStatement("SELECT " .
   "a.payer_type, a.pay_amount, a.memo, s.session_id, s.reference, s.check_date " .
   "FROM ar_activity AS a " .
   "LEFT JOIN ar_session AS s ON s.session_id = a.session_id WHERE " .
-  "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND a.pay_amount != 0 " .
+  "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND a.deleted IS NULL AND a.pay_amount != 0 " .
   "ORDER BY s.check_date, a.sequence_no");
 while ($arow = sqlFetchArray($ares)) {
   $memo = $arow['memo'];

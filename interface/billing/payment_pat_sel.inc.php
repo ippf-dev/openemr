@@ -199,7 +199,7 @@ if (isset($_POST["mode"]))
 						$Copay=$rowCopay['copay']*-1;
 						
 						$resMoneyGot = sqlStatement("SELECT sum(pay_amount) as PatientPay FROM ar_activity where
-						pid ='$hidden_patient_code'  and  encounter  ='$Encounter' and  payer_type=0 and 
+						deleted IS NULL AND pid ='$hidden_patient_code'  and  encounter  ='$Encounter' and  payer_type=0 and 
 						account_code='PCP'");//new fees screen copay gives account_code='PCP'
 						$rowMoneyGot = sqlFetchArray($resMoneyGot);
 						$PatientPay=$rowMoneyGot['PatientPay'];
@@ -208,13 +208,13 @@ if (isset($_POST["mode"]))
 					 }
 						//payer_type!=0, supports both mapped and unmapped code_type in ar_activity
 						$resMoneyGot = sqlStatement("SELECT sum(pay_amount) as MoneyGot FROM ar_activity where
-						pid ='$hidden_patient_code' and (code_type='$Codetype' or code_type='') and code='$Code' and modifier='$Modifier'  and  encounter  ='$Encounter' and  !(payer_type=0 and 
+						deleted IS NULL AND pid ='$hidden_patient_code' and (code_type='$Codetype' or code_type='') and code='$Code' and modifier='$Modifier'  and  encounter  ='$Encounter' and  !(payer_type=0 and 
 						account_code='PCP')");//new fees screen copay gives account_code='PCP'
 						$rowMoneyGot = sqlFetchArray($resMoneyGot);
 						$MoneyGot=$rowMoneyGot['MoneyGot'];
                                                 //supports both mapped and unmapped code_type in ar_activity
 						$resMoneyAdjusted = sqlStatement("SELECT sum(adj_amount) as MoneyAdjusted FROM ar_activity where
-						pid ='$hidden_patient_code' and (code_type='$Codetype' or code_type='') and code='$Code' and modifier='$Modifier'  and  encounter  ='$Encounter'");
+						deleted IS NULL AND pid ='$hidden_patient_code' and (code_type='$Codetype' or code_type='') and code='$Code' and modifier='$Modifier'  and  encounter  ='$Encounter'");
 						$rowMoneyAdjusted = sqlFetchArray($resMoneyAdjusted);
 						$MoneyAdjusted=$rowMoneyAdjusted['MoneyAdjusted'];
 

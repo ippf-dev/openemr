@@ -48,7 +48,7 @@ if (isset($_POST["mode"]))
   if ($_POST["mode"] == "DeletePayments")
    {
     $DeletePaymentId=trim(formData('DeletePaymentId' ));
-	$ResultSearch = sqlStatement("SELECT distinct encounter,pid from ar_activity where  session_id ='$DeletePaymentId'");
+	$ResultSearch = sqlStatement("SELECT distinct encounter,pid from ar_activity where deleted IS NULL AND session_id = '$DeletePaymentId'");
 	if(sqlNumRows($ResultSearch)>0)
 	 {
 	  while ($RowSearch = sqlFetchArray($ResultSearch))
@@ -59,8 +59,8 @@ if (isset($_POST["mode"]))
 	   }
 	 }
 	//delete and log that action
-	row_delete("ar_session", "session_id ='$DeletePaymentId'");
-	row_delete("ar_activity", "session_id ='$DeletePaymentId'");
+	// row_delete("ar_session", "session_id ='$DeletePaymentId'");
+	row_modify("ar_activity", "deleted = NOW()", "deleted IS NULL AND session_id ='$DeletePaymentId'");
 	$Message='Delete';
 	//------------------
     $_POST["mode"] = "SearchPayment";
@@ -172,7 +172,7 @@ if (isset($_POST["mode"]))
 	if($PaymentStatus!='')
 	 {
 		 	$QsString="select ar_session.session_id,pay_total,global_amount,sum(pay_amount) sum_pay_amount from ar_session,ar_activity
-				where ar_session.session_id=ar_activity.session_id group by ar_activity.session_id,ar_session.session_id
+				where ar_activity.deleted IS NULL AND ar_session.session_id=ar_activity.session_id group by ar_activity.session_id,ar_session.session_id
 				having pay_total-global_amount-sum_pay_amount=0 or pay_total=0";
 			$rs= sqlStatement("$QsString");
 			while($rowrs=sqlFetchArray($rs))
@@ -618,7 +618,7 @@ document.onclick=HideTheAjaxDivs;
 								$row=sqlFetchArray($rs);
 								$pay_total=$row['pay_total'];
 								$global_amount=$row['global_amount'];
-								$rs= sqlStatement("select sum(pay_amount) sum_pay_amount from ar_activity where session_id='".$RowSearch['session_id']."'");
+								$rs= sqlStatement("select sum(pay_amount) sum_pay_amount from ar_activity where deleted IS NULL AND session_id = '".$RowSearch['session_id']."'");
 								$row=sqlFetchArray($rs);
 								$pay_amount=$row['sum_pay_amount'];
 								$UndistributedAmount=$pay_total-$pay_amount-$global_amount;

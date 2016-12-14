@@ -1013,7 +1013,7 @@ if(is_array($ret))
       $rhtml2 = "";
       $rowcnt = 0;
       $resMoneyGot = sqlStatement("SELECT pay_amount as PatientPay,date(post_time) as date FROM ar_activity where ".
-        "pid = ? and encounter = ? and payer_type=0 and account_code='PCP'",
+        "pid = ? and encounter = ? AND deleted IS NULL and payer_type = 0 and account_code = 'PCP'",
         array($iter['enc_pid'],$iter['enc_encounter']));
         //new fees screen copay gives account_code='PCP'
       if(sqlNumRows($resMoneyGot) > 0){

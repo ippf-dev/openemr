@@ -80,7 +80,7 @@ if($payment_id>0)
 	$row=sqlFetchArray($rs);
 	$pay_total=$row['pay_total'];
 	$global_amount=$row['global_amount'];
-	$rs= sqlStatement("select sum(pay_amount) sum_pay_amount from ar_activity where session_id='$payment_id'");
+	$rs= sqlStatement("select sum(pay_amount) sum_pay_amount from ar_activity where deleted IS NULL AND session_id='$payment_id'");
 	$row=sqlFetchArray($rs);
 	$pay_amount=$row['sum_pay_amount'];
 	$UndistributedAmount=$pay_total-$pay_amount-$global_amount;

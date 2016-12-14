@@ -1045,7 +1045,7 @@ if ($billresult) {
 }
 
 $resMoneyGot = sqlStatement("SELECT pay_amount as PatientPay,session_id as id,date(post_time) as date ".
-  "FROM ar_activity where pid =? and encounter =? and payer_type=0 and account_code='PCP'",
+  "FROM ar_activity where pid = ? and encounter = ? AND deleted IS NULL and payer_type = 0 and account_code = 'PCP'",
   array($fs->pid, $fs->encounter)); //new fees screen copay gives account_code='PCP'
 while($rowMoneyGot = sqlFetchArray($resMoneyGot)){
   $PatientPay=$rowMoneyGot['PatientPay']*-1;

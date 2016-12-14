@@ -296,7 +296,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     $query = "SELECT " .
       "b.id, b.code_text, b.units, b.fee " .
       "FROM billing AS b " .
-      "JOIN ar_activity AS a ON a.pid = b.pid AND a.encounter = b.encounter AND " .
+      "JOIN ar_activity AS a ON a.pid = b.pid AND a.encounter = b.encounter AND a.deleted IS NULL AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = b.code_type AND a.code = b.code ) ) AND " .
       "  a.memo = '" . $form_adjreason . "' WHERE " .
@@ -343,7 +343,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     $query = "SELECT " .
       "s.fee, s.quantity, s.sale_id, d.name " .
       "FROM drug_sales AS s " .
-      "JOIN ar_activity AS a ON a.pid = s.pid AND a.encounter = s.encounter AND " .
+      "JOIN ar_activity AS a ON a.pid = s.pid AND a.encounter = s.encounter AND a.deleted IS NULL AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = 'PROD' AND a.code = s.drug_id ) ) AND " .
       "  a.memo = '" . $form_adjreason . "' " .

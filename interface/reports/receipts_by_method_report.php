@@ -369,7 +369,7 @@ if ($_POST['form_refresh']) {
       "JOIN forms AS f ON f.pid = a.pid AND f.encounter = a.encounter AND f.formdir = 'newpatient' " .
       "LEFT JOIN ar_session AS s ON s.session_id = a.session_id " .
       "LEFT JOIN insurance_companies AS i ON i.id = s.payer_id " .
-      "WHERE ( a.pay_amount != 0 OR a.adj_amount != 0 )";
+      "WHERE a.deleted IS NULL AND ( a.pay_amount != 0 OR a.adj_amount != 0 )";
     //
     if ($form_use_edate) {
       $query .= " AND fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";

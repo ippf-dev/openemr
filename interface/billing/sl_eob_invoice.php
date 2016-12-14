@@ -18,6 +18,7 @@
   require_once("$srcdir/invoice_summary.inc.php");
   require_once("../../custom/code_types.inc.php");
   require_once("$srcdir/formdata.inc.php");
+  require_once("$srcdir/payment.inc.php");
 
   $debug = 0; // set to 1 for debugging mode
 
@@ -35,6 +36,7 @@
       printf("%.2f", $amount);
   }
 
+  /********************************************************************
   // Delete rows, with logging, for the specified table using the
   // specified WHERE clause.  Borrowed from deleter.php.
   //
@@ -57,6 +59,7 @@
       sqlStatement($query);
     }
   }
+  ********************************************************************/
 ?>
 <html>
 <head>
@@ -276,8 +279,8 @@ function updateFields(payField, adjField, balField, coPayField, isFirstProcCode)
         // Handle deletes. row_delete() is borrowed from deleter.php.
         if ($ALLOW_DELETE && !$debug) {
           foreach ($_POST['form_del'] as $arseq => $dummy) {
-            row_delete("ar_activity", "pid = '$patient_id' AND " .
-              "encounter = '$encounter_id' AND sequence_no = '$arseq'");
+            row_modify("ar_activity", "deleted = NOW()", "pid = '$patient_id' AND " .
+              "encounter = '$encounter_id' AND sequence_no = '$arseq' AND deleted IS NULL");
           }
         }
       }

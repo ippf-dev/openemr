@@ -251,5 +251,17 @@ function DistributionInsert($CountRow,$created_time,$user_id)
       sqlStatement($query);
     }
   }
+
+ // Deactivate rows, with logging, for the specified table using the
+ // specified SET and WHERE clauses.  Borrowed from deleter.php.
+ //
+ function row_modify($table, $set, $where) {
+  if (sqlQuery("SELECT * FROM $table WHERE $where")) {
+   newEvent("deactivate", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "$table: $where");
+   $query = "UPDATE $table SET $set WHERE $where";
+   echo $query . "<br>\n";
+   sqlStatement($query);
+  }
+ }
 //===============================================================================
 ?>

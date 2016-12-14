@@ -1686,7 +1686,7 @@ function get_patient_balance($pid, $with_insurance=false) {
           array($pid, $encounter));
         $drow = sqlQuery("SELECT SUM(pay_amount) AS payments " .
           "FROM ar_activity WHERE " .
-          "pid = ? AND encounter = ? AND payer_type = 0",
+          "deleted IS NULL AND pid = ? AND encounter = ? AND payer_type = 0",
           array($pid, $encounter));
         $ptbal = $insarr[0]['copay'] + $brow['amount'] - $drow['payments'];
         if ($ptbal > 0) $balance += $ptbal;
@@ -1698,7 +1698,7 @@ function get_patient_balance($pid, $with_insurance=false) {
           "activity = 1", array($pid, $encounter));
         $drow = sqlQuery("SELECT SUM(pay_amount) AS payments, " .
           "SUM(adj_amount) AS adjustments FROM ar_activity WHERE " .
-          "pid = ? AND encounter = ?", array($pid, $encounter));
+          "deleted IS NULL AND pid = ? AND encounter = ?", array($pid, $encounter));
         $srow = sqlQuery("SELECT SUM(fee) AS amount FROM drug_sales WHERE " .
           "pid = ? AND encounter = ?", array($pid, $encounter));
         $balance += $brow['amount'] + $srow['amount']
@@ -1745,7 +1745,7 @@ function get_patient_balance_excluding($pid, $excluded = -1) {
   $drow = sqlQuery("SELECT SUM(a.pay_amount) AS payments, " .
     "SUM(a.adj_amount) AS adjustments " .
     "FROM ar_activity AS a, form_encounter AS fe WHERE " .
-    "a.pid = ? AND a.encounter != 0 AND a.encounter != ? AND " .
+    "a.deleted IS NULL AND a.pid = ? AND a.encounter != 0 AND a.encounter != ? AND " .
     "fe.pid = a.pid AND fe.encounter = a.encounter",
     array($pid, $excluded));
   return sprintf('%01.2f', $brow['amount'] + $srow['amount']

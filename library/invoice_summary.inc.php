@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2005-2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2005-2010, 2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -200,7 +200,7 @@ function ar_get_invoice_summary($patient_id, $encounter_id, $with_detail = false
     "FROM ar_activity AS a " .
     "LEFT OUTER JOIN ar_session AS s ON s.session_id = a.session_id " .
     "LEFT OUTER JOIN insurance_companies AS i ON i.id = s.payer_id " .
-    "WHERE a.pid = ? AND a.encounter = ? " .
+    "WHERE a.deleted IS NULL AND a.pid = ? AND a.encounter = ? " .
     "ORDER BY s.check_date, a.sequence_no", array($patient_id,$encounter_id) );
   while ($row = sqlFetchArray($res)) {
     $code = $row['code'];

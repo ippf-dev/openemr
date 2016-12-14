@@ -389,7 +389,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       "FROM form_encounter AS fe " .
       "JOIN patient_data AS pd ON pd.pid = fe.pid AND pd.userlist4 = ? " .
       "JOIN billing AS b ON b.pid = fe.pid AND b.encounter = fe.encounter AND b.activity = 1 AND b.fee != 0.00 " .
-      "JOIN ar_activity AS a ON a.pid = b.pid AND a.encounter = b.encounter AND " .
+      "JOIN ar_activity AS a ON a.pid = b.pid AND a.encounter = b.encounter AND a.deleted IS NULL AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = b.code_type AND a.code = b.code ) ) " .
       "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 AND lo.notes LIKE '%=Ins%' " .
@@ -454,7 +454,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       "FROM form_encounter AS fe " .
       "JOIN patient_data AS pd ON pd.pid = fe.pid AND pd.userlist4 = ? " .
       "JOIN drug_sales AS s ON s.pid = fe.pid AND s.encounter = fe.encounter AND s.fee != 0.00 " .
-      "JOIN ar_activity AS a ON a.pid = s.pid AND a.encounter = s.encounter AND " .
+      "JOIN ar_activity AS a ON a.pid = s.pid AND a.encounter = s.encounter AND a.deleted IS NULL AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = 'PROD' AND a.code = s.drug_id ) ) " .
       "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 AND lo.notes LIKE '%=Ins%' " .

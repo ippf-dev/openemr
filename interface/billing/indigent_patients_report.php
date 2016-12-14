@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2005-2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2005-2010, 2016 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -210,7 +210,7 @@ if (!$INTEGRATED_AR) SLConnect();
         $inv_paid = 0 - $arow['amount'];
         $arow = sqlQuery("SELECT SUM(pay_amount) AS pay, " .
           "sum(adj_amount) AS adj FROM ar_activity WHERE " .
-          "pid = '$patient_id' AND encounter = '$encounter_id'");
+          "pid = '$patient_id' AND encounter = '$encounter_id' AND deleted IS NULL");
         $inv_paid   += $arow['pay'];
         $inv_amount -= $arow['adj'];
       }

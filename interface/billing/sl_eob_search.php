@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2005-2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2005-2010, 2016 Rod Roark <rod@sunsetsystems.com>
 //
 // Windows compatibility and statement downloading:
 //     2009 Bill Cernansky and Tony McCormick [mi-squared.com]
@@ -673,11 +673,11 @@ if ($_POST['form_search'] || $_POST['form_print']) {
       "b.pid = f.pid AND b.encounter = f.encounter AND " .
       "b.activity = 1 AND b.code_type != 'COPAY' ) AS charges, " .
       "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
-      "a.pid = f.pid AND a.encounter = f.encounter AND a.payer_type = 0 AND a.account_code = 'PCP')*-1 AS copays, " .
+      "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL AND a.payer_type = 0 AND a.account_code = 'PCP')*-1 AS copays, " .
       "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
-      "a.pid = f.pid AND a.encounter = f.encounter AND a.account_code != 'PCP') AS payments, " .
+      "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL AND a.account_code != 'PCP') AS payments, " .
       "( SELECT SUM(a.adj_amount) FROM ar_activity AS a WHERE " .
-      "a.pid = f.pid AND a.encounter = f.encounter ) AS adjustments " .
+      "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL ) AS adjustments " .
       "FROM form_encounter AS f " .
       "JOIN patient_data AS p ON p.pid = f.pid " .
       "WHERE $where " .

@@ -617,13 +617,13 @@ function calctotal() {
     "b.pid = f.pid AND b.encounter = f.encounter AND " .
     "b.activity = 1 ) AS billed, " .
     "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
-    "a.pid = f.pid AND a.encounter = f.encounter AND " .
+    "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL AND " .
     "a.payer_type = 0 ) AS ptpaid, " .
     "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
-    "a.pid = f.pid AND a.encounter = f.encounter AND " .
+    "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL AND " .
     "a.payer_type != 0 ) AS inspaid, " .
     "( SELECT SUM(a.adj_amount) FROM ar_activity AS a WHERE " .
-    "a.pid = f.pid AND a.encounter = f.encounter ) AS adjustments " .
+    "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL ) AS adjustments " .
     "FROM form_encounter AS f " .
     "JOIN patient_data AS p ON p.pid = f.pid " .
     "WHERE f.pid = '$pid' AND f.encounter != '$omitenc' " .

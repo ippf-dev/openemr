@@ -540,9 +540,9 @@ if ($_POST['form_refresh'] || $_POST['form_export'] || $_POST['form_csvexport'])
       "( SELECT SUM(s.fee) FROM drug_sales AS s WHERE " .
       "s.pid = f.pid AND s.encounter = f.encounter ) AS sales, " .
       "( SELECT SUM(a.pay_amount) FROM ar_activity AS a WHERE " .
-      "a.pid = f.pid AND a.encounter = f.encounter ) AS payments, " .
+      "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL ) AS payments, " .
       "( SELECT SUM(a.adj_amount) FROM ar_activity AS a WHERE " .
-      "a.pid = f.pid AND a.encounter = f.encounter ) AS adjustments " .
+      "a.pid = f.pid AND a.encounter = f.encounter AND a.deleted IS NULL ) AS adjustments " .
       "FROM form_encounter AS f " .
       "JOIN patient_data AS p ON p.pid = f.pid " .
       "LEFT OUTER JOIN users AS u ON u.id = p.ref_providerID " .

@@ -200,7 +200,8 @@ function popup_close() {
    row_delete("claims"         , "patient_id = '$patient'");
    delete_drug_sales($patient);
    row_delete("payments"       , "pid = '$patient'");
-   row_delete("ar_activity"    , "pid = '$patient'");
+   // row_delete("ar_activity"    , "pid = '$patient'");
+   row_modify("ar_activity"    , "deleted = NOW()", "pid = '$patient' AND deleted IS NULL");
    row_delete("openemr_postcalendar_events", "pc_pid = '$patient'");
    row_delete("immunizations"  , "patient_id = '$patient'");
    row_delete("issue_encounter", "pid = '$patient'");
@@ -239,7 +240,8 @@ function popup_close() {
    if (!acl_check('admin', 'super')) die("Not authorized!");
    row_modify("billing", "activity = 0", "encounter = '$encounterid'");
    delete_drug_sales(0, $encounterid);
-   row_delete("ar_activity", "encounter = '$encounterid'");
+   // row_delete("ar_activity", "encounter = '$encounterid'");
+   row_modify("ar_activity", "deleted = NOW()", "encounter = '$encounterid' AND deleted IS NULL");
    row_delete("claims", "encounter_id = '$encounterid'");
    row_delete("issue_encounter", "encounter = '$encounterid'");
    $res = sqlStatement("SELECT * FROM forms WHERE encounter = '$encounterid'");
@@ -285,6 +287,7 @@ function popup_close() {
           "FROM ar_activity WHERE " .
           "pid = '$patient_id' AND " .
           "encounter = '" . $payrow['encounter'] . "' AND " .
+          "deleted IS NULL AND " .
           "payer_type = 0 AND " .
           "adj_amount = 0.00 " .
           "GROUP BY session_id ORDER BY session_id DESC");
@@ -299,6 +302,7 @@ function popup_close() {
           die(xlt('Unable to match this payment in ar_activity') . ": $tpmt");
         }
         // Delete the payment.
+        /**************************************************************
         row_delete("ar_activity",
           "pid = '$patient_id' AND " .
           "encounter = '" . $payrow['encounter'] . "' AND " .
@@ -311,10 +315,20 @@ function popup_close() {
             "patient_id = '$patient_id' AND " .
             "session_id = '$ref_id'");
         }
+        **************************************************************/
+        row_modify("ar_activity", "deleted = NOW()",
+          "pid = '$patient_id' AND " .
+          "encounter = '" . $payrow['encounter'] . "' AND " .
+          "deleted IS NULL AND " .
+          "payer_type = 0 AND " .
+          "pay_amount != 0.00 AND " .
+          "adj_amount = 0.00 AND " .
+          "session_id = '$ref_id'");
       }
       else {
         // Encounter is 0! Seems this happens for pre-payments.
         $tpmt = sprintf("%01.2f", $payrow['amount1'] + $payrow['amount2']);
+        /**************************************************************
         row_delete("ar_session",
           "patient_id = '$patient_id' AND " .
           "payer_id = 0 AND " .
@@ -322,6 +336,7 @@ function popup_close() {
           "pay_total = '$tpmt' AND " .
           "(SELECT COUNT(*) FROM ar_activity where ar_activity.session_id = ar_session.session_id) = 0 " .
           "ORDER BY session_id DESC LIMIT 1");
+        **************************************************************/
       }
       row_delete("payments", "id = '" . $payrow['id'] . "'");
     }
@@ -330,11 +345,15 @@ function popup_close() {
     if (!acl_check('acct','disc')) die("Not authorized!");
     list($patient_id, $encounter_id) = explode(".", $billing);
     if ($GLOBALS['oer_config']['ws_accounting']['enabled'] === 2) {
+      /****************************************************************
       sqlStatement("DELETE FROM ar_activity WHERE " .
         "pid = '$patient_id' AND encounter = '$encounter_id'");
       sqlStatement("DELETE ar_session FROM ar_session LEFT JOIN " .
         "ar_activity ON ar_session.session_id = ar_activity.session_id " .
         "WHERE ar_activity.session_id IS NULL");
+      ****************************************************************/
+      row_modify("ar_activity", "deleted = NOW()",
+        "pid = '$patient_id' AND encounter = '$encounter_id' AND deleted IS NULL");
       row_modify("billing", "activity = 0",
         "pid = '$patient_id' AND " .
         "encounter = '$encounter_id' AND " .

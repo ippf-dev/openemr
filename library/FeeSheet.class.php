@@ -625,6 +625,7 @@ class FeeSheet {
         if ($fee < 0) {
           $fee = $fee * -1;
         }
+        /**************************************************************
         if (!$id) {
           // adding new copay from fee sheet into ar_session and ar_activity tables
           $session_id = idSqlStatement("INSERT INTO ar_session " .
@@ -640,7 +641,7 @@ class FeeSheet {
         else {
           // editing copay saved to ar_session and ar_activity
           $session_id = $id;
-          $res_amount = sqlQuery("SELECT pay_amount FROM ar_activity WHERE pid=? AND encounter=? AND session_id=?",
+          $res_amount = sqlQuery("SELECT pay_amount FROM ar_activity WHERE deleted IS NULL AND pid = ? AND encounter = ? AND session_id = ?",
             array($this->pid, $this->encounter, $session_id));
           if ($fee != $res_amount['pay_amount']) {
             sqlStatement("UPDATE ar_session SET user_id=?,pay_total=?,modified_time=now(),post_to_date=now() WHERE session_id=?",
@@ -650,6 +651,23 @@ class FeeSheet {
               array($ct0, $cod0, $mod0, $_SESSION['authId'], $fee, $this->pid, $this->encounter, $session_id));
           }
         }
+        **************************************************************/
+        if ($id) {
+          sqlStatement("UPDATE ar_activity SET deleted = NOW() WHERE " .
+            "deleted IS NULL AND pid = ? AND encounter = ? AND account_code = 'PCP' AND session_id = ?",
+            array($this->pid, $this->encounter, $id));
+        }
+        // adding new copay from fee sheet into ar_session and ar_activity tables
+        $session_id = idSqlStatement("INSERT INTO ar_session " .
+          "(payer_id, user_id, pay_total, payment_type, description, patient_id, payment_method, " .
+          "adjustment_code, post_to_date) " .
+          "VALUES ('0',?,?,'patient','COPAY',?,'','patient_payment',now())",
+          array($_SESSION['authId'], $fee, $this->pid));
+        SqlStatement("INSERT INTO ar_activity (pid, encounter, code_type, code, modifier, " .
+          "payer_type, post_time, post_user,session_id, pay_amount,account_code) " .
+          "VALUES (?,?,?,?,?,0,now(),?,?,?,'PCP')",
+          array($this->pid, $this->encounter, $ct0, $cod0, $mod0, $_SESSION['authId'], $session_id, $fee));
+
         if (!$cod0){
           $copay_update = TRUE;
           $update_session_id = $session_id;
@@ -716,8 +734,8 @@ class FeeSheet {
     // if modifier is not inserted during loop update the record using the first
     // non-empty modifier and code
     if($copay_update == TRUE && $update_session_id != '' && $mod0 != '') {
-      sqlStatement("UPDATE ar_activity SET code_type = ?, code = ?, modifier = ?".
-        " WHERE pid = ? AND encounter = ? AND account_code = 'PCP' AND session_id = ?",
+      sqlStatement("UPDATE ar_activity SET code_type = ?, code = ?, modifier = ? " .
+        "WHERE deleted IS NULL AND pid = ? AND encounter = ? AND account_code = 'PCP' AND session_id = ?",
         array($ct0, $cod0, $mod0, $this->pid, $this->encounter, $update_session_id));
     }
 

@@ -198,7 +198,7 @@ class Claim {
     
     $resMoneyGot = sqlStatement("SELECT pay_amount as PatientPay,session_id as id,".
       "date(post_time) as date FROM ar_activity where pid ='{$this->pid}' and encounter ='{$this->encounter_id}' ".
-      "and payer_type=0 and account_code='PCP'");
+      "and deleted IS NULL AND payer_type=0 and account_code='PCP'");
       //new fees screen copay gives account_code='PCP'
     while($rowMoneyGot = sqlFetchArray($resMoneyGot)){
       $PatientPay=$rowMoneyGot['PatientPay']*-1;

@@ -159,7 +159,7 @@ class newpatienttoapprove {
             }
             $query="select concat(encounter,code,modifier) as pecm,encounter,code,
             modifier,pay_amount,adj_amount,payer_type,post_time,account_code,
-            follow_up_note,memo,date_format(post_time,'%Y-%m-%d') as dtfrom from ar_activity where pid=? $enc_set";
+            follow_up_note,memo,date_format(post_time,'%Y-%m-%d') as dtfrom from ar_activity where deleted IS NULL AND pid=? $enc_set";
             return array($query,$enc_set_array);
             break;
             case 'A9':
@@ -169,7 +169,7 @@ class newpatienttoapprove {
             break;
             case 'A10':
 						//Payment
-                $query = "SELECT sum(pay_amount)  as pay_amount FROM ar_session,ar_activity WHERE patient_id=? AND adjustment_code=?
+                $query = "SELECT sum(pay_amount)  as pay_amount FROM ar_session,ar_activity WHERE ar_activity.deleted IS NULL AND patient_id=? AND adjustment_code=?
                           AND pid=? AND ar_session.session_id=ar_activity.session_id  and pay_amount>0";
                 return array($query,array($pid,'pre_payment',$pid));
             break;
@@ -180,7 +180,7 @@ class newpatienttoapprove {
             break;
             case 'A12':
 						//Payment
-                $query = "SELECT sum(pay_amount)  as pay_amount FROM ar_session,ar_activity WHERE patient_id=? AND adjustment_code!=?
+                $query = "SELECT sum(pay_amount)  as pay_amount FROM ar_session,ar_activity WHERE ar_activity.deleted IS NULL AND patient_id=? AND adjustment_code!=?
                           AND pid=? AND ar_session.session_id=ar_activity.session_id  and pay_amount>0";
                 return array($query,array($pid,'pre_payment',$pid));
             break;
@@ -300,7 +300,7 @@ class newpatienttoapprove {
                 ",i.name from ar_activity AS a " .
                 "LEFT OUTER JOIN ar_session AS s ON s.session_id = a.session_id " .
                 "LEFT OUTER JOIN insurance_companies AS i ON i.id = s.payer_id " .
-                "WHERE  a.encounter = ? and a.pid = ? " .
+                "WHERE a.deleted IS NULL AND a.encounter = ? and a.pid = ? " .
                 "ORDER BY s.check_date, a.sequence_no";
             return array($query,$data[1]);
             break;

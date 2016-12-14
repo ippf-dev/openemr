@@ -1,5 +1,5 @@
 <?php
-    // Copyright (C) 2006-2010 Rod Roark <rod@sunsetsystems.com>
+    // Copyright (C) 2006-2010, 2016 Rod Roark <rod@sunsetsystems.com>
     //
     // This program is free software; you can redistribute it and/or
     // modify it under the terms of the GNU General Public License
@@ -631,7 +631,7 @@ require_once("$srcdir/billing.inc");
                     $rs= sqlQ("select pay_total from ar_session where session_id='$value'");
                     $row=sqlFetchArray($rs);
                     $pay_total=$row['pay_total'];
-                    $rs= sqlQ("select sum(pay_amount) sum_pay_amount from ar_activity where session_id='$value'");
+                    $rs= sqlQ("select sum(pay_amount) sum_pay_amount from ar_activity where deleted IS NULL AND session_id = '$value'");
                     $row=sqlFetchArray($rs);
                     $pay_amount=$row['sum_pay_amount'];
                     

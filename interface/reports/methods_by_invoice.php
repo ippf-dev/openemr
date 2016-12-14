@@ -398,7 +398,7 @@ if (isset($_POST['form_orderby'])) {
     "JOIN forms AS f ON f.pid = a.pid AND f.encounter = a.encounter AND f.formdir = 'newpatient' " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id " .
     "LEFT JOIN users AS u ON u.id = a.post_user " .
-    "WHERE ( a.pay_amount != 0 OR a.adj_amount != 0 )";
+    "WHERE a.deleted IS NULL AND ( a.pay_amount != 0 OR a.adj_amount != 0 )";
   if ($form_date_type == 1) { // Invoice Date specified
     // Getting all payments/adjustments for encounters in the date range.
     $query .= " AND fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";

@@ -631,3 +631,7 @@ INSERT INTO list_options (list_id,option_id,title,seq) VALUES ('patient_flow_boa
 #IfNotColumnType user_settings setting_label varchar(100)
 ALTER TABLE `user_settings` CHANGE `setting_label` `setting_label` varchar(100) NOT NULL;
 #EndIf
+
+#IfMissingColumn ar_activity deleted
+ALTER TABLE `ar_activity` ADD COLUMN `deleted` datetime DEFAULT NULL COMMENT 'NULL if active, otherwise when voided';
+#EndIf

@@ -431,7 +431,7 @@ $(document).ready(function() {
         "LEFT OUTER JOIN billing AS b ON b.pid = a.pid AND b.encounter = a.encounter AND " .
         "b.code = a.code AND b.modifier = a.modifier AND b.activity = 1 AND " .
         "b.code_type != 'COPAY' AND b.code_type != 'TAX' " .
-        "WHERE a.pay_amount != 0 AND ( " .
+        "WHERE a.pay_amount != 0 AND a.deleted IS NULL AND ( " .
         "a.post_time >= '$form_from_date 00:00:00' AND a.post_time <= '$form_to_date 23:59:59' " .
         "OR a.post_date >= '$form_from_date' AND a.post_date <= '$form_to_date' " .      
         "OR fe.date >= '$form_from_date 00:00:00' AND fe.date <= '$form_to_date 23:59:59' " .
