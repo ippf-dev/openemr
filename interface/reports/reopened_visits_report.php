@@ -19,19 +19,6 @@ require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 
 if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
-// For each sorting option, specify the ORDER BY argument.
-$ORDERHASH = array(
-  'edate'  => 'fe.date, pd.pubpid, f.name, v.void_id, l.id',
-  'pubpid' => 'pd.pubpid, fe.date, f.name, v.void_id, l.id',
-  'invno'  => 'v.other_info, fe.date, pd.pubpid, f.name, v.void_id, l.id',
-  'user'   => 'l.user, fe.date, pd.pubpid, f.name, v.void_id, l.id',
-  'fac'    => 'f.name, fe.date, pd.pubpid, v.void_id, l.id',
-  'chg'    => 'l.comments, fe.date, pd.pubpid, f.name, v.void_id, l.id',
-  'pdate'  => 'v.date_original, fe.date, pd.pubpid, f.name, v.void_id, l.id',
-  'cdate'  => 'l.date, fe.date, pd.pubpid, f.name, v.void_id, l.id',
-  'reason' => 'lo.title, fe.date, pd.pubpid, f.name, v.void_id, l.id',
-);
-
 $form_date_type  = empty($_POST['form_date_type']) ? 0 : $_POST['form_date_type'];
 $form_from_date  = fixDate($_POST['form_from_date'], date('Y-01-01'));
 $form_to_date    = fixDate($_POST['form_to_date']  , date('Y-m-d'));
@@ -41,19 +28,25 @@ $form_facility = 0 + empty($_POST['form_facility']) ? 0 : $_POST['form_facility'
 
 $form_user = empty($_POST['form_user']) ? '' : $_POST['form_user'];
 $form_patient_id = empty($_POST['form_patient_id']) ? '' : $_POST['form_patient_id'];
-
-$form_orderby = $ORDERHASH[$_REQUEST['form_orderby']] ? $_REQUEST['form_orderby'] : 'edate';
-$orderby = $ORDERHASH[$form_orderby];
-
+$form_orderby = empty($_REQUEST['form_orderby']) ? 'edate' : $_REQUEST['form_orderby'];
 $form_reason  = empty($_POST['form_reason']) ? '' : $_POST['form_reason'];
+
+$last_void_id = 0;
+$encount = 0;
 
 // Output a row.
 function writeRow($row, $changedate, $comments, $iname='', $pricelevel='', $fee='', $units='', $newvalue='', $codedesc='') {
-  global $bgcolor, $form_facility;
+  global $form_facility, $last_void_id, $encount;
 
   $patient_id = $row['patient_id'];
   $encounter_id = $row['encounter_id'];
   $invnumber = $row['other_info'] ? $row['other_info'] : "$patient_id.$encounter_id";
+
+  if ($last_void_id != $row['void_id']) {
+    ++$encount;
+    $last_void_id = $row['void_id'];
+  }
+  $bgcolor = ($encount & 1) ? "#ddddff" : "#ffdddd";
 
   if ($iname) {
     if (!$units) $units = 1;
@@ -65,7 +58,7 @@ function writeRow($row, $changedate, $comments, $iname='', $pricelevel='', $fee=
     echo ',"' . addslashes($row['pubpid']                                   ) . '"';
     echo ',"' . addslashes($invnumber                                       ) . '"';
     echo ',"' . addslashes($row['facname']                                  ) . '"';
-    echo ',"' . addslashes($row['user']                                     ) . '"';
+    echo ',"' . addslashes($row['username']                                 ) . '"';
     echo ',"' . addslashes(oeFormatShortDate(substr($row['date_original'], 0, 10)) . substr($row['date_original'], 10)) . '"';
     echo ',"' . addslashes(oeFormatShortDate(substr($changedate, 0, 10)) . substr($changedate, 10)) . '"';
     echo ',"' . addslashes(empty($row['title']) ? '' : $row['title']        ) . '"';
@@ -101,7 +94,7 @@ function writeRow($row, $changedate, $comments, $iname='', $pricelevel='', $fee=
 <?php } ?>
 
   <td class='detail'>
-   <?php echo text($row['user']); ?>
+   <?php echo text($row['username']); ?>
   </td>
 
   <td class='detail'>
@@ -155,6 +148,39 @@ function writeRow($row, $changedate, $comments, $iname='', $pricelevel='', $fee=
   } // end not export
 }
 
+$arr_rows = array();
+$arr_voidid = array();
+
+function storeRow($row, $changedate, $comments, $user, $codetype='', $code='', $selector='',
+  $pricelevel='', $fee='', $units='', $newvalue='')
+{
+  global $arr_rows, $arr_voidid;
+  // If first appearance of this void, generate a row for it.
+  if (empty($arr_voidid[$row['void_id']])) {
+    $arr_voidid[$row['void_id']] = $row['void_id'];
+    storeRow($row, $row['date_voided'], xl('Voided'), $row['username']);
+  }
+
+  $iname = '';
+  $codedesc = '';
+  if ($codetype) {
+    $iname = $codetype . ':' . $code;
+    if ($selector !== '') $iname .= ':' . $selector;
+    if ($codetype == 'PROD') {
+      $tmp = sqlQuery("SELECT name AS code_text FROM drugs WHERE drug_id = ?",
+        array($code));
+    }
+    else {
+      $tmp = sqlQuery("SELECT code_text FROM codes WHERE code_type = ? AND code = ? " .
+        "ORDER BY id LIMIT 1",
+        array($code_types[$codetype]['id'], $code));
+    }
+    $codedesc = empty($tmp['code_text']) ? '' : $tmp['code_text'];
+  }
+
+  $arr_rows[] = array($row, $changedate, $comments, $user, $iname, $pricelevel, $fee, $units, $newvalue, $codedesc);
+}
+
 if ($_POST['form_csvexport']) {
   header("Pragma: public");
   header("Expires: 0");
@@ -174,7 +200,7 @@ if ($_POST['form_csvexport']) {
   echo '"' . xl('Invoice #'              ) . '",';
   echo '"' . xl('Facility'               ) . '",';
   echo '"' . xl('User'                   ) . '",';
-  echo '"' . xl('Pay Date'               ) . '",';
+  echo '"' . xl('Checkout Date'          ) . '",';
   echo '"' . xl('Change Date'            ) . '",';
   echo '"' . xl('Void Reason'            ) . '",';
   echo '"' . xl('Void Notes'             ) . '",';
@@ -200,11 +226,20 @@ else {
  .dehead { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:bold }
  .detail { color:#000000; font-family:sans-serif; font-size:10pt; font-weight:normal }
  .delink { color:#0000cc; font-family:sans-serif; font-size:10pt; font-weight:normal; cursor:pointer }
+
  .truncate {
   width: 8em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+ }
+
+ #void_results table, #void_results td {
+  border: 1px solid #aaaaaa;
+  border-collapse: collapse;
+ }
+ #void_results td {
+  padding: 1pt 4pt 1pt 4pt;
  }
 </style>
 
@@ -213,6 +248,8 @@ else {
 <script type="text/javascript" src="../../library/dynarch_calendar_en.js"></script>
 <script type="text/javascript" src="../../library/dynarch_calendar_setup.js"></script>
 <script type="text/javascript" src="../../library/dialog.js"></script>
+<script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
 
 <script language="JavaScript">
  var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
@@ -228,6 +265,10 @@ else {
  function doinvopen(ptid,encid) {
   dlgopen('../patient_file/pos_checkout.php?ptid=' + ptid + '&enc=' + encid, '_blank', 750, 550);
  }
+
+$(document).ready(function() {
+  oeFixedHeaderSetup(document.getElementById('mymaintable'));
+});
 
 </script>
 
@@ -336,7 +377,9 @@ echo generate_select_list('form_reason', 'void_reasons', $form_reason, '', '-- '
 
 </table>
 
-<table border='0' cellpadding='1' cellspacing='2' width='98%'>
+<div id="void_results">
+<table border='0' cellpadding='1' cellspacing='2' width='98%' id='mymaintable'>
+ <thead>
  <tr bgcolor="#dddddd">
 
   <td class='dehead'>
@@ -374,7 +417,7 @@ echo generate_select_list('form_reason', 'void_reasons', $form_reason, '', '-- '
   <td class='dehead'>
    <a href="#" onclick="return dosort('pdate')"
    <?php if ($form_orderby == "pdate") echo " style='color:#00cc00'"; ?>>
-   <?php echo xlt('Pay Date'); ?> </a>
+   <?php echo xlt('Checkout Date'); ?> </a>
   </td>
 
   <td class='dehead'>
@@ -424,31 +467,30 @@ echo generate_select_list('form_reason', 'void_reasons', $form_reason, '', '-- '
   </td>
 
  </tr>
+ </thead>
+ <tbody>
 
 <?php
 } // end not export
 
 if (!empty($_POST['form_orderby'])) {
+
   if ($form_date_type == 1) {
     $where = "fe.date >= ? AND fe.date <= ?";
+    $sqlargs = array("$form_from_date 00:00:00", "$form_to_date 23:59:59");
   }
   else if ($form_date_type == 2) {
     $where = "v.date_voided >= ? AND v.date_voided <= ?";
+    $sqlargs = array("$form_from_date 00:00:00", "$form_to_date 23:59:59");
   }
   else {
-    $where = "l.date IS NOT NULL AND l.date >= ? AND l.date <= ?";
+    $where = "1 = 1";
+    $sqlargs = array();
   }
-  $sqlargs = array("$form_from_date 00:00:00", "$form_to_date 23:59:59");
 
   if ($form_facility) {
     $where .= " AND fe.facility_id IS NOT NULL AND fe.facility_id = ?";
     $sqlargs[] = $form_facility;
-  }
-
-  if ($form_user) {
-    $where .= " AND (v.user_id = ? OR l.user IS NOT NULL AND l.user = ?)";
-    $sqlargs[] = $form_user;
-    $sqlargs[] = $form_user;
   }
 
   if ($form_patient_id) {
@@ -464,79 +506,137 @@ if (!empty($_POST['form_orderby'])) {
   $query = "SELECT " .
     "v.void_id, v.date_voided, v.date_original, v.other_info, v.reason, v.notes, " .
     "v.patient_id, v.encounter_id, " .
-    "l.id, l.date, l.patient_id, l.user_notes, l.user, l.comments, " .
-    "fe.date AS encdate, f.name AS facname, pd.pubpid, lo.title " .
+    "fe.date AS encdate, f.name AS facname, pd.pubpid, lo.title, u.username " .
     "FROM voids AS v " .
     "JOIN form_encounter AS fe ON fe.pid = v.patient_id AND fe.encounter = v.encounter_id " .
     "JOIN patient_data AS pd ON pd.pid = v.patient_id " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'void_reasons' AND " .
     "lo.option_id = v.reason AND lo.activity = 1 " .
     "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
-    "LEFT JOIN log AS l ON l.event = 'fee-sheet' AND l.patient_id = v.patient_id AND " .
-    "SUBSTRING_INDEX(l.user_notes, '|', 1) = v.encounter_id AND " .
-    "l.date > v.date_voided " .
-    "WHERE $where ORDER BY $orderby";
+    "LEFT JOIN users AS u ON u.id = v.user_id " .
+    "WHERE what_voided = 'checkout' AND $where ORDER BY v.void_id";
 
   // echo "<!-- $query -->\n"; // debugging
   $res = sqlStatement($query, $sqlargs);
-  $arr_logid = array();
-  $arr_voidid = array();
-  $last_void_id = 0;
-  $encount = 0;
 
   while ($row = sqlFetchArray($res)) {
 
-    // Alternate background colors for each new void.
-    if ($last_void_id != $row['void_id']) {
-      $last_void_id = $row['void_id'];
-      // If first appearance of this void, generate a row for it.
-      if (empty($arr_voidid[$row['void_id']])) {
-        $bgcolor = (++$encount & 1) ? "#ddddff" : "#ffdddd";
-        $arr_voidid[$row['void_id']] = $row['void_id'];
-        writeRow($row, $row['date_voided'], xl('Voided'));
-      }
-      else if (!empty($row['id'])) {
-        $bgcolor = (++$encount & 1) ? "#ddddff" : "#ffdddd";
-      }
+    // Get the timestamp of the next void, if any, for this visit.
+    // We'll collect changes up to but not including this time.
+    $tmprow = sqlQuery("SELECT date_voided FROM voids WHERE patient_id = ? AND encounter_id = ? " .
+      "AND date_voided > ? ORDER BY date_voided LIMIT 1",
+      array($row['patient_id'], $row['encounter_id'], $row['date_voided']));
+    $endtime = empty($tmprow['date_voided']) ? '2999-12-31 00:00:00' : $tmprow['date_voided'];
+    // If filtering by change date then we may have to adjust the cutoff time.
+    if ($form_date_type == 0 && $endtime > "$form_to_date 23:59:59") {
+      $endtime = "$form_to_date 23:59:59";
     }
 
-    // Skip if no logged change events for this void.
-    if (empty($row['id'])) continue;
-
-    // Skipping duplicate change events due to multiple voids for the same encounter.
-    if (!empty($arr_logid[$row['id']])) continue;
-    $arr_logid[$row['id']] = $row['id'];
-
-    $iname = '';
-    $codedesc = '';
-    $item = explode('|', $row['user_notes']);
-    if (empty($item[2])) {
-      $item = array($item[0], '', '', '', '', '', '', '');
+    // This gets fee sheet changes from the log entries.
+    $query = "SELECT " .
+      "l.id, l.date, l.user_notes, l.user, l.comments " .
+      "FROM log AS l WHERE l.event = 'fee-sheet' AND l.patient_id = ? AND " .
+      "SUBSTRING_INDEX(l.user_notes, '|', 1) = ? AND " .
+      "l.date >= ? AND l.date < ? ";
+    $sqlargs = array($row['patient_id'], $row['encounter_id'], $row['date_voided'], $endtime);
+    if ($form_user) {
+      $query .= "AND l.user IS NOT NULL AND l.user = ? ";
+      $sqlargs[] = $form_user;
     }
-    else {
-      $iname = $item[2] . ':' . $item[3];
-      if ($item[4] !== '') $iname .= ':' . $item[4];
+    $query .= "ORDER BY l.id";
+    $lres = sqlStatement($query, $sqlargs);
+    while ($lrow = sqlFetchArray($lres)) {
+      $item = explode('|', $lrow['user_notes']);
+      if (empty($item[2])) {
+        $item = array($item[0], '', '', '', '', '', '', '');
+      }
+      storeRow($row, $lrow['date'], $lrow['comments'], $lrow['user'], $item[2], $item[3], $item[4], $item[5], $item[6], $item[7], $item[1]);
+    }
 
-      if ($item[2] == 'PROD') {
-        $tmp = sqlQuery("SELECT name AS code_text FROM drugs WHERE drug_id = ?",
-          array($item[3]));
+    // This gets charges and adjustments that were added for this void.
+    $query = "SELECT a.code_type, a.code, a.post_time, a.pay_amount, a.adj_amount, u.username " .
+      "FROM ar_activity AS a " .
+      "LEFT JOIN users AS u ON u.id = a.post_user " .
+      "WHERE " .
+      "a.pid = ? AND a.encounter = ? AND a.post_time >= ? AND a.post_time < ? ";
+    $sqlargs = array($row['patient_id'], $row['encounter_id'], $row['date_voided'], $endtime);
+    if ($form_user) {
+      $query .= "AND post_user = ? ";
+      $sqlargs[] = $form_user;
+    }
+    $query .= "ORDER BY sequence_no";
+    $ares = sqlStatement($query, $sqlargs);
+    while ($arow = sqlFetchArray($ares)) {
+      if ($arow['pay_amount'] == 0.00) {
+        storeRow($row, $arow['post_time'], xl('Adjustment'), $arow['username'], $arow['code_type'], $arow['code'], '', '', '', '', $arow['adj_amount']);
       }
       else {
-        $tmp = sqlQuery("SELECT code_text FROM codes WHERE code_type = ? AND code = ? " .
-          "ORDER BY id LIMIT 1",
-          array($code_types[$item[2]]['id'], $item[3]));
+        storeRow($row, $arow['post_time'], xl('Payment'), $arow['username'], $arow['code_type'], $arow['code'], '', '', '', '', $arow['pay_amount']);
       }
-      $codedesc = empty($tmp['code_text']) ? '' : $tmp['code_text'];
     }
 
-    writeRow($row, $row['date'], $row['comments'], $iname, $item[5], $item[6], $item[7], $item[1], $codedesc);
+    // function storeRow($row, $changedate, $comments, $user, $codetype='', $code='', $selector='',
+    //   $pricelevel='', $fee='', $units='', $newvalue='')
+
+    // This gets charges and adjustments that were deleted for this void.
+    $query = "SELECT code_type, code, pay_amount, adj_amount, deleted " .
+      "FROM ar_activity WHERE " .
+      "pid = ? AND encounter = ? AND deleted IS NOT NULL AND deleted >= ? AND deleted < ? " .
+      "ORDER BY sequence_no";
+    $dres = sqlStatement($query, array($row['patient_id'], $row['encounter_id'],
+      $row['date_voided'], $endtime));
+    while ($drow = sqlFetchArray($dres)) {
+      if ($drow['pay_amount'] == 0.00) {
+        storeRow($row, $drow['deleted'], xl('Adjustment deleted'), $row['username'], $drow['code_type'], $drow['code'], '', '', $drow['adj_amount']);
+      }
+      else {
+        storeRow($row, $drow['deleted'], xl('Payment deleted'), $row['username'], $drow['code_type'], $drow['code'], '', '', $drow['pay_amount']);
+      }
+    }
 
   } // end while
+
+  // $arr_rows[] = array($row, $changedate, $comments, $user, $iname, $pricelevel, $fee, $units, $newvalue, $codedesc);
+
+  usort($arr_rows, function ($a, $b) {
+    // Anonymous functions supported as of PHP 5.3.
+    global $form_orderby;
+    $one = '';
+    $two = '';
+    if ($form_orderby == 'pubpid') { $one = $a[0]['pubpid'];        $two = $b[0]['pubpid'];        } else
+    if ($form_orderby == 'invno' ) { $one = $a[0]['other_info'];    $two = $b[0]['other_info'];    } else
+    if ($form_orderby == 'user'  ) { $one = $a[3];                  $two = $b[3];                  } else
+    if ($form_orderby == 'fac'   ) { $one = $a[0]['name'];          $two = $b[0]['name'];          } else
+    if ($form_orderby == 'chg'   ) { $one = $a[2];                  $two = $b[2];                  } else
+    if ($form_orderby == 'pdate' ) { $one = $a[0]['date_original']; $two = $b[0]['date_original']; } else
+    if ($form_orderby == 'cdate' ) { $one = $a[1];                  $two = $b[1];                  } else
+    if ($form_orderby == 'reason') { $one = $a[0]['title'];         $two = $b[0]['title'];         }
+
+    if ($one == $two) { $one = $a[0]['encdate']; $two = $b[0]['encdate']; }
+    if ($one == $two) { $one = $a[0]['pubpid'];  $two = $b[0]['pubpid']; }
+    if ($one == $two) { $one = $a[0]['void_id']; $two = $b[0]['void_id']; }
+    if ($one == $two) { $one = $a[1];            $two = $b[1]; }
+
+    if ($one == $two) {
+      if ($a[2] == xl('Voided')) return -1;
+      if ($b[2] == xl('Voided')) return 1;
+      return 0;
+    }
+    return $one < $two ? -1 : 1;
+  });
+
+  foreach ($arr_rows as $args) {
+    $args[0]['username'] = $args[3];
+    writeRow($args[0], $args[1], $args[2], $args[4], $args[5], $args[6], $args[7], $args[8], $args[9]);
+  }
+
 } // end if
 if (!$_POST['form_csvexport']) {
 ?>
 
+ </tbody>
 </table>
+</div>
 
 <input type="hidden" name="form_orderby" value="<?php echo $form_orderby ?>" />
 
