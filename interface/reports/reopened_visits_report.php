@@ -526,10 +526,16 @@ if (!empty($_POST['form_orderby'])) {
     $tmprow = sqlQuery("SELECT date_voided FROM voids WHERE patient_id = ? AND encounter_id = ? " .
       "AND date_voided > ? ORDER BY date_voided LIMIT 1",
       array($row['patient_id'], $row['encounter_id'], $row['date_voided']));
+
     $endtime = empty($tmprow['date_voided']) ? '2999-12-31 00:00:00' : $tmprow['date_voided'];
     // If filtering by change date then we may have to adjust the cutoff time.
     if ($form_date_type == 0 && $endtime > "$form_to_date 23:59:59") {
       $endtime = "$form_to_date 23:59:59";
+    }
+    $begtime = $row['date_voided'];
+    // If filtering by change date then we may have to adjust the begin time.
+    if ($form_date_type == 0 && $begtime < "$form_from_date 00:00:00") {
+      $begtime = "$form_from_date 00:00:00";
     }
 
     // This gets fee sheet changes from the log entries.
@@ -538,7 +544,7 @@ if (!empty($_POST['form_orderby'])) {
       "FROM log AS l WHERE l.event = 'fee-sheet' AND l.patient_id = ? AND " .
       "SUBSTRING_INDEX(l.user_notes, '|', 1) = ? AND " .
       "l.date >= ? AND l.date < ? ";
-    $sqlargs = array($row['patient_id'], $row['encounter_id'], $row['date_voided'], $endtime);
+    $sqlargs = array($row['patient_id'], $row['encounter_id'], $begtime, $endtime);
     if ($form_user) {
       $query .= "AND l.user IS NOT NULL AND l.user = ? ";
       $sqlargs[] = $form_user;
@@ -560,7 +566,7 @@ if (!empty($_POST['form_orderby'])) {
       "LEFT JOIN users AS u ON u.id = a.post_user " .
       "WHERE " .
       "a.pid = ? AND a.encounter = ? AND a.post_time >= ? AND a.post_time < ? ";
-    $sqlargs = array($row['patient_id'], $row['encounter_id'], $row['date_voided'], $endtime);
+    $sqlargs = array($row['patient_id'], $row['encounter_id'], $begtime, $endtime);
     if ($form_user) {
       $query .= "AND post_user = ? ";
       $sqlargs[] = $form_user;
@@ -593,7 +599,7 @@ if (!empty($_POST['form_orderby'])) {
       "pid = ? AND encounter = ? AND deleted IS NOT NULL AND deleted >= ? AND deleted < ? " .
       "ORDER BY sequence_no";
     $dres = sqlStatement($query, array($row['patient_id'], $row['encounter_id'],
-      $row['date_voided'], $endtime));
+      $begtime, $endtime));
     while ($drow = sqlFetchArray($dres)) {
       if ($drow['pay_amount'] == 0.00) {
         $change = xl('Adjustment deleted');

@@ -495,7 +495,7 @@ if ($_POST['form_refresh'] || $_POST['form_orderby']) {
                  if($tracker_status != ""){
                     $frow['data_type']=1;
                     $frow['list_id']='apptstat';
-                    generate_print_field($frow, $tracker_status);
+                    echo generate_display_field($frow, $tracker_status);
                  }
                 }
             ?>
