@@ -829,7 +829,7 @@ body, td {
 
 <?php if (acl_check('acct','disc')) { ?>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<a href='#' onclick='return voidme("regen");'><?php echo xl('Reprint with New Receipt'); ?></a>
+<a href='#' onclick='return voidme("regen");'><?php echo xl('Generate New Receipt Number'); ?></a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href='#' onclick='return voidme("void");' title='<?php echo xla('Applies to this visit only'); ?>'>
  <?php echo xlt('Void Last Checkout'); ?></a>

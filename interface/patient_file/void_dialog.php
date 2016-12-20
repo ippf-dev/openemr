@@ -23,11 +23,19 @@ require_once("$srcdir/htmlspecialchars.inc.php");
 <script language="JavaScript">
 
 function DoSubmit() {
+  var f = document.forms[0];
   if (opener.closed || !opener.voidwrap) {
-    alert('The destination form was closed; I cannot act on your selection.');
+    alert('<?php echo xls('The destination form was closed; I cannot act on your selection.'); ?>');
+  }
+  else if (f.form_reason.selectedIndex == 0) {
+    alert('<?php echo xls('Please specify Void Reason.'); ?>');
+    return false;
+  }
+  else if (f.form_notes.value.trim() == '') {
+    alert('<?php echo xls('Please specify Void Notes.'); ?>');
+    return false;
   }
   else {
-    var f = document.forms[0];
     opener.voidwrap(f.form_reason.value, f.form_notes.value);
   }
   window.close();

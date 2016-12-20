@@ -444,17 +444,7 @@ function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping=''
   echo "</td>\n";
   }
 
-  // IPPF includes the ability to map each list item to a "master" identifier.
-  // Sports teams use this for some extra info for fitness levels.
-  //
-  if ($GLOBALS['ippf_specific'] || $list_id == 'fitness' || $list_id == 'lbfnames') {
-    echo "  <td align='center' class='optcell'>";
-    echo "<input type='text' name='opt[$opt_line_no][mapping]' value='" .
-        htmlspecialchars($mapping, ENT_QUOTES) . 
-            "' size='12' maxlength='31' class='optin' />";
-    echo "</td>\n";
-  }
-else if($list_id == 'apptstat') {
+  if ($list_id == 'apptstat') {
     list($apptstat_color, $apptstat_timealert) = explode("|", $notes);
     echo "  <td align='center' class='optcell'>";
     echo "<input type='text' class='color' name='opt[$opt_line_no][apptstat_color]' value='" .
@@ -464,26 +454,36 @@ else if($list_id == 'apptstat') {
     echo "<input type='text' name='opt[$opt_line_no][apptstat_timealert]' value='" .
         htmlspecialchars($apptstat_timealert, ENT_QUOTES) . "' size='2' maxlength='2' class='optin' />";
     echo "</td>\n";
-} else {
-  echo "  <td align='center' class='optcell'>";
-  echo "<input type='text' name='opt[$opt_line_no][notes]' value='" .
-      htmlspecialchars($notes, ENT_QUOTES) . "' size='25' maxlength='255' class='optin' ";
-  if ($list_id == 'lbfnames') {
-    echo "onclick='edit_layout_props($opt_line_no)' ";
+  } else {
+    // IPPF includes the ability to map each list item to a "master" identifier.
+    // Sports teams use this for some extra info for fitness levels.
+    //
+    if ($GLOBALS['ippf_specific'] || $list_id == 'fitness' || $list_id == 'lbfnames') {
+      echo "  <td align='center' class='optcell'>";
+      echo "<input type='text' name='opt[$opt_line_no][mapping]' value='" .
+          htmlspecialchars($mapping, ENT_QUOTES) . 
+              "' size='12' maxlength='31' class='optin' />";
+      echo "</td>\n";
+    }
+    echo "  <td align='center' class='optcell'>";
+    echo "<input type='text' name='opt[$opt_line_no][notes]' value='" .
+        htmlspecialchars($notes, ENT_QUOTES) . "' size='25' maxlength='255' class='optin' ";
+    if ($list_id == 'lbfnames') {
+      echo "onclick='edit_layout_props($opt_line_no)' ";
+    }
+    echo "/>";
+    echo "</td>\n";
   }
-  echo "/>";
-  echo "</td>\n";
-}
-if($list_id == 'apptstat') {
-  echo "  <td align='center' class='optcell'>";
-  echo "<input type='checkbox' name='opt[$opt_line_no][toggle_setting_1]' value='1' " .
-    "onclick='defClicked($opt_line_no)' class='optin'$checked_tog1 />";
-  echo "</td>\n";
-  echo "  <td align='center' class='optcell'>";
-  echo "<input type='checkbox' name='opt[$opt_line_no][toggle_setting_2]' value='1' " .
-    "onclick='defClicked($opt_line_no)' class='optin'$checked_tog2 />";
-  echo "</td>\n";
-}
+  if ($list_id == 'apptstat') {
+    echo "  <td align='center' class='optcell'>";
+    echo "<input type='checkbox' name='opt[$opt_line_no][toggle_setting_1]' value='1' " .
+      "onclick='defClicked($opt_line_no)' class='optin'$checked_tog1 />";
+    echo "</td>\n";
+    echo "  <td align='center' class='optcell'>";
+    echo "<input type='checkbox' name='opt[$opt_line_no][toggle_setting_2]' value='1' " .
+      "onclick='defClicked($opt_line_no)' class='optin'$checked_tog2 />";
+    echo "</td>\n";
+  }
   echo "  <td align='center' class='optcell'>";
   echo "<input type='text' name='opt[$opt_line_no][codes]' title='" .
       xla('Clinical Term Code(s)') ."' value='" .
@@ -1013,6 +1013,7 @@ while ($row = sqlFetchArray($res)) {
   <td><b><?php xl('Title'     ,'e'); ?></b></td>   
   <td><b><?php xl('Order'     ,'e'); ?></b></td>
   <td><b><?php xl('Default'   ,'e'); ?></b></td>
+  <td><b><?php echo xlt('Active'); ?></b></td>
   <td><b><?php xl('Color'     ,'e'); ?></b></td> 
   <td><b><?php xl('Alert Time','e'); ?></b></td> 
   <td><b><?php xl('Check In'  ,'e');?>&nbsp;&nbsp;&nbsp;&nbsp;</b></td>

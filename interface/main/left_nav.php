@@ -1309,7 +1309,7 @@ if ($GLOBALS['athletic_team']) {
           <?php if ($GLOBALS['gbl_menu_surinam_insurance']) {
             genMiscLink('RTop','rep','0',xl('LOBI Insurers Report'),'reports/surinam_insurance_report.php');
           } ?>
-          <?php genMiscLink('RTop','rep','0',xl('Re-Opened Visits'), 'reports/reopened_visits_report.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Voids and Re-Opened Visits'), 'reports/reopened_visits_report.php'); ?>
         </ul>
       </li>
 <?php } ?>

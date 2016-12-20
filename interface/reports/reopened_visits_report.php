@@ -152,9 +152,9 @@ $arr_rows = array();
 $arr_voidid = array();
 
 function storeRow($row, $changedate, $comments, $user, $codetype='', $code='', $selector='',
-  $pricelevel='', $fee='', $units='', $newvalue='')
+  $pricelevel='', $fee='', $units='', $newvalue='', $sequence_no=0)
 {
-  global $arr_rows, $arr_voidid;
+  global $arr_rows, $arr_voidid, $code_types;
   // If first appearance of this void, generate a row for it.
   if (empty($arr_voidid[$row['void_id']])) {
     $arr_voidid[$row['void_id']] = $row['void_id'];
@@ -178,7 +178,7 @@ function storeRow($row, $changedate, $comments, $user, $codetype='', $code='', $
     $codedesc = empty($tmp['code_text']) ? '' : $tmp['code_text'];
   }
 
-  $arr_rows[] = array($row, $changedate, $comments, $user, $iname, $pricelevel, $fee, $units, $newvalue, $codedesc);
+  $arr_rows[] = array($row, $changedate, $comments, $user, $iname, $pricelevel, $fee, $units, $newvalue, $codedesc, $sequence_no);
 }
 
 if ($_POST['form_csvexport']) {
@@ -278,7 +278,7 @@ $(document).ready(function() {
 
 <center>
 
-<h2><?php echo xlt('Changes to Re-Opened Visits'); ?></h2>
+<h2><?php echo xlt('Voids and Re-Opened Visits'); ?></h2>
 
 <form name='theform' method='post' action='reopened_visits_report.php'>
 
@@ -554,7 +554,8 @@ if (!empty($_POST['form_orderby'])) {
     }
 
     // This gets charges and adjustments that were added for this void.
-    $query = "SELECT a.code_type, a.code, a.post_time, a.pay_amount, a.adj_amount, u.username " .
+    $query = "SELECT a.code_type, a.code, a.post_time, a.pay_amount, a.adj_amount, " .
+      "a.sequence_no, a.memo, u.username " .
       "FROM ar_activity AS a " .
       "LEFT JOIN users AS u ON u.id = a.post_user " .
       "WHERE " .
@@ -568,18 +569,26 @@ if (!empty($_POST['form_orderby'])) {
     $ares = sqlStatement($query, $sqlargs);
     while ($arow = sqlFetchArray($ares)) {
       if ($arow['pay_amount'] == 0.00) {
-        storeRow($row, $arow['post_time'], xl('Adjustment'), $arow['username'], $arow['code_type'], $arow['code'], '', '', '', '', $arow['adj_amount']);
+        $change = xl('Adjustment added');
+        if ($arow['adj_amount'] == 0.00) {
+          $change = xl('Adjustment reason added') . ': ' . $arow['memo'];
+        }
+        storeRow($row, $arow['post_time'], $change, $arow['username'], $arow['code_type'], $arow['code'], '', '', '', '', $arow['adj_amount'], $arow['sequence_no']);
       }
       else {
-        storeRow($row, $arow['post_time'], xl('Payment'), $arow['username'], $arow['code_type'], $arow['code'], '', '', '', '', $arow['pay_amount']);
+        $change = xl('Payment added');
+        if ($arow['memo']) {
+          $change .= ': ' . $arow['memo'];
+        }
+        storeRow($row, $arow['post_time'], $change, $arow['username'], $arow['code_type'], $arow['code'], '', '', '', '', $arow['pay_amount'], $arow['sequence_no']);
       }
     }
 
     // function storeRow($row, $changedate, $comments, $user, $codetype='', $code='', $selector='',
-    //   $pricelevel='', $fee='', $units='', $newvalue='')
+    //   $pricelevel='', $fee='', $units='', $newvalue='', $sequence_no=0)
 
     // This gets charges and adjustments that were deleted for this void.
-    $query = "SELECT code_type, code, pay_amount, adj_amount, deleted " .
+    $query = "SELECT code_type, code, pay_amount, adj_amount, sequence_no, memo, deleted " .
       "FROM ar_activity WHERE " .
       "pid = ? AND encounter = ? AND deleted IS NOT NULL AND deleted >= ? AND deleted < ? " .
       "ORDER BY sequence_no";
@@ -587,16 +596,24 @@ if (!empty($_POST['form_orderby'])) {
       $row['date_voided'], $endtime));
     while ($drow = sqlFetchArray($dres)) {
       if ($drow['pay_amount'] == 0.00) {
-        storeRow($row, $drow['deleted'], xl('Adjustment deleted'), $row['username'], $drow['code_type'], $drow['code'], '', '', $drow['adj_amount']);
+        $change = xl('Adjustment deleted');
+        if ($arow['adj_amount'] == 0.00) {
+          $change = xl('Adjustment reason deleted') . ': ' . $drow['memo'];
+        }
+        storeRow($row, $drow['deleted'], $change, $row['username'], $drow['code_type'], $drow['code'], '', '', $drow['adj_amount'], $drow['sequence_no']);
       }
       else {
-        storeRow($row, $drow['deleted'], xl('Payment deleted'), $row['username'], $drow['code_type'], $drow['code'], '', '', $drow['pay_amount']);
+        $change = xl('Payment deleted');
+        if ($drow['memo']) {
+          $change .= ': ' . $drow['memo'];
+        }
+        storeRow($row, $drow['deleted'], $change, $row['username'], $drow['code_type'], $drow['code'], '', '', $drow['pay_amount'], $drow['sequence_no']);
       }
     }
 
   } // end while
 
-  // $arr_rows[] = array($row, $changedate, $comments, $user, $iname, $pricelevel, $fee, $units, $newvalue, $codedesc);
+  // $arr_rows[] = array($row, $changedate, $comments, $user, $iname, $pricelevel, $fee, $units, $newvalue, $codedesc, $sequence_no);
 
   usort($arr_rows, function ($a, $b) {
     // Anonymous functions supported as of PHP 5.3.
@@ -616,6 +633,7 @@ if (!empty($_POST['form_orderby'])) {
     if ($one == $two) { $one = $a[0]['pubpid'];  $two = $b[0]['pubpid']; }
     if ($one == $two) { $one = $a[0]['void_id']; $two = $b[0]['void_id']; }
     if ($one == $two) { $one = $a[1];            $two = $b[1]; }
+    if ($one == $two) { $one = $a[10];           $two = $b[10]; }
 
     if ($one == $two) {
       if ($a[2] == xl('Voided')) return -1;
