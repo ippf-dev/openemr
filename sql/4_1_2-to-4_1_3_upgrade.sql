@@ -557,8 +557,25 @@ ALTER TABLE `voids` ADD COLUMN `notes` VARCHAR(255) default '';
 
 #IfNotRow2D list_options list_id lists option_id void_reasons
 INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('lists','void_reasons','Void Reasons', 1,0);
-INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('void_reasons','one'  ,'Reason 1',10,1);
-INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('void_reasons','two'  ,'Reason 2',20,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','ADJ01','Adj - Reason Corrected',50,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','ADJ02','Adj - Amount Corrected',51,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','DEF01','Default Price Level Modified',40,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','DEF02','Default Provider Modified',41,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','OTH','Other',80,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','PAY01','Payment - Amount Modified',60,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','PAY02','Payment - Method Modified',61,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','PAY03','Payment - Posting Date Correction',62,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','PROD01','Product - Added',20,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','PROD02','Product - Deleted and Replaced',21,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','PROD03','Product - Deleted; Not provided',22,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','PROD04','Product - Price Level Modified ',30,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','PROD05','Product - Quantity Modified',31,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','PROD06','Product - Warehouse Modified',32,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','SRV01','Service - Added',1,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','SRV02','Service - Deleted and Replaced',2,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','SRV03','Service - Deleted; Not provided',3,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','SRV04','Service - Provider Modified',4,0,0,'','','',1,0,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','SRV05','Service - Quanitity Modified',5,0,0,'','','',1,0,0);
 #EndIf
 
 #IfNotIndex log patient_id
