@@ -3170,3 +3170,17 @@ INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Sexual_When','1GBV Screening','___If so, when?',31,2,1,20,0,'',0,0,'','','',0,'E','');
 INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`, `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES ('LBFGBV','GBV_Sexual_Who','1GBV Screening','___By Whom?',32,1,1,0,0,'Relation_to_Client',0,0,'','','',0,'E','');
 #EndIf
+
+#IfNotRow2D layout_options form_id LBFVitals field_id VIT_GlucoseUnits
+INSERT INTO `layout_options` (`form_id`, `field_id`, `group_name`, `title`, `seq`, `data_type`, `uor`, `fld_length`, `max_length`,
+  `list_id`, `titlecols`, `datacols`, `default_value`, `edit_options`, `description`, `fld_rows`, `source`, `conditions`) VALUES (
+  'LBFVitals', 'VIT_GlucoseUnits', '1Vitals', 'Glucose Units', 152, 1, 1, 0, 255,
+  'LAB_BloodConcentration', 1, 3, '', '', 'Glucose Units', 0, 'F', '');
+#EndIf
+
+#IfNotRow2D list_options list_id lists option_id LAB_BloodConcentration
+INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('lists','LAB_BloodConcentration','LAB_BloodConcentration', 1,0);
+DELETE FROM list_options WHERE list_id = 'LAB_BloodConcentration';
+INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('LAB_BloodConcentration','mg_dl' ,'mg/dl' ,1,1);
+INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('LAB_BloodConcentration','mmol_l','mmol/L',2,0);
+#EndIf
