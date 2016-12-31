@@ -92,11 +92,18 @@ if ($_POST['form_csvexport']) {
   echo '"' . display_csv(xl('Education'           )) . '",';
   //
   echo '"' . display_csv(xl('Causes of unwanted pregnancy')) . '",';
+  // New 2016-12-30:
+  echo '"' . display_csv(xl('Screening GBV'               )) . '",';
+  echo '"' . display_csv(xl('Type of GBV'                 )) . '",';
+  //
   echo '"' . display_csv(xl('Support network'             )) . '",';
   echo '"' . display_csv(xl('Women resolution about IVE'  )) . '",';
   echo '"' . display_csv(xl('Law applicable'              )) . '",';
   // New:
   echo '"' . display_csv(xl('Hospitalization Indication'  )) . '",'; // IVE_indication
+  // New 2016-12-30:
+  echo '"' . display_csv(xl('Present Condition'           )) . '",';
+  // New:
   echo '"' . display_csv(xl('Domestic Violence'           )) . '"' . "\n"; // IVE_domviolence
   //
 
@@ -198,10 +205,17 @@ echo "   </select>&nbsp;\n";
   <td class="dehead"><?php echo xlt('Marital Status'      ); ?></td>
   <td class="dehead"><?php echo xlt('Education'           ); ?></td>
   <td class="dehead"><?php echo xlt('Causes of unwanted pregnancy'); ?></td>
+
+  <td class="dehead"><?php echo xlt('Screening GBV'               ); ?></td>
+  <td class="dehead"><?php echo xlt('Type of GBV'                 ); ?></td>
+
   <td class="dehead"><?php echo xlt('Support network'             ); ?></td>
   <td class="dehead"><?php echo xlt('Women resolution about IVE'  ); ?></td>
   <td class="dehead"><?php echo xlt('Law applicable'              ); ?></td>
   <td class="dehead"><?php echo xlt('Hospitalization Indication'  ); ?></td>
+
+  <td class="dehead"><?php echo xlt('Present Condition'           ); ?></td>
+
   <td class="dehead"><?php echo xlt('Domestic Violence'           ); ?></td>
  </tr>
 
@@ -229,6 +243,9 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     'IVE_contmetcounsel',
     'IVE_indication',
     'IVE_domviolence',
+    'IVE_gbv',
+    'IVE_GVB_type',
+    'IVE_presentconabo',
   );
   $varr = array();
   // Note this gives us one row per IVE form instance.
@@ -360,6 +377,13 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     $education = empty($row['userlist2']) ? '' : getListTitle('userlist2' , $row['userlist2']);
     // Domestic Violence IVE3.
     $ivedomviolence = empty($row['IVE_domviolence']) ? '' : getListTitle('yesno', $row['IVE_domviolence']);
+    // Screening GBV IVE1.
+    $ivegbv     = empty($row['IVE_gbv'          ]) ? '' : getListTitle('yesno', $row['IVE_gbv']);
+    // GBV Type IVE1.
+    $ivegbvtype = empty($row['IVE_GVB_type'     ]) ? '' : getListTitles('IVE_gvb_type', $row['IVE_GVB_type']);
+    // Present Condition IVE4.
+    $iveprescon = empty($row['IVE_presentconabo']) ? '' : getListTitle('IVE_abocondition', $row['IVE_presentconabo']);
+
     if ($_POST['form_csvexport']) {
       echo '"'  . display_csv($row['pubpid']) . '"';
       echo ',"' . display_csv($name         ) . '"';
@@ -384,10 +408,13 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo ',"' . display_csv($marital      ) . '"';
       echo ',"' . display_csv($education    ) . '"';
       echo ',"' . display_csv($ivecauses    ) . '"';
+      echo ',"' . display_csv($ivegbv       ) . '"';
+      echo ',"' . display_csv($ivegbvtype   ) . '"';
       echo ',"' . display_csv($ivesuppnet   ) . '"';
       echo ',"' . display_csv($ivewomres    ) . '"';
       echo ',"' . display_csv($ivelaw       ) . '"';
       echo ',"' . display_csv($iveind       ) . '"';
+      echo ',"' . display_csv($iveprescon   ) . '"';
       echo ',"' . display_csv($ivedomviolence) . '"' . "\n";
     }
     else {
@@ -417,10 +444,13 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
       echo "  <td class='detail'>" . display_html($marital   ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($education ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivecauses ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($ivegbv    ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($ivegbvtype) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivesuppnet) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivewomres ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivelaw    ) . "</td>\n";
       echo "  <td class='detail'>" . display_html($iveind    ) . "</td>\n";
+      echo "  <td class='detail'>" . display_html($iveprescon) . "</td>\n";
       echo "  <td class='detail'>" . display_html($ivedomviolence) . "</td>\n";
       echo " </tr>\n";
     } // end not export
