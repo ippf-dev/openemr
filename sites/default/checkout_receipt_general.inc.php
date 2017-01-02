@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -22,7 +22,8 @@ require_once($GLOBALS['fileroot'] . '/library/html2pdf/_tcpdf_5.0.002/tcpdf.php'
       Phone:XXX-XXXX  Fax:XXX-XXXX 
              www.grpagy.com
 
-  Bill To: xxxxx           xxxxxxxxxxx   (Client name and ID)
+  Bill To: xxxxx x xxxxx                 (client name)
+           xxxxxxxxxxx                   (client id)
   Cashier: xxxxx
 
   Item Name                  Ext.Price
@@ -206,11 +207,12 @@ function gcrHeader(&$aReceipt, &$pdf, $patient_id, $encounter_id, $billtime='') 
 
   // End of logo and address lines.
 
-  // Blank line, "Bill To:" line including right-aligned client ID.
+  // Blank line, "Bill To:" line and client ID line.
   $pdf->Ln($GCR_LINE_HEIGHT);
   $ptname = trim(trim($aReceipt['patient_fname'] . ' ' . $aReceipt['patient_mname']) . ' ' . $aReceipt['patient_lname']);
-  gcrWriteCell($pdf, 0, $GCR_DESC_WIDTH, 'L', xl('Bill To') . ': ' . $ptname, FALSE);
-  gcrWriteCell($pdf, $GCR_DESC_WIDTH, $GCR_MONEY_WIDTH, 'R', $aReceipt['patient_pubpid']);
+  $tmplen = $pdf->GetStringWidth(xl('Bill To') . ': ');
+  gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'L', xl('Bill To') . ': ' . $ptname);
+  gcrWriteCell($pdf, $tmplen, $GCR_PAGE_WIDTH - $tmplen, 'L', $aReceipt['patient_pubpid']);
 
   // "Cashier:" line.
   gcrWriteCell($pdf, 0, $GCR_PAGE_WIDTH, 'L', xl('Cashier') . ': ' . $aReceipt['userlogin']);
