@@ -168,15 +168,23 @@ $result4 = sqlStatement("SELECT fe.encounter,fe.date,openemr_postcalendar_catego
 	 <?php
 				 }
 	 ?>
-	 top.window.parent.left_nav.setPatientEncounter(EncounterIdArray,EncounterDateArray,CalendarCategoryArray);
+
+ // Get the left_nav window, and the name of its sibling (top or bottom) frame that this form is in.
+ // This works no matter how deeply we are nested.
+ var my_left_nav = top.left_nav;
+ var w = window;
+ for (; w.parent != top; w = w.parent);
+ var my_win_name = w.name;
+
+ my_left_nav.setPatientEncounter(EncounterIdArray,EncounterDateArray,CalendarCategoryArray);
 <?php } ?>
  top.restoreSession();
 <?php if ($GLOBALS['concurrent_layout']) { ?>
 <?php if ($mode == 'new') { ?>
- parent.left_nav.setEncounter(<?php echo "'" . oeFormatShortDate($date) . "', " . attr($encounter) . ", window.name"; ?>);
- parent.left_nav.setRadio(window.name, 'enc');
+ my_left_nav.setEncounter(<?php echo "'" . oeFormatShortDate($date) . "', " . attr($encounter) . ", window.name"; ?>);
+ my_left_nav.setRadio(window.name, 'enc');
 <?php } // end if new encounter ?>
- parent.left_nav.loadFrame('enc2', window.name, '<?php echo $nexturl; ?>');
+ my_left_nav.loadFrame('enc2', my_win_name, '<?php echo $nexturl; ?>');
 <?php } else { // end if concurrent layout ?>
  window.location="<?php echo $nexturl; ?>";
 <?php } // end not concurrent layout ?>
