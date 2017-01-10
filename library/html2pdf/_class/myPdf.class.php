@@ -1,18 +1,15 @@
 <?php
 /**
- * HTML2PDF Librairy - myPdf class
+ * HTML2PDF Library - myPdf class
  *
  * HTML => PDF convertor
  * distributed under the LGPL License
  *
+ * @package   Html2pdf
  * @author    Laurent MINGUET <webmaster@html2pdf.fr>
- * @version   4.03
+ * @copyright 2016 Laurent MINGUET
  */
-
-require_once(dirname(__FILE__).'/tcpdfConfig.php');
-require_once(dirname(__FILE__).'/../_tcpdf_'.HTML2PDF_USED_TCPDF_VERSION.'/tcpdf.php');
-
-class HTML2PDF_myPdf extends TCPDF
+class HTML2PDF_myPdf extends FPDI
 {
     protected $_footerParam = array();
     protected $_transf      = array();
@@ -57,7 +54,8 @@ class HTML2PDF_myPdf extends TCPDF
         // prepare the automatic footer
         $this->SetMyFooter();
 
-        $this->cMargin = 0;
+        $this->setCellPaddings(0, 0, 0, 0);
+        $this->setCellMargins(0,0,0,0);
     }
 
     /**
@@ -126,7 +124,7 @@ class HTML2PDF_myPdf extends TCPDF
         }
     }
 
-     /**
+    /**
      * after cloning a object, we does not want to clone all the front informations
      * because it take a lot a time and a lot of memory => we use reference
      *
@@ -135,6 +133,7 @@ class HTML2PDF_myPdf extends TCPDF
      */
     public function cloneFontFrom(&$pdf)
     {
+        $this->n                = &$pdf->getN();
         $this->fonts            = &$pdf->getFonts();
         $this->FontFiles        = &$pdf->getFontFiles();
         $this->diffs            = &$pdf->getDiffs();
@@ -183,6 +182,10 @@ class HTML2PDF_myPdf extends TCPDF
     public function &getAnnotFonts()
     {
         return $this->annotation_fonts;
+    }
+    public function &getN()
+    {
+        return $this->n;
     }
 
     /**
@@ -581,7 +584,13 @@ class HTML2PDF_myPdf extends TCPDF
      */
     public function SetX($x, $rtloff=false)
     {
-        $this->x=$x;
+        if (!$rtloff AND $this->rtl) {
+
+            parent::SetX($x, $rtloff);
+        }else{
+
+            $this->x=$x;
+        }
     }
 
     /**
@@ -595,10 +604,17 @@ class HTML2PDF_myPdf extends TCPDF
      */
     public function SetY($y, $resetx=true, $rtloff=false)
     {
-        if ($resetx)
-            $this->x=$this->lMargin;
+        if (!$rtloff AND $this->rtl) {
 
-        $this->y=$y;
+            parent::SetY($y, $resetx, $rtloff);
+        }else{
+
+            if ($resetx)
+                $this->x=$this->lMargin;
+
+            $this->y=$y;
+        }
+
     }
 
     /**
@@ -612,8 +628,15 @@ class HTML2PDF_myPdf extends TCPDF
      */
     public function SetXY($x, $y, $rtloff=false)
     {
-        $this->x=$x;
-        $this->y=$y;
+        if (!$rtloff AND $this->rtl) {
+
+            parent::SetXY($x, $y, $rtloff);
+        }else{
+
+            $this->x=$x;
+            $this->y=$y;
+        }
+
     }
 
     /**

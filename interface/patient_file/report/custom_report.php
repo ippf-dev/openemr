@@ -44,8 +44,8 @@ $GLOBALS['PATIENT_REPORT_ACTIVE'] = true;
 $PDF_OUTPUT = empty($_POST['pdf']) ? false : true;
 
 if ($PDF_OUTPUT) {
-  require_once("$srcdir/html2pdf/html2pdf.class.php");
-  $pdf = new HTML2PDF('P', 'Letter', 'en');
+  require_once("$srcdir/html2pdf/vendor/autoload.php");
+  $pdf = new HTML2PDF('P', 'Letter', 'en', 'true', 'UTF-8');
   ob_start();
 }
 
