@@ -243,7 +243,7 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     'IVE_contmetcounsel',
     'IVE_indication',
     'IVE_domviolence',
-    'IVE_gbv',
+    'IVE_gvb',
     'IVE_GVB_type',
     'IVE_presentconabo',
   );
@@ -378,7 +378,7 @@ if (isset($_POST['form_refresh']) || isset($_POST['form_csvexport'])) {
     // Domestic Violence IVE3.
     $ivedomviolence = empty($row['IVE_domviolence']) ? '' : getListTitle('yesno', $row['IVE_domviolence']);
     // Screening GBV IVE1.
-    $ivegbv     = empty($row['IVE_gbv'          ]) ? '' : getListTitle('yesno', $row['IVE_gbv']);
+    $ivegbv     = empty($row['IVE_gvb'          ]) ? '' : getListTitle('yesno', $row['IVE_gvb']);
     // GBV Type IVE1.
     $ivegbvtype = empty($row['IVE_GVB_type'     ]) ? '' : getListTitles('IVE_gvb_type', $row['IVE_GVB_type']);
     // Present Condition IVE4.
