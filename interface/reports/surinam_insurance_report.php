@@ -219,6 +219,7 @@ if (getPost('form_csvexport')) {
   echo "\xEF\xBB\xBF";
   // CSV headers:
   $lastkey = count($colheads) - 1;
+  echo '"' . xl('Insurer') . '",';
   foreach ($colheads as $chkey => $ch) {
     echo '"' . $ch[0] . '"' . ($chkey == $lastkey ? "\n" : ",");
   }
@@ -475,6 +476,9 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       $code_text = empty($brow['code_text_short']) ? $brow['code_text'] : $brow['code_text_short'];
 
       tblStartRow();
+      if (getPost('form_csvexport')) {
+        tblCell($insname, 0);
+      }
       tblCell(oeFormatShortDate(substr($brow['date'], 0, 10)), 0);
       tblCell($ptname                                        , 1);
       tblCell($brow['usertext8']                             , 2);
@@ -567,6 +571,9 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       }
 
       tblStartRow();
+      if (getPost('form_csvexport')) {
+        tblCell($insname, 0);
+      }
       tblCell(oeFormatShortDate(substr($srow['date'], 0, 10)), 0);
       tblCell($ptname                                        , 1);
       tblCell($srow['usertext8']                             , 2);
