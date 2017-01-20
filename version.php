@@ -6,7 +6,7 @@
 $v_major = '4';
 $v_minor = '1';
 $v_patch = '5';
-$v_tag   = '-20170111'; // minor revision number, should be empty for production releases
+$v_tag   = '-20170120'; // minor revision number, should be empty for production releases
 
 // A real patch identifier. This is incremented when we release a patch for a
 // production release. Note the above $v_patch variable is a misnomer and actually
