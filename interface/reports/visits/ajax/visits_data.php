@@ -8,8 +8,14 @@
 // of the License, or (at your option) any later version.
 
 require_once("../../../globals.php");
-ini_set('display_errors',1);
-require_once("$webserver_root/interface/reports/dbutils/nonpersistent_dbconnect.php");
+
+// ini_set('display_errors',1);
+
+// The following disabled because it does not work and also because it violates
+// project design to bypass the sql libraries.  -- Rod
+//
+// require_once("$webserver_root/interface/reports/dbutils/nonpersistent_dbconnect.php");
+
 require_once("$webserver_root/interface/reports/dbutils/sql_constants.php");
 require_once("$webserver_root/interface/reports/dbutils/temporary_tables.php");
 require_once("$webserver_root/interface/reports/visits/visits_queries.php");

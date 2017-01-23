@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -77,7 +77,7 @@ $PDF_OUTPUT = ($formid && $isform) ? false : true;
 // $PDF_OUTPUT = false; // debugging
 
 if ($PDF_OUTPUT) {
-  require_once("$srcdir/html2pdf/html2pdf.class.php");
+  require_once("$srcdir/html2pdf/vendor/autoload.php");
   $pdf = new HTML2PDF('P', 'Letter', 'en');
   $pdf->setTestTdInOnePage(false); // Turn off error message for TD contents too big.
   $pdf->pdf->SetDisplayMode('real');
