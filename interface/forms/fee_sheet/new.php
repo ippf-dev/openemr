@@ -481,7 +481,7 @@ if (!$alertmsg && ($_POST['bn_save'] || $_POST['bn_save_close'])) {
 // Handle reopen request.  In that case no other changes will be saved.
 // If there was a checkout this will undo it.
 if (!$alertmsg && ($_POST['bn_reopen'] || $_POST['form_reopen'])) {
-  doVoid($fs->pid, $fs->encounter, true, '', $_POST['form_reason'], $_POST['form_notes']);
+  doVoid($fs->pid, $fs->encounter, true, 'all', $_POST['form_reason'], $_POST['form_notes']);
   $current_checksum = $fs->visitChecksum();
   // Remove the line items so they are refreshed from the database on redisplay.
   unset($_POST['bill']);
@@ -1351,7 +1351,7 @@ value='<?php echo xla('Refresh');?>'>
  echo "&ptid={$fs->pid}&enc={$fs->encounter}"; ?>'" />
 &nbsp;
 <input type='submit' name='bn_reopen' onclick='return this.clicked = 2;'
- value='<?php echo xla('Void Checkout and Re-Open'); ?>' />
+ value='<?php echo xla('Void All Checkouts and Re-Open'); ?>' />
 &nbsp;
 <?php } else { ?>
 <input type='submit' name='bn_reopen' onclick='return this.clicked = true;'
