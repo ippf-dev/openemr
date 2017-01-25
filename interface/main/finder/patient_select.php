@@ -100,13 +100,13 @@ form {
 .srName { width: 12%; }
 .srPhone { width: 11%; }
 .srSS { width: 11%; }
-.srDOB { width: 8%; }
-.srID { width: 7%; }
+.srDOB { width: 7%; }
+.srID { width: 12%; }
 .srPID { width: 7%; }
 .srNumEnc { width: 11%; }
 .srNumDays { width: 11%; }
-.srDateLast { width: 11%; }
-.srDateNext { width: 11%; }
+.srDateLast { width: 7%; }
+.srDateNext { width: 7%; }
 .srMisc { width: 10%; }
 .srIsOpen { font-weight: bold; }
 
@@ -159,7 +159,7 @@ $MAXSHOW = 100; // maximum number of results to display at once
 
 //the maximum number of patient records to display:
 $sqllimit = $MAXSHOW;
-$given = "*, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS";
+$given = "*";
 $orderby = "lname ASC, fname ASC";
 
 $today = date('Y-m-d');
@@ -289,7 +289,6 @@ else {
 }
 ?>
 
-
 <table border='0' cellpadding='5' cellspacing='0' width='100%'>
  <tr>
   <td class='text'>
@@ -345,12 +344,13 @@ if ($fend > $count) $fend = $count;
 <th class="srSS"><?php echo htmlspecialchars( xl('SS'), ENT_NOQUOTES);?></th>
 <th class="srDOB"><?php echo htmlspecialchars( xl('DOB'), ENT_NOQUOTES);?></th>
 <th class="srID"><?php echo htmlspecialchars( xl('ID'), ENT_NOQUOTES);?></th>
+<th class="srDateLast"><?php echo xlt('Last Visit');?></th>
 
 <?php if (empty($GLOBALS['patient_search_results_style'])) { ?>
 <th class="srPID"><?php echo htmlspecialchars( xl('PID'), ENT_NOQUOTES);?></th>
 <th class="srNumEnc"><?php echo htmlspecialchars( xl('[Number Of Encounters]'), ENT_NOQUOTES);?></th>
 <th class="srNumDays"><?php echo htmlspecialchars( xl('[Days Since Last Encounter]'), ENT_NOQUOTES);?></th>
-<th class="srDateLast"><?php echo htmlspecialchars( xl('[Date of Last Encounter]'), ENT_NOQUOTES);?></th>
+<!-- <th class="srDateLast"><?php echo htmlspecialchars( xl('[Date of Last Encounter]'), ENT_NOQUOTES);?></th> -->
 <th class="srDateNext">
 <?php
 $add_days = 90;
@@ -408,17 +408,38 @@ if ($result) {
         echo "<td class='srSS$extcls'>" . htmlspecialchars( $iter['ss'], ENT_NOQUOTES) . "</td>";
         echo "<td class='srDOB$extcls'>";
         if ($iter{"DOB"} != "0000-00-00 00:00:00") {
-            echo htmlspecialchars( $iter['DOB_TS'], ENT_NOQUOTES);
+            echo text(oeFormatShortDate($iter['DOB']));
         } else {
             echo "&nbsp;";
         }
         echo "</td>";
-        echo "<td class='srID$extcls'>" . htmlspecialchars( $iter['pubpid'], ENT_NOQUOTES) . "</td>";
+        echo "<td class='srID$extcls'>" . htmlspecialchars( $iter['pubpid'], ENT_NOQUOTES) . "&nbsp;</td>";
+
+        // Calculate date differences based on date of last encounter.
+        $day_diff = ''; 
+        $last_date_seen = ''; 
+        $next_appt_date = ''; 
+        $query = "SELECT max(form_encounter.date) as mydate, " .
+          "(to_days(current_date()) - to_days(max(form_encounter.date))) as day_diff, " .
+          "max(form_encounter.date) + interval ? day as next_appt, " .
+          "dayname(max(form_encounter.date) + interval ? day) as next_appt_day " .
+          "FROM form_encounter " .
+          "WHERE form_encounter.pid = ?";
+        $results = sqlQuery($query, array($add_days, $add_days, $iter["pid"]));
+        if ($results) {
+          $last_date_seen = $results['mydate']; 
+          $day_diff       = $results['day_diff'];
+          $next_appt_date = $results['next_appt_day'].', '.$results['next_appt'];
+        }
+
+        // Last Visit date.
+        echo "<td class='srDateLast$extcls'>" . text(oeFormatShortDate($last_date_seen)) . "</td>\n";
 
         if (empty($GLOBALS['patient_search_results_style'])) {
 
           echo "<td class='srPID$extcls'>" . htmlspecialchars( $iter['pid'], ENT_NOQUOTES) . "</td>";
-          
+
+          /************************************************************
           //setup for display of encounter date info
           $encounter_count = 0;
           $day_diff = ''; 
@@ -459,6 +480,9 @@ if ($result) {
               $day_diff = $results['day_diff'];
               $next_appt_date= $results['next_appt_day'].', '.$results['next_appt'];
           }
+          ************************************************************/
+
+          $encounter_count = 0;
 
           //calculate count of encounters by distinct billing dates with cpt4
           //entries
@@ -480,7 +504,7 @@ if ($result) {
           }
           echo "<td class='srNumEnc$extcls'>" . htmlspecialchars( $encounter_count, ENT_NOQUOTES) . "</td>\n";
           echo "<td class='srNumDay$extcls'>" . htmlspecialchars( $day_diff, ENT_NOQUOTES) . "</td>\n";
-          echo "<td class='srDateLast$extcls'>" . htmlspecialchars( $last_date_seen, ENT_NOQUOTES) . "</td>\n";
+          // echo "<td class='srDateLast$extcls'>" . htmlspecialchars( $last_date_seen, ENT_NOQUOTES) . "</td>\n";
           echo "<td class='srDateNext$extcls'>" . htmlspecialchars( $next_appt_date, ENT_NOQUOTES) . "</td>\n";
         }
 
