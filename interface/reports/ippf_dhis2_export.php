@@ -47,6 +47,7 @@ function noteOrgUnitName($key, $name) {
 
 function recordStats($dataelement, $period, $orgunit, $categoryoptioncombo, $attributeoptioncombo, $quantity=1) {
   global $outarr;
+  $attributeoptioncombo = ''; // Per request 2017-01-26.
   $key = "$period|$orgunit|$dataelement|$categoryoptioncombo|$attributeoptioncombo";
   if (!isset($outarr[$key])) $outarr[$key] = 0;
   if (empty($quantity)) $quantity = 1;
