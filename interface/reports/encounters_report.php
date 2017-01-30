@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2007-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2007-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -36,9 +36,26 @@ function show_doc_total($lastdocname, $doc_encounters) {
   }
 }
 
+function genProviders($default = '') {
+  // Build a drop-down list of providers.
+  //
+  $query = "SELECT id, lname, fname FROM users WHERE " .
+   "active = 1 AND authorized = 1 ORDER BY lname, fname";
+  $ures = sqlStatement($query);
+  $provs = "\n    <option value=''>-- " . xl('All') . " --\n";
+  while ($urow = sqlFetchArray($ures)) {
+    $provid = $urow['id'];
+    $provs .= "    <option value='$provid'";
+    if ($provid == $default) $provs .= " selected";
+    $provs .= ">" . $urow['lname'] . ", " . $urow['fname'] . "\n";
+  }
+  return $provs;
+}
+
 $form_from_date = fixDate($_POST['form_from_date'], date('Y-m-d'));
 $form_to_date = fixDate($_POST['form_to_date'], date('Y-m-d'));
-$form_provider  = $_POST['form_provider'];
+$form_default_provider  = $_POST['form_default_provider'];
+$form_service_provider  = $_POST['form_service_provider'];
 $form_facility  = $_POST['form_facility'];
 $form_details   = $_POST['form_details'] ? true : false;
 $form_new_patients = $_POST['form_new_patients'] ? true : false;
@@ -72,16 +89,22 @@ if ($form_open_only) {
 }
 $query .=
   " FROM ( form_encounter AS fe, forms AS f ) " .
-  "LEFT OUTER JOIN patient_data AS p ON p.pid = fe.pid " .
-  "LEFT OUTER JOIN users AS u ON u.id = fe.provider_id " .
+  "LEFT OUTER JOIN patient_data AS p ON p.pid = fe.pid ";
+if ($form_service_provider) {
+  $query .= "LEFT JOIN users AS u ON u.id = '$form_service_provider' ";
+}
+else {
+  $query .= "LEFT JOIN users AS u ON u.id = fe.provider_id ";
+}
+$query .=
   "WHERE f.pid = fe.pid AND f.encounter = fe.encounter AND f.formdir = 'newpatient' ";
 if ($form_to_date) {
   $query .= "AND fe.date >= '$form_from_date 00:00:00' AND fe.date <= '$form_to_date 23:59:59' ";
 } else {
   $query .= "AND fe.date >= '$form_from_date 00:00:00' AND fe.date <= '$form_from_date 23:59:59' ";
 }
-if ($form_provider) {
-  $query .= "AND fe.provider_id = '$form_provider' ";
+if ($form_default_provider) {
+  $query .= "AND fe.provider_id = '$form_default_provider' ";
 }
 if ($form_facility) {
   $query .= "AND fe.facility_id = '$form_facility' ";
@@ -105,12 +128,20 @@ if ($form_related_code) {
     list($reltype, $relcode) = explode(':', $tmp);
     if (empty($relcode) || empty($reltype)) continue;
     if ($qsvc) $qsvc .= " OR ";
-    $qsvc .= "(SELECT COUNT(*) FROM billing AS b WHERE b.pid = fe.pid AND " .
-      "b.encounter = fe.encounter AND b.code_type = '$reltype' AND " .
-      "b.code = '$relcode' AND b.activity = 1) > 0";
+    $qsvc .= "(SELECT COUNT(*) FROM billing AS b1 WHERE b1.pid = fe.pid AND " .
+      "b1.encounter = fe.encounter AND b1.code_type = '$reltype' AND " .
+      "b1.code = '$relcode' AND b1.activity = 1) > 0";
   }
   if ($qsvc) $query .= "AND ( $qsvc ) ";
 }
+
+// If service provider specified, make sure they are default or in at least one billing item.
+if ($form_service_provider) {
+  $query .= "AND (fe.provider_id = '$form_service_provider' OR " .
+    "(SELECT COUNT(*) FROM billing AS b2 WHERE b2.pid = fe.pid AND b2.encounter = fe.encounter " .
+    "AND b2.provider_id = '$form_service_provider' AND b2.activity = 1) > 0) ";
+}
+
 $query .= "ORDER BY $orderby";
 
 $res = sqlStatement($query);
@@ -290,23 +321,6 @@ $(document).ready(function() {
  echo "   </select>\n";
 ?>
 
-   <?php xl('Provider','e'); ?>:
-<?php
- // Build a drop-down list of providers.
- //
- $query = "SELECT id, lname, fname FROM users WHERE " .
-  "active = 1 AND authorized = 1 ORDER BY lname, fname";
- $ures = sqlStatement($query);
- echo "   <select name='form_provider'>\n";
- echo "    <option value=''>-- " . xl('All') . " --\n";
- while ($urow = sqlFetchArray($ures)) {
-  $provid = $urow['id'];
-  echo "    <option value='$provid'";
-  if ($provid == $_POST['form_provider']) echo " selected";
-  echo ">" . $urow['lname'] . ", " . $urow['fname'] . "\n";
- }
- echo "   </select>\n";
-?>
    &nbsp;<?php  xl('From','e'); ?>:
    <input type='text' name='form_from_date' id='form_from_date' size='10' value='<?php echo $form_from_date ?>'
     onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='Start date yyyy-mm-dd'>
@@ -320,17 +334,29 @@ $(document).ready(function() {
    <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
     id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
     title='<?php xl('Click here to choose a date','e'); ?>'>
-
   </td>
  </tr>
+
  <tr>
   <td>
+<?php
+ echo xlt('Default Provider') . ":\n";
+ echo "   <select name='form_default_provider'>" . genProviders($form_default_provider) . "</select>\n";
+ echo "&nbsp;";
+ echo xlt('Service Provider') . ":\n";
+ echo "   <select name='form_service_provider'>" . genProviders($form_service_provider) . "</select>\n";
+?>
+  </td>
+ </tr>
 
-   <?php xl('Service Filter','e'); ?>
-   <input type='text' size='30' name='form_related_code'
+ <tr>
+  <td>
+   <?php echo xlt('Service'); ?>
+   <input type='text' size='20' name='form_related_code'
     value='<?php echo $form_related_code ?>' onclick="sel_related()"
     title='<?php echo xla('Click to select a code for filtering'); ?>' readonly />
 
+   &nbsp;
    <input type='checkbox' name='form_new_patients' title='First-time visits only'<?php  if ($form_new_patients) echo ' checked'; ?>>
    <?php  xl('New','e'); ?>
 
@@ -364,7 +390,8 @@ $(document).ready(function() {
 <?php if ($form_details) { ?>
   <th>
    <a href="nojs.php" onclick="return dosort('doctor')"
-   <?php if ($form_orderby == "doctor") echo " style=\"color:#00cc00\"" ?>><?php  xl('Provider','e'); ?> </a>
+   <?php if ($form_orderby == "doctor") echo " style=\"color:#00cc00\"" ?>><?php
+    echo $form_service_provider ? xlt('Service Provider') : xlt('Default Provider'); ?> </a>
   </th>
   <th>
    <a href="nojs.php" onclick="return dosort('time')"
@@ -413,7 +440,7 @@ if ($res) {
     $patient_id = $row['pid'];
     $def_provider_id = 0 + $row['provider_id'];
 
-    $docname = '-- ' . xl('Unassigned') . ' --';
+    $docname = '--' . xl('Unassigned') . '--';
     if (!empty($row['ulname']) || !empty($row['ufname'])) {
       $docname = $row['ulname'];
       if (!empty($row['ufname']) || !empty($row['umname']))
@@ -438,10 +465,7 @@ if ($res) {
       $unbilled_count = 0;
       $last_provider_id = -1;
 
-      // if ($billres = getBillingByEncounter($row['pid'], $row['encounter'],
-      //   "code_type, code, code_text, billed"))
-
-      $billres = sqlStatement("SELECT " .
+      $query = "SELECT " .
         "b.code_type, b.code, b.code_text, b.billed, u.id, " .
         "u.lname, u.fname, u.username " .
         "FROM billing AS b " .
@@ -449,32 +473,39 @@ if ($res) {
         "WHERE " .
         "b.pid = '" . $row['pid'] . "' AND " .
         "b.encounter = '" . $row['encounter'] . "' AND " .
-        "b.activity = 1 " .
-        "ORDER BY u.lname, u.fname, u.id, b.code_type, b.code");
+        "b.activity = 1 ";
+      $query .= "ORDER BY u.lname, u.fname, u.id, b.code_type, b.code";
+      $billres = sqlStatement($query);
 
       while ($billrow = sqlFetchArray($billres)) {
         // $title = addslashes($billrow['code_text']);
         if ($billrow['code_type'] != 'COPAY' && $billrow['code_type'] != 'TAX') {
-          $provider_id = empty($billrow['id']) ? 0 : 0 + $billrow['id'];
-          if ($provider_id != $last_provider_id) {
-            $last_provider_id = $provider_id;
-            $provname = 'Unknown';
-            if ($provider_id) {
-              if (empty($billrow['lname'])) {
-                $provname = '(' . $billrow['username'] . ')';
+          $provider_id = empty($billrow['id']) ? 0 : (0 + $billrow['id']);
+
+          if (!$form_service_provider || $provider_id == $form_service_provider ||
+            ($provider_id == 0 && $def_provider_id == $form_service_provider))
+          {
+            if ($provider_id != $last_provider_id) {
+              $last_provider_id = $provider_id;
+              $provname = 'Unknown';
+              if ($provider_id) {
+                if (empty($billrow['lname'])) {
+                  $provname = '(' . $billrow['username'] . ')';
+                }
+                else {
+                  $provname = $billrow['lname'];
+                  if ($billrow['fname']) $provname .= ',' . substr($billrow['fname'], 0, 1);
+                }
               }
-              else {
-                $provname = $billrow['lname'];
-                if ($billrow['fname']) $provname .= ',' . substr($billrow['fname'], 0, 1);
-              }
+              if (!empty($coded)) $coded .= '<br />';
+              $coded .= "<span class='provname'>$provname:</span> ";
             }
-            if (!empty($coded)) $coded .= '<br />';
-            $coded .= "<span class='provname'>$provname:</span> ";
+            else {
+              $coded .= ", ";
+            }
+            $coded .= $billrow['code'];
           }
-          else {
-            $coded .= ", ";
-          }
-          $coded .= $billrow['code'];
+
           if ($billrow['billed']) ++$billed_count; else ++$unbilled_count;
         }
       }
