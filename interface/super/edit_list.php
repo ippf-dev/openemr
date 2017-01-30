@@ -881,23 +881,41 @@ function defClicked(lino) {
 // Form validation and submission.
 // This needs more validation.
 function mysubmit() {
- var f = document.forms[0];
- if (f.list_id.value == 'code_types') {
-  for (var i = 1; f['opt[' + i + '][ct_key]'].value; ++i) {
-   var ikey = 'opt[' + i + ']';
-   for (var j = i+1; f['opt[' + j + '][ct_key]'].value; ++j) {
-    var jkey = 'opt[' + j + ']';
-    if (f[ikey+'[ct_key]'].value == f[jkey+'[ct_key]'].value) {
-     alert('<?php echo xl('Error: duplicated name on line') ?>' + ' ' + j);
-     return;
+  var f = document.forms[0];
+  if (f.list_id.value == 'code_types') {
+    for (var i = 1; f['opt[' + i + '][ct_key]'].value; ++i) {
+      var ikey = 'opt[' + i + ']';
+      for (var j = i+1; f['opt[' + j + '][ct_key]'].value; ++j) {
+        var jkey = 'opt[' + j + ']';
+        if (f[ikey+'[ct_key]'].value == f[jkey+'[ct_key]'].value) {
+          alert('<?php echo xl('Error: duplicated name on line') ?>' + ' ' + j);
+          return;
+        }
+        if (parseInt(f[ikey+'[ct_id]'].value) == parseInt(f[jkey+'[ct_id]'].value)) {
+          alert('<?php echo xl('Error: duplicated ID on line') ?>' + ' ' + j);
+          return;
+        }
+      }
     }
-    if (parseInt(f[ikey+'[ct_id]'].value) == parseInt(f[jkey+'[ct_id]'].value)) {
-     alert('<?php echo xl('Error: duplicated ID on line') ?>' + ' ' + j);
-     return;
-    }
-   }
   }
- }
+  else if (f['opt[1][id]']) {
+    // Check for duplicate IDs.
+    for (var i = 1; f['opt[' + i + '][id]']; ++i) {
+      var ikey = 'opt[' + i + '][id]';
+      if (f[ikey].value == '') continue;
+      for (var j = i+1; f['opt[' + j + '][id]']; ++j) {
+        var jkey = 'opt[' + j + '][id]';
+        if (f[ikey].value.toUpperCase() == f[jkey].value.toUpperCase()) {
+          alert('<?php echo xls('Error: duplicated ID') ?>' + ': ' + f[jkey].value);
+          f[jkey].scrollIntoView();
+          f[jkey].focus();
+          f[jkey].select();
+          return;
+        }
+      }
+    }
+  }
+
  <?php if ($GLOBALS['ippf_specific']) { ?>
     // This case requires the mapping for education to be numeric.
     if (f.list_id.value == 'userlist2') {
