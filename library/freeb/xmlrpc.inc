@@ -38,14 +38,16 @@
 
 	if (!function_exists('xml_parser_create'))
 	{
+    // dl() no longer supported in php7 and freeb no longer used, so commenting these calls out.
+
 		// Win 32 fix. From: 'Leo West' <lwest@imaginet.fr>
 		if($WINDIR)
 		{
-			dl('php3_xml.dll');
+			// dl('php3_xml.dll');
 		}
 		else
 		{
-			dl('xml.so');
+			// dl('xml.so');
 		}
 	}
 
