@@ -18,12 +18,12 @@ require_once("../../custom/code_types.inc.php");
 
 // For each sorting option, specify the ORDER BY argument.
 $ORDERHASH = array(
-  'item'    => 'itemcode, svcdate, pid, encounter',
-  'svcdate' => 'svcdate, itemcode, pid, encounter',
-  'paydate' => 'paydate, itemcode, svcdate, pid, encounter',
-  'invoice' => 'invoiceno, itemcode, svcdate, pid, encounter',
-  'payor'   => 'payor, itemcode, svcdate, pid, encounter',
-  'project' => 'proj_name, itemcode, svcdate, pid, encounter',
+  'item'    => 'itemcode, svcdate, invoiceno, pid, encounter',
+  'svcdate' => 'svcdate, invoiceno, itemcode, pid, encounter',
+  'paydate' => 'paydate, svcdate, invoiceno, itemcode, pid, encounter',
+  'invoice' => 'invoiceno, svcdate, itemcode, pid, encounter',
+  'payor'   => 'payor, svcdate, invoiceno, itemcode, pid, encounter',
+  'project' => 'proj_name, svcdate, invoiceno, itemcode, pid, encounter',
 );
 
 function bucks($amount) {
@@ -186,15 +186,23 @@ function ensureLineAmounts($patient_id, $encounter_id) {
   return $invno;
 }
 
+$previous_invno = array();
+
 function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   $description, $svcdate, $paydate, $qty, $amount, $irnumber='',
   $payor, $sitecode, $project)
 {
-  global $aItems, $aTaxNames, $overpayments;
+  global $aItems, $aTaxNames, $overpayments, $previous_invno;
 
   if (empty($qty)) $qty = 1;
   $invnumber = $irnumber ? $irnumber : "$patient_id.$encounter_id";
   $rowamount = sprintf('%01.2f', $amount);
+
+  $disp_code = $code;
+  if ($code_type == 'PROD') {
+    $disp_code = $description;
+    $description = '';
+  }
 
   $tmp = $overpayments;
   $invno = ensureLineAmounts($patient_id, $encounter_id);
@@ -203,23 +211,38 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   $codekey = $code_type . ':' . $code;
   $rowadj = $aItems[$invno][$codekey][1];
   $rowpay = $aItems[$invno][$codekey][2];
+  $memo = "OpenEMR Inv " . $invnumber;
+
+  // Compute Discount Rate which is the negative sum of adjustments for the invoice.
+  // Do this only for the first item of each invoice.
+  $discount_rate = 0.00;
+  if (!isset($previous_invno[$invno])) {
+    $previous_invno[$invno] = true;
+    foreach ($aItems[$invno] AS $tmpcodekey => $dummy) {
+      $discount_rate -= $aItems[$invno][$tmpcodekey][1];
+      // $memo .= " $tmpcodekey:" . $aItems[$invno][$tmpcodekey][1]; // debugging
+    }
+  }
+  $discount_item = $discount_rate == 0.00 ? '' : xl('Discount Item');
 
   if ($_POST['form_csvexport']) {
-    echo '"' . display_desc($code) . '",';
-    echo '"' . display_desc($description) . '",';
     echo '"' . oeFormatShortDate(display_desc($svcdate)) . '",';
     echo '"' . oeFormatShortDate(display_desc($paydate)) . '",';
     echo '"' . display_desc($invnumber) . '",';
+    echo '"' . display_desc($disp_code) . '",';
+    echo '"' . display_desc($description) . '",';
     echo '"' . display_desc($qty      ) . '",';
-    echo '"'; bucks($rowamount); echo '",';
+    // echo '"'; bucks($rowamount); echo '",';
+    echo '"'; bucks($amount / $qty); echo '",';
+    echo '"' . display_desc($discount_item) . '",';
+    echo '"'; bucks($discount_rate);    echo '",';
     echo '"'; bucks($rowadj);    echo '",';
     // for ($i = 0; $i < count($aTaxNames); ++$i) {
     //   echo '"'; bucks($aItems[$invno][$codekey][3 + $i]); echo '",';
     // }
     echo '"'; bucks($rowpay);    echo '",';
     echo '"' . display_desc($payor) . '",';
-    echo '"'; bucks($amount / $qty); echo '",';
-    echo '"",'; // Memo
+    echo '"' . display_desc($memo) . '",';
     echo '"",'; // Program Strategy
     echo '"' . display_desc($sitecode) . '",';
     echo '"",'; // Fund
@@ -233,12 +256,6 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
 
  <tr>
   <td class="detail">
-   <?php echo display_desc($code); ?>
-  </td>
-  <td class="detail">
-   <?php echo display_desc($description); ?>
-  </td>
-  <td class="detail">
    <?php echo oeFormatShortDate($svcdate); ?>
   </td>
   <td class="detail">
@@ -247,11 +264,28 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   <td class='delink' onclick='doinvopen(<?php echo "$patient_id,$encounter_id"; ?>)'>
    <?php echo $invnumber; ?>
   </td>
+  <td class="detail">
+   <?php echo display_desc($disp_code); ?>
+  </td>
+  <td class="detail">
+   <?php echo display_desc($description); ?>
+  </td>
   <td class="detail" align="right">
    <?php echo $qty; ?>
   </td>
+  <!--
   <td class="detail" align="right">
    <?php bucks($rowamount); ?>
+  </td>
+  -->
+  <td class="detail" align="right">
+   <?php echo $overpaid; bucks($amount / $qty); ?>
+  </td>
+  <td class="detail">
+   <?php echo display_desc($discount_item); ?>
+  </td>
+  <td class="detail" align="right">
+   <?php bucks($discount_rate); ?>
   </td>
   <td class="detail" align="right">
    <?php bucks($rowadj); ?>
@@ -269,11 +303,8 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   <td class="detail">
    <?php echo display_desc($payor); ?>
   </td>
-  <td class="detail" align="right">
-   <?php echo $overpaid; bucks($amount / $qty); ?>
-  </td>
   <td class="detail">
-   &nbsp;
+   <?php echo display_desc($memo); ?>
   </td>
   <td class="detail">
    &nbsp;
@@ -307,13 +338,14 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
 // Invoice-level adjustments are considered to match all items in the invoice.
 //
 function get_adjustment_type($patient_id, $encounter_id, $code_type, $code) {
-  global $form_adjreason;
   $adjreason = '';
-  $row = sqlQuery("SELECT memo FROM ar_activity WHERE " .
-    "pid = '$patient_id' AND encounter = '$encounter_id' AND deleted IS NULL AND " .
-    "(code_type = '' OR (code_type = '$code_type' AND code = '$code')) AND " .
-    "(adj_amount != 0.00 OR pay_amount = 0.00) AND memo != '' " .
-    "ORDER BY code DESC, adj_amount DESC LIMIT 1");
+  $row = sqlQuery("SELECT a.memo FROM ar_activity AS a " .
+    "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
+    "WHERE " .
+    "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND a.deleted IS NULL AND " .
+    "(a.code_type = '' OR (a.code_type = '$code_type' AND a.code = '$code')) AND " .
+    "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
+    "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1");
   if (isset($row['memo'])) $adjreason = $row['memo'];
   return $adjreason;
 }
@@ -323,8 +355,9 @@ if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 $form_from_date = fixDate($_POST['form_from_date'], date('Y-m-01'));
 $form_to_date   = fixDate($_POST['form_to_date']  , date('Y-m-d'));
 $form_facility  = isset($_POST['form_facility']) ? $_POST['form_facility'] : '';
+$form_payor     = isset($_POST['form_payor']) ? $_POST['form_payor'] : '';
 
-$form_orderby = $ORDERHASH[$_REQUEST['form_orderby']] ? $_REQUEST['form_orderby'] : 'item';
+$form_orderby = $ORDERHASH[$_REQUEST['form_orderby']] ? $_REQUEST['form_orderby'] : 'svcdate';
 $orderby = $ORDERHASH[$form_orderby];
 
 // Get the tax types applicable to this report's date range.
@@ -353,20 +386,22 @@ if ($_POST['form_csvexport']) {
   // http://crashcoursing.blogspot.com/2011/05/exporting-csv-with-special-characters.html
   echo "\xEF\xBB\xBF";
   // CSV headers:
-  echo '"' . xl('Item'            ) . '",';
-  echo '"' . xl('Description'     ) . '",';
   echo '"' . xl('Service Date'    ) . '",';
   echo '"' . xl('Payment Date'    ) . '",';
-  echo '"' . xl('Invoice #'       ) . '",';
+  echo '"' . xl('Invoice'         ) . '",';
+  echo '"' . xl('Item'            ) . '",';
+  echo '"' . xl('Description'     ) . '",';
   echo '"' . xl('Qty'             ) . '",';
-  echo '"' . xl('Price'           ) . '",';
+  // echo '"' . xl('Price'           ) . '",';
+  echo '"' . xl('Each'            ) . '",';
+  echo '"' . xl('Discount Item'   ) . '",';
+  echo '"' . xl('Discount Rate'   ) . '",';
   echo '"' . xl('Adj'             ) . '",';
   // foreach ($aTaxNames as $taxname) {
   //   echo '"' . addslashes($taxname) . '",';
   // }
   echo '"' . xl('Payment'         ) . '",';
   echo '"' . xl('Payor'           ) . '",';
-  echo '"' . xl('Each'            ) . '",';
   echo '"' . xl('Memo'            ) . '",';
   echo '"' . xl('Program Strategy') . '",';
   echo '"' . xl('Site'            ) . '",';
@@ -445,6 +480,14 @@ $(document).ready(function() {
  <tr>
   <td align='center'>
 <?php
+
+// Build a drop-down for payor type.
+echo "   <select name='form_payor'>\n";
+echo "    <option value=''"  . ($form_payor == ''  ? ' selected' : '') . ">-- " . xl('All Payors') . " --\n";
+echo "    <option value='c'" . ($form_payor == 'c' ? ' selected' : '') . ">"    . xl('Cash'   ) . "\n";
+echo "    <option value='i'" . ($form_payor == 'i' ? ' selected' : '') . ">"    . xl('Insurer') . "\n";
+echo "   </select>&nbsp;\n";
+
 // Build a drop-down list of facilities.
 //
 $query = "SELECT id, name FROM facility ORDER BY name";
@@ -492,14 +535,6 @@ echo "   </select>\n";
  <thead>
  <tr bgcolor="#dddddd">
   <td class="dehead">
-   <a href="#" onclick="return dosort('item')"
-   <?php if ($form_orderby == "item") echo " style=\"color:#00cc00\""; ?>
-   ><?php echo xlt('Item'); ?></a>
-  </td>
-  <td class="dehead">
-   <?php echo xlt('Description'); ?>
-  </td>
-  <td class="dehead">
    <a href="#" onclick="return dosort('svcdate')"
    <?php if ($form_orderby == "svcdate") echo " style=\"color:#00cc00\""; ?>
    ><?php echo xlt('Service Date'); ?></a>
@@ -512,13 +547,32 @@ echo "   </select>\n";
   <td class="dehead">
    <a href="#" onclick="return dosort('invoice')"
    <?php if ($form_orderby == "invoice") echo " style=\"color:#00cc00\""; ?>
-   ><?php echo xlt('Invoice #'); ?></a>
+   ><?php echo xlt('Invoice'); ?></a>
+  </td>
+  <td class="dehead">
+   <a href="#" onclick="return dosort('item')"
+   <?php if ($form_orderby == "item") echo " style=\"color:#00cc00\""; ?>
+   ><?php echo xlt('Item'); ?></a>
+  </td>
+  <td class="dehead">
+   <?php echo xlt('Description'); ?>
   </td>
   <td class="dehead" align="right">
    <?php echo xlt('Qty'); ?>
   </td>
+  <!--
   <td class="dehead" align="right">
    <?php echo xlt('Price'); ?>
+  </td>
+  -->
+  <td class="dehead" align="right">
+   <?php echo xlt('Each'); ?>
+  </td>
+  <td class="dehead">
+   <?php echo xlt('Discount Item'); ?>
+  </td>
+  <td class="dehead" align="right">
+   <?php echo xlt('Discount Rate'); ?>
   </td>
   <td class="dehead" align="right">
    <?php echo xlt('Adj'); ?>
@@ -537,9 +591,6 @@ echo "   </select>\n";
    <a href="#" onclick="return dosort('payor')"
    <?php if ($form_orderby == "payor") echo " style=\"color:#00cc00\""; ?>
    ><?php echo xlt('Payor'); ?></a>
-  </td>
-  <td class="dehead" align="right">
-   <?php echo xlt('Each'); ?>
   </td>
   <td class="dehead">
    <?php echo xlt('Memo'); ?>
@@ -593,12 +644,12 @@ if ($_POST['form_orderby']) {
     "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
     "LEFT JOIN codes AS cp ON cp.code_type = ? AND c.related_code LIKE '%PROJ:%' AND " .
-    "cp.code = SUBSTR(c.related_code, LOCATE(c.related_code, 'PROJ:') + 5, $projcodelen) " .
+    "cp.code = SUBSTR(c.related_code, LOCATE('PROJ:', c.related_code) + 5, $projcodelen) " .
     "WHERE b.code_type != 'COPAY' AND b.activity = 1 AND b.fee != 0 AND " .
     "(b.code_type != 'TAX' OR b.ndc_info = '') " . // why the ndc_info test?
     ") UNION ALL ( " .
     "SELECT " .
-    "s.pid, s.encounter, 'PROD' AS code_type, d.name AS itemcode, '' AS description, " .
+    "s.pid, s.encounter, 'PROD' AS code_type, s.drug_id AS itemcode, d.name AS description, " .
     "s.quantity AS units, s.fee, " .
     "s.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
     "pd.userlist4 AS payor, cp.code_text AS proj_name " .
@@ -609,20 +660,32 @@ if ($_POST['form_orderby']) {
     "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
     "LEFT JOIN codes AS cp ON cp.code_type = ? AND d.related_code LIKE '%PROJ:%' AND " .
-    "cp.code = SUBSTR(d.related_code, LOCATE(d.related_code, 'PROJ:') + 5, $projcodelen) " .
+    "cp.code = SUBSTR(d.related_code, LOCATE('PROJ:', d.related_code) + 5, $projcodelen) " .
     "WHERE s.fee != 0 " .
     ") ORDER BY $orderby";
 
   $dt1 = "$from_date 00:00:00";
   $dt2 = "$to_date 23:59:59";
   $tmp = empty($code_types['PROJ']) ? 0 : $code_types['PROJ']['id'];
+
+  // if (! $_POST['form_csvexport']) echo "<!-- $query\n $dt1 $dt2 $tmp -->\n"; // debugging
+
   $res = sqlStatement($query, array($dt1, $dt2, $tmp, $dt1, $dt2, $tmp));
 
   while ($row = sqlFetchArray($res)) {
+    // Determine if this is an insurance adjustment type.
+    // Set payor and apply form_payor filter accordingly.
+    $payor = 'CASH';
+    if (get_adjustment_type($row['pid'], $row['encounter'], $row['code_type'], $row['itemcode'])) {
+      $payor = $row['payor'];
+    }
+    if ($form_payor == 'c' && $payor != 'CASH') continue;
+    if ($form_payor == 'i' && $payor == 'CASH') continue;
+
     thisLineItem($row['pid'], $row['encounter'], $row['code_type'], $row['itemcode'],
       $row['description'], substr($row['svcdate'], 0, 10), substr($row['paydate'], 0, 10),
       $row['units'], $row['fee'], $row['invoiceno'],
-      $row['payor'], $row['facility_npi'], $row['proj_name']);
+      $payor, $row['facility_npi'], $row['proj_name']);
   }
 
 } // end refresh or export

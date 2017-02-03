@@ -652,3 +652,7 @@ ALTER TABLE `user_settings` CHANGE `setting_label` `setting_label` varchar(100) 
 #IfMissingColumn ar_activity deleted
 ALTER TABLE `ar_activity` ADD COLUMN `deleted` datetime DEFAULT NULL COMMENT 'NULL if active, otherwise when voided';
 #EndIf
+
+#IfNotColumnType facility facility_npi varchar(50)
+ALTER TABLE `facility` CHANGE `facility_npi` `facility_npi` varchar(50) NOT NULL default '';
+#EndIf

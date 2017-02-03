@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2016-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -446,7 +446,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       $query .= " AND fe.facility_id IS NOT NULL AND fe.facility_id = ?";
       $qparms[] = $form_facility;
     }
-    $query .= " ORDER BY b.code_text, b.id, pd.lname, pd.fname, fe.pid, fe.date, fe.encounter";
+    $query .= " ORDER BY b.code_text, fe.date, fe.encounter, pd.lname, pd.fname, fe.pid, b.id";
 
     $bres = sqlStatement($query, $qparms);
     $last_billing_id = 0;
@@ -545,7 +545,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       $query .= " AND fe.facility_id IS NOT NULL AND fe.facility_id = ?";
       $qparms[] = $form_facility;
     }
-    $query .= " ORDER BY d.name, s.drug_id, pd.lname, pd.fname, fe.pid, fe.date, fe.encounter";
+    $query .= " ORDER BY d.name, s.drug_id, fe.date, fe.encounter, pd.lname, pd.fname, fe.pid, s.sale_id";
 
     $sres = sqlStatement($query, $qparms);
     $last_sale_id = 0;

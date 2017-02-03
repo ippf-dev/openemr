@@ -289,31 +289,33 @@ INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES (
 
 #IfNotRow2D list_options list_id lists option_id ippfconmeth
 INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('lists','ippfconmeth','IPPF Contraceptive Methods', 1,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','111101110','COC & POC'                                   ,01,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','111111110','Combined Injectable Contraceptives (1 month)',02,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','111112110','Progestogen Only Injectables (2 months)'     ,03,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','111113110','Progestogen Only Injectables (3 months)'     ,04,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','111122110','Subdermal implants 6 rods'                   ,05,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','111123110','Subdermal implants 2 rods'                   ,06,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','111124110','Subdermal implants 1 rod'                    ,07,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','111132110','Transdermal Patch (1 month)'                 ,08,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','111133110','Vaginal Ring (1 month)'                      ,09,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','112141110','Male Condom'                                 ,10,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','112142110','Female Condom'                               ,11,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','112151110','Diaphragm'                                   ,12,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','112152010','Cervical Cap'                                ,13,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','112161110','Spermicides - Foam Tabs/Tube/Suppositories'  ,14,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','112162110','Spermicides - Foam Tabs/Strip'               ,15,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','112163110','Spermicides - Foam Cans'                     ,16,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','112164110','Spermicides - Cream & Jelly'                 ,17,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','112165110','Spermicides - Pessaries / C-film'            ,18,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','113171110','Hormone releasing IUD (5 years)'             ,19,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','113172110','Copper releasing IUD (10 years) '            ,20,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','121181213','Female VSC - Minilaparatomy'                 ,21,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','121181313','Female VSC - Laparoscopy'                    ,22,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','121181413','Female VSC - Laparotomy'                     ,23,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','122182213','Male VSC - Incisional vasectomy'             ,24,0);
-INSERT INTO list_options ( list_id, option_id, title, seq, is_default ) VALUES ('ippfconmeth','122182313','Male VSC - No-scalpel Vasectomy'             ,25,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','111101110','COC & POC',1,0,0,'Pills');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','111111110','Injectable (1 month)',2,0,0,'Injectables');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','111112110','Injectable (2 months)',3,0,0,'Injectables');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','111113110','Injectables (3 months)',4,0,0,'Injectables');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','111122110','Implants 6 rods',5,0,0,'Implants');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','111123110','Implants 2 rods',6,0,0,'Implants');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','111124110','Implants 1 rod',7,0,0,'Implants');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','111132110','Transdermal Patch (1 month)',8,0,0,'Hormonal Other');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','111133110','Vaginal Ring (1 month)',9,0,0,'Hormonal Other');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','112141110','Male Condom',10,0,0,'Barrier');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','112142110','Female Condom',11,0,0,'Barrier');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','112151110','Diaphragm',12,0,0,'Barrier');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','112152010','Cervical Cap',13,0,0,'Barrier');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','112161110','Spermicides - Foam Tabs/Tube/Suppositories',14,0,0,'Spermicides');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','112162110','Spermicides - Foam Tabs/Strip',15,0,0,'Spermicides');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','112163110','Spermicides - Foam Cans',16,0,0,'Spermicides');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','112164110','Spermicides - Cream & Jelly',17,0,0,'Spermicides');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','112165110','Spermicides - Pessaries / C-film',18,0,0,'Spermicides');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','113171110','Hormone releasing IUD (5 years)',19,0,0,'IUD');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','113172110','Copper releasing IUD (10 years)',20,0,0,'IUD');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','121181213','Female VSC - Minilaparatomy',21,0,0,'Female VSC');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','121181313','Female VSC - Laparoscopy',22,0,0,'Female VSC');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','121181413','Female VSC - Laparotomy',23,0,0,'Female VSC');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','122182213','Male VSC - Incisional vasectomy',24,0,0,'Male VSC');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','122182313','Male VSC - No-scalpel Vasectomy',25,0,0,'Male VSC');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','145212110','Emergency Contraception',26,0,0,'EC');
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`) VALUES ('ippfconmeth','NoMethod','No Method',30,0,0,'No Method');
 #EndIf
 
 #IfNotRow2D codes code_type 11 code 253232521

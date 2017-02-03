@@ -1302,7 +1302,7 @@ if ($GLOBALS['athletic_team']) {
           <?php genMiscLink('RTop','rep','0',xl('Rec/Inv by Pay Methods'), 'reports/methods_by_invoice.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Collections'), 'reports/collections_report.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Financial Summary by Service Code'),'reports/svc_code_financial_report.php'); ?>
-          <?php genMiscLink('RTop','rep','0',xl('Acct Export'),'reports/export_accounting_transactions.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Peachtree Export'),'reports/export_accounting_transactions.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('NetSuite Export'),'reports/netsuite_export.php'); ?>
           <?php if ($GLOBALS['gbl_menu_projects']) {
             genMiscLink('RTop','rep','0',xl('Projects'),'reports/restricted_projects_report.php');
