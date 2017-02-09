@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -545,7 +545,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "LEFT JOIN code_types AS ct ON ct.ct_key = b.code_type " .
     "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'superbill' AND lo.option_id = c.superbill AND lo.activity = 1 " .
-    "WHERE b.code_type != 'COPAY' AND b.activity = 1 AND " .
+    "WHERE b.code_type != 'COPAY' AND b.code_type != 'TAX' AND b.activity = 1 AND " .
     "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
 
   // If a facility was specified.
