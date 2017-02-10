@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -35,6 +35,11 @@ $product_first = (!empty($_POST['form_by']) && $_POST['form_by'] == 'w') ? 0 : 1
 
 // The selected facility ID, if any.
 $form_facility = 0 + empty($_REQUEST['form_facility']) ? 0 : $_REQUEST['form_facility'];
+
+// The selected warehouse ID, if any.
+$form_warehouse = empty($_REQUEST['form_warehouse']) ? '' : $_REQUEST['form_warehouse'];
+$tmp = explode('/', $form_warehouse);
+$form_warehouse = $tmp[0];
 
 $last_warehouse_id = '~';
 $last_product_id = 0;
@@ -434,8 +439,22 @@ function doinvopen(ptid,encid) {
  dlgopen('../patient_file/pos_checkout.php?ptid=' + ptid + '&enc=' + encid, '_blank', 750, 550);
 }
 
+// Enable/disable warehouse options depending on current facility.
+function facchanged() {
+ var f = document.forms[0];
+ var facid = f.form_facility.value;
+ var theopts = f.form_warehouse.options;
+ for (var i = 1; i < theopts.length; ++i) {
+  var tmp = theopts[i].value.split('/');
+  var dis = facid && (tmp.length < 2 || tmp[1] != facid);
+  theopts[i].disabled = dis;
+  if (dis) theopts[i].selected = false;
+ }
+}
+
 $(document).ready(function() {
   oeFixedHeaderSetup(document.getElementById('mymaintable'));
+  facchanged();
 });
 
 </script>
@@ -458,8 +477,8 @@ $(document).ready(function() {
 //
 $query = "SELECT id, name FROM facility ORDER BY name";
 $fres = sqlStatement($query);
-echo "   <select name='form_facility'>\n";
-echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
+echo "   <select name='form_facility' onchange='facchanged()'>\n";
+echo "    <option value=''>" . xl('All Facilities') . "</option>\n";
 while ($frow = sqlFetchArray($fres)) {
   $facid = $frow['id'];
   if ($is_user_restricted && !isFacilityAllowed($facid)) continue;
@@ -477,6 +496,22 @@ echo "   </select>&nbsp;\n";
    </select>&nbsp;
 
 <?php
+// Build a drop-down list of warehouses.
+//
+echo "   <select name='form_warehouse'>\n";
+echo "    <option value=''>" . xl('All Warehouses') . "</option>\n";
+$lres = sqlStatement("SELECT * FROM list_options " .
+  "WHERE list_id = 'warehouse' AND activity = 1 ORDER BY seq, title");
+while ($lrow = sqlFetchArray($lres)) {
+  echo "    <option value='" . $lrow['option_id'] . "/" . $lrow['option_value'] . "'";
+  echo " id='fac" . $lrow['option_value'] . "'";
+  if (strlen($form_warehouse) > 0 && $lrow['option_id'] == $form_warehouse) {
+    echo " selected";
+  }
+  echo ">" . xl_list_label($lrow['title']) . "</option>\n";
+}
+echo "   </select>&nbsp;\n";
+
 // Build a drop-down list of products.
 //
 $query = "SELECT drug_id, name FROM drugs ORDER BY name, drug_id";
@@ -634,6 +669,10 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   // If a facility was specified.
   if ($form_facility) {
     $query .= " AND lo.option_value IS NOT NULL AND lo.option_value = '$form_facility'";
+  }
+
+  if ($form_warehouse) {
+    $query .= " AND di.warehouse_id IS NOT NULL AND di.warehouse_id = '$form_warehouse'";
   }
 
   if ($product_first) {
