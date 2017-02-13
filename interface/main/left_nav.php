@@ -1289,6 +1289,9 @@ if ($GLOBALS['athletic_team']) {
           } ?>
           <?php genMiscLink('RTop','rep','0',xl('Syndromic Surveillance'),'reports/non_reported.php'); ?>
           <?php if ($GLOBALS['gbl_menu_shifts']) genPopLink(xl('Shifts Report'),'shifts_report.php'); ?>
+          <?php if (acl_check('acct', 'rep_a')) {
+            genMiscLink('RTop','rep','0',xl('Ad Hoc Services'), 'reports/ad_hoc_services.php');
+          } ?>
         </ul>
       </li>
 <?php if (acl_check('acct', 'rep_a')) { ?>
