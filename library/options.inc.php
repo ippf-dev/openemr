@@ -156,7 +156,7 @@ function parse_static_text($frow) {
 // $frow is a row from the layout_options table.
 // $currvalue is the current value, if any, of the associated item.
 //
-function generate_form_field($frow, $currvalue) {
+function generate_form_field($frow, $currvalue='') {
   global $rootdir, $date_init, $code_types;
 
   $currescaped = htmlspecialchars($currvalue, ENT_QUOTES);

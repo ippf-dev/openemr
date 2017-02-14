@@ -28,6 +28,8 @@ function oeFormatShortDate($date='today') {
       $date = substr($date, 5, 2) . '/' . substr($date, 8, 2) . '/' . substr($date, 0, 4);
     else if ($GLOBALS['date_display_format'] == 2) // dd/mm/yyyy
       $date = substr($date, 8, 2) . '/' . substr($date, 5, 2) . '/' . substr($date, 0, 4);
+    else
+      $date = substr($date, 0, 10);
   }
   return $date;
 }

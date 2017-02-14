@@ -9,8 +9,8 @@
 // See http://www.tcpdf.org/ for TCPDF documentation.
 // Note that 5.0.002 is an older release used for compatibility with HTML2PDF.
 
-require_once($GLOBALS['fileroot'] . '/library/html2pdf/_tcpdf_5.0.002/config/lang/eng.php');
-require_once($GLOBALS['fileroot'] . '/library/html2pdf/_tcpdf_5.0.002/tcpdf.php');
+// require_once($GLOBALS['fileroot'] . '/library/html2pdf/_tcpdf_5.0.002/config/lang/eng.php');
+require_once($GLOBALS['fileroot'] . '/library/tcpdf_min/tcpdf.php');
 
 // This receipt looks something like the following:
 /**********************************************************************

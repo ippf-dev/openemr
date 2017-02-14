@@ -634,7 +634,7 @@ function calctotal() {
   // will require MySQL 4.1 or greater.
 
   $ires = sqlStatement($query);
-  $num_invoices = mysql_num_rows($ires);
+  $num_invoices = sqlNumRows($ires);
   $gottoday = false;
 
   while ($irow = sqlFetchArray($ires)) {

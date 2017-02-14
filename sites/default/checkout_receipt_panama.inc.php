@@ -9,8 +9,8 @@
 // See http://www.tcpdf.org/ for TCPDF documentation.
 // Note that 5.0.002 is an older release used for compatibility with HTML2PDF.
 
-require_once($GLOBALS['fileroot'] . '/library/html2pdf/_tcpdf_5.0.002/config/lang/eng.php');
-require_once($GLOBALS['fileroot'] . '/library/html2pdf/_tcpdf_5.0.002/tcpdf.php');
+// require_once($GLOBALS['fileroot'] . '/library/html2pdf/_tcpdf_5.0.002/config/lang/eng.php');
+require_once($GLOBALS['fileroot'] . '/library/tcpdf_min/tcpdf.php');
 
 // Global statement here because we're invoked within a function.
 global $GCR_PAGE_WIDTH, $GCR_PAGE_HEIGHT, $GCR_LINE_HEIGHT, $GCR_ITEMS_PER_PAGE;
