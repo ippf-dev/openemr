@@ -682,7 +682,7 @@ $(document).ready(function() {
         substr($row['date'], 0, 10), $row['units'], $row['fee'], $row['invoice_refno'], $row['id']);
     }
     //
-    $query = "SELECT s.sale_date, s.fee, s.quantity, s.pid, s.encounter, " .
+    $query = "SELECT s.sale_date, s.fee, s.quantity, s.pid, s.encounter, s.selector, " .
       "s.drug_id, s.sale_id, d.name, fe.date, fe.facility_id, fe.invoice_refno " .
       "FROM drug_sales AS s " .
       "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
@@ -702,8 +702,13 @@ $(document).ready(function() {
         $adjreason = get_adjustment_type($row['pid'], $row['encounter'], 'PROD', $row['drug_id']);
         if ($adjreason != $form_adjreason) continue;
       }
+      // Product name has selector appended if it exists and is not the same.
+      $description = $row['name'];
+      if ($row['selector'] !== '' && $row['selector'] !== $description) {
+        $description .= ' / ' . $row['selector'];
+      }
       thisLineItem($row['pid'], $row['encounter'], 'PROD', $row['drug_id'],
-        xl('Products'), $row['name'], substr($row['date'], 0, 10), $row['quantity'],
+        xl('Products'), $description, substr($row['date'], 0, 10), $row['quantity'],
         $row['fee'], $row['invoice_refno'], $row['sale_id']);
     }
 
