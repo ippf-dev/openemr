@@ -898,6 +898,7 @@ function updatePatientData($pid, $new, $create=false)
       $sql .= ", `$key` = " . pdValueOrNull($key, $value);
     }
     $db_id = sqlInsert($sql);
+    updateDupScore($pid);
   }
   else {
     $db_id = $new['id'];
@@ -1784,4 +1785,44 @@ function is_patient_deceased($pid,$date='') {
   }
 }
 
+// The SQL returned by this function is an expression that computes the duplication
+// score between two patient_data table rows p1 and p2.
+//
+function getDupScoreSQL() {
+  return
+  //  5 First name
+  "(TRIM(p1.fname) = TRIM(p2.fname)) * 5 + " .
+  //  3 Last name
+  "(p1.lname = p2.lname) * 3 + " .
+  //  4 Any phone number
+  "((TRIM(p1.phone_home) != '' AND ( " .
+    "REPLACE(REPLACE(p1.phone_home, '-', ''), ' ', '') = REPLACE(REPLACE(p2.phone_home, '-', ''), ' ', '') OR " .
+    "REPLACE(REPLACE(p1.phone_home, '-', ''), ' ', '') = REPLACE(REPLACE(p2.phone_biz , '-', ''), ' ', '') OR " .
+    "REPLACE(REPLACE(p1.phone_home, '-', ''), ' ', '') = REPLACE(REPLACE(p2.phone_cell, '-', ''), ' ', '')))" .
+  "OR (TRIM(p1.phone_biz) != '' AND ( " .
+    "REPLACE(REPLACE(p1.phone_biz , '-', ''), ' ', '') = REPLACE(REPLACE(p2.phone_biz , '-', ''), ' ', '') OR " .
+    "REPLACE(REPLACE(p1.phone_biz , '-', ''), ' ', '') = REPLACE(REPLACE(p2.phone_cell, '-', ''), ' ', ''))) " .
+  "OR (TRIM(p1.phone_cell) != '' AND ( " .
+    "REPLACE(REPLACE(p1.phone_cell, '-', ''), ' ', '') = REPLACE(REPLACE(p2.phone_cell, '-', ''), ' ', ''))) " .
+  ") * 4 + " .
+  //  6 Birth date
+  "(p1.DOB IS NOT NULL AND p2.DOB IS NOT NULL AND p1.DOB = p2.DOB) * 6 + " .
+  // 7 Email
+  "(TRIM(p1.email) != '' AND TRIM(p2.email) != '' AND TRIM(p1.email) = TRIM(p2.email)) * 7 + " .
+  // 15 Government ID
+  "(TRIM(p1.ss) != '' AND TRIM(p2.ss) != '' AND TRIM(p1.ss) = TRIM(p2.ss)) * 15";
+}
+
+// This computes, sets and returns the dup score for the given patient.
+//
+function updateDupScore($pid) {
+  $row = sqlQuery("SELECT MAX(" . getDupScoreSQL() . ") AS dupscore " .
+    "FROM patient_data AS p1, patient_data AS p2 WHERE " .
+    "p1.pid = ? AND p2.pid < p1.pid",
+    array($pid));
+  $dupscore = empty($row['dupscore']) ? 0 : $row['dupscore'];
+  sqlStatement("UPDATE patient_data SET dupscore = ? WHERE pid = ?",
+    array($dupscore, $pid));
+  return $dupscore;
+}
 ?>
