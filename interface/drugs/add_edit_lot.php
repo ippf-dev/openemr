@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -26,6 +26,13 @@ function checkWarehouseUsed($warehouse_id) {
   $row = sqlQuery("SELECT count(*) AS count FROM drug_inventory WHERE " .
     "drug_id = ? AND " .
     "destroy_date IS NULL AND warehouse_id = ?", array($drug_id,$warehouse_id) );
+  return $row['count'];
+}
+
+function areVendorsUsed() {
+  $row = sqlQuery("SELECT COUNT(*) AS count FROM users " .
+      "WHERE active = 1 AND (info IS NULL OR info NOT LIKE '%Inactive%') " .
+      "AND abook_type LIKE 'vendor%'");
   return $row['count'];
 }
 
@@ -132,16 +139,22 @@ td { font-size:10pt; }
 
  function validate() {
   var f = document.forms[0];
+  var trans_type = f.form_trans_type.value;
 
-  if (f.form_trans_type.value > '0') {
+  if (trans_type > '0') {
    // Transaction date validation. Must not be later than today or before 2000.
    if (f.form_sale_date.value > '<?php echo date('Y-m-d') ?>' || f.form_sale_date.value < '2000-01-01') {
     alert('<?php echo xls('Transaction date must not be in the future or before 2000'); ?>');
     return false;
    }
-   // Transaction with zero quantity makes no sense.
-   if (!parseInt(f.form_quantity.value)) {
+   // Quantity validations.
+   var qty = parseInt(f.form_quantity.value);
+   if (!qty) {
     alert('<?php echo xls('A quantity is required'); ?>');
+    return false;
+   }
+   if (f.form_trans_type.value != '5' && qty < 0) {
+    alert('<?php echo xls('Quantity cannot be negative for this transaction type'); ?>');
     return false;
    }
   }
@@ -167,9 +180,9 @@ td { font-size:10pt; }
    return false;
   }
 
-  // Require comments for adjustment transactions.
-  if (f.form_trans_type.value == '5' && f.form_notes.value.search(/\S/) < 0) {
-   alert('<?php echo xls('Comments are required for adjustments'); ?>');
+  // Require comments for all transactions.
+  if (f.form_trans_type.value > '0' && f.form_notes.value.search(/\S/) < 0) {
+   alert('<?php echo xls('Comments are required'); ?>');
    return false;
   }
 
@@ -192,40 +205,71 @@ td { font-size:10pt; }
   var f = document.forms[0];
   var sel = f.form_trans_type;
   var type = sel.options[sel.selectedIndex].value;
-  var showQuantity  = true;
-  var showSaleDate  = true;
-  var showCost      = true;
-  var showSourceLot = true;
-  var showNotes     = true;
+
+  // display attributes
+  var showQuantity     = true;
+  var showSaleDate     = true;
+  var showCost         = true;
+  var showSourceLot    = true;
+  var showNotes        = true;
+  var showManufacturer = true;
+  var showVendor       = <?php echo areVendorsUsed() ? 'true' : 'false'; ?>;
+
+  // readonly attributes
+  var roManufacturer   = true;
+  var roLotNumber      = true;
+  var roExpiration     = true;
+
+  labelWarehouse       = '<?php echo xlt('Warehouse'); ?>';
+
   if (type == '2') { // purchase
-    showSourceLot = false;
+    showSourceLot  = false;
+    roManufacturer = false;
+    roLotNumber    = false;
+    roExpiration   = false;
   }
   else if (type == '3') { // return
     showSourceLot = false;
   }
   else if (type == '4') { // transfer
     showCost = false;
+    labelWarehouse = '<?php echo xlt('Destination Warehouse'); ?>';
   }
   else if (type == '5') { // adjustment
-    showCost = false;
-    showSourceLot = false;
+    showCost         = false;
+    showSourceLot    = false;
+    showManufacturer = false;
   }
   else if (type == '7') { // consumption
-    showCost      = false;
-    showSourceLot = false;
+    showCost         = false;
+    showSourceLot    = false;
+    showManufacturer = false;
+    showVendor       = false;
   }
-  else {
-    showQuantity  = false;
-    showSaleDate  = false;
-    showCost      = false;
-    showSourceLot = false;
-    showNotes     = false;
+  else {                  // Edit Only
+    showQuantity   = false;
+    showSaleDate   = false;
+    showCost       = false;
+    showSourceLot  = false;
+    showNotes      = false;
+    roManufacturer = false;
+    roLotNumber    = false;
+    roExpiration   = false;
   }
-  document.getElementById('row_quantity'  ).style.display = showQuantity  ? '' : 'none';
-  document.getElementById('row_sale_date' ).style.display = showSaleDate  ? '' : 'none';
-  document.getElementById('row_cost'      ).style.display = showCost      ? '' : 'none';
-  document.getElementById('row_source_lot').style.display = showSourceLot ? '' : 'none';
-  document.getElementById('row_notes'     ).style.display = showNotes     ? '' : 'none';
+  document.getElementById('row_quantity'    ).style.display = showQuantity     ? '' : 'none';
+  document.getElementById('row_sale_date'   ).style.display = showSaleDate     ? '' : 'none';
+  document.getElementById('row_cost'        ).style.display = showCost         ? '' : 'none';
+  document.getElementById('row_source_lot'  ).style.display = showSourceLot    ? '' : 'none';
+  document.getElementById('row_notes'       ).style.display = showNotes        ? '' : 'none';
+  document.getElementById('row_manufacturer').style.display = showManufacturer ? '' : 'none';
+  document.getElementById('row_vendor'      ).style.display = showVendor       ? '' : 'none';
+
+  f.form_manufacturer.readOnly = roManufacturer;
+  f.form_lot_number.readOnly   = roLotNumber;
+  f.form_expiration.readOnly   = roExpiration;
+  document.getElementById('img_expiration').style.display = roExpiration ? 'none' : '';
+
+  document.getElementById('label_warehouse').innerHTML = labelWarehouse;
  }
 
 </script>
@@ -410,6 +454,59 @@ if ($_POST['form_save']) {
 
 <table border='0' width='100%'>
 
+ <tr id='row_sale_date'>
+  <td valign='top' nowrap><b><?php echo xlt('Date'); ?>:</b></td>
+  <td>
+   <input type='text' size='10' name='form_sale_date' id='form_sale_date'
+    value='<?php echo attr(date('Y-m-d')) ?>'
+    onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'
+    title='<?php echo xla('yyyy-mm-dd date of purchase or transfer'); ?>' />
+   <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
+    id='img_sale_date' border='0' alt='[?]' style='cursor:pointer'
+    title='<?php echo xla('Click here to choose a date'); ?>'>
+  </td>
+ </tr>
+
+ <tr>
+  <td valign='top' nowrap><b><?php echo xlt('Transaction Type'); ?>:</b></td>
+  <td>
+   <select name='form_trans_type' onchange='trans_type_changed()'>
+<?php
+foreach (array(
+  '2' => xl('Purchase/Receipt'),
+  '3' => xl('Return'),
+  '4' => xl('Transfer'),
+  '5' => xl('Adjustment'),
+  '7' => xl('Consumption'),
+  '0' => xl('Edit Only'),
+) as $key => $value)
+{
+  echo "<option value='" . attr($key) . "'";
+  if (!$auth_admin && (
+    $key == 2 && !acl_check('inventory', 'purchases'  ) ||
+    $key == 3 && !acl_check('inventory', 'purchases'  ) ||
+    $key == 4 && !acl_check('inventory', 'transfers'  ) ||
+    $key == 5 && !acl_check('inventory', 'adjustments') ||
+    $key == 7 && !acl_check('inventory', 'consumption')
+  )) {
+    echo " disabled";
+  }
+  else if (
+    $lot_id  && in_array($key, array('2', '4'     )) ||
+    !$lot_id && in_array($key, array('3', '5', '7'))
+  ) {
+    echo " disabled";
+  }
+  else {
+    if (isset($_POST['form_trans_type']) && $key == $form_trans_type) echo " selected";
+  }
+  echo ">" . text($value) . "</option>\n";
+}
+?>
+   </select>
+  </td>
+ </tr>
+
  <tr>
   <td valign='top' width='1%' nowrap><b><?php echo xlt('Lot Number'); ?>:</b></td>
   <td>
@@ -417,7 +514,7 @@ if ($_POST['form_save']) {
   </td>
  </tr>
 
- <tr>
+ <tr id='row_manufacturer'>
   <td valign='top' nowrap><b><?php echo xlt('Manufacturer'); ?>:</b></td>
   <td>
    <input type='text' size='40' name='form_manufacturer' maxlength='250' value='<?php echo attr($row['manufacturer']) ?>' style='width:100%' />
@@ -437,7 +534,7 @@ if ($_POST['form_save']) {
   </td>
  </tr>
 
- <tr>
+ <tr id='row_vendor'>
   <td valign='top' nowrap><b><?php echo xlt('Vendor'); ?>:</b></td>
   <td>
 <?php
@@ -451,7 +548,7 @@ generate_form_field(array('data_type' => 14, 'field_id' => 'vendor_id',
  </tr>
 
  <tr>
-  <td valign='top' nowrap><b><?php echo xlt('Warehouse'); ?>:</b></td>
+  <td valign='top' nowrap><b id='label_warehouse'><?php echo xlt('Warehouse'); ?>:</b></td>
   <td>
 <?php
   if (!genWarehouseList("form_warehouse_id", $row['warehouse_id'],
@@ -467,53 +564,6 @@ generate_form_field(array('data_type' => 14, 'field_id' => 'vendor_id',
   <td valign='top' nowrap><b><?php echo xlt('On Hand'); ?>:</b></td>
   <td>
    <?php echo text($row['on_hand'] + 0); ?>
-  </td>
- </tr>
-
- <tr>
-  <td valign='top' nowrap><b><?php echo xlt('Transaction'); ?>:</b></td>
-  <td>
-   <select name='form_trans_type' onchange='trans_type_changed()'>
-<?php
-foreach (array(
-  '0' => xl('None'),
-  '2' => xl('Purchase/Receipt'),
-  '3' => xl('Return'),
-  '4' => xl('Transfer'),
-  '5' => xl('Adjustment'),
-  '7' => xl('Consumption'),
-) as $key => $value)
-{
-  echo "<option value='" . attr($key) . "'";
-  if (!$auth_admin && (
-    $key == 2 && !acl_check('inventory', 'purchases'  ) ||
-    $key == 3 && !acl_check('inventory', 'purchases'  ) ||
-    $key == 4 && !acl_check('inventory', 'transfers'  ) ||
-    $key == 5 && !acl_check('inventory', 'adjustments') ||
-    $key == 7 && !acl_check('inventory', 'consumption')
-  )) {
-    echo " disabled";
-  }
-  else {
-    if ($key == $form_trans_type) echo " selected";
-  }
-  echo ">" . text($value) . "</option>\n";
-}
-?>
-   </select>
-  </td>
- </tr>
-
- <tr id='row_sale_date'>
-  <td valign='top' nowrap><b><?php echo xlt('Date'); ?>:</b></td>
-  <td>
-   <input type='text' size='10' name='form_sale_date' id='form_sale_date'
-    value='<?php echo attr(date('Y-m-d')) ?>'
-    onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'
-    title='<?php echo xla('yyyy-mm-dd date of purchase or transfer'); ?>' />
-   <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
-    id='img_sale_date' border='0' alt='[?]' style='cursor:pointer'
-    title='<?php echo xla('Click here to choose a date'); ?>'>
   </td>
  </tr>
 
@@ -557,7 +607,7 @@ while ($lrow = sqlFetchArray($lres)) {
   </td>
  </tr>
 
- <tr id='row_notes'>
+ <tr id='row_notes' title='<?php echo xla('Include your initials and details of reason for transaction.'); ?>'>
   <td valign='top' nowrap><b><?php echo xlt('Comments'); ?>:</b></td>
   <td>
    <input type='text' size='40' name='form_notes' maxlength='255' style='width:100%' />

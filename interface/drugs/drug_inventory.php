@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2017 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -110,7 +110,8 @@ table.mymaintable td {
 
 // callback from add_edit_drug.php or add_edit_drug_inventory.php:
 function refreshme() {
- location.reload();
+ // Avoiding reload() here because it generates a browser warning about repeating a POST.
+ location.href = location.href;
 }
 
 // Process click on drug title.
@@ -303,8 +304,8 @@ $(document).ready(function() {
 	 generate_display_field(array('data_type'=>'1','list_id'=>'drug_units'), $row['unit']) .
 	 "</td>\n";
    if ($auth_lots && $row['dispensable']) {
-    echo "  <td onclick='doiclick($lastid,0)' title='" . xla('Add new lot and transaction') . "'>" .
-     "<a href='' onclick='return false'>" . xlt('New') . "</a></td>\n";
+    echo "  <td onclick='doiclick($lastid,0)' title='" . xla('Add New Lot or Transfer') . "' style='padding:0'>" .
+     "<input type='button' value='" . xla('New') . "'style='padding:0' /></td>\n";
    }
    else {
     echo "  <td title='" . xlt('Not applicable') . "'>&nbsp;</td>\n";
@@ -317,7 +318,8 @@ $(document).ready(function() {
    $lot_number = htmlspecialchars($row['lot_number']);
    $expired = !empty($row['expiration']) && strcmp($row['expiration'], $today) <= 0;      
    if ($auth_lots) {
-    echo "  <td onclick='doiclick(" . attr($lastid) . "," . attr($row['inventory_id']) . ")'>" .
+    echo "  <td title='" . xla('Add Adjustment, Consumption, or Return Transaction') .
+     "' onclick='doiclick(" . attr($lastid) . "," . attr($row['inventory_id']) . ")'>" .
      "<a href='' onclick='return false'>" . text($row['lot_number']) . "</a></td>\n";
    }
    else {
