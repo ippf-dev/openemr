@@ -200,7 +200,7 @@ class FeeSheet {
         if ($reltype !== 'IPPFCM') continue;
         $methtype = $is_initial_consult ? 2 : 1;
         $tmprow = sqlQuery("SELECT cyp_factor FROM codes WHERE " .
-          "code_type = '32' AND code = ? LIMIT 1", array($relcode));
+          "code_type = '32' AND code = ? ORDER BY active DESC, id LIMIT 1", array($relcode));
         $cyp = 0 + $tmprow['cyp_factor'];
         if ($cyp > $this->line_contra_cyp) {
           $this->line_contra_cyp      = $cyp;
@@ -288,6 +288,7 @@ class FeeSheet {
     else {
       $query .= " AND (modifier IS NULL OR modifier = '')";
     }
+    $query .= " ORDER BY active DESC, id LIMIT 1";
     $result = sqlQuery($query, $sqlArray);
     $codes_id = $result['id'];
 
@@ -319,7 +320,7 @@ class FeeSheet {
     // It adds contraceptive method and effectiveness to relevant lines.
     if ($GLOBALS['ippf_specific'] && $GLOBALS['gbl_new_acceptor_policy'] && $codetype == 'MA') {
       $codesrow = sqlQuery("SELECT related_code, cyp_factor FROM codes WHERE " .
-        "code_type = ? AND code = ? LIMIT 1",
+        "code_type = ? AND code = ? ORDER BY active DESC, id LIMIT 1",
         array($code_types[$codetype]['id'], $code));
       $this->checkRelatedForContraception($codesrow['related_code'], $codesrow['cyp_factor']);
       if ($this->line_contra_code) {
@@ -1025,7 +1026,7 @@ class FeeSheet {
       $crow = sqlQuery("SELECT c.id AS code_id, b.id " .
         "FROM codes AS c " .
         "LEFT JOIN billing AS b ON b.pid = ? AND b.encounter = ? AND b.code_type = ? AND b.code = c.code AND b.activity = 1 " .
-        "WHERE c.code_type = ? AND c.code = ? LIMIT 1",
+        "WHERE c.code_type = ? AND c.code = ? ORDER BY c.active DESC, c.id LIMIT 1",
         array($this->pid, $this->encounter, $codetype, $code_types[$codetype]['id'], $code));
       $this->code_is_in_fee_sheet = !empty($crow['id']);
       $cbarray = array($codetype, $code);
@@ -1043,7 +1044,7 @@ class FeeSheet {
     }
     else {
       $crow = sqlQuery("SELECT id FROM codes WHERE code_type = ? AND code = ? " .
-        "ORDER BY modifier, id LIMIT 1",
+        "ORDER BY active DESC, modifier, id LIMIT 1",
         array($code_types[$codetype]['id'], $code));
       $pr_id = $crow['id'];
       $selector = '';
