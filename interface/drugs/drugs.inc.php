@@ -270,4 +270,22 @@ function isWarehouseAllowed($facid, $whid, $userid=0) {
   }
   return true;
 }
+
+// Determine if this product is one that we have on hand and that the user has permission for.
+//
+function isProductSelectable($drug_id) {
+  $is_user_restricted = isUserRestricted();
+  $wfres = sqlStatement("SELECT di.warehouse_id, lo.option_value AS facid " .
+    "FROM drug_inventory AS di " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+    "WHERE di.drug_id = ? AND di.destroy_date IS NULL AND di.on_hand > 0 AND " .
+    "(di.expiration IS NULL OR di.expiration > NOW())",
+    array($drug_id));
+  while ($wfrow = sqlFetchArray($wfres)) {
+    if ($is_user_restricted && !isWarehouseAllowed($wfrow['facid'], $wfrow['warehouse_id'])) continue;
+    return true;
+  }
+  return false;
+}
 ?>

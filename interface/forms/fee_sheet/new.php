@@ -799,6 +799,8 @@ if ($GLOBALS['sell_non_drug_products']) {
     "d.drug_id = dt.drug_id AND d.active = 1 AND d.consumable = 0 " .
     "ORDER BY d.name, dt.selector, dt.drug_id");
   while ($trow = sqlFetchArray($tres)) {
+    // Skip products that we don't have any of or that the user may not access.
+    if (!isProductSelectable($trow['drug_id'])) continue;
     echo "    <option value='PROD|" . attr($trow['drug_id']) . '|' . attr($trow['selector']) . "'>";
     echo text($trow['name']);
     if ($trow['name'] !== $trow['selector']) echo ' / ' . text($trow['selector']);

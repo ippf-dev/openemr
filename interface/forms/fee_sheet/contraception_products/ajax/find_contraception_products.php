@@ -4,6 +4,8 @@ $fake_register_globals=false;
 $sanitize_all_escapes=true;
 
 require_once("../../../../globals.php");
+require_once("../../../../drugs/drugs.inc.php");
+
 function find_contraceptive_methods($contraceptive_code)
 {
     $retval=array();
@@ -15,6 +17,7 @@ function find_contraceptive_methods($contraceptive_code)
     $results  =sqlStatement($sqlSearch,array("%".$code."%"));
     while($row=sqlFetchArray($results))
     {
+        if (!isProductSelectable($row['drug_id'])) continue;
         $rel_codes=explode(";",$row['related_code']);
         $match=false;
         foreach($rel_codes as $cur_code)

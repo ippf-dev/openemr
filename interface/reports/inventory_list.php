@@ -19,6 +19,9 @@ if (!$auth_drug_reports) {
   die(xl("Unauthorized access."));
 }
 
+// Note if user is restricted to any facilities and/or warehouses.
+$is_user_restricted = isUserRestricted();
+
 function addWarning($msg) {
   global $warnings;
   $break = empty($_POST['form_csvexport']) ? '<br />' : '; ';
@@ -81,8 +84,23 @@ function checkReorder($drug_id, $min, $warehouse='') {
   return false;
 }
 
+// Generate the list of warehouse IDs that the current user is allowed to access.
+// This is used to build SQL for $uwcond.
+//
+function genUserWarehouses($userid=0) {
+  $list = '';
+  $res = sqlStatement("SELECT DISTINCT option_id, option_value FROM list_options");
+  while ($row = sqlFetchArray($res)) {
+    if (isWarehouseAllowed($row['option_value'], $row['option_id'], $userid)) {
+      if ($list != '') $list .= ', ';
+      $list .= "'" . $row['option_id'] . "'";
+    }
+  }
+  return $list;
+}
+
 function write_report_line(&$row) {
-  global $form_details, $wrl_last_drug_id, $warnings, $encount, $fwcond, $form_days;
+  global $form_details, $wrl_last_drug_id, $warnings, $encount, $fwcond, $uwcond, $form_days;
   global $gbl_expired_lot_warning_days;
 
   $emptyvalue = empty($_POST['form_csvexport']) ? '&nbsp;' : '';
@@ -102,9 +120,9 @@ function write_report_line(&$row) {
       "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
       "WHERE " .
       "s.drug_id = '$drug_id' AND " .
-      "di.warehouse_id = '$warehouse_id' AND " .
+      "di.warehouse_id IS NOT NULL AND di.warehouse_id = '$warehouse_id' AND " .
       "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
-      "AND s.pid != 0 $fwcond";
+      "AND s.pid != 0 $fwcond $uwcond";
     $srow = sqlQuery($query);
     // echo "\n<!-- " . $srow['sale_quantity'] . " $query -->\n"; // debugging
   }
@@ -118,7 +136,7 @@ function write_report_line(&$row) {
       "WHERE " .
       "s.drug_id = '$drug_id' AND " .
       "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
-      "AND s.pid != 0 $fwcond");
+      "AND s.pid != 0 $fwcond $uwcond");
   }
   $sale_quantity = $srow['sale_quantity'];
 
@@ -181,7 +199,7 @@ function write_report_line(&$row) {
   // Compute the smallest quantity that might be taken from ANY lot for this product
   // (and warehouse if details) based on the past $form_days days of sales.  If lot
   // combining is allowed this is always 1.
-  $extracond = $form_details ? "AND di.warehouse_id = '$warehouse_id'" : $fwcond;
+  $extracond = $form_details ? "AND di.warehouse_id = '$warehouse_id'" : "$fwcond $uwcond";
   $min_sale = 1;
   if (!$row['allow_combining']) {
     $sminrow = sqlQuery("SELECT " .
@@ -343,10 +361,11 @@ if ($form_facility) $fwcond .=
 if ($form_warehouse) $fwcond .=
   " AND di.warehouse_id IS NOT NULL AND di.warehouse_id = '$form_warehouse'";
 
+$uwcond = $is_user_restricted ? ("AND di.warehouse_id IS NOT NULL AND di.warehouse_id IN (" . genUserWarehouses() . ")") : "";
+
 // Compute WHERE condition for filtering on activity.
 $actcond = '';
-if (!$form_inactive) $actcond .=
-  " AND d.active = 1";
+if (!$form_inactive) $actcond .= " AND d.active = 1";
 
 if ($form_details) {
   // Query for the main loop if lot details are wanted.
@@ -361,7 +380,7 @@ if ($form_details) {
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "LEFT JOIN product_warehouse AS pw ON pw.pw_drug_id = d.drug_id AND " .
     "pw.pw_warehouse = di.warehouse_id " .
-    "WHERE 1 = 1 $fwcond$actcond " .
+    "WHERE 1 = 1 $fwcond $uwcond $actcond " .
     "ORDER BY d.name, d.drug_id, lo.title, di.warehouse_id, di.lot_number, di.inventory_id";
 }
 else {
@@ -374,7 +393,7 @@ else {
     // Join with list_options needed to support facility filter ($fwcond).
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
-    "WHERE 1 = 1 $fwcond$actcond " .
+    "WHERE 1 = 1 $fwcond $uwcond $actcond " .
     "GROUP BY d.name, d.drug_id ORDER BY d.name, d.drug_id";
 }
 
@@ -482,6 +501,7 @@ $(document).ready(function() {
   echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
   while ($frow = sqlFetchArray($fres)) {
     $facid = $frow['id'];
+    if ($is_user_restricted && !isFacilityAllowed($facid)) continue;
     echo "    <option value='$facid'";
     if ($facid == $form_facility) echo " selected";
     echo ">" . $frow['name'] . "\n";
@@ -493,9 +513,12 @@ $(document).ready(function() {
   $lres = sqlStatement("SELECT * FROM list_options " .
     "WHERE list_id = 'warehouse' AND activity = 1 ORDER BY seq, title");
   while ($lrow = sqlFetchArray($lres)) {
-    echo "    <option value='" . $lrow['option_id'] . "/" . $lrow['option_value'] . "'";
-    echo " id='fac" . $lrow['option_value'] . "'";
-    if (strlen($form_warehouse)  > 0 && $lrow['option_id'] == $form_warehouse) {
+    $whid  = $lrow['option_id'];
+    $facid = $lrow['option_value'];
+    if ($is_user_restricted && !isWarehouseAllowed($facid, $whid)) continue;
+    echo "    <option value='" . $whid . "/" . $facid . "'";
+    echo " id='fac" . $facid . "'";
+    if (strlen($form_warehouse)  > 0 && $whid == $form_warehouse) {
       echo " selected";
     }
     echo ">" . xl_list_label($lrow['title']) . "</option>\n";

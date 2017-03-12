@@ -229,16 +229,21 @@ td { font-size:10pt; }
     roExpiration   = false;
   }
   else if (type == '3') { // return
-    showSourceLot = false;
+    showSourceLot    = false;
+    showManufacturer = false;
+    showVendor       = false;
   }
   else if (type == '4') { // transfer
-    showCost = false;
+    showCost         = false;
+    showManufacturer = false;
+    showVendor       = false;
     labelWarehouse = '<?php echo xlt('Destination Warehouse'); ?>';
   }
   else if (type == '5') { // adjustment
     showCost         = false;
     showSourceLot    = false;
     showManufacturer = false;
+    showVendor       = false;
   }
   else if (type == '7') { // consumption
     showCost         = false;
@@ -492,8 +497,8 @@ foreach (array(
     echo " disabled";
   }
   else if (
-    $lot_id  && in_array($key, array('2', '4'     )) ||
-    !$lot_id && in_array($key, array('3', '5', '7'))
+    $lot_id  && in_array($key, array('2', '4')) ||
+    !$lot_id && in_array($key, array('0', '3', '5', '7'))
   ) {
     echo " disabled";
   }
@@ -531,6 +536,32 @@ foreach (array(
    <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
     id='img_expiration' border='0' alt='[?]' style='cursor:pointer'
     title='<?php echo xla('Click here to choose a date'); ?>'>
+  </td>
+ </tr>
+
+ <tr id='row_source_lot'>
+  <td valign='top' nowrap><b><?php echo xlt('Source Lot'); ?>:</b></td>
+  <td>
+   <select name='form_source_lot'>
+    <option value='0'> </option>
+<?php
+$lres = sqlStatement("SELECT " .
+  "di.inventory_id, di.lot_number, di.on_hand, lo.title, lo.option_value " .
+  "FROM drug_inventory AS di " .
+  "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+  "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+  "WHERE di.drug_id = ? AND di.inventory_id != ? AND " .
+  "di.on_hand > 0 AND di.destroy_date IS NULL " .
+  "ORDER BY di.lot_number, lo.title, di.inventory_id", array ($drug_id,$lot_id));
+while ($lrow = sqlFetchArray($lres)) {
+  echo "<option value='" . attr($lrow['inventory_id']) . '|' . attr($lrow['option_value'])  . "'>";
+  echo text($lrow['lot_number']);
+  if (!empty($lrow['title'])) echo " / " . text($lrow['title']);
+  echo " (" . text($lrow['on_hand']) . ")";
+  echo "</option>\n";
+}
+?>
+   </select>
   </td>
  </tr>
 
@@ -578,32 +609,6 @@ generate_form_field(array('data_type' => 14, 'field_id' => 'vendor_id',
   <td valign='top' nowrap><b><?php echo xlt('Total Cost'); ?>:</b></td>
   <td>
    <input type='text' size='7' name='form_cost' maxlength='12' />
-  </td>
- </tr>
-
- <tr id='row_source_lot'>
-  <td valign='top' nowrap><b><?php echo xlt('Source Lot'); ?>:</b></td>
-  <td>
-   <select name='form_source_lot'>
-    <option value='0'> </option>
-<?php
-$lres = sqlStatement("SELECT " .
-  "di.inventory_id, di.lot_number, di.on_hand, lo.title, lo.option_value " .
-  "FROM drug_inventory AS di " .
-  "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-  "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
-  "WHERE di.drug_id = ? AND di.inventory_id != ? AND " .
-  "di.on_hand > 0 AND di.destroy_date IS NULL " .
-  "ORDER BY di.lot_number, lo.title, di.inventory_id", array ($drug_id,$lot_id));
-while ($lrow = sqlFetchArray($lres)) {
-  echo "<option value='" . attr($lrow['inventory_id']) . '|' . attr($lrow['option_value'])  . "'>";
-  echo text($lrow['lot_number']);
-  if (!empty($lrow['title'])) echo " / " . text($lrow['title']);
-  echo " (" . text($lrow['on_hand']) . ")";
-  echo "</option>\n";
-}
-?>
-   </select>
   </td>
  </tr>
 
