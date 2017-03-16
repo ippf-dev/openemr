@@ -656,3 +656,13 @@ ALTER TABLE `ar_activity` ADD COLUMN `deleted` datetime DEFAULT NULL COMMENT 'NU
 #IfNotColumnType facility facility_npi varchar(50)
 ALTER TABLE `facility` CHANGE `facility_npi` `facility_npi` varchar(50) NOT NULL default '';
 #EndIf
+
+#IfNotColumnType drugs form varchar(31)
+ALTER TABLE `drugs` CHANGE `form`  `form`  varchar(31) NOT NULL default '0';
+#EndIf
+#IfNotColumnType drugs unit varchar(31)
+ALTER TABLE `drugs` CHANGE `unit`  `unit`  varchar(31) NOT NULL default '0';
+#EndIf
+#IfNotColumnType drugs route varchar(31)
+ALTER TABLE `drugs` CHANGE `route` `route` varchar(31) NOT NULL default '0';
+#EndIf

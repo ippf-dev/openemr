@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2017 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -483,7 +483,7 @@ else {
  </tr>
 
  <tr class='drugsonly'>
-  <td valign='top' nowrap><b><?php echo xlt('Pill Size'); ?>:</b></td>
+  <td valign='top' nowrap><b><?php echo xlt('Size'); ?>:</b></td>
   <td>
    <input type='text' size='5' name='form_size' maxlength='7' value='<?php echo attr($row['size']) ?>' />
   </td>
