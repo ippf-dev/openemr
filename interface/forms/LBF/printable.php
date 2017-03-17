@@ -149,6 +149,10 @@ div.section td.stuff {
 <?php } ?>
 }
 
+div.section td.stuff img {
+ width: 100%;
+}
+
 <?php
 // Generate widths for the various numbers of label columns and data columns.
 for ($lcols = 1; $lcols < $CPR; ++$lcols) {

@@ -666,3 +666,7 @@ ALTER TABLE `drugs` CHANGE `unit`  `unit`  varchar(31) NOT NULL default '0';
 #IfNotColumnType drugs route varchar(31)
 ALTER TABLE `drugs` CHANGE `route` `route` varchar(31) NOT NULL default '0';
 #EndIf
+
+#IfNotColumnType lbf_data field_value longtext
+ALTER TABLE `lbf_data` CHANGE `field_value` `field_value` longtext NOT NULL;
+#EndIf

@@ -1004,7 +1004,9 @@ function generate_form_field($frow, $currvalue='') {
         $currvalue = $GLOBALS['web_root'] . '/sites/' . $_SESSION['site_id'] . '/images/' . $matches[1];
       }
     }
-    echo "<div id='form_$field_id_esc'></div>";
+    $mywidth  = 50 + max($canWidth , 250);
+    $myheight = 31 + max($canHeight, 261);
+    echo "<div id='form_$field_id_esc' style='width:$mywidth; height:$myheight;'></div>";
     // Hidden form field exists to send updated data to the server at submit time.
     echo "<input type='hidden' name='form_$field_id_esc' value='' />";
     // Hidden image exists to support initialization of the canvas.
@@ -3052,7 +3054,7 @@ function lbf_canvas_head() {
  * This makes the widget 25% less tall and adjusts some other things accordingly.
  */
 .literally {
-  min-height:292px;min-width:300px;        /* Was 400, unspecified */
+  min-height:100%;min-width:300px;        /* Was 400, unspecified */
 }
 .literally .lc-picker .toolbar-button {
   width:20px;height:20px;line-height:20px; /* Was 26, 26, 26 */
