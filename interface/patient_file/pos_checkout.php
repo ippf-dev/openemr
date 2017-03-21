@@ -617,13 +617,15 @@ body, td {
 
   // Product sales
   $inres = sqlStatement("SELECT s.sale_id, s.sale_date, s.fee, " .
-    "s.quantity, s.drug_id, s.billed, s.bill_date, d.name " .
+    "s.quantity, s.drug_id, s.billed, s.bill_date, s.selector, d.name " .
     "FROM drug_sales AS s LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
     "WHERE s.pid = '$patient_id' AND s.encounter = '$encounter' " .
     "ORDER BY s.sale_id");
   while ($inrow = sqlFetchArray($inres)) {
     $billtime = $inrow['billed'] ? $inrow['bill_date'] : '';
-    receiptDetailLine('PROD', $inrow['drug_id'], $inrow['name'],
+    $tmpname = $inrow['name'];
+    if ($tmpname !== $inrow['selector']) $tmpname .= ' / ' . $inrow['selector'];
+    receiptDetailLine('PROD', $inrow['drug_id'], $tmpname,
       $inrow['quantity'], $inrow['fee'], $aTotals, 'P:' . $inrow['sale_id'], $billtime);
   }
 
