@@ -35,7 +35,7 @@ $isform = empty($_REQUEST['isform']) ? 0 : 1;
 $PDF_OUTPUT = ($patientid && $isform) ? false : true;
 
 if ($PDF_OUTPUT) {
-  require_once("$srcdir/html2pdf/html2pdf.class.php");
+  require_once("$srcdir/html2pdf/vendor/autoload.php");
   $pdf = new HTML2PDF('P', 'Letter', 'en');
   $pdf->setTestTdInOnePage(false); // Turn off error message for TD contents too big.
   $pdf->pdf->SetDisplayMode('real');
