@@ -271,7 +271,8 @@ UPDATE layout_options SET group_name = '1Who', title='', seq = 7, data_type = 1,
 
 # 2011-08-01 we decided not to do this.
 # 2011-08-10 decided to do it again.
-UPDATE facility SET domain_identifier = facility_npi WHERE facility_npi != '' AND ( domain_identifier IS NULL OR domain_identifier = '' );
+# 2017-03-23 no more.
+# UPDATE facility SET domain_identifier = facility_npi WHERE facility_npi != '' AND ( domain_identifier IS NULL OR domain_identifier = '' );
 
 # The following re-added 2011-08-15 because LV asked for it. --Rod
 #IfNotRow2D list_options list_id lists option_id posref
