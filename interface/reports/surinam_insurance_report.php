@@ -284,9 +284,20 @@ else {
   <td align='center'>
 <?php
   // Build a drop-down list of insurers.
+  // For this report the insurers are certain adjustment reasons.
   //
-  echo generate_select_list('form_insurer', 'userlist4', $form_insurer, '',
-    '-- ' . xl('All Insurers') . ' --');
+  $ires = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
+  "list_id = 'adjreason' AND activity = 1 AND notes LIKE '%=Ins%' " .
+  "ORDER by seq, title");
+  echo "   <select name='form_insurer'>\n";
+  echo "    <option value=''>-- " . xlt('All Insurers') . " --</option>\n";
+  while ($irow = sqlFetchArray($ires)) {
+    $insid = $irow['option_id'];
+    echo "    <option value='$insid'";
+    if ($insid == $form_insurer) echo " selected";
+    echo ">" . text($irow['title']) . "</option>\n";
+  }
+  echo "   </select>\n";
 ?>
   &nbsp;
 <?php
@@ -377,7 +388,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
 
   // Main loop is on insurer.
   $query = "SELECT option_id AS insid, title AS insname FROM list_options " .
-    "WHERE list_id = 'userlist4'";
+    "WHERE list_id = 'adjreason' AND activity = 1 AND notes LIKE '%=Ins%'";
   $qparms = array();
   // If an insurer was specified.
   if ($form_insurer) {
@@ -419,7 +430,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
     // Get service items.
     $query = "SELECT " .
       "fe.pid, fe.encounter, fe.date, " .
-      "pd.lname, pd.fname, pd.mname, pd.pubpid, pd.usertext8, pd.userlist4, " .
+      "pd.lname, pd.fname, pd.mname, pd.pubpid, pd.usertext8, " .
       "f.name AS facname, " .
       "b.id, b.code_text, b.units, b.fee, c.code_text_short " .
       "FROM form_encounter AS fe " .
@@ -438,7 +449,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       $query .= "a.memo = ?";
     }
     else {
-      $query .= "pd.userlist4 = ? AND lo.notes LIKE '%=Ins%'";
+      $query .= "lo.option_id = ? AND lo.notes LIKE '%=Ins%'";
     }
 
     // If a facility was specified.
@@ -520,7 +531,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
     // Products.
     $query = "SELECT " .
       "fe.pid, fe.encounter, fe.date, " .
-      "pd.lname, pd.fname, pd.mname, pd.pubpid, pd.usertext8, pd.userlist4, " .
+      "pd.lname, pd.fname, pd.mname, pd.pubpid, pd.usertext8, " .
       "f.name AS facname, " .
       "s.fee, s.quantity, s.sale_id, d.name " .
       "FROM form_encounter AS fe " .
@@ -538,7 +549,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       $query .= "a.memo = ?";
     }
     else {
-      $query .= "pd.userlist4 = ? AND lo.notes LIKE '%=Ins%'";
+      $query .= "lo.option_id = ? AND lo.notes LIKE '%=Ins%'";
     }
     // If a facility was specified.
     if ($form_facility) {
