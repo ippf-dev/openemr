@@ -1946,9 +1946,12 @@ UPDATE layout_options SET group_name = '1Who', title='', seq = 7, data_type = 1,
 UPDATE layout_options SET data_type = 14 WHERE form_id = 'REF' AND field_id = 'refer_from';
 UPDATE layout_options SET title='Referral Type', list_id = 'reftype'  WHERE form_id = 'REF' AND field_id = 'refer_external' AND list_id = 'boolean';
 
--- The following added 2011-06-09:
+-- The following added 2011-06-09 and changed 2017-03-24:
 
-insert into lang_definitions ( cons_id, lang_id, definition ) select lc.cons_id, 1, 'SDP ID'   from lang_constants as lc left join lang_definitions as ld on ld.cons_id = lc.cons_id and ld.lang_id = 1 where lc.constant_name = 'CLIA Number' and ld.cons_id is null;
+insert into lang_definitions ( cons_id, lang_id, definition )
+  select lc.cons_id, 1, 'DHIS2 Code' from lang_constants as lc
+  left join lang_definitions as ld on ld.cons_id = lc.cons_id and ld.lang_id = 1
+  where lc.constant_name = 'CLIA Number' and ld.cons_id is null;
 
 -- The following re-added 2011-08-15 because LV asked for it:
 

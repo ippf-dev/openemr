@@ -3187,3 +3187,5 @@ DELETE FROM list_options WHERE list_id = 'LAB_BloodConcentration';
 INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('LAB_BloodConcentration','mg_dl' ,'mg/dl' ,1,1);
 INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('LAB_BloodConcentration','mmol_l','mmol/L',2,0);
 #EndIf
+
+UPDATE lang_definitions SET definition = 'DHIS2 Code' WHERE lang_id = 1 AND definition = 'SDP ID';

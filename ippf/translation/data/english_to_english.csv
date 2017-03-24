@@ -14,7 +14,7 @@ Chart,System ID
 Chief Complaint,Reason of Visit
 Clear Active Patient,Clear Active Client
 CLEAR ACTIVE PATIENT,Clear Active Client
-CLIA Number,SDP ID
+CLIA Number,DHIS2 Code
 Clinic ID,Clinic
 Clinic ID:,Clinic:
 CO-PAY,Payment
