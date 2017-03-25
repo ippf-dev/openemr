@@ -121,8 +121,20 @@ body {
 p.grpheader {
  font-family: Arial;
  font-weight: bold;
- font-size: <?php echo round($FONTSIZE * 1.33); ?>pt;
- margin-bottom: <?php echo round($FONTSIZE * 0.44); ?>pt;
+ font-size: <?php echo round($FONTSIZE * 1.00); ?>pt;
+ margin-bottom: <?php echo round($FONTSIZE * 0.00); ?>pt;
+ margin-top: <?php echo round($FONTSIZE * 0.44); ?>pt;
+}
+
+div.grpheader {
+ font-family: Arial;
+ font-weight: bold;
+ font-size: <?php echo round($FONTSIZE * 1.00); ?>pt;
+ color: #000000;
+ background-color: #cccccc;
+ padding: 2pt;
+ margin-bottom: <?php echo round($FONTSIZE * 0.22); ?>pt;
+ margin-top: <?php echo round($FONTSIZE * 0.22); ?>pt;
 }
 
 div.section {
@@ -135,9 +147,9 @@ div.section {
 ?>
  border-style: solid;
  border-width: 1px;
- border-color: #000000;
-<?php } ?>
- padding: 2pt 5pt 5pt 5pt;
+ border-color: #ffffff #ffffff #ffffff #ffffff;
+<?php } // below was 2 5 5 5 ?>
+ padding: 0pt 5pt 0pt 5pt;
 }
 div.section table {
  width: 100%;
@@ -338,7 +350,8 @@ while ($frow = sqlFetchArray($fres)) {
     // start on a new page if there is not otherwise room for it on this page.
     echo "<nobreak>\n";
 
-    echo "<p class='grpheader'>" . text(xl_layout_label(substr($gname, 1))) . "</p>\n";
+    // echo "<p class='grpheader'>" . text(xl_layout_label(str_replace('_', ' ', substr($gname, 1)))) . "</p>\n";
+    echo "<div class='grpheader'>" . text(xl_layout_label(str_replace('_', ' ', substr($gname, 1)))) . "</div>\n";
     echo "<div class='section'>\n";
     echo " <table border='0' cellpadding='0'>\n";
     echo "  <tr>";
@@ -374,7 +387,8 @@ while ($frow = sqlFetchArray($fres)) {
 
   echo "<b>";
     
-  if ($frow['title']) echo (text(xl_layout_label($frow['title'])) . ":"); else echo "&nbsp;";
+  // if ($frow['title']) echo (text(xl_layout_label($frow['title'])) . ":"); else echo "&nbsp;";
+  if ($frow['title']) echo (text(xl_layout_label($frow['title']))); else echo "&nbsp;";
 
   echo "</b>";
 
@@ -384,8 +398,8 @@ while ($frow = sqlFetchArray($fres)) {
     echo "<td colspan='$datacols' class='dcols$datacols stuff under' style='";
 
     if ($cell_count > 0) echo "padding-left:5pt;";
-    if (in_array($data_type, array(21,27))) {
-      // Omit underscore for checkboxes and radio buttons.
+    if (in_array($data_type, array(21,27,40))) {
+      // Omit underscore for checkboxes, radio buttons and images.
       echo "border-width:0 0 0 0;";
     }
     echo "'>";
@@ -433,7 +447,8 @@ if ($fs && isset($LBF_SERVICES_SECTION)) {
   }
   if ($s) {
     echo "<nobreak>\n";
-    echo "<p class='grpheader'>" . xlt('Services') . "</p>\n";
+    // echo "<p class='grpheader'>" . xlt('Services') . "</p>\n";
+    echo "<div class='grpheader'>" . xlt('Services') . "</div>\n";
     echo "<div class='section'>\n";
     echo " <table border='0' cellpadding='0' style='width:'>\n";
     echo $s;
@@ -454,7 +469,8 @@ if ($fs && isset($LBF_PRODUCTS_SECTION)) {
   }
   if ($s) {
     echo "<nobreak>\n";
-    echo "<p class='grpheader'>" . xlt('Products') . "</p>\n";
+    // echo "<p class='grpheader'>" . xlt('Products') . "</p>\n";
+    echo "<div class='grpheader'>" . xlt('Products') . "</div>\n";
     echo "<div class='section'>\n";
     echo " <table border='0' cellpadding='0' style='width:'>\n";
     echo $s;
@@ -476,7 +492,8 @@ if ($fs && isset($LBF_DIAGS_SECTION)) {
   }
   if ($s) {
     echo "<nobreak>\n";
-    echo "<p class='grpheader'>" . xlt('Diagnoses') . "</p>\n";
+    // echo "<p class='grpheader'>" . xlt('Diagnoses') . "</p>\n";
+    echo "<div class='grpheader'>" . xlt('Diagnoses') . "</div>\n";
     echo "<div class='section'>\n";
     echo " <table border='0' cellpadding='0' style='width:'>\n";
     echo $s;
