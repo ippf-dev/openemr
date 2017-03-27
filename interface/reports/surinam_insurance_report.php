@@ -287,7 +287,7 @@ else {
   // For this report the insurers are certain adjustment reasons.
   //
   $ires = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-  "list_id = 'adjreason' AND activity = 1 AND notes LIKE '%=Ins%' " .
+  "list_id = 'adjreason' AND activity = 1 AND (notes LIKE '%=Ins%' OR option_id = 'CASH') " .
   "ORDER by seq, title");
   echo "   <select name='form_insurer'>\n";
   echo "    <option value=''>-- " . xlt('All Insurers') . " --</option>\n";
@@ -388,7 +388,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
 
   // Main loop is on insurer.
   $query = "SELECT option_id AS insid, title AS insname FROM list_options " .
-    "WHERE list_id = 'adjreason' AND activity = 1 AND notes LIKE '%=Ins%'";
+    "WHERE list_id = 'adjreason' AND activity = 1 AND (notes LIKE '%=Ins%' OR option_id = 'CASH')";
   $qparms = array();
   // If an insurer was specified.
   if ($form_insurer) {
