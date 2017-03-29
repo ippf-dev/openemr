@@ -102,6 +102,15 @@ $USER_SPECIFIC_GLOBALS = array('default_top_pane',
                                'checkout_roll_off',
                                'erx_import_status_message');
 
+function gblTimeZones() {
+  $zones = timezone_identifiers_list();
+  $arr = array('' => xl('Unassigned'));
+  foreach ($zones as $zone) {
+    $arr[$zone] = str_replace('_', ' ', $zone);
+  }
+  return $arr;
+}
+
 $GLOBALS_METADATA = array(
 
   // Appearance Tab
@@ -420,6 +429,13 @@ $GLOBALS_METADATA = array(
       ),
       '0',
       xl('Format used to display most times.')
+    ),
+    
+    'gbl_time_zone' => array(
+      xl('Time Zone'),
+      gblTimeZones(),
+      '',
+      xl('If unassigned will default to php.ini setting for date.timezone.')
     ),
 
     'currency_decimals' => array(
