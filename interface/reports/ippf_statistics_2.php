@@ -1208,6 +1208,7 @@ function process_ma_code($row, $code='', $quantity=1) {
   // Just one row.
   //
   else if ($form_by === '2') {
+    if ($form_content == '2') return; // total unique clients handled in process_visit().
     $key = $arr_content[$form_content];
   }
 
@@ -1286,12 +1287,19 @@ function LBFgcac_title($form_id, $field_id, $list_id) {
 // This is called for each encounter that is selected.
 //
 function process_visit($row) {
-  global $form_by, $form_content;
+  global $form_by, $form_content, $arr_content;
 
   // New contraceptive method following abortion.  These should only be
   // present for inbound referrals.
   //
   if ($form_by === '7') {
+  }
+
+  // Just one row for unique clients.
+  //
+  else if ($form_by == '2' && $form_content == '2') {
+    $key = $arr_content[$form_content];
+    loadColumnData($key, $row);
   }
 
   // Complications of abortion by abortion method and complication type.

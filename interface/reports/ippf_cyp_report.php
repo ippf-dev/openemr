@@ -1,15 +1,19 @@
 <?php
-// Copyright (C) 2009-2010, 2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; either version 2
 // of the License, or (at your option) any later version.
 
+$sanitize_all_escapes  = true;
+$fake_register_globals = false;
+
 require_once("../globals.php");
 require_once("$srcdir/patient.inc");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/formatting.inc.php");
+require_once($GLOBALS['fileroot'] . '/custom/code_types.inc.php');
 
 function formatcyp($amount) {
   if ($amount) return sprintf("%.2f", $amount);
@@ -24,8 +28,9 @@ function display_desc($desc) {
 }
 
 function thisLineItem($patient_id, $encounter_id, $description, $transdate, $qty, $related_code, $irnumber='') {
-  global $product, $productcyp, $producttotal, $productqty, $grandtotal, $grandqty;
+  global $product, $productcyp, $producttotal, $productqty, $grandtotal, $grandqty, $code_types;
 
+  /********************************************************************
   // Look up the CYP factor for the related IPPF code.
   $cypfactor = 0;
   $relcodes = explode(';', $related_code);
@@ -38,6 +43,20 @@ function thisLineItem($patient_id, $encounter_id, $description, $transdate, $qty
     $cypfactor = empty($tmprow['cyp_factor']) ? 0 : (0 + $tmprow['cyp_factor']);
     if ($cypfactor) break;
   }
+  ********************************************************************/
+  // Look up the CYP factor from the related IPPFCM code.
+  $cypfactor = 0;
+  $relcodes = explode(';', $related_code);
+  foreach ($relcodes as $relstring) {
+    if ($relstring === '') continue;
+    list($reltype, $relcode) = explode(':', $relstring);
+    if ($reltype !== 'IPPFCM') continue;
+    $tmprow = sqlQuery("SELECT cyp_factor FROM codes WHERE code_type = ? AND code = ? LIMIT 1",
+      array($code_types['IPPFCM']['id'], $relcode));
+    $cypfactor = empty($tmprow['cyp_factor']) ? 0 : (0 + $tmprow['cyp_factor']);
+    if ($cypfactor) break;
+  }
+  /*******************************************************************/
 
   // If not for contraception, skip this item.
   if (!$cypfactor) return;
@@ -85,7 +104,7 @@ function thisLineItem($patient_id, $encounter_id, $description, $transdate, $qty
     $product = $rowproduct;
     $productleft = $product;
     $productcyp = $rowcyp;
-  }
+  } // end new product
 
   if ($_POST['form_details']) {
     if ($_POST['form_csvexport']) {
@@ -265,7 +284,9 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   $query = "SELECT b.pid, b.encounter, b.code_type, b.code, b.units, " .
     "b.code_text, c.related_code, fe.date, fe.facility_id, fe.invoice_refno " .
     "FROM billing AS b " .
-    "JOIN codes AS c ON c.code_type = '12' AND c.code = b.code AND c.modifier = b.modifier AND c.related_code != '' " .
+    "JOIN codes AS c ON c.code_type = '12' AND c.code = b.code AND c.modifier = b.modifier AND " .
+    // Only surgical contraception counts for services:
+    "(c.related_code LIKE '%IPPFCM:456%' OR c.related_code LIKE '%IPPFCM:457%') " .
     "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter " .
     "WHERE b.code_type = 'MA' AND b.activity = 1 AND " .
     "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
@@ -284,9 +305,10 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   }
   //
   $query = "SELECT s.sale_date, s.quantity, s.pid, s.encounter, " .
-    "d.name, d.related_code, fe.date, fe.facility_id, fe.invoice_refno " .
+    "d.name, d.related_code, t.pkgqty, fe.date, fe.facility_id, fe.invoice_refno " .
     "FROM drug_sales AS s " .
     "JOIN drugs AS d ON d.drug_id = s.drug_id AND d.related_code != '' " .
+    "LEFT JOIN drug_templates AS t ON t.drug_id = s.drug_id AND t.selector = s.selector " .
     "JOIN form_encounter AS fe ON " .
     "fe.pid = s.pid AND fe.encounter = s.encounter AND " .
     "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59' " .
@@ -299,8 +321,13 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   //
   $res = sqlStatement($query);
   while ($row = sqlFetchArray($res)) {
+    $quantity = $row['quantity'];
+    // Package quantity affects CYP quantity only for male condoms.
+    if (strpos($row['related_code'], 'IPPFCM:4450') !== false) {
+      if (!empty($row['pkgqty'])) $quantity *= floatval($row['pkgqty']);
+    }
     thisLineItem($row['pid'], $row['encounter'], $row['name'],
-      substr($row['date'], 0, 10), $row['quantity'], $row['related_code'],
+      substr($row['date'], 0, 10), $quantity, $row['related_code'],
       $row['invoice_refno']);
   }
 

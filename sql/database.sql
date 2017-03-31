@@ -827,6 +827,7 @@ CREATE TABLE `drug_templates` (
   `quantity` int(11) NOT NULL default '0',
   `refills` int(11) NOT NULL default '0',
   `taxrates` varchar(255) default NULL,
+  `pkgqty` float NOT NULL DEFAULT 1.0 COMMENT 'Number of product items per template item',
   PRIMARY KEY  (`drug_id`,`selector`)
 ) ENGINE=MyISAM;
 

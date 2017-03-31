@@ -239,7 +239,7 @@ $(document).ready(function() {
   <td>
    <?php echo xlt('Size'); ?>
   </td>
-  <td>
+  <td title='<?php echo xlt('Measurement Units'); ?>'>
    <?php echo xlt('Unit'); ?>
   </td>
   <td title='<?php echo xla('Click to receive (add) new lot'); ?>'>
@@ -300,7 +300,7 @@ $(document).ready(function() {
 	 generate_display_field(array('data_type'=>'1','list_id'=>'drug_form'), $row['form']) .
 	 "</td>\n";
    echo "  <td>" . text($row['size']) . "</td>\n";
-   echo "  <td>" .
+   echo "  <td title='" . xlt('Measurement Units') . "'>" .
 	 generate_display_field(array('data_type'=>'1','list_id'=>'drug_units'), $row['unit']) .
 	 "</td>\n";
    if ($auth_lots && $row['dispensable']) {

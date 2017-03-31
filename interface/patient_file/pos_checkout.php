@@ -1861,7 +1861,7 @@ $query = "SELECT id, date, code_type, code, modifier, code_text, " .
 $bres = sqlStatement($query, array($patient_id, $encounter_id));
 
 $query = "SELECT s.sale_id, s.sale_date, s.prescription_id, s.fee, s.quantity, " .
-  "s.encounter, s.drug_id, s.billed, s.bill_date, d.name, r.provider_id " .
+  "s.encounter, s.drug_id, s.billed, s.bill_date, s.selector, d.name, r.provider_id " .
   "FROM drug_sales AS s " .
   "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
   "LEFT OUTER JOIN prescriptions AS r ON r.id = s.prescription_id " .
@@ -1953,8 +1953,11 @@ while ($drow = sqlFetchArray($dres)) {
   $taxrates = $tmp['taxrates'];
   markTaxes($taxrates);
 
+  $tmpname = $drow['name'];
+  if ($tmpname !== $drow['selector']) $tmpname .= ' / ' . $drow['selector'];
+
   write_form_line('PROD', $drow['drug_id'], $drow['sale_id'], $thisdate,
-    $drow['name'], $drow['fee'], $drow['quantity'], $taxrates, $billtime);
+    $tmpname, $drow['fee'], $drow['quantity'], $taxrates, $billtime);
 }
 
 /*********************************************************************

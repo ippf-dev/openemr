@@ -9,12 +9,12 @@
 $sanitize_all_escapes  = true;
 $fake_register_globals = false;
 
- require_once("../globals.php");
- require_once("$srcdir/acl.inc");
- require_once("drugs.inc.php");
- require_once("$srcdir/options.inc.php");
- require_once("$srcdir/formdata.inc.php");
- require_once("$srcdir/htmlspecialchars.inc.php");
+require_once("../globals.php");
+require_once("$srcdir/acl.inc");
+require_once("drugs.inc.php");
+require_once("$srcdir/options.inc.php");
+require_once("$srcdir/formdata.inc.php");
+require_once("$srcdir/htmlspecialchars.inc.php");
 
  $alertmsg = '';
  $drug_id = $_REQUEST['drug'];
@@ -35,7 +35,7 @@ function bucks($amount) {
 
 // Write a line of data for one template to the form.
 //
-function writeTemplateLine($selector, $dosage, $period, $quantity, $refills, $prices, $taxrates) {
+function writeTemplateLine($selector, $dosage, $period, $quantity, $refills, $prices, $taxrates, $pkgqty) {
   global $tmpl_line_no;
   ++$tmpl_line_no;
 
@@ -59,6 +59,9 @@ function writeTemplateLine($selector, $dosage, $period, $quantity, $refills, $pr
   echo "</td>\n";
   echo "  <td class='tmplcell drugsonly'>";
   echo "<input type='text' name='form_tmpl[$tmpl_line_no][refills]' value='" . attr($refills) . "' size='3' maxlength='5'>";
+  echo "</td>\n";
+  echo "  <td class='tmplcell drugsonly'>";
+  echo "<input type='text' name='form_tmpl[$tmpl_line_no][pkgqty]' value='" . attr($pkgqty) . "' size='3' maxlength='5'>";
   echo "</td>\n";
   foreach ($prices as $pricelevel => $price) {
     echo "  <td class='tmplcell'>";
@@ -95,7 +98,7 @@ function numericff($name) {
 <style>
 td { font-size:10pt; }
 
-<?php if ($GLOBALS['sell_non_drug_products'] == 2) { ?>
+<?php if ($GLOBALS['sell_non_drug_products'] == 2) { // "Products but no prescription drugs and no templates" ?>
 .drugsonly { display:none; }
 <?php } else { ?>
 .drugsonly { }
@@ -282,10 +285,10 @@ if (($_POST['form_save'] || $_POST['form_delete']) && !$alertmsg) {
       }
      }
      sqlInsert("INSERT INTO drug_templates ( " .
-      "drug_id, selector, dosage, period, quantity, refills, taxrates " .
-      ") VALUES ( ?, ?, ?, ?, ?, ?, ? )",
+      "drug_id, selector, dosage, period, quantity, refills, taxrates, pkgqty " .
+      ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )",
       array($drug_id, $selector, trim($iter['dosage']), trim($iter['period']),
-      trim($iter['quantity']), trim($iter['refills']), $taxrates));
+      trim($iter['quantity']), trim($iter['refills']), $taxrates, floatval(trim($iter['pkgqty']))));
 
      // Add prices for this drug ID and selector.
      foreach ($iter['price'] as $key => $value) {
@@ -411,8 +414,8 @@ else {
   <td>
    <table>
     <tr>
-     <td valign='top' nowrap><b><?php echo $GLOBALS['gbl_min_max_months'] ? xl('Months') : xl('Units'); ?></b></td>
-     <td valign='top' nowrap><?php echo xlt('Global'); ?></td>
+     <td valign='top'><b><?php echo $GLOBALS['gbl_min_max_months'] ? xl('Months') : xl('Units'); ?></b></td>
+     <td valign='top'><?php echo xlt('Global'); ?></td>
 <?php
   // One column header per warehouse title.
   $pwarr = array();
@@ -426,13 +429,13 @@ else {
     array($drug_id));
   while ($pwrow = sqlFetchArray($pwres)) {
     $pwarr[] = $pwrow;
-    echo "     <td valign='top' nowrap>" .
+    echo "     <td valign='top'>" .
       text($pwrow['title']) . "</td>\n";
   }
 ?>
     </tr>
     <tr>
-     <td valign='top' nowrap><?php echo xlt('Min'); ?>&nbsp;</td>
+     <td valign='top'><?php echo xlt('Min'); ?>&nbsp;</td>
      <td valign='top'>
       <input type='text' size='5' name='form_reorder_point' maxlength='7'
        value='<?php echo attr($row['reorder_point']) ?>'
@@ -451,7 +454,7 @@ else {
 ?>
     </tr>
     <tr>
-     <td valign='top' nowrap><?php echo xlt('Max'); ?>&nbsp;</td>
+     <td valign='top'><?php echo xlt('Max'); ?>&nbsp;</td>
      <td>
       <input type='text' size='5' name='form_max_level' maxlength='7'
        value='<?php echo attr($row['max_level']) ?>'
@@ -489,7 +492,7 @@ else {
   </td>
  </tr>
 
- <tr class='drugsonly'>
+ <tr class='drugsonly' title='<?php echo xlt('Measurement Units'); ?>'>
   <td valign='top' nowrap><b><?php echo xlt('Units'); ?>:</b></td>
   <td>
 <?php
@@ -507,7 +510,7 @@ else {
   </td>
  </tr>
 
- <tr class='ippfonly'>
+ <tr class='ippfonly' style='display:none'> <!-- Removed per CV 2017-03-29 -->
   <td valign='top' nowrap><b><?php echo xlt('CYP Factor'); ?>:</b></td>
   <td>
    <input type='text' size='10' name='form_cyp_factor' maxlength='20' value='<?php echo attr($row['cyp_factor']) ?>' />
@@ -529,13 +532,14 @@ else {
    <b><?php echo $GLOBALS['sell_non_drug_products'] == 2 ? xlt('Fees') : xlt('Templates'); ?>:</b>
   </td>
   <td>
-   <table border='0' width='100%'>
+   <table border='0'>
     <tr>
      <td class='drugsonly'><b><?php echo xlt('Name'    ); ?></b></td>
      <td class='drugsonly'><b><?php echo xlt('Schedule'); ?></b></td>
      <td class='drugsonly'><b><?php echo xlt('Interval'); ?></b></td>
-     <td class='drugsonly'><b><?php echo xlt('Qty'     ); ?></b></td>
+     <td class='drugsonly'><b><?php echo xlt('Dose Qty'); ?></b></td>
      <td class='drugsonly'><b><?php echo xlt('Refills' ); ?></b></td>
+     <td class='drugsonly'><b><?php echo xlt('Basic Units'); ?></b></td>
 <?php
   // Show a heading for each price level.  Also create an array of prices
   // for new template lines.
@@ -576,12 +580,12 @@ else {
         $prices[$prow['option_id']] = $prow['pr_price'];
       }
       writeTemplateLine($selector, $trow['dosage'], $trow['period'],
-        $trow['quantity'], $trow['refills'], $prices, $trow['taxrates']);
+        $trow['quantity'], $trow['refills'], $prices, $trow['taxrates'], $trow['pkgqty']);
     }
   }
   for ($i = 0; $i < $blank_lines; ++$i) {
     $selector = $GLOBALS['sell_non_drug_products'] == 2 ? $row['name'] : '';
-    writeTemplateLine($selector, '', '', '', '', $emptyPrices, '');
+    writeTemplateLine($selector, '', '', '', '', $emptyPrices, '', '1');
   }
 ?>
    </table>

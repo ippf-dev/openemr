@@ -670,3 +670,7 @@ ALTER TABLE `drugs` CHANGE `route` `route` varchar(31) NOT NULL default '0';
 #IfNotColumnType lbf_data field_value longtext
 ALTER TABLE `lbf_data` CHANGE `field_value` `field_value` longtext NOT NULL;
 #EndIf
+
+#IfMissingColumn drug_templates pkgqty
+ALTER TABLE `drug_templates` ADD COLUMN `pkgqty` float NOT NULL DEFAULT 1.0 COMMENT 'Number of product items per template item';
+#EndIf

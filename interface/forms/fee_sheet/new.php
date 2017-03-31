@@ -962,7 +962,7 @@ echo "</b></span>\n";
 <?php } else { ?>
   <td class='billcell' style='display:none'>&nbsp;</td>
 <?php } ?>
-  <td class='billcell' align='center'><b><?php echo xlt('Units');?></b></td>
+  <td class='billcell' align='center'><b><?php echo xlt('Qty');?></b></td>
 <?php } ?>
 <?php if (justifiers_are_used()) { ?>
   <td class='billcell' align='center'<?php echo $justifystyle; ?>><b><?php echo xlt('Justify');?></b></td>
