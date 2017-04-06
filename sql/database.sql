@@ -2526,6 +2526,8 @@ INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`d
 INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,`max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`) VALUES ('DEM', 'pubpid', '1Who', 'External ID', 5, 2, 1, 10, 15, '', 1, 1, '', 'ND', 'External identifier', 0);
 INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,`max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`) VALUES ('DEM', 'DOB', '1Who', 'DOB', 6, 4, 2, 10, 10, '', 1, 1, '', 'D', 'Date of Birth', 0);
 INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,`max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`) VALUES ('DEM', 'sex', '1Who', 'Sex', 7, 1, 2, 0, 0, 'sex', 1, 1, '', 'N', 'Sex', 0);
+INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,`max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`) VALUES ('DEM', 'gender', '1Who', 'Gender', 8, 1, 1, 0, 0, 'Gender', 1, 1, '', 'N', '', 0);
+INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,`max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`) VALUES ('DEM', 'sexual_orientation', '1Who', 'Sexual Orientation', 8, 1, 1, 0, 0, 'Sexual_Orientation', 1, 1, '', 'N', '', 0);
 INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,`max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`) VALUES ('DEM', 'ss', '1Who', 'S.S.', 8, 2, 1, 11, 11, '', 1, 1, '', '', 'Social Security Number', 0);
 INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,`max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`) VALUES ('DEM', 'drivers_license', '1Who', 'License/ID', 9, 2, 1, 15, 63, '', 1, 1, '', '', 'Drivers License or State ID', 0);
 INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,`max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`) VALUES ('DEM', 'status', '1Who', 'Marital Status', 10, 1, 1, 0, 0, 'marital', 1, 3, '', '', 'Marital Status', 0);
@@ -3688,6 +3690,25 @@ INSERT INTO list_options(list_id,option_id,title,seq) VALUES ('general_issue_lis
 -- Issue Types List
 INSERT INTO list_options (`list_id`,`option_id`,`title`) VALUES ('lists','issue_types','Issue Types');
 
+-- Gender List
+INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('lists','Gender','Gender', 1,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','Fem' ,'Female',10,1);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','Male','Male'  ,20,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','FTM' ,'FTM'   ,30,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','MTF' ,'MTF'   ,40,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','Oth' ,'Other' ,50,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','NS','Not Specified',60,0);
+
+-- Sexual_Orientation List
+INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('lists','Sexual_Orientation','Sexual Orientation', 1,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Bis','Bisexual'     ,10,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Gay','Gay'          ,20,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Het','Heterosexual' ,30,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Les','Lesbian'      ,40,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Msm','MSM'          ,50,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Oth','Other'        ,60,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','NS' ,'Not Specified',70,0);
+
 -- LBF list item and layout for referrals
 INSERT INTO list_options (list_id, option_id, title, seq, is_default, option_value) VALUES ('lbfnames','LBFref' ,'Referral' ,1,0,0);
 INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,`max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`) VALUES ('LBFref','refer_date'      ,'1Referral','Referral Date'                  , 1, 4,2, 0,  0,''         ,1,1,'C','D','Date of referral', 0);
@@ -4162,6 +4183,8 @@ CREATE TABLE `patient_data` (
   `deceased_date` datetime default NULL,
   `deceased_reason` varchar(255) NOT NULL default '',
   `soap_import_status` TINYINT(4) DEFAULT NULL COMMENT '1-Prescription Press 2-Prescription Import 3-Allergy Press 4-Allergy Import',
+  `gender` varchar(31) NOT NULL default '',
+  `sexual_orientation` varchar(31) NOT NULL default '',
   UNIQUE KEY `pid` (`pid`),
   KEY `id` (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 ;

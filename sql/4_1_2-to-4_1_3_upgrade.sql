@@ -674,3 +674,38 @@ ALTER TABLE `lbf_data` CHANGE `field_value` `field_value` longtext NOT NULL;
 #IfMissingColumn drug_templates pkgqty
 ALTER TABLE `drug_templates` ADD COLUMN `pkgqty` float NOT NULL DEFAULT 1.0 COMMENT 'Number of product items per template item';
 #EndIf
+
+#IfMissingColumn patient_data gender
+ALTER TABLE `patient_data` ADD COLUMN `gender` varchar(31) NOT NULL default '';
+INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,
+  `max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`)
+  VALUES ('DEM', 'gender', '1Who', 'Gender', 8, 1, 1, 0, 0, 'Gender', 1, 1, '', 'N', '', 0);
+#EndIf
+
+#IfMissingColumn patient_data sexual_orientation
+ALTER TABLE `patient_data` ADD COLUMN `sexual_orientation` varchar(31) NOT NULL default '';
+INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,
+  `max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`)
+  VALUES ('DEM', 'sexual_orientation', '1Who', 'Sexual Orientation', 8, 1, 1, 0, 0, 'Sexual_Orientation', 1, 1, '', 'N', '', 0);
+#EndIf
+
+#IfNotRow2D list_options list_id lists option_id Gender
+INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('lists','Gender','Gender', 1,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','Fem' ,'Female',10,1);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','Male','Male'  ,20,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','FTM' ,'FTM'   ,30,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','MTF' ,'MTF'   ,40,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','Oth' ,'Other' ,50,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Gender','NS','Not Specified',60,0);
+#EndIf
+
+#IfNotRow2D list_options list_id lists option_id Sexual_Orientation
+INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('lists','Sexual_Orientation','Sexual Orientation', 1,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Bis','Bisexual'     ,10,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Gay','Gay'          ,20,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Het','Heterosexual' ,30,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Les','Lesbian'      ,40,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Msm','MSM'          ,50,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','Oth','Other'        ,60,0);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`) VALUES ('Sexual_Orientation','NS' ,'Not Specified',70,0);
+#EndIf
