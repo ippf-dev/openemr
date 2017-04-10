@@ -185,13 +185,14 @@ if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
         $larray = array();
         $lres = sqlStatement("SELECT * FROM list_options WHERE list_id = '$list_id'");
         while ($lrow = sqlFetchArray($lres)) {
-          $larray[$lrow['option_id']] = $lrow;
+          $larray[trim($lrow['option_id'])] = $lrow;
         }
         for ($lino = 1; isset($opt["$lino"]['id']); ++$lino) {
           $iter = $opt["$lino"];
           $value = empty($iter['value']) ? 0 : (trim($iter['value']) + 0);
-          $id = strip_escape_custom(trim($iter['id']));
-          if (strlen($id) == 0) continue;
+          $id = strip_escape_custom($iter['id']);
+          $idtrimmed = trim($id);
+          if (strlen($idtrimmed) == 0) continue;
           // Special processing for the immunizations list
           // Map the entered cvx codes into the immunizations table cvx_code
           if ($list_id == 'immunizations' && is_int($value) && $value > 0 &&
@@ -201,8 +202,8 @@ if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
               "WHERE `immunization_id` = '$id'");
           }
           // Force List Based Form names to start with LBF.
-          if ($list_id == 'lbfnames' && substr($id,0,3) != 'LBF') {
-            $id = "LBF$id";
+          if ($list_id == 'lbfnames' && substr($idtrimmed,0,3) != 'LBF') {
+            $id = $idtrimmed = "LBF$idtrimmed";
           }
 
           // For the flow board.
@@ -224,43 +225,51 @@ if ($_POST['formaction']=='save' && $list_id && $alertmsg == '') {
           $lrow['notes'       ] = $notes;
           $lrow['codes'       ] = strip_escape_custom($iter['codes'  ]);
           $lrow['activity'    ] = strip_escape_custom($iter['activity']);
-          $lrow['toggle_setting_1'] = strip_escape_custom($iter['toggle_setting_1']);
-          $lrow['toggle_setting_2'] = strip_escape_custom($iter['toggle_setting_2']);
+          $lrow['toggle_setting_1'] = empty($iter['toggle_setting_1']) ? '0' : $iter['toggle_setting_1'];
+          $lrow['toggle_setting_2'] = empty($iter['toggle_setting_2']) ? '0' : $iter['toggle_setting_2'];
           $sets = '';
-          if (isset($larray[$id])) {
+          if (isset($larray[$idtrimmed])) {
             // If the list item was already in the database, update or ignore it as appropriate.
             // Only the fields that changed will be updated.
+            $lrow['option_id'] = $idtrimmed;
             foreach ($lrow as $key => $val) {
-              if ($larray[$id][$key] !== $val) {
+              if ($larray[$idtrimmed][$key] !== $val) {
                 if ($sets) $sets .= ", ";
                 $sets .= "`$key` = '" . add_escape_custom($val) . "'";
               }
             }
             if ($sets) {
+              // A mysql oddity to keep in mind here is that string comparisons, including key
+              // matching, are not sensitive to trailing spaces.
               sqlStatement("UPDATE list_options SET $sets WHERE list_id = '" .
-                add_escape_custom($list_id) . "' AND option_id = '" . add_escape_custom($id) . "'");
+                add_escape_custom($list_id) . "' AND option_id = '" .
+                add_escape_custom($id) . "'");
             }
             // Delete $larray entries for table rows that match up with form rows.
             // Whatever remains will be the table rows that should be deleted from the database.
-            unset($larray[$id]);
+            unset($larray[$idtrimmed]);
           }
           else {
-            // Not already in the database so insert it.
+            // Not already in the database so insert it. 
+            // IGNORE is used in case the trimmed id already exists (we allow updating/deleting
+            // but not inserting of ids with leading/trailing spaces).
             foreach ($lrow as $key => $val) {
               if ($sets) $sets .= ", ";
               $sets .= "`$key` = '" . add_escape_custom($val) . "'";
             }
-            sqlStatement("INSERT INTO list_options SET `list_id` = '" .
-              add_escape_custom($list_id) . "', `option_id` = '" . add_escape_custom($id) .
+            sqlStatement("INSERT IGNORE INTO list_options SET `list_id` = '" .
+              add_escape_custom($list_id) . "', `option_id` = '" . add_escape_custom($idtrimmed) .
               "', $sets");
+            // In case they added a space after an existing ID, don't delete that entry.
+            // if (isset($larray[$idtrimmed])) unset($larray[$idtrimmed]);
           }
           $last_list_item_id = $id;
         }
         // Delete any list items from the database that are not in the form.
         foreach ($larray as $id => $dummy) {
           sqlStatement("DELETE FROM list_options WHERE list_id = '" .
-              add_escape_custom($list_id) . "' AND option_id = '" . add_escape_custom($id) .
-              "'");
+              add_escape_custom($list_id) . "' AND option_id = '" .
+              add_escape_custom($id) . "'");
         }
     }
     newEvent("edit_list", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "List = $list_id");    
