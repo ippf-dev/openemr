@@ -94,17 +94,13 @@ if (!empty($_POST['form_submit'])) {
   // Sort on site directory name.
   ksort($siteslist);
 
-  // Get array of allowed global settings.
-  $first_site = array_shift(array_keys($siteslist));
-  $globals_arr = getGlobalsArray("$base_directory/$first_site/library/globals.inc.php");
-
   if (!$GSDEBUG) {
     // Initialize CSV output.
     header("Pragma: public");
     header("Expires: 0");
     header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
     header("Content-Type: application/force-download; charset=utf-8");
-    header("Content-Disposition: attachment; filename=globals.csv");
+    header("Content-Disposition: attachment; filename=multisite_admin.csv");
     header("Content-Description: File Transfer");
     // Prepend a BOM (Byte Order Mark) header to mark the data as UTF-8.  This is
     // said to work for Excel 2007 pl3 and up and perhaps also Excel 2003 pl3.  See:
@@ -113,38 +109,77 @@ if (!empty($_POST['form_submit'])) {
     echo "\xEF\xBB\xBF";
   }
 
-  if (!$GSDEBUG) {
-    // Write header row.
-    echo output_csv('Tab', false);
-    echo output_csv('Item');
-    echo output_csv('Default Value/Setting');
-    echo output_csv('Relevant to IPPF/WHR');
-    foreach ($siteslist as $name => $dummy) {
-      echo output_csv($name);
-    }
-    echo "\n";
-  }
+  if (!empty($_POST['form_globals'])) {
+    // Get array of allowed global settings.
+    $first_site = array_shift(array_keys($siteslist));
+    $globals_arr = getGlobalsArray("$base_directory/$first_site/library/globals.inc.php");
 
-  // Write detail rows.
-  foreach ($globals_arr as $group_name => $group_arr) {
-    foreach ($group_arr as $item_key => $item_arr) {
-      echo output_csv($group_name, false);
-      echo output_csv($item_arr[0]);
-      echo output_csv(dispValue($item_arr[2], $item_arr));
-      echo output_csv('');
-      foreach ($siteslist as $name => $link) {
-        $value = '';
-        $res = sqlSelect($link, "SELECT * FROM globals WHERE gl_name = '" . $item_key . "' ORDER BY gl_index");
-        while ($row = mysqli_fetch_assoc($res)) {
-          if ($value) $value .= '; ';
-          $value .= dispValue($row['gl_value'], $item_arr);
-        }
-        mysqli_free_result($res);
-        echo output_csv($value);
+    if (!$GSDEBUG) {
+      // Write header row.
+      echo output_csv('Tab', false);
+      echo output_csv('Item');
+      echo output_csv('Default Value/Setting');
+      echo output_csv('Relevant to IPPF/WHR');
+      foreach ($siteslist as $name => $dummy) {
+        echo output_csv($name);
       }
       echo "\n";
     }
-  }
+
+    // Write detail rows.
+    foreach ($globals_arr as $group_name => $group_arr) {
+      foreach ($group_arr as $item_key => $item_arr) {
+        echo output_csv($group_name, false);
+        echo output_csv($item_arr[0]);
+        echo output_csv(dispValue($item_arr[2], $item_arr));
+        echo output_csv('');
+        foreach ($siteslist as $name => $link) {
+          $value = '';
+          $res = sqlSelect($link, "SELECT * FROM globals WHERE gl_name = '" . $item_key . "' ORDER BY gl_index");
+          while ($row = mysqli_fetch_assoc($res)) {
+            if ($value) $value .= '; ';
+            $value .= dispValue($row['gl_value'], $item_arr);
+          }
+          mysqli_free_result($res);
+          echo output_csv($value);
+        }
+        echo "\n";
+      }
+    }
+  } // end form_globals
+
+  if (!empty($_POST['form_history'])) {
+    if (!$GSDEBUG) {
+      // Write header row.
+      echo output_csv('Site', false);
+      echo output_csv('Pid');
+      echo output_csv('ID');
+      echo output_csv('Number of Saves');
+      // echo output_csv('First');
+      echo output_csv('Date of Last');
+      echo "\n";
+    }
+
+    // Write detail rows.
+    foreach ($siteslist as $name => $link) {
+      $res = sqlSelect($link, "SELECT h.pid, p.pubpid, MIN(h.date) AS mindate, MAX(h.date) AS maxdate, " .
+        "COUNT(h.id) AS count " .
+        "FROM history_data AS h " .
+        "JOIN patient_data AS p ON p.pid = h.pid " .
+        "WHERE (SELECT COUNT(z.id) FROM history_data AS z WHERE z.pid = h.pid) > 1 " .
+        "GROUP BY h.pid ORDER BY h.pid");
+      while ($row = mysqli_fetch_assoc($res)) {
+        echo output_csv($name, false);
+        echo output_csv($row['pid']);
+        echo output_csv($row['pubpid']);
+        echo output_csv($row['count'] - 1);
+        // echo output_csv($row['mindate']);
+        echo output_csv($row['maxdate']);
+        echo "\n";
+      }
+      mysqli_free_result($res);
+    }
+  } // end form_history
 
   foreach ($siteslist as $link) mysqli_close($link);
   exit;
@@ -155,7 +190,9 @@ if (!empty($_POST['form_submit'])) {
   <form method='post' action='multisite_admin.php'>
    <center>
    <p>Multiple Sites Administration</p>
-   <input type='submit' name='form_submit' value='Download Global Settings' />
+   <input type='submit' name='form_globals' value='Download Global Settings' />
+   <input type='submit' name='form_history' value='Download History Usage' />
+   <input type='hidden' name='form_submit' value='1' />
    </center>
   </form>
  </body>
