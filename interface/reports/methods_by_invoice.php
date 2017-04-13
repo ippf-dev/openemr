@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2012-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2012-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -386,53 +386,70 @@ if (isset($_POST['form_orderby'])) {
   $grandchgtotal  = 0;
   $grandadjtotal  = 0;
 
+  // If a cashier was specified.
+  $cashcond = $form_cashier ? "AND a.post_user = '$form_cashier'" : "";
+
   // Get payments and adjustments in the date range, corresponding
   // payers and check reference data, and the encounter dates separately.
   //
-  $query = "SELECT a.pid, a.encounter, a.pay_amount, " .
+  $query = "SELECT fe.pid, fe.encounter, a.pay_amount, " .
     "a.adj_amount, a.memo, a.session_id, a.code, a.payer_type, " .
     "fe.id, fe.date, fe.invoice_refno, fe.provider_id, " .
-    "s.deposit_date, s.payer_id, s.reference, u.username " .
+    "s.deposit_date, s.payer_id, s.reference, u.username ";
+  if ($form_date_type == 1) { $query .=
+    // Query by Invoice Date. This will include invoices with no payments or adjustments.
+    "FROM form_encounter AS fe " .
+    "JOIN forms AS f ON f.pid = fe.pid AND f.encounter = fe.encounter AND f.formdir = 'newpatient' " .
+    "LEFT JOIN ar_activity AS a ON fe.pid = a.pid AND fe.encounter = a.encounter AND " .
+    "a.deleted IS NULL AND (a.pay_amount != 0 OR a.adj_amount != 0) $cashcond" .
+    "LEFT JOIN ar_session AS s ON s.session_id = a.session_id " .
+    "LEFT JOIN users AS u ON u.id = a.post_user " .
+    "WHERE fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
+  }
+  else { $query .=
+    // Query by Payment Date.
     "FROM ar_activity AS a " .
     "JOIN form_encounter AS fe ON fe.pid = a.pid AND fe.encounter = a.encounter " .
     "JOIN forms AS f ON f.pid = a.pid AND f.encounter = a.encounter AND f.formdir = 'newpatient' " .
     "LEFT JOIN ar_session AS s ON s.session_id = a.session_id " .
     "LEFT JOIN users AS u ON u.id = a.post_user " .
-    "WHERE a.deleted IS NULL AND ( a.pay_amount != 0 OR a.adj_amount != 0 )";
-  if ($form_date_type == 1) { // Invoice Date specified
-    // Getting all payments/adjustments for encounters in the date range.
-    $query .= " AND fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
+    "WHERE a.deleted IS NULL AND (a.pay_amount != 0 OR a.adj_amount != 0) " .
+    "AND ((s.deposit_date IS NOT NULL AND " .
+    "s.deposit_date >= '$from_date' AND s.deposit_date <= '$to_date') OR " .
+    "(s.deposit_date IS NULL AND a.post_date IS NOT NULL AND " .
+    "a.post_date >= '$from_date' AND " .
+    "a.post_date <= '$to_date' ) OR " .
+    "(s.deposit_date IS NULL AND a.post_date IS NULL AND " .
+    "a.post_time >= '$from_date 00:00:00' AND " .
+    "a.post_time <= '$to_date 23:59:59')) $cashcond";
   }
-  else {
-    // Getting all payments/adjustments in the date range.
-    $query .= " AND ( ( s.deposit_date IS NOT NULL AND " .
-      "s.deposit_date >= '$from_date' AND s.deposit_date <= '$to_date' ) OR " .
-      "( s.deposit_date IS NULL AND a.post_date IS NOT NULL AND " .
-      "a.post_date >= '$from_date' AND " .
-      "a.post_date <= '$to_date' ) OR " .
-      "( s.deposit_date IS NULL AND a.post_date IS NULL AND " .
-      "a.post_time >= '$from_date 00:00:00' AND " .
-      "a.post_time <= '$to_date 23:59:59' ) )";
-  }
+
   // If a facility was specified.
   if ($form_facility) $query .= " AND fe.facility_id = '$form_facility'";
-  // If a cashier was specified.
-  if ($form_cashier) $query .= " AND a.post_user = '$form_cashier'";
-  //
-  $query .= " ORDER BY fe.date, a.pid, a.encounter, fe.id";
+
+  $query .= " ORDER BY fe.date, fe.pid, fe.encounter, fe.id";
   // echo "<!-- $query -->\n"; // debugging
-  //
+
   $res = sqlStatement($query);
   while ($row = sqlFetchArray($res)) {
     $encdate = substr($row['date'], 0, 10);
+
+    if (empty($row['pay_amount'])) $row['pay_amount'] = 0;
+    if (empty($row['adj_amount'])) $row['adj_amount'] = 0;
+    if (empty($row['memo'      ])) $row['memo'      ] = '';
+    if (empty($row['reference' ])) $row['reference' ] = '';
+    if (empty($row['username'  ])) $row['username'  ] = '';
+
     // Compute payment method.
     if (empty($row['session_id'])) {
       $rowmethod = trim($row['memo']);
     } else {
       $rowmethod = trim($row['reference']);
     }
+
     recordPayment($encdate, $row['pid'], $row['encounter'], $rowmethod, 0,
       $row['pay_amount'], $row['adj_amount'], $row['username'], $row['invoice_refno']);
+
     getCharges($row['pid'], $row['encounter']);
   }
 
