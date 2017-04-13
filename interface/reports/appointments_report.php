@@ -79,7 +79,7 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
  }
 
  function oldEvt(eventid) {
-    dlgopen('../main/calendar/add_edit_event.php?eid=' + eventid, 'blank', 550, 270);
+    dlgopen('../main/calendar/add_edit_event.php?eid=' + eventid, 'blank', 750, 420);
  }
 
  function refreshme() {

@@ -138,7 +138,7 @@ function bpopup(tkid) {
 // popup for calendar add edit 
 function calendarpopup(eid,date_squash) {
  top.restoreSession()   
- window.open('../main/calendar/add_edit_event.php?eid=' + eid + '&date=' + date_squash,'_blank', 'width=550,height=400,resizable=1');
+ window.open('../main/calendar/add_edit_event.php?eid=' + eid + '&date=' + date_squash,'_blank', 'width=750,height=420,resizable=1');
  return false;
 }
 

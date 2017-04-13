@@ -517,7 +517,7 @@ function newEvt() {
     url += '&userid=' + parseInt(f.form_refer_from.value);
     }
     }
-    dlgopen(url, '_blank', 600, 300);
+    dlgopen(url, '_blank', 750, 420);
     return false;
 }
 

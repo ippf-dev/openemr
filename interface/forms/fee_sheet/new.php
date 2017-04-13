@@ -672,7 +672,7 @@ function newEvt() {
  if (f.ProviderID && f.ProviderID.value) {
   url += '&userid=' + parseInt(f.ProviderID.value);
  }
- dlgopen(url, '_blank', 600, 300);
+ dlgopen(url, '_blank', 750, 420);
  return false;
 }
 
