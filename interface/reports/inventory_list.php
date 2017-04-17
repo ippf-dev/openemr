@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2008-2016 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2008-2017 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -75,7 +75,6 @@ function checkReorder($drug_id, $min, $warehouse='') {
     if ($sales != 0) {
       $stock_months = sprintf('%0.1f', $onhand * ($form_days / 30.5) / $sales);
       if ($stock_months <= $min) {
-        // echo "<!-- $drug_id $min '$warehouse' $onhand $sales $stock_months -->\n"; // debugging
         return true;
       }
     }
@@ -99,9 +98,123 @@ function genUserWarehouses($userid=0) {
   return $list;
 }
 
+// This counts the number of days that have a starting zero inventory for a given product
+// since a given start date with given restrictions for warehouse or facility.
+// End date is assumed to be the current date.
+//
+// function zeroDays($product_id, $begdate, $warehouse_id = '~', $facility_id = 0) {
+function zeroDays($product_id, $begdate, $extracond, $min_sale=1) {
+  $today = date('Y-m-d');
+
+  $prodcond = '';
+  if ($product_id) {
+    $prodcond = "AND di.drug_id = '$product_id'";
+  }
+
+  // This will be an array where key is date and value is quantity.
+  // For each date key the value represents net quantity changes for that day.
+  $qtys = array();
+
+  // Force it to have entries for the begin and end dates.
+  $qtys[$today] = 0;
+  $qtys[$begdate] = 0;
+
+  // Get sums of current inventory quantities.
+  $query = "SELECT SUM(di.on_hand) AS on_hand " .
+    "FROM drug_inventory AS di " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+    "WHERE " .
+    "di.destroy_date IS NULL $prodcond $extracond";
+  $row = sqlQuery($query);
+  $current_qoh = $row['on_hand'];
+  // echo "\n<!-- $begdate $current_qoh $query -->\n"; // debugging
+
+  // Add sums of destructions done for each date (effectively a type of transaction).
+  $res = sqlStatement("SELECT di.destroy_date, SUM(di.on_hand) AS on_hand " .
+    "FROM drug_inventory AS di " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+    "WHERE " .
+    "di.destroy_date IS NOT NULL AND di.destroy_date >= ? " .
+    "$prodcond $extracond" .
+    "GROUP BY di.destroy_date ORDER BY di.destroy_date",
+    array($begdate));
+  while ($row = sqlFetchArray($res)) {
+    $thisdate = substr($row['destroy_date'], 0, 10);
+    if (!isset($qtys[$thisdate])) $qtys[$thisdate] = 0;
+    $qtys[$thisdate] += $row['on_hand'];
+  }
+
+  // Add sums of other transactions for each date.
+  // Note sales are positive and purchases are negative.
+  $res = sqlStatement("SELECT ds.sale_date, SUM(ds.quantity) AS quantity " .
+    "FROM drug_sales AS ds, drug_inventory AS di " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+    "WHERE " .
+    "ds.sale_date >= ? AND " .
+    "di.inventory_id = ds.inventory_id " .
+    "$prodcond $extracond" .
+    "GROUP BY ds.sale_date ORDER BY ds.sale_date",
+    array($begdate));
+  while ($row = sqlFetchArray($res)) {
+    $thisdate = $row['sale_date'];
+    if (!isset($qtys[$thisdate])) $qtys[$thisdate] = 0;
+    $qtys[$thisdate] += $row['quantity'];
+  }
+
+  // Subtract sums of transfers out for each date.
+  // Quantity for transfers, like purchases, is usually negative.
+  $res = sqlStatement("SELECT ds.sale_date, SUM(ds.quantity) AS quantity " .
+    "FROM drug_sales AS ds, drug_inventory AS di " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+    "WHERE " .
+    "ds.sale_date >= ? AND " .
+    "di.inventory_id = ds.xfer_inventory_id " .
+    "$prodcond $extracond" .
+    "GROUP BY ds.sale_date ORDER BY ds.sale_date",
+    array($begdate));
+  while ($row = sqlFetchArray($res)) {
+    $thisdate = $row['sale_date'];
+    if (!isset($qtys[$thisdate])) $qtys[$thisdate] = 0;
+    $qtys[$thisdate] -= $row['quantity'];
+  }
+
+  // Sort by reverse date.
+  krsort($qtys);
+
+  $lastdate = '';
+  $lastqty = $current_qoh;
+
+  // This will be the count of days that have zero quantity at the start of the day.
+  $zerodays = 0;
+
+  // Now we traverse the array in descending date order, adding a date's quantity adjustment
+  // to the running total to get the quantity at the beginning of that date.
+  foreach ($qtys as $key => $val) {
+    if ($lastdate && $lastqty < $min_sale) {
+      // The span of days from $key to start of $lastdate has zero quantity.
+      // Add that number of days to $zerodays.
+      $diff = date_diff(date_create($key), date_create($lastdate));
+      // $zerodays += $diff->format('%d');
+      $zerodays += $diff->days;
+      // echo "<!-- From $key to $lastdate cum zerodays = $zerodays -->\n"; // debugging
+    }
+    $lastdate = $key;
+    $lastqty += $val; // giving qoh at the start of $lastdate
+  }
+  // The last array entry hasn't been accounted for yet, so do that.
+  if ($lastqty < $min_sale) ++$zerodays;
+  // echo "<!-- total zerodays = $zerodays min_sale = $min_sale -->\n"; // debugging
+  return $zerodays;
+}
+
 function write_report_line(&$row) {
   global $form_details, $wrl_last_drug_id, $warnings, $encount, $fwcond, $uwcond, $form_days;
   global $gbl_expired_lot_warning_days;
+  global $form_facility, $form_warehouse;
 
   $emptyvalue = empty($_POST['form_csvexport']) ? '&nbsp;' : '';
   $drug_id = 0 + $row['drug_id'];
@@ -124,7 +237,6 @@ function write_report_line(&$row) {
       "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
       "AND s.pid != 0 $fwcond $uwcond";
     $srow = sqlQuery($query);
-    // echo "\n<!-- " . $srow['sale_quantity'] . " $query -->\n"; // debugging
   }
   else {
     $srow = sqlQuery("SELECT " .
@@ -215,6 +327,14 @@ function write_report_line(&$row) {
       "AND s.quantity > 0 $extracond");
     $min_sale = 0 + $sminrow['min_sale'];
   }
+  if (!$min_sale) $min_sale = 1;
+
+  // Get number of days with no stock.
+  $today = date('Y-m-d');
+  $tmp_days = max($form_days - 1, 0);
+  $begdate = date('Y-m-d', strtotime("$today - $tmp_days days"));
+  $zerodays = zeroDays($drug_id, $begdate, $extracond, $min_sale);
+
   // Get all lots that we want to issue warnings about.  These are lots
   // expired, soon to expire, or with insufficient quantity for selling.
   $gbl_expired_lot_warning_days = empty($gbl_expired_lot_warning_days) ? 0 : intval($gbl_expired_lot_warning_days);
@@ -293,6 +413,7 @@ function write_report_line(&$row) {
       echo '"' . output_csv($row['max_level'])                   . '",';
     }
     echo '"' . output_csv($row['on_hand'])                       . '",';
+    echo '"' . output_csv($zerodays)                            . '",';
     echo '"' . output_csv($monthly)                              . '",';
     echo '"' . output_csv($stock_months)                         . '",';
     echo '"' . output_csv($reorder_qty)                          . '",';
@@ -323,6 +444,7 @@ function write_report_line(&$row) {
       echo "  <td align='right'>" . htmlspecialchars($row['max_level'])    . "</td>\n";
     }
     echo "  <td align='right'>" . $row['on_hand']                          . "</td>\n";
+    echo "  <td align='right'>" . $zerodays                                . "</td>\n";
     echo "  <td align='right'>" . $monthly                                 . "</td>\n";
     echo "  <td align='right'>" . $stock_months                            . "</td>\n";
     echo "  <td align='right'>" . $reorder_qty                             . "</td>\n";
@@ -424,6 +546,7 @@ if (!empty($_POST['form_csvexport'])) {
   echo '"' . $mmtype . xl('Min') . '",';
   echo '"' . $mmtype . xl('Max') . '",';
   echo '"' . xl('QOH'         ) . '",';
+  echo '"' . xl('Zero Stock Days') . '",';
   echo '"' . xl('Avg Monthly' ) . '",';
   echo '"' . xl('Stock Months') . '",';
   echo '"' . xl('Reorder Qty' ) . '",';
@@ -554,6 +677,7 @@ $(document).ready(function() {
    <th align='right'><?php echo "$mmtype " . xl('Min'); ?></th>
    <th align='right'><?php echo "$mmtype " . xl('Max'); ?></th>
    <th align='right'><?php echo xlt('QOH'         ); ?></th>
+   <th align='right'><?php echo xlt('Zero Stock Days'); ?></th>
    <th align='right'><?php echo xlt('Avg Monthly' ); ?></th>
    <th align='right'><?php echo xlt('Stock Months'); ?></th>
    <th align='right'><?php echo xlt('Reorder Qty' ); ?></th>
