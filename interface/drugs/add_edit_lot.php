@@ -213,6 +213,8 @@ td { font-size:10pt; }
   var showSourceLot    = true;
   var showNotes        = true;
   var showManufacturer = true;
+  var showLotNumber    = true;
+  var showExpiration   = true;
   var showVendor       = <?php echo areVendorsUsed() ? 'true' : 'false'; ?>;
 
   // readonly attributes
@@ -237,6 +239,8 @@ td { font-size:10pt; }
     showCost         = false;
     showManufacturer = false;
     showVendor       = false;
+    showLotNumber    = false;
+    showExpiration   = false;
     labelWarehouse = '<?php echo xlt('Destination Warehouse'); ?>';
   }
   else if (type == '5') { // adjustment
@@ -268,6 +272,8 @@ td { font-size:10pt; }
   document.getElementById('row_notes'       ).style.display = showNotes        ? '' : 'none';
   document.getElementById('row_manufacturer').style.display = showManufacturer ? '' : 'none';
   document.getElementById('row_vendor'      ).style.display = showVendor       ? '' : 'none';
+  document.getElementById('row_lot_number'  ).style.display = showLotNumber    ? '' : 'none';
+  document.getElementById('row_expiration'  ).style.display = showExpiration   ? '' : 'none';
 
   f.form_manufacturer.readOnly = roManufacturer;
   f.form_lot_number.readOnly   = roLotNumber;
@@ -512,7 +518,7 @@ foreach (array(
   </td>
  </tr>
 
- <tr>
+ <tr id='row_lot_number'>
   <td valign='top' width='1%' nowrap><b><?php echo xlt('Lot Number'); ?>:</b></td>
   <td>
    <input type='text' size='40' name='form_lot_number' maxlength='40' value='<?php echo attr($row['lot_number']) ?>' style='width:100%' />
@@ -526,7 +532,7 @@ foreach (array(
   </td>
  </tr>
 
- <tr>
+ <tr id='row_expiration'>
   <td valign='top' nowrap><b><?php echo xlt('Expiration'); ?>:</b></td>
   <td>
    <input type='text' size='10' name='form_expiration' id='form_expiration'
