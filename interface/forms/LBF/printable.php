@@ -287,6 +287,80 @@ function getContent() {
   return $content;
 }
 
+// This checks if the given field with the given value should be skipped.
+// It somewhat mirrors the checkSkipConditions function in options.js.php.
+// TBD: Move this to options.inc.php if anything else needs it.
+//
+function isSkipped(&$frow, $currvalue) {
+  global $sk_layout_items;
+
+  // Accumulate an array of the encountered fields and their values.
+  // It is assumed that fields appear before they are tested by another field.
+  // TBD: Bad assumption?
+  $field_id = $frow['field_id'];
+  if (!isset($sk_layout_items)) $sk_layout_items = array();
+  $sk_layout_items[$field_id] = array('row' => $frow, 'value' => $currvalue);
+
+  if (empty($frow['conditions'])) return false;
+
+  $skiprows  = unserialize($frow['conditions']);
+  $prevandor = '';
+  $prevcond  = false;
+  $datatype  = $frow['data_type'];
+
+  foreach ($skiprows as $skiprow) {
+    // id         referenced field id
+    // itemid     referenced array key if applicable
+    // operator   "eq", "ne", "se" or "ns"
+    // value      if eq or ne, some string to compare with
+    // andor      "and", "or" or empty
+
+    if (empty($skiprow['id'])) continue;
+
+    $id = $skiprow['id'];
+    if (!isset($sk_layout_items[$id])) {
+      error_log("Function isSkipped() cannot find skip source field '$id'.");
+      continue;
+    }
+    $itemid   = $skiprow['itemid'];
+    $operator = $skiprow['operator'];
+    $skipval  = $skiprow['value'];
+    $srcvalue = $sk_layout_items[$id]['value'];
+
+    // Some data types use itemid and we have to dig for their value.
+    if ($datatype == 21 && $frow['list_id']) { // array of checkboxes
+      $tmp = explode('|', $srcvalue);
+      $srcvalue = in_array($itemid, $tmp);
+    }
+    else if ($datatype == 22 || $datatype == 23 || $datatype == 25) {
+      $tmp = explode('|', $srcvalue);
+      $srcvalue = '';
+      foreach ($tmp as $tmp2) {
+        if (strpos($tmp2, "$itemid:") === 0) {
+          if ($datatype == 22) $srcvalue = substr($tmp2, strlen($itemid) + 1);
+          else $srcvalue = substr($tmp2, strlen($itemid) + 1, 1);
+        }
+      }
+    }
+
+    // Compute the result of the test for this condition row.
+    // PHP's looseness with variable type conversion helps us here.
+    $condition = false;
+    if ($operator == 'eq') $condition = $srcvalue == $skipval; else
+    if ($operator == 'ne') $condition = $srcvalue != $skipval; else
+    if ($operator == 'se') $condition = $srcvalue == true; else
+    if ($operator == 'ns') $condition = $srcvalue != true; else
+    error_log("Unknown skip operator '$operator' for field '$field_id'.");
+
+    // Logic to accumulate multiple conditions for the same target.
+    if ($prevandor == 'and') $condition = $condition && $prevcond; else
+    if ($prevandor == 'or' ) $condition = $condition || $prevcond;
+    $prevandor = $skiprow['andor'];
+    $prevcond = $condition;
+  }
+  return $prevcond;
+}
+
 $cell_count = 0;
 $item_count = 0;
 
@@ -306,14 +380,23 @@ while ($frow = sqlFetchArray($fres)) {
   $list_id      = $frow['list_id'];
   $edit_options = $frow['edit_options'];
 
-  // Skip this field if its do-not-print option is set.
-  if (strpos($edit_options, 'X') !== FALSE) continue;
-
   $currvalue = '';
   if ($formid || $visitid) {
     $currvalue = lbf_current_value($frow, $formid, $visitid);
-    if ($currvalue === FALSE) continue; // should not happen
   }
+
+  // Skip this field if skip conditions call for that.
+  // Note this also accumulates info for subsequent skip tests.
+  if (isSkipped($frow, $currvalue)) continue;
+
+  if ($currvalue === FALSE) {
+    // Should not happen.
+    error_log("Function lbf_current_value() failed for field '$field_id'.");
+    continue;
+  }
+
+  // Skip this field if its do-not-print option is set.
+  if (strpos($edit_options, 'X') !== FALSE) continue;
 
   $this_levels = explode('|', $this_group);
   $i = 0;
