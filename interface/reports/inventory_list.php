@@ -73,7 +73,7 @@ function checkReorder($drug_id, $min, $warehouse='') {
   }
   else {
     if ($sales != 0) {
-      $stock_months = sprintf('%0.1f', $onhand * ($form_days / 30.5) / $sales);
+      $stock_months = sprintf('%0.1f', $onhand * ($form_days / 30.41) / $sales);
       if ($stock_months <= $min) {
         return true;
       }
@@ -221,10 +221,25 @@ function write_report_line(&$row) {
   $on_hand = 0 + $row['on_hand'];
   // $inventory_id = 0 + (empty($row['inventory_id']) ? 0 : $row['inventory_id']);
   $warehouse_id = isset($row['warehouse_id']) ? $row['warehouse_id'] : '';
+  $facility_id = empty($row['option_value']) ? '0' : $row['option_value'];
   $warnings = '';
 
-  // Get sales in the date range for this drug (and warehouse if details).
-  if ($form_details) {
+  // Get sales in the date range for this drug (and facility or warehouse if details).
+  if ($form_details == 1) { // facility details
+    $query = "SELECT " .
+      "SUM(s.quantity) AS sale_quantity " .
+      "FROM drug_sales AS s " .
+      "LEFT JOIN drug_inventory AS di ON di.inventory_id = s.inventory_id " .
+      "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+      "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+      "WHERE " .
+      "s.drug_id = '$drug_id' AND " .
+      "lo.option_value IS NOT NULL AND lo.option_value = '$facility_id' AND " .
+      "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
+      "AND s.pid != 0 $fwcond $uwcond";
+    $srow = sqlQuery($query);
+  }
+  else if ($form_details == 2) { // warehouse details
     $query = "SELECT " .
       "SUM(s.quantity) AS sale_quantity " .
       "FROM drug_sales AS s " .
@@ -252,10 +267,40 @@ function write_report_line(&$row) {
   }
   $sale_quantity = $srow['sale_quantity'];
 
-  $months = $form_days / 30.5;
+  // Compute the smallest quantity that might be taken from ANY lot for this product
+  // (and facility or warehouse if details) based on the past $form_days days of sales.
+  // If lot combining is allowed this is always 1.
+  $extracond = "$fwcond $uwcond";
+  if ($form_details == 1) $extracond = "AND lo.option_value IS NOT NULL AND lo.option_value = '$facility_id'";
+  if ($form_details == 2) $extracond = "AND di.warehouse_id = '$warehouse_id'";
+  $min_sale = 1;
+  if (!$row['allow_combining']) {
+    $sminrow = sqlQuery("SELECT " .
+      "MIN(s.quantity) AS min_sale " .
+      "FROM drug_sales AS s " .
+      "LEFT JOIN drug_inventory AS di ON di.drug_id = s.drug_id " .
+      "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+      "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+      "WHERE " .
+      "s.drug_id = '$drug_id' AND " .
+      "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
+      "AND s.pid != 0 " .
+      "AND s.quantity > 0 $extracond");
+    $min_sale = 0 + $sminrow['min_sale'];
+  }
+  if (!$min_sale) $min_sale = 1;
 
-  $monthly = ($months && $sale_quantity) ?
-    sprintf('%0.1f', $sale_quantity / $months) : 0;
+  // Get number of days with no stock.
+  $today = date('Y-m-d');
+  $tmp_days = max($form_days - 1, 0);
+  $begdate = date('Y-m-d', strtotime("$today - $tmp_days days"));
+  $zerodays = zeroDays($drug_id, $begdate, $extracond, $min_sale);
+
+  $months = $form_days / 30.41;
+
+  $monthly = ($months && $sale_quantity && $form_days > $zerodays) ?
+    sprintf('%0.1f', $sale_quantity / $months * $form_days / ($form_days - $zerodays))
+    : 0;
 
   if ($monthly == 0.0 && $on_hand == 0) {
     // The row has no QOH and no recent sales, so is deemed uninteresting.
@@ -267,8 +312,8 @@ function write_report_line(&$row) {
   $bgcolor = "#" . (($encount & 1) ? "ddddff" : "ffdddd");
 
   $stock_months = 0;
-  if ($sale_quantity != 0) {
-    $stock_months = sprintf('%0.1f', $on_hand * $months / $sale_quantity);
+  if ($monthly != 0) {
+    $stock_months = sprintf('%0.1f', $on_hand / $monthly);
     if ($stock_months < 1.0) {
       addWarning(xl('QOH is less than monthly usage'));
     }
@@ -298,42 +343,15 @@ function write_report_line(&$row) {
     }
     *****************************************************************/
   }
-  // For details mode we want the message on the line for this warehouse.
+  // For warehouse details mode we want the message on the line for this warehouse.
   // If the warehouse is not shown because it has no QOH and no recent
   // activity, then this message doesn't matter any more either.
-  if ($form_details) {
+  if ($form_details == 2) {
     if (checkReorder($drug_id, $row['pw_min_level'], $warehouse_id)) {
       addWarning(xl("Reorder point has been reached for warehouse") .
         " '" . $row['title'] . "'");
     }
   }
-
-  // Compute the smallest quantity that might be taken from ANY lot for this product
-  // (and warehouse if details) based on the past $form_days days of sales.  If lot
-  // combining is allowed this is always 1.
-  $extracond = $form_details ? "AND di.warehouse_id = '$warehouse_id'" : "$fwcond $uwcond";
-  $min_sale = 1;
-  if (!$row['allow_combining']) {
-    $sminrow = sqlQuery("SELECT " .
-      "MIN(s.quantity) AS min_sale " .
-      "FROM drug_sales AS s " .
-      "LEFT JOIN drug_inventory AS di ON di.drug_id = s.drug_id " .
-      "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
-      "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
-      "WHERE " .
-      "s.drug_id = '$drug_id' AND " .
-      "s.sale_date > DATE_SUB(NOW(), INTERVAL $form_days DAY) " .
-      "AND s.pid != 0 " .
-      "AND s.quantity > 0 $extracond");
-    $min_sale = 0 + $sminrow['min_sale'];
-  }
-  if (!$min_sale) $min_sale = 1;
-
-  // Get number of days with no stock.
-  $today = date('Y-m-d');
-  $tmp_days = max($form_days - 1, 0);
-  $begdate = date('Y-m-d', strtotime("$today - $tmp_days days"));
-  $zerodays = zeroDays($drug_id, $begdate, $extracond, $min_sale);
 
   // Get all lots that we want to issue warnings about.  These are lots
   // expired, soon to expire, or with insufficient quantity for selling.
@@ -374,6 +392,7 @@ function write_report_line(&$row) {
   // Reorder Quantity should be rounded up to a whole number.
   $reorder_qty = 0;
   if ($monthly > 0.00) {
+    // Note if facility details, this the sum of min levels for the facility's warehouses.
     $min_months = 0 + ($form_details ? $row['pw_min_level'] : $row['reorder_point']);
     // If min is not specified as months then compute it that way.
     if (empty($GLOBALS['gbl_min_max_months'])) $min_months /= $monthly;
@@ -404,7 +423,10 @@ function write_report_line(&$row) {
     echo '"' . output_csv(generate_display_field(array(
       'data_type'=>'1', 'list_id'=>'drug_form'), $row['form']))  . '",';
     if ($form_details) {
-      echo '"' . output_csv($row['title'])                       . '",';
+      echo '"' . output_csv($row['facname'])                     . '",';
+      if ($form_details == 2) { // warehouse details {
+        echo '"' . output_csv($row['title'])                     . '",';
+      }
       echo '"' . output_csv($row['pw_min_level'])                . '",';
       echo '"' . output_csv($row['pw_max_level'])                . '",';
     }
@@ -435,7 +457,10 @@ function write_report_line(&$row) {
         'list_id'=>'drug_form'), $row['form'])                             . "</td>\n";
     }
     if ($form_details) {
-      echo "  <td>" . htmlspecialchars($row['title'])                      . "</td>\n";
+      echo "  <td>" . htmlspecialchars($row['facname'])                    . "</td>\n";
+      if ($form_details == 2) { // warehouse details {
+        echo "  <td>" . htmlspecialchars($row['title'])                    . "</td>\n";
+      }
       echo "  <td align='right'>" . htmlspecialchars($row['pw_min_level']) . "</td>\n";
       echo "  <td align='right'>" . htmlspecialchars($row['pw_max_level']) . "</td>\n";
     }
@@ -464,7 +489,7 @@ else {
 
 $form_inactive = empty($_REQUEST['form_inactive']) ? 0 : 1;
 
-$form_details = empty($_REQUEST['form_details']) ? 0 : 1;
+$form_details = empty($_REQUEST['form_details']) ? 0 : intval($_REQUEST['form_details']);
 
 $form_facility = 0 + empty($_REQUEST['form_facility']) ? 0 : $_REQUEST['form_facility'];
 
@@ -489,10 +514,25 @@ $uwcond = $is_user_restricted ? ("AND di.warehouse_id IS NOT NULL AND di.warehou
 $actcond = '';
 if (!$form_inactive) $actcond .= " AND d.active = 1";
 
-if ($form_details) {
-  // Query for the main loop if lot details are wanted.
+if ($form_details == 1) {
+  // Query for the main loop if facility details are wanted.
+  $query = "SELECT d.*, SUM(di.on_hand) AS on_hand, lo.option_value, fac.name AS facname, " .
+    "SUM(pw.pw_min_level) AS pw_min_level, SUM(pw.pw_max_level) AS pw_max_level " .
+    "FROM drugs AS d " .
+    "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
+    "AND di.destroy_date IS NULL " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+    "LEFT JOIN facility AS fac ON fac.id = lo.option_value " .
+    "LEFT JOIN product_warehouse AS pw ON pw.pw_drug_id = d.drug_id AND " .
+    "pw.pw_warehouse = di.warehouse_id " .
+    "WHERE 1 = 1 $fwcond $uwcond $actcond " .
+    "GROUP BY d.name, d.drug_id, lo.option_value ORDER BY d.name, d.drug_id, lo.option_value";
+}
+else if ($form_details == 2) {
+  // Query for the main loop if warehouse/lot details are wanted.
   $query = "SELECT d.*, di.on_hand, di.inventory_id, di.lot_number, " .
-    "di.expiration, di.warehouse_id, lo.title, " .
+    "di.expiration, di.warehouse_id, lo.title, fac.name AS facname, " .
     "pw.pw_min_level, pw.pw_max_level " .
     "FROM drugs AS d " .
     "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
@@ -500,6 +540,7 @@ if ($form_details) {
     "AND di.destroy_date IS NULL " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+    "LEFT JOIN facility AS fac ON fac.id = lo.option_value " .
     "LEFT JOIN product_warehouse AS pw ON pw.pw_drug_id = d.drug_id AND " .
     "pw.pw_warehouse = di.warehouse_id " .
     "WHERE 1 = 1 $fwcond $uwcond $actcond " .
@@ -541,10 +582,13 @@ if (!empty($_POST['form_csvexport'])) {
   echo '"' . xl('Active'      ) . '",';
   echo '"' . xl('Form'        ) . '",';
   if ($form_details) {
-    echo '"' . xl('Warehouse' ) . '",';
+    echo '"' . xl('Facility'  ) . '",';
+    if ($form_details == 2) {
+      echo '"' . xl('Warehouse' ) . '",';
+    }
+    echo '"' . $mmtype . xl('Min') . '",';
+    echo '"' . $mmtype . xl('Max') . '",';
   }
-  echo '"' . $mmtype . xl('Min') . '",';
-  echo '"' . $mmtype . xl('Max') . '",';
   echo '"' . xl('QOH'         ) . '",';
   echo '"' . xl('Zero Stock Days') . '",';
   echo '"' . xl('Avg Monthly' ) . '",';
@@ -653,8 +697,16 @@ $(document).ready(function() {
    <?php echo xlt('days'); ?>&nbsp;
    <input type='checkbox' name='form_inactive' value='1'<?php if ($form_inactive) echo " checked"; ?>
    /><?php echo xlt('Include Inactive'); ?>&nbsp;
-   <input type='checkbox' name='form_details' value='1'<?php if ($form_details) echo " checked"; ?>
-   /><?php echo xlt('Details'); ?>&nbsp;
+<?php
+  echo "   <select name='form_details'>\n";
+  $tmparr = array(0 => xl('Summary'), 1 => xl('Facility Details'), 2 => xl('Warehouse Details'));
+  foreach ($tmparr as $key => $value) {
+    echo "    <option value='$key'";
+    if ($key == $form_details) echo " selected";
+    echo ">" . text($value) . "\n";
+  }
+  echo "   </select>&nbsp;\n";
+?>
    <input type="submit" value="<?php echo xla('Refresh'); ?>" />&nbsp;
    <input type="submit" name="form_csvexport" value="<?php echo xla('Export to CSV'); ?>">&nbsp;
    <input type="button" value="<?php echo xla('Print'); ?>" onclick="window.print()" />
@@ -672,7 +724,10 @@ $(document).ready(function() {
    <th><?php echo xlt('Active'    ); ?></th>
    <th><?php echo xlt('Form'      ); ?></th>
 <?php if ($form_details) { ?>
+   <th><?php echo xlt('Facility'  ); ?></th>
+<?php if ($form_details == 2) { ?>
    <th><?php echo xlt('Warehouse' ); ?></th>
+<?php } ?>
 <?php } ?>
    <th align='right'><?php echo "$mmtype " . xl('Min'); ?></th>
    <th align='right'><?php echo "$mmtype " . xl('Max'); ?></th>
@@ -696,8 +751,7 @@ $warehouse_row = array('drug_id' => 0, 'warehouse_id' => '');
 
 while ($row = sqlFetchArray($res)) {
   $drug_id = 0 + $row['drug_id'];
-
-  if ($form_details) {
+  if ($form_details == 2) {
     if ($drug_id != $last_drug_id || $row['warehouse_id'] != $warehouse_row['warehouse_id']) {
       if (!empty($warehouse_row['drug_id'])) {
         write_report_line($warehouse_row);
@@ -713,7 +767,7 @@ while ($row = sqlFetchArray($res)) {
   $last_drug_id = $drug_id;
 }
 
-if ($form_details) {
+if ($form_details == 2) {
   if (!empty($warehouse_row['drug_id'])) {
     write_report_line($warehouse_row);
   }
