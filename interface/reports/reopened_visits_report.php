@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2015-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2015-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -476,8 +476,10 @@ echo generate_select_list('form_reason', 'void_reasons', $form_reason, '', '-- '
 if (!empty($_POST['form_orderby'])) {
 
   if ($form_date_type == 1) {
-    $where = "fe.date >= ? AND fe.date <= ?";
-    $sqlargs = array("$form_from_date 00:00:00", "$form_to_date 23:59:59");
+    $where = "((fe.date IS NOT NULL AND fe.date >= ? AND fe.date <= ?) OR " .
+      "(fe.date IS NULL AND v.date_original >= ? AND v.date_original <= ?))";
+    $sqlargs = array("$form_from_date 00:00:00", "$form_to_date 23:59:59",
+      "$form_from_date 00:00:00", "$form_to_date 23:59:59");
   }
   else if ($form_date_type == 2) {
     $where = "v.date_voided >= ? AND v.date_voided <= ?";
@@ -508,18 +510,19 @@ if (!empty($_POST['form_orderby'])) {
     "v.patient_id, v.encounter_id, " .
     "fe.date AS encdate, f.name AS facname, pd.pubpid, lo.title, u.username " .
     "FROM voids AS v " .
-    "JOIN form_encounter AS fe ON fe.pid = v.patient_id AND fe.encounter = v.encounter_id " .
     "JOIN patient_data AS pd ON pd.pid = v.patient_id " .
+    "LEFT JOIN form_encounter AS fe ON fe.pid = v.patient_id AND fe.encounter = v.encounter_id " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'void_reasons' AND " .
     "lo.option_id = v.reason AND lo.activity = 1 " .
     "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "LEFT JOIN users AS u ON u.id = v.user_id " .
-    "WHERE what_voided = 'checkout' AND $where ORDER BY v.void_id";
+    "WHERE what_voided != 'receipt' AND $where ORDER BY v.void_id";
 
   // echo "<!-- $query -->\n"; // debugging
   $res = sqlStatement($query, $sqlargs);
 
   while ($row = sqlFetchArray($res)) {
+    if (empty($row['encdate'])) $row['encdate'] = $row['date_original'];
 
     // Get the timestamp of the next void, if any, for this visit.
     // We'll collect changes up to but not including this time.

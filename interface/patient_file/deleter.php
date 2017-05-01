@@ -238,9 +238,12 @@ function popup_close() {
   }
   else if ($encounterid) {
    if (!acl_check('admin', 'super')) die("Not authorized!");
+   // Record a void entry. This does not delete or deactivate anything.
+   $tmprow = sqlQuery("SELECT pid FROM form_encounter WHERE encounter = ?", array($encounterid));
+   doVoid($tmprow['pid'], $encounterid, 2, 'all', 'OTH', 'Visit Deleted');
+   //
    row_modify("billing", "activity = 0", "encounter = '$encounterid'");
    delete_drug_sales(0, $encounterid);
-   // row_delete("ar_activity", "encounter = '$encounterid'");
    row_modify("ar_activity", "deleted = NOW()", "encounter = '$encounterid' AND deleted IS NULL");
    row_delete("claims", "encounter_id = '$encounterid'");
    row_delete("issue_encounter", "encounter = '$encounterid'");

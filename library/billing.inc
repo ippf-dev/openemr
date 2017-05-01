@@ -303,10 +303,13 @@ function updateInvoiceRefNumber() {
 }
 
 // Common function for voiding a receipt or checkout.  When voiding a checkout you can specify
-// $time as a timestamp (yyyy-mm-dd hh:mm:ss) or 'all'; default is the last checkout.
+// $time as a timestamp (yyyy-mm-dd hh:mm:ss) or 'all'; default means void the last checkout.
+// $purge is 0 (or false) for receipt, 2 for visit delete, 1 (or otherwise true) for checkout.
+// Nothing is purged on a visit delete because deleter.php does all that.
 //
-function doVoid($patient_id, $encounter_id, $purge=false, $time='', $reason='', $notes='') {
-  $what_voided = $purge ? 'checkout' : 'receipt';
+function doVoid($patient_id, $encounter_id, $purge=0, $time='', $reason='', $notes='') {
+  $what_voided = $purge ? ($purge === 2 ? 'delete' : 'checkout') : 'receipt';
+
   $date_original = '';
   $adjustments = 0;
   $payments = 0;
@@ -345,10 +348,12 @@ function doVoid($patient_id, $encounter_id, $purge=false, $time='', $reason='', 
     $payments = $row['payments'];
   }
 
-  // Get old invoice reference number.
-  $encrow = sqlQuery("SELECT invoice_refno FROM form_encounter WHERE " .
+  // Get old invoice reference number and encounter date.
+  $encrow = sqlQuery("SELECT invoice_refno, date FROM form_encounter WHERE " .
     "pid = '$patient_id' AND encounter = '$encounter_id' LIMIT 1");
   $old_invoice_refno = $encrow['invoice_refno'];
+  // For a deleted visit we preserve the visit date for voids reporting.
+  if ($purge === 2) $date_original = $encrow['date'];
   //
   $usingirnpools = getInvoiceRefNumber();
   // If not (undoing a checkout or using IRN pools), nothing is done.
@@ -366,7 +371,7 @@ function doVoid($patient_id, $encounter_id, $purge=false, $time='', $reason='', 
       "reason = '" . add_escape_custom($reason) . "', " .
       "notes = '" . add_escape_custom($notes) . "'");
   }
-  if ($purge) {
+  if ($purge && $purge !== 2) {
     // Purge means delete adjustments and payments from the last checkout
     // and re-open the visit.
     if ($date_original) {
@@ -394,8 +399,8 @@ function doVoid($patient_id, $encounter_id, $purge=false, $time='', $reason='', 
       "last_level_closed = 0, stmt_count = 0, last_stmt_date = NULL " .
       "WHERE pid = '$patient_id' AND encounter = '$encounter_id'");
   }
-  else if ($usingirnpools) {
-    // Non-purge means just assign a new invoice reference number.
+  else if ($usingirnpools && $purge !== 2) {
+    // Just assign a new invoice reference number.
     $new_invoice_refno = add_escape_custom(updateInvoiceRefNumber());
     sqlStatement("UPDATE form_encounter " .
       "SET invoice_refno = '$new_invoice_refno' " .

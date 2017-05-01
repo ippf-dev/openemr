@@ -5987,6 +5987,24 @@ INSERT INTO `ippf2_categories` VALUES ('1','CONTRACEPTIVE SERVICES',b'0')
 
 -- --------------------------------------------------------
 
+CREATE TABLE `voids` (
+  `void_id`                bigint(20)    NOT NULL AUTO_INCREMENT,
+  `patient_id`             bigint(20)    NOT NULL            COMMENT 'references patient_data.pid',
+  `encounter_id`           bigint(20)    NOT NULL DEFAULT 0  COMMENT 'references form_encounter.encounter',
+  `what_voided`            varchar(31)   NOT NULL            COMMENT 'checkout,receipt and maybe other options later',
+  `date_original`          datetime      DEFAULT NULL        COMMENT 'time of original action that is now voided',
+  `date_voided`            datetime      NOT NULL            COMMENT 'time of void action',
+  `user_id`                bigint(20)    NOT NULL            COMMENT 'references users.id',
+  `amount1`                decimal(12,2) NOT NULL DEFAULT 0  COMMENT 'for checkout,receipt total voided adjustments',
+  `amount2`                decimal(12,2) NOT NULL DEFAULT 0  COMMENT 'for checkout,receipt total voided payments',
+  `other_info`             text          NOT NULL DEFAULT '' COMMENT 'for checkout,receipt the old invoice refno',
+  `reason`                 VARCHAR(31)   default '',
+  `notes`                  VARCHAR(255)  default '',
+  PRIMARY KEY (`void_id`),
+  KEY datevoided (date_voided),
+  KEY pidenc (patient_id, encounter_id)
+) ENGINE=MyISAM;
+
 INSERT INTO list_options (list_id, option_id, title, seq, is_default) VALUES ('lists','void_reasons','Void Reasons', 1,0);
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','ADJ01','Adj - Reason Corrected',50,0,0,'','','',1,0,0);
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`, `option_value`, `mapping`, `notes`, `codes`, `activity`, `toggle_setting_1`, `toggle_setting_2`) VALUES ('void_reasons','ADJ02','Adj - Amount Corrected',51,0,0,'','','',1,0,0);
