@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -21,6 +21,14 @@ require_once("$srcdir/options.inc.php");
 <?php html_header_show();?>
 <link rel='stylesheet' href='<?php echo $css_header ?>' type='text/css'>
 <?php
+
+// There was some uncertainty as to whether adjustments should be handled in the same form
+// with payments, so this option caters to either way.
+$form_feat = 1;                             // payments only
+if (!empty($_GET['feat'])) {
+  if ($_GET['feat'] == 2) $form_feat = 2;  // adjustments only
+  if ($_GET['feat'] == 3) $form_feat = 3;  // payments and adjustments
+}
 
 // Format dollars for display.
 //
@@ -44,29 +52,41 @@ function rawbucks($amount) {
 // Display a row of data for an encounter.
 //
 function echoLine($enc, $billed, $date, $charges, $ptpaid, $inspaid, $duept) {
+  global $form_feat;
   $balance = bucks($charges - $ptpaid - $inspaid);
   $getfrompt = ($duept > 0) ? $duept : 0;
-  $iname = 'form_bpay[' . $enc . ']';
   $billed = $billed ? 1 : 0;
   echo " <tr>\n";
   echo "  <td class='detail'>" . oeFormatShortDate($date) . "</td>\n";
   echo "  <td class='detail' align='right'>" . bucks($charges) . "</td>\n";
+  echo "  <td class='detail' align='right'>" . bucks($inspaid) . "</td>\n";
   echo "  <td class='detail' align='right'>" . bucks($ptpaid) . "</td>\n";
-  if (!$GLOBALS['simplified_demographics'])
-    echo "  <td class='detail' align='right'>" . bucks($inspaid) . "</td>\n";
   echo "  <td class='detail' align='right'>$balance</td>\n";
-  if (!$GLOBALS['simplified_demographics'])
+  if (!$GLOBALS['simplified_demographics']) {
     echo "  <td class='detail' align='right'>" . bucks($duept) . "</td>\n";
-  echo "  <td class='detail' align='right'><input type='text' name='$iname' " .
-    "size='6' value='" . rawbucks($getfrompt) . "' onchange='calctotal()' " .
-    "onkeyup='calctotal()' style='text-align:right' /></td>\n";
-  echo "  <td class='detail' align='right'>" .
-    generate_select_list('form_meth[' . $enc . ']', 'paymethod', '', '', '') .
-    "&nbsp;&nbsp;</td>\n";
-  echo "  <td class='detail' align='right'>" .
-    "<input type='text' name='form_src[" . $enc . "]' size='6' />" .
-    "<input type='hidden' name='form_bill[" . $enc . "]' value='$billed' />" .
-    "</td>\n";
+  }
+  if ($form_feat & 1) {
+    $iname = 'form_bpay[' . $enc . ']';
+    echo "  <td class='detail' align='right'><input type='text' name='$iname' " .
+      "size='6' value='" . rawbucks($getfrompt) . "' onchange='calctotal()' " .
+      "onkeyup='calctotal()' style='text-align:right' /></td>\n";
+    echo "  <td class='detail' align='right'>" .
+      generate_select_list('form_meth[' . $enc . ']', 'paymethod', '', '', '') .
+      "&nbsp;</td>\n";
+    echo "  <td class='detail' align='right'>" .
+      "<input type='text' name='form_src[" . $enc . "]' size='6' />" .
+      "<input type='hidden' name='form_bill[" . $enc . "]' value='$billed' />" .
+      "</td>\n";
+  }
+  if ($form_feat & 2) {
+    $jname = 'form_badj[' . $enc . ']';
+    echo "  <td class='detail' align='right'><input type='text' name='$jname' " .
+      "size='6' value='" . rawbucks($form_feat == 2 ? $getfrompt : 0) . "' onchange='calctotal()' " .
+      "onkeyup='calctotal()' style='text-align:right' /></td>\n";
+    echo "  <td class='detail' align='right'>" .
+      generate_select_list('form_adjreason[' . $enc . ']', 'adjreason', '', '', '') .
+      "&nbsp;</td>\n";
+  }
   echo " </tr>\n";
 }
 
@@ -180,6 +200,11 @@ function postPayment($form_pid, $enc, $form_method, $form_source, $amount, $post
   arPostPayment($form_pid, $enc, $session_id, $amount, '', 0, $thissrc, 0, $post_time, '', $post_date);
 }
 
+function postAdjustment($form_pid, $enc, $reason, $amount, $post_time, $post_date) {
+  $session_id = 0;
+  arPostAdjustment($form_pid, $enc, $session_id, $amount, '', 0, $reason, 0, $post_time, $post_date);
+}
+
 function getListTitle($list, $option) {
   $row = sqlQuery("SELECT title FROM list_options WHERE " .
     "list_id = '$list' AND option_id = '$option' AND activity = 1");
@@ -211,7 +236,7 @@ if ($_POST['form_save_pr'] || $_POST['form_save_op'] || $_POST['form_save_co'] |
   }
 
   // Post payments.
-  if ($_POST['form_bpay']) {
+  if (!empty($_POST['form_bpay'])) {
     foreach ($_POST['form_bpay'] as $enc => $payment) {
       $form_method = trim($_POST['form_meth'][$enc]);
       $form_source = trim($_POST['form_src'][$enc]);
@@ -222,6 +247,18 @@ if ($_POST['form_save_pr'] || $_POST['form_save_op'] || $_POST['form_save_co'] |
           $timestamp, $posting_date);
         frontPayment($form_pid, $enc, $form_method, $form_source,
           $billed ? 0 : $amount, $billed ? $amount : 0);
+      }
+    }
+  }
+
+  // Post adjustments.
+  if (!empty($_POST['form_badj'])) {
+    foreach ($_POST['form_badj'] as $enc => $adjustment) {
+      $form_adjreason = trim($_POST['form_adjreason'][$enc]);
+      $billed = !empty($_POST['form_bill'][$enc]);
+      if ($amount = 0 + $adjustment) {
+        if (!$enc) continue;
+        postAdjustment($form_pid, $enc, $form_adjreason, $amount, $timestamp, $posting_date);
       }
     }
   }
@@ -279,11 +316,13 @@ if ($_POST['form_save_pr'] || $_REQUEST['receipt']) {
   window.print();
   // divstyle.display = 'block';
  }
+
  // Process click on Delete button.
  function deleteme() {
   dlgopen('deleter.php?payment=<?php echo $payment_key ?>', '_blank', 500, 450);
   return false;
  }
+
  // Called by the deleteme.php window on a successful delete.
  function imdeleted() {
   window.close();
@@ -476,7 +515,7 @@ else if ($_POST['form_save_op']) {
 else if ($_POST['form_save_co']) {
   echo "</head>\n<body>\n<script language='JavaScript'>\n";
   echo "opener.parent.left_nav.loadFrame2('bil1','RBot','patient_file/pos_checkout.php?framed=1');\n";
-  echo "window.close();\n";
+  echo "if (window.opener) window.close();\n";
   echo "</script>\n</body>\n";
 }
 
@@ -484,7 +523,8 @@ else if ($_POST['form_save_co']) {
 //
 else if ($_POST['form_save_cl']) {
   echo "</head>\n<body>\n<script language='JavaScript'>\n";
-  echo "window.close();\n";
+  echo "if (window.opener) window.close();\n";
+  echo "else window.location.href = 'front_payment.php?feat=$form_feat';\n";
   echo "</script>\n</body>\n";
 }
 
@@ -492,7 +532,13 @@ else if ($_POST['form_save_cl']) {
 //
 else {
 ?>
-<title><?php xl('Record Payment','e'); ?></title>
+<title>
+<?php
+  if ($form_feat == 1) echo xlt('Record Payments'); else
+  if ($form_feat == 2) echo xlt('Record Adjustments'); else
+  echo xlt('Record Payments and Adjustments');
+?>
+</title>
 
 <style type="text/css">
  body    { font-family:sans-serif; font-size:10pt; font-weight:normal }
@@ -513,15 +559,20 @@ else {
 
 function calctotal() {
  var f = document.forms[0];
- var total = 0;
+ var paytotal = 0;
+ var adjtotal = 0;
  for (var i = 0; i < f.elements.length; ++i) {
   var elem = f.elements[i];
   var ename = elem.name;
   if (ename.indexOf('form_bpay[') == 0) {
-   if (elem.value.length > 0) total += Number(elem.value);
+   if (elem.value.length > 0) paytotal += Number(elem.value);
+  }
+  if (ename.indexOf('form_badj[') == 0) {
+   if (elem.value.length > 0) adjtotal += Number(elem.value);
   }
  }
- f.form_paytotal.value = Number(total).toFixed(2);
+ if (f.form_paytotal) f.form_paytotal.value = Number(paytotal).toFixed(2);
+ if (f.form_adjtotal) f.form_adjtotal.value = Number(adjtotal).toFixed(2);
  return true;
 }
 
@@ -531,7 +582,7 @@ function calctotal() {
 
 <body class="body_top" onunload='imclosing()'>
 
-<form method='post' action='front_payment.php<?php if ($payid) echo "?payid=$payid"; ?>'
+<form method='post' action='front_payment.php?feat=<?php echo $form_feat; if ($payid) echo "&payid=$payid"; ?>'
  onsubmit='return top.restoreSession()'>
 <input type='hidden' name='form_pid' value='<?php echo $pid ?>' />
 
@@ -542,8 +593,14 @@ function calctotal() {
  <tr>
   <td colspan='2' align='center'>
    &nbsp;<br>
-   <b><?php xl('Accept Payment for ','e','',' '); ?><?php echo $patdata['fname'] . " " .
-    $patdata['lname'] . " (" . $patdata['pubpid'] . ")" ?></b>
+   <b>
+<?php
+  if ($form_feat == 1) echo xlt('Accept Payments for'); else
+  if ($form_feat == 2) echo xlt('Accept Adjustments for'); else
+  echo xlt('Accept Payments and Adjustments for');
+  echo " " . text($patdata['fname']) . " " . text($patdata['lname']) . " (" . text($patdata['pubpid']) . ")";
+?>
+</b>
     <br>&nbsp;
   </td>
  </tr>
@@ -573,13 +630,11 @@ function calctotal() {
    <?php xl('Charges','e')?>
   </td>
   <td class="dehead" align="right">
+   <?php echo $GLOBALS['simplified_demographics'] ? xlt('Adjustments') : xlt('Insurance'); ?>
+  </td>
+  <td class="dehead" align="right">
    <?php xl('Client Paid','e')?>
   </td>
-<?php if (!$GLOBALS['simplified_demographics']) { ?>
-  <td class="dehead" align="right">
-   <?php xl('Insurance','e')?>
-  </td>
-<?php } ?>
   <td class="dehead" align="right">
    <?php xl('Balance','e')?>
   </td>
@@ -588,15 +643,25 @@ function calctotal() {
    <?php xl('Due Client','e')?>
   </td>
 <?php } ?>
+<?php if ($form_feat & 1) { ?>
   <td class="dehead" align="right">
-   <?php xl('Payment','e')?>&nbsp;
+   <?php echo xlt('Payment')?>&nbsp;
   </td>
   <td class="dehead" align="right">
-   <?php xl('Payment Method','e')?>
+   <?php echo xlt('Payment Method')?>&nbsp;
   </td>
   <td class="dehead" align="right">
-   <?php xl('Ref No','e')?>&nbsp;&nbsp;&nbsp;
+   <?php echo xlt('Ref No')?>&nbsp;
   </td>
+<?php } ?>
+<?php if ($form_feat & 2) { ?>
+  <td class="dehead" align="right">
+   <?php echo xlt('Adjustment')?>&nbsp;
+  </td>
+  <td class="dehead" align="right">
+   <?php echo xlt('Adjustment Reason')?>&nbsp;
+  </td>
+<?php } ?>
  </tr>
 
 <?php
@@ -653,8 +718,8 @@ function calctotal() {
 
     $inspaid = $irow['inspaid'] + $irow['adjustments'];
     $ptpaid  = $irow['ptpaid'] - $irow['copays'];
-    // $duept   = ($duncount < 0) ? 0 : $balance;
-    $duept = ($duncount < 0) ? (getCopay($pid, $svcdate) - $ptpaid) : $balance;
+    $duept = ($duncount < 0 && !$GLOBALS['simplified_demographics']) ?
+      (getCopay($pid, $svcdate) - $ptpaid) : $balance;
 
     if (strcmp($svcdate, $today) == 0 && !$gottoday) {
       $svcdate = xl('Today');
@@ -668,17 +733,22 @@ function calctotal() {
   // If no billing was entered yet for today and we are not omitting anything,
   // then generate a line for entering today's co-pay.
   //
-  if (!$gottoday && $omitenc <= 0) {
+  if (!$gottoday && $omitenc <= 0 && ($form_feat & 1)) {
     echoLine(0, 0, xl('Today'), 0, 0, 0, getCopay($pid, $today));
   }
 
   // Continue with display of the data entry form.
+  $cols1 = $GLOBALS['simplified_demographics'] ? 5 : 6; // # cols from Visit Date thru Balance
+
+
 ?>
 
  <tr bgcolor="#cccccc">
-  <td class="dehead" colspan="<?php echo $GLOBALS['simplified_demographics'] ? 4 : 6; ?>" align='right'>
-   <?php xl('Total Amount Paid','e')?>
+  <td class="dehead" colspan="<?php echo $cols1; ?>" align='right'>
+   <?php echo xl('Total')?>
   </td>
+
+<?php if ($form_feat & 1) { // payment total ?>
   <td class="dehead" align="right">
    <input type='text' name='form_paytotal' size='6' value=''
     style='color:#00aa00; background-color:transparent; text-align:right;' readonly />
@@ -686,18 +756,32 @@ function calctotal() {
   <td class="dehead" colspan="2">
    &nbsp;
   </td>
+<?php } ?>
+
+<?php if ($form_feat & 2) { // adjustment total ?>
+  <td class="dehead" align="right">
+   <input type='text' name='form_adjtotal' size='6' value=''
+    style='color:#00aa00; background-color:transparent; text-align:right;' readonly />
+  </td>
+  <td class="dehead">
+   &nbsp;
+  </td>
+<?php } ?>
+
  </tr>
 
 </table>
 
 <p>
+<?php if ($form_feat & 1) { ?>
 <input type='submit' name='form_save_pr' value='<?php xl('Save and Print Receipt','e'); ?>' /> &nbsp;
 <input type='submit' name='form_save_op' value='<?php xl('Save and Open a Visit','e');  ?>' /> &nbsp;
+<?php } ?>
 <?php if (!empty($_GET['omitenc'])) { // indicates we got here from the checkout form ?>
 <input type='submit' name='form_save_co' value='<?php xl('Save and Check Out','e');     ?>' /> &nbsp;
 <?php } ?>
 <input type='submit' name='form_save_cl' value='<?php xl('Save and Close','e');         ?>' /> &nbsp;
-<input type='button' value='<?php xl('Cancel','e'); ?>' onclick='window.close()' />
+<input type='button' value='<?php xl('Cancel','e'); ?>' onclick='if (window.opener) window.close()' />
 
 </center>
 </form>

@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -99,7 +99,7 @@ function load_adjustments($patient_id, $encounter_id) {
   // Create array aAdjusts from ar_activity rows for $encounter_id.
   $aAdjusts = array();
   $ares = sqlStatement("SELECT " .
-    "a.payer_type, a.adj_amount, a.memo, a.code_type, a.code, a.post_time, " .
+    "a.payer_type, a.adj_amount, a.memo, a.code_type, a.code, a.post_time, a.post_date, " .
     "s.session_id, s.reference, s.check_date, lo.title AS memotitle " .
     "FROM ar_activity AS a " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 " .
@@ -127,7 +127,8 @@ function pull_adjustment($code_type, $code, $billtime, &$memo) {
         ($aAdjusts[$i]['adj_amount'] != 0 || $aAdjusts[$i]['memotitle'] !== ''))
       {
         $adjust += $aAdjusts[$i]['adj_amount'];
-        $memo = $aAdjusts[$i]['memotitle'];
+        if ($memo && $aAdjusts[$i]['memotitle']) $memo .= ', ';
+        $memo .= $aAdjusts[$i]['memotitle'];
         $aAdjusts[$i]['adj_amount'] = 0;
         $aAdjusts[$i]['memotitle'] = '';
       }
@@ -196,7 +197,7 @@ function pull_tax($lineid, &$aTaxes) {
 // Output HTML for a receipt line item.
 //
 function receiptDetailLine($code_type, $code, $description, $quantity, $charge, &$aTotals='',
-  $lineid='', $billtime='')
+  $lineid='', $billtime='', $postdate='')
 {
   global $details;
 
@@ -208,11 +209,18 @@ function receiptDetailLine($code_type, $code, $description, $quantity, $charge, 
 
   $adjust = 0;
   $memo = '';
+  $isadjust = false;
 
-  // If an adjustment, get it into the right column.
+  // If an adjustment, do appropriate interpretation.
   if ($code_type === '') {
+    $isadjust = true;
     $adjust = 0 - $charge;
     $charge = 0;
+    list($payer, $code_type, $code) = explode('|', $code);
+    $memo = $description;
+    $description = $GLOBALS['simplified_demographics'] ? '' : "$payer ";
+    $description .= $code ? xl('Item Adjustment') : xl('Invoice Adjustment');
+    $quantity = '';
   }
   else {
     // Total and clear adjustments in $aAdjusts matching this line item.
@@ -242,10 +250,15 @@ function receiptDetailLine($code_type, $code, $description, $quantity, $charge, 
 
   if (!$details) return;
 
+  if (empty($postdate) || substr($postdate, 0, 4) == '0000') $postdate = $billtime;
+
   echo " <tr>\n";
+  echo "  <td title='" . xla('Entered') . ' ' .
+       text(oeFormatShortDate($billtime)) . attr(substr($billtime, 10)) . "'>" .
+       text(oeFormatShortDate($postdate)) . "</td>\n";
   echo "  <td>$code</td>\n";
   echo "  <td>$description</td>\n";
-  echo "  <td align='center'>$quantity</td>\n";
+  echo "  <td align='center'>" . ($isadjust ? '' : $quantity) . "</td>\n";
   echo "  <td align='right'>" . oeFormatMoney($price,false,true) . "</td>\n";
 
   if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) {
@@ -268,9 +281,8 @@ function receiptDetailLine($code_type, $code, $description, $quantity, $charge, 
 
 // Output HTML for a receipt payment line.
 //
-function receiptPaymentLine($paydate, $amount, $description='', $method='', $refno='') {
+function receiptPaymentLine($paydate, $amount, $description='', $method='', $refno='', $billtime='') {
   global $aTaxNames;
-
   $amount = formatMoneyNumber($amount); // make it negative
   if ($description == 'Pt') $description = '';
   // Resolve the payment method portion of the memo to display properly.
@@ -289,8 +301,13 @@ function receiptPaymentLine($paydate, $amount, $description='', $method='', $ref
     }
   }
   echo " <tr>\n";
-  echo "  <td>" . oeFormatShortDate($paydate) . "</td>\n";
-  echo "  <td>" . text($refno) . "</td>\n";
+  echo "  <td";
+  if (!empty($billtime) && substr($billtime, 0, 4) != '0000') {
+    echo " title='" . xla('Entered') . ' ' .
+      text(oeFormatShortDate($billtime)) . attr(substr($billtime, 10)) . "'";
+  }
+  echo ">" . oeFormatShortDate($paydate) . "</td>\n";
+  echo "  <td colspan='2'>" . text($refno) . "</td>\n";
   echo "  <td colspan='" .
        ($GLOBALS['gbl_checkout_line_adjustments'] ? 3 : 1) .
        "' align='left'>" . text($method) . "</td>\n";
@@ -574,13 +591,14 @@ body, td {
  -->
 
  <tr>
-  <td colspan='<?php echo (empty($GLOBALS['gbl_checkout_line_adjustments']) ? 5 : 8) + count($aTaxNames); ?>'
+  <td colspan='<?php echo (empty($GLOBALS['gbl_checkout_line_adjustments']) ? 6 : 9) + count($aTaxNames); ?>'
    style='padding-top:5pt;'>
     <b><?php echo xl('Charges for') . ' ' . oeFormatShortDate($svcdate); ?></b>
   </td>
  </tr>
 
  <tr>
+  <td><b><?php echo xlt('Date'); ?></b></td>
   <td><b><?php xl('Code','e'); ?></b></td>
   <td><b><?php xl('Description','e'); ?></b></td>
   <td align='center'><b><?php echo $details ? xl('Qty'  ) : '&nbsp;'; ?></b></td>
@@ -602,7 +620,7 @@ body, td {
 <?php } // end if details ?>
 
  <tr>
-  <td colspan='<?php echo (empty($GLOBALS['gbl_checkout_line_adjustments']) ? 5 : 8) + count($aTaxNames); ?>'
+  <td colspan='<?php echo (empty($GLOBALS['gbl_checkout_line_adjustments']) ? 6 : 9) + count($aTaxNames); ?>'
    style='border-top:1px solid black; font-size:1px; padding:0;'>
     &nbsp;
   </td>
@@ -626,7 +644,7 @@ body, td {
     $tmpname = $inrow['name'];
     if ($tmpname !== $inrow['selector']) $tmpname .= ' / ' . $inrow['selector'];
     receiptDetailLine('PROD', $inrow['drug_id'], $tmpname,
-      $inrow['quantity'], $inrow['fee'], $aTotals, 'P:' . $inrow['sale_id'], $billtime);
+      $inrow['quantity'], $inrow['fee'], $aTotals, 'P:' . $inrow['sale_id'], $billtime, $svcdate);
   }
 
   // Service items.
@@ -637,20 +655,20 @@ body, td {
   while ($inrow = sqlFetchArray($inres)) {
     $billtime = $inrow['billed'] ? $inrow['bill_date'] : '';
     receiptDetailLine($inrow['code_type'], $inrow['code'], $inrow['code_text'],
-      $inrow['units'], $inrow['fee'], $aTotals, 'S:' . $inrow['id'], $billtime);
+      $inrow['units'], $inrow['fee'], $aTotals, 'S:' . $inrow['id'], $billtime, $svcdate);
   }
 
   // Write any adjustments left in the aAdjusts array.
   foreach ($aAdjusts as $arow) {
     if ($arow['adj_amount'] == 0 && $arow['memotitle'] == '') continue;
     $payer = empty($arow['payer_type']) ? 'Pt' : ('Ins' . $arow['payer_type']);
-    receiptDetailLine('', xl('Adjustment'), $payer . ' ' . $arow['memotitle'], 1,
-      0 - $arow['adj_amount'], $aTotals, '', $arow['post_time']);
+    receiptDetailLine('', "$payer|" . $arow['code_type'] . "|" . $arow['code'], $arow['memotitle'], 1,
+      0 - $arow['adj_amount'], $aTotals, '', $arow['post_time'], $arow['post_date']);
   }
 ?>
 
  <tr>
-  <td colspan='<?php echo (empty($GLOBALS['gbl_checkout_line_adjustments']) ? 5 : 8) + count($aTaxNames); ?>'
+  <td colspan='<?php echo (empty($GLOBALS['gbl_checkout_line_adjustments']) ? 6 : 9) + count($aTaxNames); ?>'
    style='border-top:1px solid black; font-size:1px; padding:0;'>
     &nbsp;
   </td>
@@ -660,7 +678,7 @@ body, td {
   // Sub-Total line with totals of all numeric columns.
   if ($details) {
     echo " <tr>\n";
-    echo "  <td colspan='2' align='right'><b>" . xl('Sub-Total') . "</b></td>\n";
+    echo "  <td colspan='3' align='right'><b>" . xl('Sub-Total') . "</b></td>\n";
     echo "  <td align='center'>" . $aTotals[0] . "</td>\n";
     echo "  <td align='right'>" . oeFormatMoney($aTotals[1]) . "</td>\n";
     if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) {
@@ -704,7 +722,7 @@ body, td {
   // Total Charges line.
   echo " <tr>\n";
   echo "  <td colspan='" .
-       ((empty($GLOBALS['gbl_checkout_line_adjustments']) ? 2 : 5) + count($aTaxNames)) .
+       ((empty($GLOBALS['gbl_checkout_line_adjustments']) ? 3 : 6) + count($aTaxNames)) .
        "'>&nbsp;</td>\n";
   echo "  <td colspan='" . 2 .
        "' align='right'><b>" . xl('Total Charges') . "</b></td>\n";
@@ -718,14 +736,14 @@ body, td {
 -->
 
  <tr>
-  <td colspan='<?php echo ($GLOBALS['gbl_checkout_line_adjustments'] ? 8 : 5) + count($aTaxNames); ?>' style='padding-top:5pt;'>
+  <td colspan='<?php echo ($GLOBALS['gbl_checkout_line_adjustments'] ? 9 : 6) + count($aTaxNames); ?>' style='padding-top:5pt;'>
     <b><?php echo xl('Payments'); ?></b>
   </td>
  </tr>
 
  <tr>
   <td><b><?php echo xlt('Date'); ?></b></td>
-  <td><b><?php echo xlt('Checkout Receipt Ref'); ?></b></td>
+  <td colspan='2'><b><?php echo xlt('Checkout Receipt Ref'); ?></b></td>
   <td colspan="<?php echo $GLOBALS['gbl_checkout_line_adjustments'] ? 3 : 1; ?>"
    align='left'><b><?php echo xlt('Payment Method'); ?></b></td>
   <td colspan="<?php echo (1 + count($aTaxNames)); ?>"
@@ -735,7 +753,7 @@ body, td {
  </tr>
 
  <tr>
-  <td colspan='<?php echo ($GLOBALS['gbl_checkout_line_adjustments'] ? 8 : 5) + count($aTaxNames); ?>'
+  <td colspan='<?php echo ($GLOBALS['gbl_checkout_line_adjustments'] ? 9 : 6) + count($aTaxNames); ?>'
    style='border-top:1px solid black; font-size:1px; padding:0;'>
     &nbsp;
   </td>
@@ -771,20 +789,20 @@ body, td {
     $tmp = array_search($inrow['post_time'], $checkout_times);
     $tmp = $tmp === FALSE ? 0 : ($tmp + 1);
     $refno = $invoice_refno ? "$invoice_refno-$tmp" : "$encounter-$tmp";
-    receiptPaymentLine(substr($inrow['post_date'], 0, 10), $inrow['pay_amount'],
-      trim($payer . ' ' . $inrow['reference']), $inrow['memo'], $refno);
+    receiptPaymentLine($inrow['post_date'], $inrow['pay_amount'],
+      trim($payer . ' ' . $inrow['reference']), $inrow['memo'], $refno, $inrow['post_time']);
   }
 ?>
 
  <tr>
-  <td colspan='<?php echo ($GLOBALS['gbl_checkout_line_adjustments'] ? 8 : 5) + count($aTaxNames); ?>'
+  <td colspan='<?php echo ($GLOBALS['gbl_checkout_line_adjustments'] ? 9 : 6) + count($aTaxNames); ?>'
    style='border-top:1px solid black; font-size:1px; padding:0;'>
     &nbsp;
   </td>
  </tr>
 
  <tr>
-  <td colspan='<?php echo ($GLOBALS['gbl_checkout_line_adjustments'] ? 5 : 2) + count($aTaxNames); ?>'>&nbsp;</td>
+  <td colspan='<?php echo ($GLOBALS['gbl_checkout_line_adjustments'] ? 6 : 3) + count($aTaxNames); ?>'>&nbsp;</td>
   <td colspan='2' align='right'><b><?php xl('Total Payments','e'); ?></b></td>
   <td align='right'><?php echo str_replace(' ', '&nbsp;', oeFormatMoney($payments, true)); ?></td>
  </tr>
@@ -1769,7 +1787,8 @@ foreach ($aCellHTML as $ix => $html) {
   echo "    var html = \"$html\";\n";
   echo "    cell = row.insertCell(row.cells.length);\n";
   if ($GLOBALS['gbl_checkout_line_adjustments']) {
-    if ($ix == 1 || $ix == 2) echo "    cell.colSpan = 2;\n";
+    if ($ix == 1) echo "    cell.colSpan = 2;\n";
+    if ($ix == 2) echo "    cell.colSpan = 2;\n";
     if ($ix == 4) echo "    cell.colSpan = " . (2 + count($taxes)) . ";\n";
   }
   echo "    cell.innerHTML = html.replace(/%d/, paylino);\n";

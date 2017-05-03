@@ -271,7 +271,8 @@ function genPopupsList($style='') {
  <option value='../../custom/refer.php'><?php xl('Refer','e'); ?></option>
 <?php } ?>
  <option value='../patient_file/printed_fee_sheet.php?fill=1'><?php xl('Superbill','e'); ?></option>
- <option value='../patient_file/front_payment.php'><?php xl('Payment','e'); ?></option>
+ <option value='../patient_file/front_payment.php?feat=1'><?php echo xla('Payment'); ?></option>
+ <option value='../patient_file/front_payment.php?feat=2'><?php echo xla('Adjustment'); ?></option>
 <?php if ($GLOBALS['inhouse_pharmacy'] && (acl_check('admin', 'super') || acl_check('acct', 'bill') || acl_check('acct', 'disc'))) { ?>
  <option value='../patient_file/pos_checkout.php'><?php xl('Checkout','e'); ?></option>
 <?php } ?>
@@ -1156,7 +1157,9 @@ if ($GLOBALS['athletic_team']) {
     <ul>
       <?php genMiscLink('RBot','cod','2',xl('Fee Sheet'),'patient_file/encounter/load_form.php?formname=fee_sheet'); ?>
       <?php if ($GLOBALS['use_charges_panel']) genTreeLink('RBot','cod',xl('Charges')); ?>
-      <?php genMiscLink('RBot','pay','1',xl('Payment'),'patient_file/front_payment.php'); ?>
+      <?php genMiscLink('RBot','pay','1',xl('Payment'   ),'patient_file/front_payment.php?feat=1'); ?>
+      <?php genMiscLink('RBot','pay','1',xl('Adjustment'),'patient_file/front_payment.php?feat=2'); ?>
+      <?php // genMiscLink('RBot','pay','1',xl('Pay/Adjust'),'patient_file/front_payment.php?feat=3'); ?>
       <?php if (acl_check('admin', 'super') || acl_check('acct', 'bill') || acl_check('acct', 'disc'))
         genMiscLink('RBot','bil','1',xl('Checkout'),'patient_file/pos_checkout.php?framed=1'); ?> 
       <?php if (! $GLOBALS['simplified_demographics']) genTreeLink('RTop','bil',xl('Billing')); ?>
