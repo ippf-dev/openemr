@@ -202,7 +202,7 @@ function postPayment($form_pid, $enc, $form_method, $form_source, $amount, $post
 
 function postAdjustment($form_pid, $enc, $reason, $amount, $post_time, $post_date) {
   $session_id = 0;
-  arPostAdjustment($form_pid, $enc, $session_id, $amount, '', 0, $reason, 0, $post_time, $post_date);
+  arPostAdjustment($form_pid, $enc, $session_id, $amount, '', 0, $reason, 0, $post_time, '', $post_date);
 }
 
 function getListTitle($list, $option) {

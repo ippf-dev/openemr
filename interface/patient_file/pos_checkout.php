@@ -174,9 +174,9 @@ function load_taxes($patient_id, $encounter) {
 function pull_tax($lineid, &$aTaxes) {
   global $aInvTaxes;
   $totlinetax = 0;
-  if ($lineid !== '') {
-    foreach ($aInvTaxes as $taxid => $taxarr) {
-      $aTaxes[$taxid] = 0;
+  foreach ($aInvTaxes as $taxid => $taxarr) {
+    $aTaxes[$taxid] = 0;
+    if ($lineid !== '') {
       foreach ($taxarr as $taxlineid => $tax) {
         if ($taxlineid === $lineid) {
           $aTaxes[$taxid] += $tax;

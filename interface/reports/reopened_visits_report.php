@@ -158,7 +158,8 @@ function storeRow($row, $changedate, $comments, $user, $codetype='', $code='', $
   // If first appearance of this void, generate a row for it.
   if (empty($arr_voidid[$row['void_id']])) {
     $arr_voidid[$row['void_id']] = $row['void_id'];
-    storeRow($row, $row['date_voided'], xl('Voided'), $row['username']);
+    $tmp = $row['what_voided'] == 'delete' ? xl('Voided by Visit Delete') : xl('Voided');
+    storeRow($row, $row['date_voided'], $tmp, $row['username']);
   }
 
   $iname = '';
@@ -507,7 +508,7 @@ if (!empty($_POST['form_orderby'])) {
 
   $query = "SELECT " .
     "v.void_id, v.date_voided, v.date_original, v.other_info, v.reason, v.notes, " .
-    "v.patient_id, v.encounter_id, " .
+    "v.patient_id, v.encounter_id, v.what_voided, " .
     "fe.date AS encdate, f.name AS facname, pd.pubpid, lo.title, u.username " .
     "FROM voids AS v " .
     "JOIN patient_data AS pd ON pd.pid = v.patient_id " .
@@ -645,8 +646,8 @@ if (!empty($_POST['form_orderby'])) {
     if ($one == $two) { $one = $a[10];           $two = $b[10]; }
 
     if ($one == $two) {
-      if ($a[2] == xl('Voided')) return -1;
-      if ($b[2] == xl('Voided')) return 1;
+      if ($a[2] == xl('Voided') || $a[2] == xl('Voided by Visit Delete')) return -1;
+      if ($b[2] == xl('Voided') || $b[2] == xl('Voided by Visit Delete')) return 1;
       return 0;
     }
     return $one < $two ? -1 : 1;

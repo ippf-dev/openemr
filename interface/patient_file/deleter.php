@@ -4,7 +4,7 @@
  *
  * Called from many different pages.
  *
- *  Copyright (C) 2005-2016 Rod Roark <rod@sunsetsystems.com>
+ *  Copyright (C) 2005-2017 Rod Roark <rod@sunsetsystems.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -20,6 +20,7 @@ require_once('../globals.php');
 require_once($GLOBALS['srcdir'].'/log.inc');
 require_once($GLOBALS['srcdir'].'/acl.inc');
 require_once($GLOBALS['srcdir'].'/sl_eob.inc.php');
+require_once($GLOBALS['srcdir'].'/options.inc.php');
 
  $patient     = $_REQUEST['patient'];
  $encounterid = $_REQUEST['encounterid'];
@@ -240,7 +241,7 @@ function popup_close() {
    if (!acl_check('admin', 'super')) die("Not authorized!");
    // Record a void entry. This does not delete or deactivate anything.
    $tmprow = sqlQuery("SELECT pid FROM form_encounter WHERE encounter = ?", array($encounterid));
-   doVoid($tmprow['pid'], $encounterid, 2, 'all', 'OTH', 'Visit Deleted');
+   doVoid($tmprow['pid'], $encounterid, 2, 'all', $_POST['form_reason'], $_POST['form_notes']);
    //
    row_modify("billing", "activity = 0", "encounter = '$encounterid'");
    delete_drug_sales(0, $encounterid);
@@ -416,7 +417,7 @@ function popup_close() {
 
 <form method='post' name="deletefrm" action='deleter.php?patient=<?php echo $patient ?>&encounterid=<?php echo $encounterid ?>&formid=<?php echo $formid ?>&issue=<?php echo $issue ?>&document=<?php echo attr($document) ?>&payment=<?php echo $payment ?>&billing=<?php echo $billing ?>&transaction=<?php echo $transaction ?>' onsubmit="javascript:alert('1');document.deleform.submit();">
 
-<p class="text">&nbsp;<br><?php xl('Do you really want to delete','e'); ?>
+<p class="bold">&nbsp;<br><?php xl('Do you really want to delete','e'); ?>
 
 <?php
  if ($patient) {
@@ -440,10 +441,23 @@ function popup_close() {
 
 <center>
 
-<p class="text">&nbsp;<br>
+<?php
+if ($encounterid) {
+  echo "<table><tr>";
+  echo "<td class='bold'>" . xlt('Void Reason') . "</td><td>";
+  generate_form_field(array('data_type'=>1,'field_id'=>'reason','list_id'=>'void_reasons','empty_title'=>'Select Reason'));
+  echo "</td></tr><tr><td class='bold'>" . xlt('Void Notes') . "</td>";
+  echo "<td><input type='text' size='40' name='form_notes' maxlength='50' /></td></tr></table>\n";
+}
+?>
+
+<p class='text'>&nbsp;<br>
+<table><tr><td>
 <a href="#" onclick="submit_form()" class="css_button"><span><?php xl('Yes, Delete and Log','e'); ?></span></a>
 <input type='hidden' name='form_submit' value=<?php xl('Yes, Delete and Log','e','\'','\''); ?>/>
+&nbsp;
 <a href='#' class="css_button" onclick=popup_close();><span><?php echo xl('No, Cancel');?></span></a>
+</td></tr></table>
 </p>
 
 </center>
