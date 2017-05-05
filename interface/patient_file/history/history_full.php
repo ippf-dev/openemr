@@ -163,7 +163,10 @@ function smoking_statusClicked(cb)
 <script type="text/javascript">
 /// todo, move this to a common library
 $(document).ready(function(){
-    tabbify();
+  tabbify();
+  if (window.checkSkipConditions) {
+    checkSkipConditions();
+  }
 });
 </script>
 
@@ -184,9 +187,7 @@ if (!is_array($result)) {
   $result = getHistoryData($pid);
 }
 
-$fres = sqlStatement("SELECT * FROM layout_options " .
-  "WHERE form_id = 'HIS' AND uor > 0 " .
-  "ORDER BY group_name, seq");
+$condition_str = '';
 ?>
 
 <form action="history_save.php" name='history_form' method='post' onsubmit='return validate(this)' >
@@ -227,7 +228,14 @@ $fres = sqlStatement("SELECT * FROM layout_options " .
 </body>
 
 <script language="JavaScript">
+
+// Array of skip conditions for the checkSkipConditions() function.
+var skipArray = [
+<?php echo $condition_str; ?>
+];
+
 <?php echo $date_init; // setup for popup calendars ?>
+
 </script>
 
 </html>
