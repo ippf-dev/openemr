@@ -23,11 +23,14 @@ function xl($constant,$mode='r',$prepend='',$append='') {
   }
   else {
     // TRANSLATE
+
+    /******************************************************************
     // first, clean lines
     // convert new lines to spaces and remove windows end of lines
     $patterns = array ('/\n/','/\r/');
     $replace = array (' ','');
     $constant = preg_replace($patterns, $replace, $constant);
+    ******************************************************************/
 
     // second, attempt translation
     $sql = "SELECT ld.definition FROM lang_constants AS lc " .
@@ -38,8 +41,13 @@ function xl($constant,$mode='r',$prepend='',$append='') {
     if ($string == '') { $string = "$constant"; }
 
     // remove dangerous characters and remove comments
+    /******************************************************************
     $patterns = array ('/\n/','/\r/','/"/',"/'/",'/\{\{.*\}\}/');
     $replace = array (' ','','`','`','');
+    ******************************************************************/
+    $patterns = array ('/"/',"/'/",'/\{\{.*\}\}/');
+    $replace = array ('`','`','');
+    /*****************************************************************/
     $string = preg_replace($patterns, $replace, $string);
   }
     

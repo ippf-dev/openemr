@@ -1,8 +1,7 @@
 <?php
 require_once("language.inc.php");
 
-
-if ($_POST['add']){
+if (!empty($_POST['add'])){
 	//validate	
 	if ($_POST['constant_name'] == "") {
 	        echo htmlspecialchars(xl('Constant name is blank'),ENT_NOQUOTES).'<br>';
@@ -27,18 +26,18 @@ if ($_POST['add']){
 		echo htmlspecialchars(xl('Constant','','',' ') . $_POST['constant_name'] . xl('added','',' '),ENT_NOQUOTES).'<br>';
 	}
 	
-
-
 // echo "$sql here ";
 }
 
 ?>
 
 <TABLE>
-<FORM name="cons_form" METHOD=POST ACTION="?m=constant" onsubmit="return top.restoreSession()">
+<FORM name="cons_form" METHOD="POST" ACTION="?m=constant" onsubmit="return top.restoreSession()">
 <TR>
-	<TD><?php echo htmlspecialchars(xl('constant name'),ENT_NOQUOTES); ?></TD>
-	<TD><INPUT TYPE="text" NAME="constant_name" size="100" value="<?php echo htmlspecialchars($val_constant,ENT_QUOTES); ?>"></TD>
+	<TD><?php echo htmlspecialchars(xl('Constant Name'),ENT_NOQUOTES); ?></TD>
+  <!-- textarea here because "text type=input" does not preserve newlines. -->
+  <td><textarea name ='constant_name' rows='1' cols='100'
+  ><?php echo htmlspecialchars($val_constant, ENT_NOQUOTES); ?></textarea></td>
 </TR>
 <TR>
 	<TD></TD>

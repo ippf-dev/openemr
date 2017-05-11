@@ -159,7 +159,8 @@ if ($_POST['edit']){
 	if ($lang_id==1) {
 		while ($row=SqlFetchArray($res)){
 		        $isShow = false; //flag if passes the definition filter
-		        $stringTemp = '<tr><td>'.htmlspecialchars($row['constant_name'],ENT_NOQUOTES).'</td>';
+            $stringTemp = "<tr><td><textarea rows='1' cols='50' readonly>" .
+              htmlspecialchars($row['constant_name'], ENT_NOQUOTES) . "</textarea></td>";
 			// if there is no definition
 			if (empty($row['def_id'])){
 				$cons_name = "cons_id[" . $row['cons_id'] . "]";
@@ -171,7 +172,9 @@ if ($_POST['edit']){
 			        $res2 = SqlStatement($sql, array($row['def_id'], $lang_filter_def) );
 			        if (SqlFetchArray($res2)) $isShow = true;   
 			}
-			$stringTemp .= '<td><INPUT TYPE="text" size="50" NAME="' . htmlspecialchars($cons_name,ENT_QUOTES) . '" value="' . htmlspecialchars($row['definition'],ENT_QUOTES) . '">';
+      $stringTemp .= "<td><textarea rows='1' cols='50' name='" .
+        htmlspecialchars($cons_name, ENT_QUOTES) . "'>" .
+        htmlspecialchars($row['definition'], ENT_NOQUOTES) . "</textarea>";
 			$stringTemp .= '</td><td></td></tr>';
 		        if ($isShow) {
 			        //definition filter passed, so show
@@ -188,14 +191,16 @@ if ($_POST['edit']){
         // constant has more than one definition for the same language!
         continue;
       }
-		        $isShow = false; //flag if passes the definition filter
-			$stringTemp = '<tr><td>'.htmlspecialchars($row['constant_name'],ENT_NOQUOTES).'</td>';
+      $isShow = false; //flag if passes the definition filter
+      $stringTemp = "<tr><td><textarea rows='1' cols='50' readonly>" .
+        htmlspecialchars($row['constant_name'], ENT_NOQUOTES) . "</textarea></td>";
 			if ($row['definition']=='' OR $row['definition']=='NULL') { 
 				$def=" " ;
 			} else {
 				$def=$row['definition'];
 			}
-			$stringTemp .= '<td>'.htmlspecialchars($def,ENT_NOQUOTES).'</td>';
+      $stringTemp .= "<td><textarea rows='1' cols='50' readonly>" .
+        htmlspecialchars($def, ENT_NOQUOTES) . "</textarea></td>";
 			$row=SqlFetchArray($res); // jump one to get the second language selected
 			if ($row['def_id']=='' OR $row['def_id']=='NULL'){
 				$cons_name="cons_id[".$row['cons_id']."]";
@@ -207,7 +212,9 @@ if ($_POST['edit']){
 			        $res2 = SqlStatement($sql, array($row['def_id'], $lang_filter_def) );
 			        if (SqlFetchArray($res2)) $isShow = true;
 			}
-			$stringTemp .= '<td><INPUT TYPE="text" size="50" NAME="'.htmlspecialchars($cons_name,ENT_QUOTES).'" value="'.htmlspecialchars($row['definition'],ENT_QUOTES).'">';
+      $stringTemp .= "<td><textarea rows='1' cols='50' name='" .
+        htmlspecialchars($cons_name, ENT_QUOTES) . "'>" .
+        htmlspecialchars($row['definition'], ENT_NOQUOTES) . "</textarea>";
 			$stringTemp .='</td></tr>';
                         if ($isShow) {
 			        //definition filter passed, so show
