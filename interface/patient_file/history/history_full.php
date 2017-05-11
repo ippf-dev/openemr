@@ -158,6 +158,56 @@ function smoking_statusClicked(cb)
      document.getElementById('form_tobacco').selectedIndex = 6;
      }
 }
+
+// The ID of the input element to receive a found code.
+var current_sel_name = '';
+
+// This is for callback by the find-code popup.
+// Appends to or erases the current list of related codes.
+function set_related(codetype, code, selector, codedesc) {
+ var f = document.forms[0];
+ // frc will be the input element containing the codes.
+ // frcd, if set, will be the input element containing their descriptions.
+ var frc = f[current_sel_name];
+ var frcd;
+ var matches = current_sel_name.match(/^(.*)__desc$/);
+ if (matches) {
+  frcd = frc;
+  frc  = f[matches[1]];
+ }
+ // For LBFs we will allow only one code in a field.
+ var s = ''; // frc.value;
+ var sd = ''; // frcd ? frcd.value : s;
+ //
+ if (code) {
+  if (codetype != 'PROD') {
+   if (s.indexOf(codetype + ':') == 0 || s.indexOf(';' + codetype + ':') > 0) {
+    return '<?php echo xl('A code of this type is already selected. Erase the field first if you need to replace it.') ?>';
+   }
+  }     
+  if (s.length > 0) {
+   s  += ';';
+   sd += ';';
+  }
+  s  += codetype + ':' + code;
+  sd += codedesc;
+ } else {
+  s  = '';
+  sd = '';
+ }
+ frc.value = s;
+ if (frcd) frcd.value = sd;
+ return '';
+}
+
+// This invokes the "dynamic" find-code popup.
+function sel_related(elem, codetype) {
+ current_sel_name = elem ? elem.name : '';
+ var url = '<?php echo $rootdir ?>/patient_file/encounter/find_code_dynamic.php';
+ if (codetype) url += '?codetype=' + codetype;
+ dlgopen(url, '_blank', 800, 500);
+}
+
 </script>
 
 <script type="text/javascript">
