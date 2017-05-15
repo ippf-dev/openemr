@@ -352,8 +352,8 @@ getTaxNames($pid);
 
 <style type="text/css">
 .openvisit {background-color:#ffffcc;}
-#patient_pastenc th.right {text-align:right; padding-right:5pt;}
-#patient_pastenc td.right {text-align:right; padding-right:5pt;}
+#encounters th.right {text-align:right; padding-right:5pt;}
+#encounters td.right {text-align:right; padding-right:5pt;}
 </style>
 
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/js/jquery.js"></script>
@@ -818,6 +818,12 @@ while ($result4 = sqlFetchArray($res4)) {
  
             $invno = "$pid." . $result4['encounter'];
 
+            // Initialize array of encounter totals.
+            $totals = array(0, 0); // charges, adjustments
+            for ($i = 0; $i < count($aTaxNames); ++$i) $totals[] = 0; // taxes
+            $totals[] = 0; // paid
+            $totals[] = 0; // bal
+
             foreach ($aItems[$invno] AS $codekey => $arr) {
               $title = addslashes($arr['dsc']);
 
@@ -857,14 +863,27 @@ while ($result4 = sqlFetchArray($res4)) {
                 }
                 $binfo[1] .= oeFormatMoney($arr['fee']);
                 $binfo[2] .= oeFormatMoney($arr['adj']);
+                $totals[0] += $arr['fee'];
+                $totals[1] += $arr['adj'];
                 $tax = 0;
                 $i = 0;
                 for (; $i < count($aTaxNames); ++$i) {
                   $binfo[3 + $i] .= oeFormatMoney($arr['tax'][$i]);
                   $tax += $arr['tax'][$i];
+                  $totals[2 + $i] += $arr['tax'][$i];
                 }
                 $binfo[3 + $i] .= oeFormatMoney($arr['pay']);
                 $binfo[4 + $i] .= oeFormatMoney($arr['fee'] - $arr['adj'] + $tax - $arr['pay']);
+                $totals[2 + $i] += $arr['pay'];
+                $totals[3 + $i] += $arr['fee'] - $arr['adj'] + $tax - $arr['pay'];
+              }
+            }
+
+            // Append totals stuff to $binfo elements, if there are any line items.
+            if ($binfo[1] !== '' && $billing_view && $accounting_enabled) {
+              $binfo[0] .= '<br><b>' . xlt('Totals') . '</b>';
+              for ($i = 1; $i < 5 + count($aTaxNames); ++$i) {
+                $binfo[$i] .= '<br><b>' . oeFormatMoney($totals[$i - 1]) . '</b>';
               }
             }
 
