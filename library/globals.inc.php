@@ -1062,6 +1062,13 @@ $GLOBALS_METADATA = array(
       xl('Enable client SSL certificate authentication.')
     ),
 
+    'gbl_fac_warehouse_restrictions' => array(
+      xl('Enable Facility/Warehouse Permissions'),
+      'bool',                           // data type
+      '0',                              // default
+      xl('Enable facility/warehouse restrictions in the user administration form.')
+    ),
+
     'certificate_authority_crt' => array(
       xl('Path to CA Certificate File'),
       'text',                           // data type

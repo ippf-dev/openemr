@@ -355,7 +355,7 @@ if ($fres) {
  </tr>
 
 <!-- facility and warehouse restrictions, optional -->
-<?php if ($GLOBALS['restrict_user_facility']) { ?>
+<?php if ($GLOBALS['gbl_fac_warehouse_restrictions']) { ?>
  <tr title="<?php echo xla('If nothing is selected here then all are permitted.'); ?>">
   <td><span class="text"><?php echo $GLOBALS['inhouse_pharmacy'] ?
     xlt('Facility and warehouse permissions') : xlt('Facility permissions'); ?>:</td>
