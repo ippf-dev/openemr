@@ -42,14 +42,16 @@ array(
       '0',                              // default
       xl('Limit service provider selection according to the facility of the logged-in user.')
     ),
-    
     'gbl_checkout_line_adjustments' => array(
-      xl('Checkout Adjustments at Line Level'),
-      'bool',                           // data type
-      '0',                              // default = false
-      xl('Discounts at checkout time may be entered per line item.')
+      xl('Adjustments at Checkout'),
+      array(
+        '0' => xl('Invoice Level Only'),
+        '1' => xl('Line Items Only'),
+        '2' => xl('Invoice and Line Levels'),
+      ),
+      '1',                              // default = line items only
+      xl('Discounts at checkout time may be entered per invoice or per line item or both.')
     ),
-
     'gbl_auto_create_rx' => array(
       xl('Automatically Create Prescriptions'),
       'bool',                           // data type
