@@ -74,6 +74,16 @@ $ires = sqlStatement("SELECT id, type, title, begdate FROM lists WHERE " .
 
  var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
 
+ // Array of past visit dates for validation.
+<?php
+echo " var arrVisitDates = [";
+$vdres = sqlStatement("SELECT date FROM form_encounter WHERE pid = ?", array($pid));
+while ($vdrow = sqlFetchArray($vdres)) {
+  echo "'" . substr($vdrow['date'], 0, 10) . "', ";
+}
+echo "];\n";
+?>
+
  // Process click on issue title.
  function newissue() {
   dlgopen('../../patient_file/summary/add_edit_issue.php', '_blank', 800, 600);
@@ -88,6 +98,13 @@ $ires = sqlStatement("SELECT id, type, title, begdate FROM lists WHERE " .
 
  function saveClicked() {
   var f = document.forms[0];
+
+ // Check for existing visit on this date.
+ if (arrVisitDates.indexOf(f.form_date.value) != -1) {
+  if (!confirm('<?php echo xla('There is already a visit on this date. Do you really want to create another one?'); ?>')) {
+   return;
+  }
+ }
 
 <?php if (!$GLOBALS['athletic_team']) { ?>
   var category = document.forms[0].pc_catid.value;
