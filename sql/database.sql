@@ -4185,6 +4185,7 @@ CREATE TABLE `patient_data` (
   `soap_import_status` TINYINT(4) DEFAULT NULL COMMENT '1-Prescription Press 2-Prescription Import 3-Allergy Press 4-Allergy Import',
   `gender` varchar(31) NOT NULL default '',
   `sexual_orientation` varchar(31) NOT NULL default '',
+  `dupscore` INT NOT NULL default -9,
   UNIQUE KEY `pid` (`pid`),
   KEY `id` (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 ;

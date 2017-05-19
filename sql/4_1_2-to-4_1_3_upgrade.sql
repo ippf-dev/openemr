@@ -714,3 +714,7 @@ INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`
 INSERT INTO `globals` (gl_name, gl_index, gl_value) SELECT 'gbl_fac_warehouse_restrictions', gl_index, gl_value
   FROM globals WHERE gl_name = 'restrict_user_facility';
 #EndIf
+
+#IfMissingColumn patient_data dupscore
+ALTER TABLE `patient_data` ADD COLUMN `dupscore` INT NOT NULL default -9;
+#EndIf
