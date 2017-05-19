@@ -1931,12 +1931,13 @@ if ($_POST['form_submit']) {
     if ($form_content == 5) { // sales of contraceptive items
       $query = "SELECT " .
         "ds.pid, ds.encounter, ds.sale_date, ds.quantity, ds.drug_id, " .
-        "d.name, d.cyp_factor, d.related_code, " . 
+        "d.name, d.cyp_factor, d.related_code, t.pkgqty, " .
         "pd.regdate, pd.sex, pd.DOB, pd.lname, pd.fname, pd.mname, " .
         "pd.referral_source$pd_fields, " .
         "fe.date AS encdate, fe.provider_id, fe.facility_id " .
         "FROM drug_sales AS ds " .
         "JOIN drugs AS d ON d.drug_id = ds.drug_id " .
+        "LEFT JOIN drug_templates AS t ON t.drug_id = ds.drug_id AND t.selector = ds.selector " .
         "JOIN patient_data AS pd ON pd.pid = ds.pid $sexcond" . sql_age_filter("fe.date") .
         "JOIN form_encounter AS fe ON fe.pid = ds.pid AND fe.encounter = ds.encounter " .
         "WHERE fe.date >= '$from_date 00:00:00' AND " .
@@ -1996,13 +1997,17 @@ if ($_POST['form_submit']) {
         // The above commented out because there are no MA reports for services where
         // $form_content is 5.
 
+        // Product quantities are multiplied by "Basic Units" for contraception stats reporting.
+        $quantity = $row['quantity'];
+        if (!empty($row['pkgqty'])) $quantity *= floatval($row['pkgqty']);
+
         // At this point $prodcode is the desired IPPFCM code, or empty if none.
-        process_ippfcm_code($row, $prodcode, $row['quantity']);
+        process_ippfcm_code($row, $prodcode, $quantity);
 
         // This is for the Contraceptive Products report (105).
         if ($form_by === '105') {
           $key = '{' . $my_group_name . '}' . $row['name'];
-          loadColumnData($key, $row, $row['quantity']);
+          loadColumnData($key, $row, $quantity);
         }
       }
     }
