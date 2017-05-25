@@ -370,6 +370,41 @@ while ($lrow = sqlFetchArray($lres)) {
  dlgopen(url, '_blank', 700, 500);
 }
 
+function checkSkipConditions() {
+  // dummy function to avoid reference error
+}
+
+// Test code.
+function queryid_clicked() {
+  var f = document.forms[0];
+  if (f.form_pubpid) {
+    $.getJSON("<?php echo $GLOBALS['webroot']; ?>/library/ajax/uruguay_ws_ajax.php",
+      {"clientid": f.form_pubpid.value},
+      function (jsondata, textstatus) {
+        // executed only on success
+        for (var key in jsondata) {
+          if ('error' == key) {
+            if (jsondata[key]) alert(jsondata[key]);
+            continue;
+          }
+          var fieldid = 'form_' + key;
+          if (f[fieldid]) {
+            f[fieldid].value = jsondata[key];
+          }
+          else {
+            // alert("Field not found: " + fieldid);
+          }
+        }
+      }
+    );
+  }
+  else {
+    alert('Field pubpid does not exist in the layout.');
+  }
+}
+
+
+
 //-->
 
 </script>
@@ -755,6 +790,16 @@ if (! $GLOBALS['simplified_demographics']) {
 
 <?php if (!$SHORT_FORM) echo "  <center>\n"; ?>
 <br />
+
+
+
+<!-- Test Code -->
+<input type="button" name='queryid' id="queryid" value='<?php echo xla('Query National ID'); ?>'
+ onclick='queryid_clicked()' />
+&nbsp;&nbsp;
+
+
+
 <?php if ($WITH_SEARCH) { ?>
 <input type="button" id="search" value=<?php xl('Search','e','\'','\''); ?>
  style='background-color:<?php echo $searchcolor; ?>' />
