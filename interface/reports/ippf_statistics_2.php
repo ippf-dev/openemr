@@ -607,6 +607,7 @@ function getGcacClientStatus($row) {
 
 $age2G_column_count=2*3+2; // Three columns for each age group (M,F,T) + 2 columns for M/F total
 $age9G_column_count=9*3+2; // Three columns for each age group (M,F,T) + 2 columns for M/F total
+$age13G_column_count=13*3+2; // Three columns for each age group (M,F,T) + 2 columns for M/F total
 
 // For a given clinic (or '' for clinic totals) this sets up the empty
 // accumulators for each needed period and for the total of all periods.
@@ -614,7 +615,7 @@ $age9G_column_count=9*3+2; // Three columns for each age group (M,F,T) + 2 colum
 // Also the array to relate clinic IDs to names is built.
 //
 function needClinicArray($key, $clinicid) {
-  global $areport, $arr_clinics, $arr_periods, $arr_show,$age2G_column_count,$age9G_column_count;
+  global $areport, $arr_clinics, $arr_periods, $arr_show,$age2G_column_count,$age9G_column_count,$age13G_column_count;
   if (empty($arr_clinics[$clinicid])) {
     $row = sqlQuery("SELECT name FROM facility WHERE id = '$clinicid'");
     $name = empty($row['name']) ? (xl('Unnamed Clinic') . " #$clinicid") : $row['name'];
@@ -628,9 +629,11 @@ function needClinicArray($key, $clinicid) {
     $areport[$key]['.dtl'][$clinicid][$pdate]['.men'] = 0;       // number of services for men
     $areport[$key]['.dtl'][$clinicid][$pdate]['.age2'] = array(0,0);               // age array
     $areport[$key]['.dtl'][$clinicid][$pdate]['.age9'] = array(0,0,0,0,0,0,0,0,0); // age array
+    $areport[$key]['.dtl'][$clinicid][$pdate]['.age13'] = array(0,0,0,0,0,0,0,0,0,0,0,0,0); // age array
     $areport[$key]['.dtl'][$clinicid][$pdate]['.age2'] = array(0,0);               // age array
     $areport[$key]['.dtl'][$clinicid][$pdate]['.age2G'] = array_fill(0,$age2G_column_count,0);               // age and gender array
     $areport[$key]['.dtl'][$clinicid][$pdate]['.age9G'] = array_fill(0,$age9G_column_count,0);               // age and gender array
+    $areport[$key]['.dtl'][$clinicid][$pdate]['.age13G'] = array_fill(0,$age13G_column_count,0);             // age and gender array
     foreach ($arr_show as $askey => $dummy) {
       if (substr($askey, 0, 1) == '.') continue;
       $areport[$key]['.dtl'][$clinicid][$pdate][$askey] = array();
@@ -669,6 +672,14 @@ function accumClinicPeriod($key, $row, $quantity, $clikey, $perkey) {
   $areport[$key]['.dtl'][$clikey][$perkey]['.age9G'][(10*$gender_flag)+$i] += $quantity;
   $areport[$key]['.dtl'][$clikey][$perkey]['.age9G'][(10*$gender_flag)+9] += $quantity;
   $areport[$key]['.dtl'][$clikey][$perkey]['.age9G'][20+$i] += $quantity;
+
+  $i = min(intval(($age - 5) / 5), 12);
+  if ($age < 10) $i = 0;
+  $areport[$key]['.dtl'][$clikey][$perkey]['.age13'][$i] += $quantity;
+  $areport[$key]['.dtl'][$clikey][$perkey]['.age13G'][(14*$gender_flag)+$i] += $quantity;
+  $areport[$key]['.dtl'][$clikey][$perkey]['.age13G'][(14*$gender_flag)+13] += $quantity;
+  $areport[$key]['.dtl'][$clikey][$perkey]['.age13G'][28+$i] += $quantity;
+
   $i = $age < 25 ? 0 : 1;
   $areport[$key]['.dtl'][$clikey][$perkey]['.age2'][$i] += $quantity;
   $areport[$key]['.dtl'][$clikey][$perkey]['.age2G'][(3*$gender_flag)+$i] += $quantity;
@@ -1448,8 +1459,10 @@ $arr_show   = array(
   // '.total' => array('title' => xl('Total')),
   '.age2'  => array('title' => xl('Age Category') . ' (2)'),
   '.age9'  => array('title' => xl('Age Category') . ' (9)'),
+  '.age13'  => array('title' => xl('Age Category') . ' (13)'),
   '.age2G'  => array('title' => xl('Age Category and Sex (2)')),
   '.age9G'  => array('title' => xl('Age Category and Sex (9)')),
+  '.age13G' => array('title' => xl('Age Category and Sex (13)')),
 ); // info about selectable columns
 
 // This holds 2 levels of column headers. The first level of keys are the
@@ -2317,11 +2330,17 @@ if ($_POST['form_submit']) {
       else if ($value == '.age9') { // Age
         $period_col_count += 9;
       }
+      else if ($value == '.age13') { // Age
+        $period_col_count += 13;
+      }
       else if ($value == '.age2G') { // Age
         $period_col_count += $age2G_column_count;
       }
       else if ($value == '.age9G') { // Age
         $period_col_count += $age9G_column_count;
+      }
+      else if ($value == '.age13G') { // Age
+        $period_col_count += $age13G_column_count;
       }
       else if ($arr_show[$value]['list_id'] || !empty($arr_titles[$value])) {
         $period_col_count += count($arr_titles[$value]);
@@ -2363,6 +2382,9 @@ if ($_POST['form_submit']) {
         else if ($value == '.age9') { // Age
           genHeadCell($arr_show[$value]['title'], 'center', 9);
         }
+        else if ($value == '.age13') { // Age
+          genHeadCell($arr_show[$value]['title'], 'center', 13);
+        }
         else if ($value == '.age2G') { // Age
             genHeadCell("Age Category (2) Male", 'center', 3 );
             genHeadCell("Age Category (2) Female", 'center', 3 );
@@ -2372,6 +2394,11 @@ if ($_POST['form_submit']) {
             genHeadCell("Age Category (9) Male", 'center', 10 );
             genHeadCell("Age Category (9) Female", 'center', 10 );
             genHeadCell("Age Category (9) Total", 'center', 9 );
+        }
+        else if ($value == '.age13G') { // Age
+            genHeadCell("Age Category (13) Male"  , 'center', 14);
+            genHeadCell("Age Category (13) Female", 'center', 14);
+            genHeadCell("Age Category (13) Total" , 'center', 13);
         }
         else if ($arr_show[$value]['list_id']) {
           genHeadCell($arr_show[$value]['title'], 'center', count($arr_titles[$value]));
@@ -2420,6 +2447,21 @@ if ($_POST['form_submit']) {
           genHeadCell(xl('40-44'), 'right');
           genHeadCell(xl('45+'  ), 'right');
         }
+        else if ($value == '.age13') { // Age
+          genHeadCell(xl('0-9'  ), 'right');
+          genHeadCell(xl('10-14'), 'right');
+          genHeadCell(xl('15-19'), 'right');
+          genHeadCell(xl('20-24'), 'right');
+          genHeadCell(xl('25-29'), 'right');
+          genHeadCell(xl('30-34'), 'right');
+          genHeadCell(xl('35-39'), 'right');
+          genHeadCell(xl('40-44'), 'right');
+          genHeadCell(xl('45-49'), 'right');
+          genHeadCell(xl('50-54'), 'right');
+          genHeadCell(xl('55-59'), 'right');
+          genHeadCell(xl('60-64'), 'right');
+          genHeadCell(xl('65+'  ), 'right');
+        }
         else if ($value == '.age2G') { // Age
           genHeadCell(xl('M 0-24' ), 'right');
           genHeadCell(xl('M 25+'  ), 'right');
@@ -2460,6 +2502,16 @@ if ($_POST['form_submit']) {
           genHeadCell(xl('Tot 35-39'), 'right');
           genHeadCell(xl('Tot 40-44'), 'right');
           genHeadCell(xl('Tot 45+'  ), 'right');
+        }
+        else if ($value == '.age13G') { // Age
+          foreach (array('M', 'F', 'Tot') as $tmp1) {
+            foreach (array('0-9','10-14','15-19','20-24','25-29','30-34','35-39','40-44',
+              '45-49','50-54','55-59','60-64','65+','Total') as $tmp2)
+            {
+              if ($tmp1 == 'Tot' && $tmp2 == 'Total') continue;
+              genHeadCell(xl("$tmp1 $tmp2"), 'right');
+            }
+          }
         }
         else if ($arr_show[$value]['list_id']) {
           foreach ($arr_titles[$value] as $key => $dummy) {
@@ -2592,6 +2644,11 @@ if ($_POST['form_submit']) {
                 genNumCell($areport[$key]['.dtl'][$clikey][$perkey]['.age9'][$i], $cnum++, $clikey);
               }
             }
+            else if ($value == '.age13') { // Age
+              for ($i = 0; $i < 13; ++$i) {
+                genNumCell($areport[$key]['.dtl'][$clikey][$perkey]['.age13'][$i], $cnum++, $clikey);
+              }
+            }
             else if ($value == '.age2G') { // Age
               for ($i = 0; $i < $age2G_column_count; ++$i) {
                 genNumCell($areport[$key]['.dtl'][$clikey][$perkey]['.age2G'][$i], $cnum++, $clikey);
@@ -2600,6 +2657,11 @@ if ($_POST['form_submit']) {
             else if ($value == '.age9G') { // Age
               for ($i = 0; $i < $age9G_column_count; ++$i) {
                 genNumCell($areport[$key]['.dtl'][$clikey][$perkey]['.age9G'][$i], $cnum++, $clikey);
+              }
+            }
+            else if ($value == '.age13G') { // Age
+              for ($i = 0; $i < $age13G_column_count; ++$i) {
+                genNumCell($areport[$key]['.dtl'][$clikey][$perkey]['.age13G'][$i], $cnum++, $clikey);
               }
             }
             else if (!empty($arr_titles[$value])) {
