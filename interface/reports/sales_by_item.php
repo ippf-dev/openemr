@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -41,6 +41,8 @@ function ensureItems($invno, $codekey) {
 }
 
 // Get taxes matching this line item and store them in their proper $aItems array slots.
+// $id here is S:id or P:sale_id, which matches ndc_info for a tax item.
+// $codekey is relevant only for $aItems.
 function getItemTaxes($patient_id, $encounter_id, $codekey, $id) {
   global $aItems, $aTaxNames;
   $invno = "$patient_id.$encounter_id";
@@ -103,11 +105,12 @@ function ensureLineAmounts($patient_id, $encounter_id) {
   }
 
   // Get charges from drug_sales table and associated taxes.
-  $tres = sqlStatement("SELECT s.drug_id, s.fee, s.sale_id " .
+  $tres = sqlStatement("SELECT s.drug_id, s.fee, s.sale_id, s.selector " .
     "FROM drug_sales AS s WHERE " .
     "s.pid = '$patient_id' AND s.encounter = '$encounter_id' AND s.fee != 0");
   while ($trow = sqlFetchArray($tres)) {
     $codekey = 'PROD:' . $trow['drug_id'];
+    if (!empty($trow['selector'])) $codekey .= ':' . $trow['selector'];
     ensureItems($invno, $codekey);
     $aItems[$invno][$codekey][0] += $trow['fee'];
     $denom += $trow['fee'];
@@ -121,9 +124,19 @@ function ensureLineAmounts($patient_id, $encounter_id) {
     "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND a.deleted IS NULL");
   while ($trow = sqlFetchArray($tres)) {
     $codekey = $trow['code_type'] . ':' . $trow['code'];
-    if (isset($aItems[$invno][$codekey])) {
-      $aItems[$invno][$codekey][1] += $trow['adj_amount'];
-      $aItems[$invno][$codekey][2] += $trow['pay_amount'];
+    // ar_activity does not have a selector, which may be relevant for adjustments.
+    // So search for a match in $aItems[$invno] ignoring selector.
+    $cklen = strlen($codekey);
+    $arrkey = '';
+    foreach ($aItems[$invno] as $thiskey => $dummy) {
+      if ($thiskey == $codekey || (substr($thiskey, 0, $cklen) == $codekey && substr($thiskey, $cklen, 1) == ':')) {
+        $arrkey = $thiskey;
+        break;
+      }
+    }
+    if ($arrkey) {
+      $aItems[$invno][$arrkey][1] += $trow['adj_amount'];
+      $aItems[$invno][$arrkey][2] += $trow['pay_amount'];
       $denom -= $trow['adj_amount'];
       $denom -= $trow['pay_amount'];
     }
@@ -681,7 +694,8 @@ $(document).ready(function() {
         $row['title'], $row['code'] . ' ' . $row['code_text'],
         substr($row['date'], 0, 10), $row['units'], $row['fee'], $row['invoice_refno'], $row['id']);
     }
-    //
+
+    // Get product items.
     $query = "SELECT s.sale_date, s.fee, s.quantity, s.pid, s.encounter, s.selector, " .
       "s.drug_id, s.sale_id, d.name, fe.date, fe.facility_id, fe.invoice_refno " .
       "FROM drug_sales AS s " .
@@ -707,7 +721,9 @@ $(document).ready(function() {
       if ($row['selector'] !== '' && $row['selector'] !== $description) {
         $description .= ' / ' . $row['selector'];
       }
-      thisLineItem($row['pid'], $row['encounter'], 'PROD', $row['drug_id'],
+      $prodcode = $row['drug_id'];
+      if (!empty($row['selector'])) $prodcode .= ':' . $row['selector'];
+      thisLineItem($row['pid'], $row['encounter'], 'PROD', $prodcode,
         xl('Products'), $description, substr($row['date'], 0, 10), $row['quantity'],
         $row['fee'], $row['invoice_refno'], $row['sale_id']);
     }
