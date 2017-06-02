@@ -355,17 +355,18 @@ if ($fres) {
  </tr>
 
 <!-- facility and warehouse restrictions, optional -->
-<?php if ($GLOBALS['gbl_fac_warehouse_restrictions']) { ?>
+<?php if ($GLOBALS['gbl_fac_warehouse_restrictions'] || $GLOBALS['restrict_user_facility']) { ?>
  <tr title="<?php echo xla('If nothing is selected here then all are permitted.'); ?>">
-  <td><span class="text"><?php echo $GLOBALS['inhouse_pharmacy'] ?
+  <td><span class="text"><?php echo $GLOBALS['gbl_fac_warehouse_restrictions'] ?
     xlt('Facility and warehouse permissions') : xlt('Facility permissions'); ?>:</td>
   <td colspan="3">
    <select name="schedule_facility[]" multiple style="width:490px;">
 <?php
-  $userFacilities = getUserFacilities($user_id);
+  $userFacilities = getUserFacilities($user_id, 'id', $GLOBALS['gbl_fac_warehouse_restrictions']);
   $ufid = array();
   foreach ($userFacilities as $uf) $ufid[] = $uf['id'];
-  $fres = sqlStatement("select * from facility where service_location != 0 order by name");
+  // $fres = sqlStatement("select * from facility where service_location != 0 order by name");
+  $fres = sqlStatement("select * from facility order by name");
   if ($fres) {
     while($frow = sqlFetchArray($fres)) {
       // Get the warehouses that are linked to this user and facility.
@@ -378,8 +379,8 @@ if ($fres) {
       }
       echo " value='" . $frow['id'] . "'>" . text($frow['name']) . "</option>\n";
       // Then generate an option for each of the facility's warehouses.
-      // Does not apply if the site does not use inventory.
-      if ($GLOBALS['inhouse_pharmacy']) {
+      // Does not apply if the site does not use warehouse restrictions.
+      if ($GLOBALS['gbl_fac_warehouse_restrictions']) {
         $lres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
           "list_id = ? AND option_value = ? AND activity = 1 ORDER BY seq, title",
           array('warehouse', $frow['id']));

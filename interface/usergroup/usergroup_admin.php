@@ -30,7 +30,7 @@ function userCmp($a, $b) {
 // Update the users_facility table for this user from the POST variables.
 //
 function setUserFacilities($user_id) {
-  if (empty($GLOBALS['gbl_fac_warehouse_restrictions'])) return;
+  if (empty($GLOBALS['gbl_fac_warehouse_restrictions']) && empty($GLOBALS['restrict_user_facility'])) return;
 
   if (empty($_POST["schedule_facility"])) $_POST["schedule_facility"] = array();
   $tmpres = sqlStatement("SELECT * FROM users_facility WHERE " .

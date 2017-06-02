@@ -104,16 +104,26 @@ class FeeSheetHtml extends FeeSheet {
           if ($lrow['option_id'] == $default) $s .= " selected";
         }
         else {
-          $has_inventory = sellDrug($drug_id, 1, 0, 0, 0, 0, '', '', $lrow['option_id'], true);
+          $allowed = true;
+          if (isUserRestricted()) {
+            // Check for permission to use this warehouse.
+            if (!isWarehouseAllowed($lrow['option_value'], $lrow['option_id'])) {
+              $allowed = false;
+            }
+          }
+          if ($allowed) {
+            // OK got permission, check to see if inventory is there.
+            $allowed = sellDrug($drug_id, 1, 0, 0, 0, 0, '', '', $lrow['option_id'], true);
+          }
           if (((strlen($default) == 0 && $lrow['is_default']) ||
                (strlen($default)  > 0 && $lrow['option_id'] == $default)) &&
-              ($is_sold || $has_inventory))
+              ($is_sold || $allowed))
           {
             $s .= " selected";
           }
           else {
-            // Disable this warehouse option if not selected and has no inventory.
-            if (!$has_inventory) $s .= " disabled";
+            // Hide this warehouse option if not selected and has no permission or no inventory.
+            if (!$allowed) $s .= " disabled style='display:none'";
           }
         }
         $s .= ">" . text(xl_list_label($lrow['title'])) . "</option>\n";

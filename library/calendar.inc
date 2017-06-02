@@ -76,16 +76,20 @@ function getUsername($uID) {
 	return "";
 }
 
-//	returns an array of facility id and names
-function getUserFacilities($uID, $orderby='id') {
-  if ($GLOBALS['restrict_user_facility']) {
+// Returns an array of the facility ids and names that the user is allowed to access.
+// Access might be for inventory purposes ($inventory=true) or calendar purposes.
+//
+function getUserFacilities($uID, $orderby='id', $inventory=false) {
+  $restrict = $inventory ? $GLOBALS['gbl_fac_warehouse_restrictions'] : $GLOBALS['restrict_user_facility'];
+  if ($restrict) {
     // No entries in this table means the user is not restricted.
     $countrow = sqlQuery("SELECT count(*) AS count FROM users_facility WHERE " .
       "tablename = 'users' AND table_id = ?", array($uID));
   }
-  if (!$GLOBALS['restrict_user_facility'] || empty($countrow['count'])) {
+  if (!$restrict || empty($countrow['count'])) {
     $rez = sqlStatement("SELECT id, name, color FROM facility " .
-      "WHERE service_location != 0 ORDER BY $orderby");
+      // "WHERE service_location != 0 ORDER BY $orderby");
+      "ORDER BY $orderby");
   }
   else {
     // This query gets facilities that the user is authorized to access.
