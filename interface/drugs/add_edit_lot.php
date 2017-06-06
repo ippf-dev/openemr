@@ -186,10 +186,17 @@ td { font-size:10pt; }
    return false;
   }
 
-  // Check the case of a transfer between different facilities.
-  if (f.form_trans_type.value == '4' && facto != facfrom) {
-   if (!confirm('<?php echo xls('Warning: Source and target facilities differ. Continue anyway?'); ?>'))
+  if (f.form_trans_type.value == '4') {
+   // Transfers require a source lot.
+   if (!lotfrom) {
+    alert('<?php echo xls('A source lot is required'); ?>');
     return false;
+   }
+   // Check the case of a transfer between different facilities.
+   if (facto != facfrom) {
+    if (!confirm('<?php echo xls('Warning: Source and target facilities differ. Continue anyway?'); ?>'))
+     return false;
+   }
   }
 
   // Check for missing expiration date on a purchase or simple update.
@@ -300,7 +307,7 @@ if ($_POST['form_save']) {
 
   $form_quantity = $_POST['form_quantity'] + 0;
   $form_cost = sprintf('%0.2f', $_POST['form_cost']);
-  $form_source_lot = $_POST['form_source_lot'] + 0;
+  // $form_source_lot = $_POST['form_source_lot'] + 0;
 
   list($form_source_lot, $form_source_facility) = explode('|', $_POST['form_source_lot']);
   $form_source_lot = intval($form_source_lot);
@@ -503,7 +510,8 @@ foreach (array(
     echo " disabled";
   }
   else if (
-    $lot_id  && in_array($key, array('2', '4')) ||
+    // $lot_id  && in_array($key, array('2', '4')) ||
+    $lot_id  && in_array($key, array('2')) ||
     !$lot_id && in_array($key, array('0', '3', '5', '7'))
   ) {
     echo " disabled";
@@ -552,7 +560,7 @@ foreach (array(
     <option value='0'> </option>
 <?php
 $lres = sqlStatement("SELECT " .
-  "di.inventory_id, di.lot_number, di.on_hand, lo.title, lo.option_value " .
+  "di.inventory_id, di.lot_number, di.on_hand, lo.title, lo.option_value, di.warehouse_id " .
   "FROM drug_inventory AS di " .
   "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
   "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
@@ -560,7 +568,11 @@ $lres = sqlStatement("SELECT " .
   "di.on_hand > 0 AND di.destroy_date IS NULL " .
   "ORDER BY di.lot_number, lo.title, di.inventory_id", array ($drug_id,$lot_id));
 while ($lrow = sqlFetchArray($lres)) {
-  echo "<option value='" . attr($lrow['inventory_id']) . '|' . attr($lrow['option_value'])  . "'>";
+  // TBD: For transfer to an existing lot do we want to force the same lot number?
+  // Check clinic/wh permissions.
+  $facid = 0 + $lrow['option_value'];
+  if ($is_user_restricted && !isWarehouseAllowed($facid, $lrow['warehouse_id'])) continue;
+  echo "<option value='" . attr($lrow['inventory_id']) . '|' . attr($facid)  . "'>";
   echo text($lrow['lot_number']);
   if (!empty($lrow['title'])) echo " / " . text($lrow['title']);
   echo " (" . text($lrow['on_hand']) . ")";

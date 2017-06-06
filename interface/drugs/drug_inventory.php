@@ -304,7 +304,7 @@ $(document).ready(function() {
 	 generate_display_field(array('data_type'=>'1','list_id'=>'drug_units'), $row['unit']) .
 	 "</td>\n";
    if ($auth_lots && $row['dispensable']) {
-    echo "  <td onclick='doiclick($lastid,0)' title='" . xla('Add New Lot or Transfer') . "' style='padding:0'>" .
+    echo "  <td onclick='doiclick($lastid,0)' title='" . xla('Add or Transfer to Create a New Lot') . "' style='padding:0'>" .
      "<input type='button' value='" . xla('New') . "'style='padding:0' /></td>\n";
    }
    else {
@@ -318,7 +318,7 @@ $(document).ready(function() {
    $lot_number = htmlspecialchars($row['lot_number']);
    $expired = !empty($row['expiration']) && strcmp($row['expiration'], $today) <= 0;      
    if ($auth_lots) {
-    echo "  <td title='" . xla('Add Adjustment, Consumption, or Return Transaction') .
+    echo "  <td title='" . xla('Adjustment, Consumption, Return, or Transfer to an Existing Lot') .
      "' onclick='doiclick(" . attr($lastid) . "," . attr($row['inventory_id']) . ")'>" .
      "<a href='' onclick='return false'>" . text($row['lot_number']) . "</a></td>\n";
    }
