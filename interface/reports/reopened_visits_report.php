@@ -160,6 +160,7 @@ function storeRow($row, $changedate, $comments, $user, $codetype='', $code='', $
     $arr_voidid[$row['void_id']] = $row['void_id'];
     $tmp = $row['what_voided'] == 'delete' ? xl('Voided by Visit Delete') : xl('Voided');
     storeRow($row, $row['date_voided'], $tmp, $row['username']);
+    if (empty($changedate) && empty($user)) return;
   }
 
   $iname = '';
@@ -219,7 +220,7 @@ else {
 <html>
 <head>
 <?php html_header_show();?>
-<title><?php xl('Destroyed Drugs','e'); ?></title>
+<title><?php echo xlt('Visit Voids and Changes'); ?></title>
 <link rel='stylesheet' href='<?php echo $css_header ?>' type='text/css'>
 <style  type="text/css">@import url(../../library/dynarch_calendar.css);</style>
 
@@ -279,7 +280,7 @@ $(document).ready(function() {
 
 <center>
 
-<h2><?php echo xlt('Voids and Re-Opened Visits'); ?></h2>
+<h2><?php echo xlt('Visit Voids and Changes'); ?></h2>
 
 <form name='theform' method='post' action='reopened_visits_report.php'>
 
@@ -542,6 +543,8 @@ if (!empty($_POST['form_orderby'])) {
       $begtime = "$form_from_date 00:00:00";
     }
 
+    $any_changes = false;
+
     // This gets fee sheet changes from the log entries.
     $query = "SELECT " .
       "l.id, l.date, l.user_notes, l.user, l.comments " .
@@ -561,6 +564,7 @@ if (!empty($_POST['form_orderby'])) {
         $item = array($item[0], '', '', '', '', '', '', '');
       }
       storeRow($row, $lrow['date'], $lrow['comments'], $lrow['user'], $item[2], $item[3], $item[4], $item[5], $item[6], $item[7], $item[1]);
+      $any_changes = true;
     }
 
     // This gets charges and adjustments that were added for this void.
@@ -592,6 +596,7 @@ if (!empty($_POST['form_orderby'])) {
         }
         storeRow($row, $arow['post_time'], $change, $arow['username'], $arow['code_type'], $arow['code'], '', '', '', '', $arow['pay_amount'], $arow['sequence_no']);
       }
+      $any_changes = true;
     }
 
     // function storeRow($row, $changedate, $comments, $user, $codetype='', $code='', $selector='',
@@ -619,6 +624,12 @@ if (!empty($_POST['form_orderby'])) {
         }
         storeRow($row, $drow['deleted'], $change, $row['username'], $drow['code_type'], $drow['code'], '', '', $drow['pay_amount'], $drow['sequence_no']);
       }
+      $any_changes = true;
+    }
+
+    if (!$any_changes) {
+      // Nothing happened after the void so just make sure we report the void.
+      storeRow($row, '', '', '');
     }
 
   } // end while

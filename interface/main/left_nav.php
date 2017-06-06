@@ -1,6 +1,6 @@
 <?php
 use ESign\Api;
-/* Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
+/* Copyright (C) 2006-2017 Rod Roark <rod@sunsetsystems.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -1317,7 +1317,7 @@ if ($GLOBALS['athletic_team']) {
           <?php if ($GLOBALS['gbl_menu_surinam_insurance']) {
             genMiscLink('RTop','rep','0',xl('LOBI Insurers Report'),'reports/surinam_insurance_report.php');
           } ?>
-          <?php genMiscLink('RTop','rep','0',xl('Voids and Re-Opened Visits'), 'reports/reopened_visits_report.php'); ?>
+          <?php genMiscLink('RTop','rep','0',xl('Visit Voids and Changes'), 'reports/reopened_visits_report.php'); ?>
         </ul>
       </li>
 <?php } ?>
