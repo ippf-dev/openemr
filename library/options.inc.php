@@ -137,7 +137,11 @@ function generate_select_list($tag_name, $list_id, $currvalue='', $title='',
 
 // Parsing for data type 31, static text.
 function parse_static_text($frow) {
-  $tmp = nl2br(xl_layout_label($frow['description']));
+  $tmp = $frow['description'];
+  // Translate if it does not look like HTML.
+  if (substr($tmp, 0, 1) != '<') {
+    $tmp = nl2br(xl_layout_label($tmp));
+  }
   $s = '';
   if ($frow['source'] == 'D' || $frow['source'] == 'H') {
     // Source is demographics or history. This case supports value substitution.
