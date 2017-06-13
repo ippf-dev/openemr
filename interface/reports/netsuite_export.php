@@ -190,7 +190,7 @@ $previous_invno = array();
 
 function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   $description, $svcdate, $paydate, $qty, $amount, $irnumber='',
-  $payor, $sitecode, $project)
+  $payor, $sitecode, $project, $fund_name)
 {
   global $aItems, $aTaxNames, $overpayments, $previous_invno;
 
@@ -212,6 +212,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   $rowadj = $aItems[$invno][$codekey][1];
   $rowpay = $aItems[$invno][$codekey][2];
   $memo = "OpenEMR Inv " . $invnumber;
+  $memo_header = '';
 
   // Compute Discount Rate which is the negative sum of adjustments for the invoice.
   // Do this only for the first item of each invoice.
@@ -222,6 +223,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
       $discount_rate -= $aItems[$invno][$tmpcodekey][1];
       // $memo .= " $tmpcodekey:" . $aItems[$invno][$tmpcodekey][1]; // debugging
     }
+    $memo_header = $memo;
   }
   $discount_item = $discount_rate == 0.00 ? '' : xl('Discount Item');
 
@@ -232,23 +234,32 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
     echo '"' . display_desc($disp_code) . '",';
     echo '"' . display_desc($description) . '",';
     echo '"' . display_desc($qty      ) . '",';
-    // echo '"'; bucks($rowamount); echo '",';
     echo '"'; bucks($amount / $qty); echo '",';
+
+    /******************************************************************
     echo '"' . display_desc($discount_item) . '",';
     echo '"'; bucks($discount_rate);    echo '",';
     echo '"'; bucks($rowadj);    echo '",';
-    // for ($i = 0; $i < count($aTaxNames); ++$i) {
-    //   echo '"'; bucks($aItems[$invno][$codekey][3 + $i]); echo '",';
-    // }
     echo '"'; bucks($rowpay);    echo '",';
-    echo '"' . display_desc($payor) . '",';
+    ******************************************************************/
+
+    echo '"' . display_desc($memo_header) . '",';
+    echo '"' . display_desc($memo) . '",';
+    echo '"' . display_desc($payor == '' ? 'Client Self-Pay' : $payor) . '",';
+    echo '"' . display_desc($payor == '' ? 'Cash' : '') . '",';
+
+    /******************************************************************
     echo '"' . display_desc($memo) . '",';
     echo '"",'; // Program Strategy
+    ******************************************************************/
+
+    echo '"",'; // Terms
+    echo '"' . display_desc($GLOBALS['gbl_netsuite_strategic_obj']) . '",';
     echo '"' . display_desc($sitecode) . '",';
-    echo '"",'; // Fund
     echo '"' . display_desc($project) . '",';
-    echo '"",'; // Budget Activity
-    echo '"",'; // Department
+    echo '"' . display_desc($fund_name) . '",';
+    echo '"",'; // Activity
+    echo '"' . display_desc($GLOBALS['gbl_netsuite_department']) . '"';
     echo "\n";
   }
   else {
@@ -273,14 +284,11 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   <td class="detail" align="right">
    <?php echo $qty; ?>
   </td>
-  <!--
-  <td class="detail" align="right">
-   <?php bucks($rowamount); ?>
-  </td>
-  -->
   <td class="detail" align="right">
    <?php echo $overpaid; bucks($amount / $qty); ?>
   </td>
+
+  <!--
   <td class="detail">
    <?php echo display_desc($discount_item); ?>
   </td>
@@ -290,39 +298,53 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   <td class="detail" align="right">
    <?php bucks($rowadj); ?>
   </td>
-<?php
-  //    for ($i = 0; $i < count($aTaxNames); ++$i) {
-  //      echo "  <td class='detail' align='right'>\n";
-  //      echo "   "; bucks($aItems[$invno][$codekey][3 + $i]); echo "\n";
-  //      echo "  </td>\n";
-  //    }
-?>
   <td class="detail" align="right">
    <?php echo $overpaid; bucks($rowpay); ?>
   </td>
+  -->
+
   <td class="detail">
-   <?php echo display_desc($payor); ?>
+   <?php echo display_desc($memo_header); ?>
   </td>
+  <td class="detail">
+   <?php echo display_desc($memo); ?>
+  </td>
+  <td class="detail">
+   <?php echo display_desc($payor == '' ? 'Client Self-Pay' : $payor); ?>
+  </td>
+  <td class="detail">
+   <?php echo display_desc($payor == '' ? 'Cash' : ''); ?>
+  </td>
+
+  <!--
   <td class="detail">
    <?php echo display_desc($memo); ?>
   </td>
   <td class="detail">
    &nbsp;
   </td>
-  <td class="detail">
-   <?php echo display_desc($sitecode); ?>
-  </td>
+  -->
+
   <td class="detail">
    &nbsp;
+  </td>
+  <td class="detail">
+   <?php echo display_desc($GLOBALS['gbl_netsuite_strategic_obj']); ?>
+  </td>
+  <td class="detail">
+   <?php echo display_desc($sitecode); ?>
   </td>
   <td class="detail">
    <?php echo display_desc($project); ?>
   </td>
   <td class="detail">
-   &nbsp;
+   <?php echo display_desc($fund_name); ?>
   </td>
   <td class="detail">
    &nbsp;
+  </td>
+  <td class="detail">
+   <?php echo display_desc($GLOBALS['gbl_netsuite_department']); ?>
   </td>
  </tr>
 <?php
@@ -334,6 +356,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   }
 } // end function thisLineItem
 
+/**********************************************************************
 // Get the adjustment type, if any, associated with a service or product sale.
 // Invoice-level adjustments are considered to match all items in the invoice.
 //
@@ -349,6 +372,7 @@ function get_adjustment_type($patient_id, $encounter_id, $code_type, $code) {
   if (isset($row['memo'])) $adjreason = $row['memo'];
   return $adjreason;
 }
+**********************************************************************/
 
 if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
@@ -392,22 +416,31 @@ if ($_POST['form_csvexport']) {
   echo '"' . xl('Item'            ) . '",';
   echo '"' . xl('Description'     ) . '",';
   echo '"' . xl('Qty'             ) . '",';
-  // echo '"' . xl('Price'           ) . '",';
   echo '"' . xl('Each'            ) . '",';
+
+  /********************************************************************
   echo '"' . xl('Discount Item'   ) . '",';
   echo '"' . xl('Discount Rate'   ) . '",';
   echo '"' . xl('Adj'             ) . '",';
-  // foreach ($aTaxNames as $taxname) {
-  //   echo '"' . addslashes($taxname) . '",';
-  // }
   echo '"' . xl('Payment'         ) . '",';
-  echo '"' . xl('Payor'           ) . '",';
+  ********************************************************************/
+
+  echo '"' . xl('Memo Header'     ) . '",';
+  echo '"' . xl('Memo Column'     ) . '",';
+  echo '"' . xl('Customer'        ) . '",';
+  echo '"' . xl('Payment Method'  ) . '",';
+
+  /********************************************************************
   echo '"' . xl('Memo'            ) . '",';
   echo '"' . xl('Program Strategy') . '",';
+  ********************************************************************/
+
+  echo '"' . xl('Terms'           ) . '",';
+  echo '"' . xl('Strategic Obj'   ) . '",';
   echo '"' . xl('Site'            ) . '",';
-  echo '"' . xl('Fund'            ) . '",';
   echo '"' . xl('Project'         ) . '",';
-  echo '"' . xl('Budget Activity' ) . '",';
+  echo '"' . xl('Fund'            ) . '",';
+  echo '"' . xl('Activity'        ) . '",';
   echo '"' . xl('Department'      ) . '"';
   echo "\n";
 } // end export
@@ -516,7 +549,7 @@ echo "   </select>\n";
     id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
     title='<?php echo xlt('Click here to choose a date'); ?>'>
    &nbsp;
-   <input type='submit' name='form_refresh' value="<?php echo xlt('Refresh') ?>">
+   <input type='submit' name='form_refresh' value="<?php echo xlt('Run') ?>">
    &nbsp;
    <input type='submit' name='form_csvexport' value="<?php echo xlt('Export to CSV') ?>">
    &nbsp;
@@ -560,14 +593,11 @@ echo "   </select>\n";
   <td class="dehead" align="right">
    <?php echo xlt('Qty'); ?>
   </td>
-  <!--
-  <td class="dehead" align="right">
-   <?php echo xlt('Price'); ?>
-  </td>
-  -->
   <td class="dehead" align="right">
    <?php echo xlt('Each'); ?>
   </td>
+
+  <!--
   <td class="dehead">
    <?php echo xlt('Discount Item'); ?>
   </td>
@@ -577,32 +607,45 @@ echo "   </select>\n";
   <td class="dehead" align="right">
    <?php echo xlt('Adj'); ?>
   </td>
-<?php
-  // foreach ($aTaxNames as $taxname) {
-  //   echo "  <td class='dehead' align='right'>\n";
-  //   echo "   " . htmlspecialchars($taxname) . "\n";
-  //   echo "  </td>\n";
-  // }
-?>
   <td class="dehead" align="right">
    <?php echo xlt('Payment'); ?>
+  </td>
+  -->
+
+  <td class="dehead">
+   <?php echo xlt('Memo Header'); ?>
+  </td>
+  <td class="dehead">
+   <?php echo xlt('Memo Column'); ?>
   </td>
   <td class="dehead">
    <a href="#" onclick="return dosort('payor')"
    <?php if ($form_orderby == "payor") echo " style=\"color:#00cc00\""; ?>
-   ><?php echo xlt('Payor'); ?></a>
+   ><?php echo xlt('Customer'); ?></a>
   </td>
+  <td class="dehead">
+   <a href="#" onclick="return dosort('payor')"
+   <?php if ($form_orderby == "payor") echo " style=\"color:#00cc00\""; ?>
+   ><?php echo xlt('Payment Method'); ?></a>
+  </td>
+
+  <!--
   <td class="dehead">
    <?php echo xlt('Memo'); ?>
   </td>
   <td class="dehead">
    <?php echo xlt('Program Strategy'); ?>
   </td>
+  -->
+
   <td class="dehead">
-   <?php echo xlt('Site'); ?>
+   <?php echo xlt('Terms'); ?>
   </td>
   <td class="dehead">
-   <?php echo xlt('Fund'); ?>
+   <?php echo xlt('Strategic Obj'); ?>
+  </td>
+  <td class="dehead">
+   <?php echo xlt('Site'); ?>
   </td>
   <td class="dehead">
    <a href="#" onclick="return dosort('project')"
@@ -610,7 +653,10 @@ echo "   </select>\n";
    ><?php echo xlt('Project'); ?></a>
   </td>
   <td class="dehead">
-   <?php echo xlt('Budget Activity'); ?>
+   <?php echo xlt('Fund'); ?>
+  </td>
+  <td class="dehead">
+   <?php echo xlt('Activity'); ?>
   </td>
   <td class="dehead">
    <?php echo xlt('Department'); ?>
@@ -635,7 +681,17 @@ if ($_POST['form_orderby']) {
     "SELECT " .
     "b.pid, b.encounter, b.code_type, b.code AS itemcode, b.code_text AS description, b.units, b.fee, " .
     "b.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
-    "pd.userlist4 AS payor, cp.code_text AS proj_name " .
+    // "pd.userlist4 AS payor, cp.code_text AS proj_name, cp.code_text_short AS fund_name " .
+
+    "cp.code_text AS proj_name, cp.code_text_short AS fund_name, " .
+    "IF((SELECT a.memo FROM ar_activity AS a " .
+    "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
+    "WHERE " .
+    "a.pid = fe.pid AND a.encounter = fe.encounter AND a.deleted IS NULL AND " .
+    "(a.code_type = '' OR (a.code_type = b.code_type AND a.code = b.code)) AND " .
+    "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
+    "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1) IS NULL, '', pd.userlist4) AS payor " .
+
     "FROM billing AS b " .
     "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter AND " .
     "fe.date >= ? AND fe.date <= ? $factest " .
@@ -652,7 +708,17 @@ if ($_POST['form_orderby']) {
     "s.pid, s.encounter, 'PROD' AS code_type, s.drug_id AS itemcode, d.name AS description, " .
     "s.quantity AS units, s.fee, " .
     "s.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
-    "pd.userlist4 AS payor, cp.code_text AS proj_name " .
+    // "pd.userlist4 AS payor, cp.code_text AS proj_name, cp.code_text_short AS fund_name " .
+
+    "cp.code_text AS proj_name, cp.code_text_short AS fund_name, " .
+    "IF((SELECT a.memo FROM ar_activity AS a " .
+    "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
+    "WHERE " .
+    "a.pid = fe.pid AND a.encounter = fe.encounter AND a.deleted IS NULL AND " .
+    "(a.code_type = '' OR (a.code_type = 'PROD' AND a.code = s.drug_id)) AND " .
+    "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
+    "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1) IS NULL, '', pd.userlist4) AS payor " .
+
     "FROM drug_sales AS s " .
     "JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter AND " .
     "fe.date >= ? AND fe.date <= ? $factest " .
@@ -675,17 +741,21 @@ if ($_POST['form_orderby']) {
   while ($row = sqlFetchArray($res)) {
     // Determine if this is an insurance adjustment type.
     // Set payor and apply form_payor filter accordingly.
+    /******************************************************************
     $payor = 'CASH';
     if (get_adjustment_type($row['pid'], $row['encounter'], $row['code_type'], $row['itemcode'])) {
       $payor = $row['payor'];
     }
-    if ($form_payor == 'c' && $payor != 'CASH') continue;
-    if ($form_payor == 'i' && $payor == 'CASH') continue;
+    ******************************************************************/
+    $payor = $row['payor'];
+
+    if ($form_payor == 'c' && $payor != '') continue;
+    if ($form_payor == 'i' && $payor == '') continue;
 
     thisLineItem($row['pid'], $row['encounter'], $row['code_type'], $row['itemcode'],
       $row['description'], substr($row['svcdate'], 0, 10), substr($row['paydate'], 0, 10),
       $row['units'], $row['fee'], $row['invoiceno'],
-      $payor, $row['facility_npi'], $row['proj_name']);
+      $payor, $row['facility_npi'], $row['proj_name'], $row['fund_name']);
   }
 
 } // end refresh or export

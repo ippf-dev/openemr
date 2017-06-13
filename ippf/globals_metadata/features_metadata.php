@@ -76,11 +76,27 @@ array(
       '0',                              // default
       xl('Present an additional PDF custom receipt after checkout.')
     ),
+
     'gbl_ma_ippf_code_restriction' => array(
       xl('Allow More than one MA/IPPF code mapping'),
       'bool',                           // data type
       '0',                              // default = false
       xl('Disable the restriction of only one IPPF code per MA code in superbill')
     ),    
+
+    'gbl_netsuite_strategic_obj' => array (
+      xl('NetSuite Export Strategic Obj'),
+      'text',                           // data type
+      '',
+      xl('For the Strategic Obj column of the NetSuite Export.')
+    ),    
+
+    'gbl_netsuite_department' => array (
+      xl('NetSuite Export Department'),
+      'text',                           // data type
+      '',
+      xl('For the Department column of the NetSuite Export.')
+    ),    
+
 );
 ?>
