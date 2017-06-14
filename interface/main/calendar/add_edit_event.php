@@ -1529,7 +1529,7 @@ $(document).ready(function(){
 // Check for errors when the form is submitted.
 function validate(valu) {
     var f = document.getElementById('theform');
-    if (f.form_provider.value == '0') {
+    if (f.form_provider && f.form_provider.value == '0') {
       alert('<?php echo xls('Please select a provider.'); ?>');
       return false;
     }
