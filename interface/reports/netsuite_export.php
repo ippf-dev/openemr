@@ -6,8 +6,6 @@
 // as published by the Free Software Foundation; either version 2
 // of the License, or (at your option) any later version.
 
-// This is a dump of sales, payments and adjustments by line item.
-
 require_once("../globals.php");
 require_once("$srcdir/patient.inc");
 require_once("$srcdir/sql-ledger.inc");
@@ -190,7 +188,7 @@ $previous_invno = array();
 
 function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   $description, $svcdate, $paydate, $qty, $amount, $irnumber='',
-  $payor, $sitecode, $project, $fund_name)
+  $payor, $sitecode, $project, $fund_name, $terms='')
 {
   global $aItems, $aTaxNames, $overpayments, $previous_invno;
 
@@ -234,26 +232,12 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
     echo '"' . display_desc($disp_code) . '",';
     echo '"' . display_desc($description) . '",';
     echo '"' . display_desc($qty      ) . '",';
-    echo '"'; bucks($amount / $qty); echo '",';
-
-    /******************************************************************
-    echo '"' . display_desc($discount_item) . '",';
-    echo '"'; bucks($discount_rate);    echo '",';
-    echo '"'; bucks($rowadj);    echo '",';
-    echo '"'; bucks($rowpay);    echo '",';
-    ******************************************************************/
-
+    echo '"' . ($amount / $qty)         . '",';
     echo '"' . display_desc($memo_header) . '",';
     echo '"' . display_desc($memo) . '",';
-    echo '"' . display_desc($payor == '' ? 'Client Self-Pay' : $payor) . '",';
+    echo '"' . display_desc($payor == '' ? 'C00001' : $payor) . '",';
     echo '"' . display_desc($payor == '' ? 'Cash' : '') . '",';
-
-    /******************************************************************
-    echo '"' . display_desc($memo) . '",';
-    echo '"",'; // Program Strategy
-    ******************************************************************/
-
-    echo '"",'; // Terms
+    echo '"' . display_desc($terms) . '",';
     echo '"' . display_desc($GLOBALS['gbl_netsuite_strategic_obj']) . '",';
     echo '"' . display_desc($sitecode) . '",';
     echo '"' . display_desc($project) . '",';
@@ -287,22 +271,6 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   <td class="detail" align="right">
    <?php echo $overpaid; bucks($amount / $qty); ?>
   </td>
-
-  <!--
-  <td class="detail">
-   <?php echo display_desc($discount_item); ?>
-  </td>
-  <td class="detail" align="right">
-   <?php bucks($discount_rate); ?>
-  </td>
-  <td class="detail" align="right">
-   <?php bucks($rowadj); ?>
-  </td>
-  <td class="detail" align="right">
-   <?php echo $overpaid; bucks($rowpay); ?>
-  </td>
-  -->
-
   <td class="detail">
    <?php echo display_desc($memo_header); ?>
   </td>
@@ -310,23 +278,13 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
    <?php echo display_desc($memo); ?>
   </td>
   <td class="detail">
-   <?php echo display_desc($payor == '' ? 'Client Self-Pay' : $payor); ?>
+   <?php echo display_desc($payor == '' ? 'C00001' : $payor); ?>
   </td>
   <td class="detail">
    <?php echo display_desc($payor == '' ? 'Cash' : ''); ?>
   </td>
-
-  <!--
   <td class="detail">
-   <?php echo display_desc($memo); ?>
-  </td>
-  <td class="detail">
-   &nbsp;
-  </td>
-  -->
-
-  <td class="detail">
-   &nbsp;
+   <?php echo display_desc($terms); ?>
   </td>
   <td class="detail">
    <?php echo display_desc($GLOBALS['gbl_netsuite_strategic_obj']); ?>
@@ -355,24 +313,6 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
     $aItems[$invno][$codekey][$i] = 0;
   }
 } // end function thisLineItem
-
-/**********************************************************************
-// Get the adjustment type, if any, associated with a service or product sale.
-// Invoice-level adjustments are considered to match all items in the invoice.
-//
-function get_adjustment_type($patient_id, $encounter_id, $code_type, $code) {
-  $adjreason = '';
-  $row = sqlQuery("SELECT a.memo FROM ar_activity AS a " .
-    "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
-    "WHERE " .
-    "a.pid = '$patient_id' AND a.encounter = '$encounter_id' AND a.deleted IS NULL AND " .
-    "(a.code_type = '' OR (a.code_type = '$code_type' AND a.code = '$code')) AND " .
-    "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
-    "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1");
-  if (isset($row['memo'])) $adjreason = $row['memo'];
-  return $adjreason;
-}
-**********************************************************************/
 
 if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
@@ -417,24 +357,10 @@ if ($_POST['form_csvexport']) {
   echo '"' . xl('Description'     ) . '",';
   echo '"' . xl('Qty'             ) . '",';
   echo '"' . xl('Each'            ) . '",';
-
-  /********************************************************************
-  echo '"' . xl('Discount Item'   ) . '",';
-  echo '"' . xl('Discount Rate'   ) . '",';
-  echo '"' . xl('Adj'             ) . '",';
-  echo '"' . xl('Payment'         ) . '",';
-  ********************************************************************/
-
   echo '"' . xl('Memo Header'     ) . '",';
   echo '"' . xl('Memo Column'     ) . '",';
   echo '"' . xl('Customer'        ) . '",';
   echo '"' . xl('Payment Method'  ) . '",';
-
-  /********************************************************************
-  echo '"' . xl('Memo'            ) . '",';
-  echo '"' . xl('Program Strategy') . '",';
-  ********************************************************************/
-
   echo '"' . xl('Terms'           ) . '",';
   echo '"' . xl('Strategic Obj'   ) . '",';
   echo '"' . xl('Site'            ) . '",';
@@ -596,22 +522,6 @@ echo "   </select>\n";
   <td class="dehead" align="right">
    <?php echo xlt('Each'); ?>
   </td>
-
-  <!--
-  <td class="dehead">
-   <?php echo xlt('Discount Item'); ?>
-  </td>
-  <td class="dehead" align="right">
-   <?php echo xlt('Discount Rate'); ?>
-  </td>
-  <td class="dehead" align="right">
-   <?php echo xlt('Adj'); ?>
-  </td>
-  <td class="dehead" align="right">
-   <?php echo xlt('Payment'); ?>
-  </td>
-  -->
-
   <td class="dehead">
    <?php echo xlt('Memo Header'); ?>
   </td>
@@ -628,16 +538,6 @@ echo "   </select>\n";
    <?php if ($form_orderby == "payor") echo " style=\"color:#00cc00\""; ?>
    ><?php echo xlt('Payment Method'); ?></a>
   </td>
-
-  <!--
-  <td class="dehead">
-   <?php echo xlt('Memo'); ?>
-  </td>
-  <td class="dehead">
-   <?php echo xlt('Program Strategy'); ?>
-  </td>
-  -->
-
   <td class="dehead">
    <?php echo xlt('Terms'); ?>
   </td>
@@ -681,9 +581,7 @@ if ($_POST['form_orderby']) {
     "SELECT " .
     "b.pid, b.encounter, b.code_type, b.code AS itemcode, b.code_text AS description, b.units, b.fee, " .
     "b.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
-    // "pd.userlist4 AS payor, cp.code_text AS proj_name, cp.code_text_short AS fund_name " .
-
-    "cp.code_text AS proj_name, cp.code_text_short AS fund_name, " .
+    "cp.code_text AS proj_name, cp.code_text_short AS fund_name, l4.notes AS terms, " .
     "IF((SELECT a.memo FROM ar_activity AS a " .
     "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
     "WHERE " .
@@ -691,12 +589,12 @@ if ($_POST['form_orderby']) {
     "(a.code_type = '' OR (a.code_type = b.code_type AND a.code = b.code)) AND " .
     "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
     "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1) IS NULL, '', pd.userlist4) AS payor " .
-
     "FROM billing AS b " .
     "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter AND " .
     "fe.date >= ? AND fe.date <= ? $factest " .
     "JOIN patient_data AS pd ON pd.pid = fe.pid " .
     "JOIN code_types AS ct ON ct.ct_key = b.code_type " .
+    "LEFT JOIN list_options AS l4 ON l4.list_id = 'userlist4' AND l4.option_id = pd.userlist4 AND l4.activity = 1 " .
     "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
     "LEFT JOIN codes AS cp ON cp.code_type = ? AND c.related_code LIKE '%PROJ:%' AND " .
@@ -708,9 +606,7 @@ if ($_POST['form_orderby']) {
     "s.pid, s.encounter, 'PROD' AS code_type, s.drug_id AS itemcode, d.name AS description, " .
     "s.quantity AS units, s.fee, " .
     "s.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
-    // "pd.userlist4 AS payor, cp.code_text AS proj_name, cp.code_text_short AS fund_name " .
-
-    "cp.code_text AS proj_name, cp.code_text_short AS fund_name, " .
+    "cp.code_text AS proj_name, cp.code_text_short AS fund_name, l4.notes AS terms, " .
     "IF((SELECT a.memo FROM ar_activity AS a " .
     "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
     "WHERE " .
@@ -718,11 +614,11 @@ if ($_POST['form_orderby']) {
     "(a.code_type = '' OR (a.code_type = 'PROD' AND a.code = s.drug_id)) AND " .
     "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
     "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1) IS NULL, '', pd.userlist4) AS payor " .
-
     "FROM drug_sales AS s " .
     "JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter AND " .
     "fe.date >= ? AND fe.date <= ? $factest " .
     "JOIN patient_data AS pd ON pd.pid = fe.pid " .
+    "LEFT JOIN list_options AS l4 ON l4.list_id = 'userlist4' AND l4.option_id = pd.userlist4 AND l4.activity = 1 " .
     "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
     "LEFT JOIN codes AS cp ON cp.code_type = ? AND d.related_code LIKE '%PROJ:%' AND " .
@@ -739,15 +635,8 @@ if ($_POST['form_orderby']) {
   $res = sqlStatement($query, array($dt1, $dt2, $tmp, $dt1, $dt2, $tmp));
 
   while ($row = sqlFetchArray($res)) {
-    // Determine if this is an insurance adjustment type.
-    // Set payor and apply form_payor filter accordingly.
-    /******************************************************************
-    $payor = 'CASH';
-    if (get_adjustment_type($row['pid'], $row['encounter'], $row['code_type'], $row['itemcode'])) {
-      $payor = $row['payor'];
-    }
-    ******************************************************************/
     $payor = $row['payor'];
+    $terms = ($payor && !empty($row['terms'])) ? $row['terms'] : '';
 
     if ($form_payor == 'c' && $payor != '') continue;
     if ($form_payor == 'i' && $payor == '') continue;
@@ -755,7 +644,7 @@ if ($_POST['form_orderby']) {
     thisLineItem($row['pid'], $row['encounter'], $row['code_type'], $row['itemcode'],
       $row['description'], substr($row['svcdate'], 0, 10), substr($row['paydate'], 0, 10),
       $row['units'], $row['fee'], $row['invoiceno'],
-      $payor, $row['facility_npi'], $row['proj_name'], $row['fund_name']);
+      $payor, $row['facility_npi'], $row['proj_name'], $row['fund_name'], $terms);
   }
 
 } // end refresh or export
