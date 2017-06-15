@@ -628,6 +628,9 @@ if (!empty($_POST['form_orderby'])) {
     }
 
     if (!$any_changes) {
+      if ($form_date_type == 0 && ($row['date_voided'] < "$form_from_date 00:00:00" || $row['date_voided'] > "$form_to_date 23:59:59")) {
+        continue;
+      }
       // Nothing happened after the void so just make sure we report the void.
       storeRow($row, '', '', '');
     }

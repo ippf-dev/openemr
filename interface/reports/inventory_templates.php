@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2012-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2012-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -25,7 +25,7 @@ $form_inactive = empty($_REQUEST['form_inactive']) ? 0 : 1;
 $mmtype = $GLOBALS['gbl_min_max_months'] ? xl('Months') : xl('Units');
 
 // Query for the main loop.
-$query = "SELECT d.*, dt.selector, dt.period, dt.quantity, dt.refills " .
+$query = "SELECT d.*, dt.selector, dt.period, dt.quantity, dt.refills, dt.pkgqty " .
   "FROM drugs AS d " .
   "LEFT JOIN drug_templates AS dt ON dt.drug_id = d.drug_id ";
 if (empty($form_inactive)) $query .= "WHERE d.active = 1 ";
@@ -87,15 +87,16 @@ $(document).ready(function() {
 <table width='98%' id='mymaintable' class='mymaintable'>
  <thead style='display:table-header-group'>
   <tr class='head'>
-   <th><?php  xl('Name','e'); ?></th>
-   <th><?php  xl('NDC','e'); ?></th>
-   <th><?php  xl('Active','e'); ?></th>
-   <th><?php  xl('Form','e'); ?></th>
-   <th><?php  xl('Relate To','e'); ?></th>
-   <th><?php  xl('Template','e'); ?></th>
-   <th><?php  xl('Schedule','e'); ?></th>
-   <th align='right'><?php  xl('Quantity','e'); ?></th>
-   <th align='right'><?php  xl('Refills','e'); ?></th>
+   <th><?php echo xlt('Name'); ?></th>
+   <th><?php echo xlt('NDC'); ?></th>
+   <th><?php echo xlt('Active'); ?></th>
+   <th><?php echo xlt('Form'); ?></th>
+   <th><?php echo xlt('Relate To'); ?></th>
+   <th><?php echo xlt('Template'); ?></th>
+   <th><?php echo xlt('Schedule'); ?></th>
+   <th align='right'><?php echo xlt('Sales Units'); ?></th>
+   <th align='right'><?php echo xlt('Basic Units'); ?></th>
+   <th align='right'><?php echo xlt('Refills'); ?></th>
 <?php
   // Show a heading for each price level.
   $numprices = 0;
@@ -139,6 +140,7 @@ while ($row = sqlFetchArray($res)) {
     generate_display_field(array('data_type'=>'1','list_id'=>'drug_interval'),
     $row['period']) . "</td>\n";
   echo "  <td align='right'>" . $row['quantity'] . "</td>\n";
+  echo "  <td align='right'>" . $row['pkgqty'] . "</td>\n";
   echo "  <td align='right'>" . $row['refills'] . "</td>\n";
 
   // Prices.

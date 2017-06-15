@@ -11,7 +11,7 @@
 <script type="text/javascript">
     function export_to_csv(elem)
     {
-        var data_table=$("center > table");
+        var data_table = $("#mymaintable");
         var json_data=[];
         var header=data_table.find("thead > tr > th");
         var header_data=[];
