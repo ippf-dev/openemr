@@ -91,12 +91,5 @@ array(
       xl('For the Strategic Obj column of the NetSuite Export.')
     ),    
 
-    'gbl_netsuite_department' => array (
-      xl('NetSuite Export Department'),
-      'text',                           // data type
-      '',
-      xl('For the Department column of the NetSuite Export.')
-    ),    
-
 );
 ?>
