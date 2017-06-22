@@ -174,8 +174,10 @@ foreach ($counters as $key => $dummy) {
 // Value is irrelevant. Avoids counting any referral more than once.
 $refsused = array();
 
-$from_date = fixDate($_POST['form_from_date']);
+$from_date = fixDate($_POST['form_from_date'], date('Y-m-01'));
 $to_date   = fixDate($_POST['form_to_date'], date('Y-m-d'));
+
+// if (!empty($_POST['form_from_date'])) {
 
 // Main query, LBFcercan form instances. If a visit has multiple LBFcercan
 // forms we will take only the last one.
@@ -199,9 +201,9 @@ $query = "SELECT " .
   "LEFT JOIN lbf_data AS d2 ON d2.form_id = fcc.form_id AND d2.field_id = 'ishivpos' " .
   "LEFT JOIN lbf_data AS d3 ON d3.form_id = fcc.form_id AND d3.field_id = 'ccresult' " .
   "LEFT JOIN shared_attributes AS v1 ON v1.pid = fe.pid AND v1.encounter = fe.encounter AND v1.field_id = 'CC_PrevScreen' " .
-  "LEFT JOIN shared_attributes AS v2 ON v1.pid = fe.pid AND v2.encounter = fe.encounter AND v2.field_id = 'HA_HIVStatus' " .
-  "LEFT JOIN shared_attributes AS v3 ON v1.pid = fe.pid AND v3.encounter = fe.encounter AND v3.field_id = 'VIA_Results' " .
-  "LEFT JOIN shared_attributes AS v4 ON v1.pid = fe.pid AND v4.encounter = fe.encounter AND v4.field_id = 'VIA_CryoEligible' " .
+  "LEFT JOIN shared_attributes AS v2 ON v2.pid = fe.pid AND v2.encounter = fe.encounter AND v2.field_id = 'HA_HIVStatus' " .
+  "LEFT JOIN shared_attributes AS v3 ON v3.pid = fe.pid AND v3.encounter = fe.encounter AND v3.field_id = 'VIA_Results' " .
+  "LEFT JOIN shared_attributes AS v4 ON v4.pid = fe.pid AND v4.encounter = fe.encounter AND v4.field_id = 'VIA_CryoEligible' " .
   "WHERE fe.date >= ? AND fe.date <= ? ";
 if ($form_facility) {
   $query .= "AND fe.facility_id = '$form_facility' ";
@@ -416,6 +418,8 @@ while ($row = sqlFetchArray($res)) {
   }
 } // end while
 
+// } // end if (!empty($_POST['form_from_date']))
+
 if (!empty($_POST['form_csvexport'])) {
   header("Pragma: public");
   header("Expires: 0");
@@ -500,13 +504,15 @@ a, a:visited, a:hover { color:#0000cc; }
  echo "   </select>\n";
 ?>
    <br />
-   <input type="submit" value="<?php xl('Refresh','e'); ?>" />&nbsp;
+   <input type="submit" name="form_refresh" value="<?php xl('Refresh','e'); ?>" />&nbsp;
    <input type="submit" name="form_csvexport" value="<?php echo xl('Export to CSV'); ?>">&nbsp;
    <input type="button" value="<?php xl('Print','e'); ?>" onclick="window.print()" />
   </td>
  </tr>
 </table>
 </form>
+
+<?php // if (!empty($_POST['form_from_date'])) { ?>
 
 <table width='98%' cellpadding='2' cellspacing='2'>
  <thead style='display:table-header-group'>
@@ -525,7 +531,12 @@ a, a:visited, a:hover { color:#0000cc; }
  <tbody>
 
 <?php
+
+// } // end if (!empty($_POST['form_from_date']))
+
 } // end not exporting
+
+// if (!empty($_POST['form_from_date'])) {
 
 $lastcat = '';
 foreach ($rptlines as $key => $value) {
@@ -561,6 +572,8 @@ foreach ($rptlines as $key => $value) {
     echo csvitem($pct2, true);
   }
 }
+
+// } // end if (!empty($_POST['form_from_date']))
 
 if (empty($_POST['form_csvexport'])) {
 ?>
