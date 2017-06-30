@@ -129,7 +129,10 @@ function gcrHeader(&$aReceipt, &$pdf, $patient_id, $encounter_id, $billtime='') 
   $tmp = craGetTimestamps($patient_id, $encounter_id);
   $tmp = array_search($billtime, $tmp);
   $tmp = $tmp === FALSE ? 0 : ($tmp + 1);
-  $irn = $aReceipt['invoice_refno'] . "-$tmp";
+
+  // $irn = $aReceipt['invoice_refno'] . "-$tmp";
+  $irn = $aReceipt['invoice_refno'] ? "{$aReceipt['invoice_refno']}-$tmp" : "$encounter_id-$tmp";
+
   gcrWriteCell($pdf, $GCR_TOP_WIDTH_1, $GCR_TOP_WIDTH_2, 'R', xl('Sales Receipt') . " # $irn");
   $pdf->Ln($GCR_LINE_HEIGHT);
 
