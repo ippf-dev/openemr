@@ -187,7 +187,7 @@ $previous_invno = array();
 
 function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   $description, $svcdate, $paydate, $qty, $amount, $irnumber='',
-  $payor, $sitecode, $project, $fund_name, $terms='', $dept_name)
+  $payor, $sitecode, $project, $fund_name, $terms='', $dept_name='', $sobj_name='')
 {
   global $aItems, $aTaxNames, $overpayments, $previous_invno;
 
@@ -237,7 +237,8 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
     echo '"' . display_desc($payor == '' ? 'C00001' : $payor) . '",';
     echo '"' . display_desc($payor == '' ? 'Cash' : '') . '",';
     echo '"' . display_desc($terms) . '",';
-    echo '"' . display_desc($GLOBALS['gbl_netsuite_strategic_obj']) . '",';
+    // echo '"' . display_desc($GLOBALS['gbl_netsuite_strategic_obj']) . '",';
+    echo '"' . display_desc($sobj_name) . '",';
     echo '"' . display_desc($sitecode) . '",';
     echo '"' . display_desc($project) . '",';
     echo '"' . display_desc($fund_name) . '",';
@@ -286,7 +287,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
    <?php echo display_desc($terms); ?>
   </td>
   <td class="detail">
-   <?php echo display_desc($GLOBALS['gbl_netsuite_strategic_obj']); ?>
+   <?php echo display_desc($sobj_name); ?>
   </td>
   <td class="detail">
    <?php echo display_desc($sitecode); ?>
@@ -572,10 +573,11 @@ if ($_POST['form_orderby']) {
   $overpayments = 0;
   $aItems = array();
 
-  // Lengths of PROJ, DEPT and FUND codes. Yes this is a bit lame.
+  // Lengths of PROJ, DEPT, FUND and SOBJ codes. Yes this is a bit lame.
   $projcodelen = 10;
   $deptcodelen = 3;
   $fundcodelen = 3;
+  $sobjcodelen = 3;
 
   // If a facility was specified.
   $factest = $form_facility ? "AND fe.facility_id = '$form_facility'" : "";
@@ -589,13 +591,16 @@ if ($_POST['form_orderby']) {
     "cf.code = SUBSTR(cp.related_code, LOCATE('FUND:', cp.related_code) + 5, $fundcodelen) " .
     "LEFT JOIN codes AS cd ON cd.code_type = ? AND cp.related_code IS NOT NULL AND " .
     "cp.related_code LIKE '%DEPT:%' AND " .
-    "cd.code = SUBSTR(cp.related_code, LOCATE('DEPT:', cp.related_code) + 5, $deptcodelen) ";
+    "cd.code = SUBSTR(cp.related_code, LOCATE('DEPT:', cp.related_code) + 5, $deptcodelen) " .
+    "LEFT JOIN codes AS cs ON cs.code_type = ? AND cp.related_code IS NOT NULL AND " .
+    "cp.related_code LIKE '%SOBJ:%' AND " .
+    "cs.code = SUBSTR(cp.related_code, LOCATE('SOBJ:', cp.related_code) + 5, $sobjcodelen) ";
 
   $query = "( " .
     "SELECT " .
     "b.pid, b.encounter, b.code_type, b.code AS itemcode, b.code_text AS description, b.units, b.fee, " .
     "b.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
-    "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, l4.notes AS terms, " .
+    "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, l4.notes AS terms, " .
     "IF((SELECT a.memo FROM ar_activity AS a " .
     "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
     "WHERE " .
@@ -619,7 +624,7 @@ if ($_POST['form_orderby']) {
     "s.pid, s.encounter, 'PROD' AS code_type, s.drug_id AS itemcode, d.name AS description, " .
     "s.quantity AS units, s.fee, " .
     "s.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
-    "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, l4.notes AS terms, " .
+    "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, l4.notes AS terms, " .
     "IF((SELECT a.memo FROM ar_activity AS a " .
     "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
     "WHERE " .
@@ -643,10 +648,12 @@ if ($_POST['form_orderby']) {
   $projid = empty($code_types['PROJ']) ? 0 : $code_types['PROJ']['id'];
   $fundid = empty($code_types['FUND']) ? 0 : $code_types['FUND']['id'];
   $deptid = empty($code_types['DEPT']) ? 0 : $code_types['DEPT']['id'];
+  $sobjid = empty($code_types['SOBJ']) ? 0 : $code_types['SOBJ']['id'];
 
   // if (! $_POST['form_csvexport']) echo "<!-- $query\n $dt1 $dt2 $tmp -->\n"; // debugging
 
-  $res = sqlStatement($query, array($dt1, $dt2, $projid, $fundid, $deptid, $dt1, $dt2, $projid, $fundid, $deptid));
+  $res = sqlStatement($query, array($dt1, $dt2, $projid, $fundid, $deptid, $sobjid,
+    $dt1, $dt2, $projid, $fundid, $deptid, $sobjid));
 
   while ($row = sqlFetchArray($res)) {
     $payor = $row['payor'];
@@ -658,7 +665,8 @@ if ($_POST['form_orderby']) {
     thisLineItem($row['pid'], $row['encounter'], $row['code_type'], $row['itemcode'],
       $row['description'], substr($row['svcdate'], 0, 10), substr($row['paydate'], 0, 10),
       $row['units'], $row['fee'], $row['invoiceno'],
-      $payor, $row['facility_npi'], $row['proj_name'], $row['fund_name'], $terms, $row['dept_name']);
+      $payor, $row['facility_npi'], $row['proj_name'], $row['fund_name'], $terms,
+      $row['dept_name'], $row['sobj_name']);
   }
 
 } // end refresh or export

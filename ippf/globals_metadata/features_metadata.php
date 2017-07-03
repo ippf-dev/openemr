@@ -84,12 +84,5 @@ array(
       xl('Disable the restriction of only one IPPF code per MA code in superbill')
     ),    
 
-    'gbl_netsuite_strategic_obj' => array (
-      xl('NetSuite Export Strategic Obj'),
-      'text',                           // data type
-      '',
-      xl('For the Strategic Obj column of the NetSuite Export.')
-    ),    
-
 );
 ?>
