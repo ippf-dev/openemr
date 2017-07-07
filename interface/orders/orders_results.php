@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2010-2013 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2010-2013, 2017 Rod Roark <rod@sunsetsystems.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -436,7 +436,7 @@ while ($row = sqlFetchArray($res)) {
   $date_collected = empty($row['date_collected'  ]) ? '' : substr($row['date_collected'], 0, 16);
   $specimen_num   = empty($row['specimen_num'    ]) ? '' : $row['specimen_num'];
   $report_status  = empty($row['report_status'   ]) ? '' : $row['report_status']; 
-  $review_status  = empty($row['review_status'   ]) ? 'received' : $row['review_status'];
+  $review_status  = empty($row['review_status'   ]) ? '' : $row['review_status'];
 
   // skip report_status = receive to make sure do not show the report before it reviewed and sign off by Physicians
   if ($form_review) {
@@ -452,8 +452,10 @@ while ($row = sqlFetchArray($res)) {
     "ps.procedure_result_id, ps.result_code AS result_code, ps.result_text, ps.abnormal, ps.result, " .
     "ps.range, ps.result_status, ps.facility, ps.comments, ps.units, ps.comments";
 
-  // procedure_type_id for order:
-  $pt2cond = "pt2.parent = $order_type_id AND " .
+  // To match the result (and recommendation) types under this order type.
+  // This permits 0 or 1 level of groupings under the order type.
+  $pt2cond = "(pt2.parent = $order_type_id OR pt2.parent IN " .
+    "(SELECT pt3.procedure_type_id FROM procedure_type AS pt3 WHERE pt3.parent = $order_type_id)) AND " .
     "(pt2.procedure_type LIKE 'res%' OR pt2.procedure_type LIKE 'rec%')";
 
   // pr.procedure_report_id or 0 if none:
