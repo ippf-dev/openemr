@@ -718,3 +718,7 @@ INSERT INTO `globals` (gl_name, gl_index, gl_value) SELECT 'gbl_fac_warehouse_re
 #IfMissingColumn patient_data dupscore
 ALTER TABLE `patient_data` ADD COLUMN `dupscore` INT NOT NULL default -9;
 #EndIf
+
+#IfMissingColumn facility related_code
+ALTER TABLE `facility` ADD COLUMN `related_code` VARCHAR(255) NOT NULL default '';
+#EndIf

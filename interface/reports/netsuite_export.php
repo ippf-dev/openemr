@@ -585,7 +585,6 @@ if ($_POST['form_orderby']) {
   // Joins that work for both services and products.
   $morejoins =
     "LEFT JOIN list_options AS l4 ON l4.list_id = 'userlist4' AND l4.option_id = pd.userlist4 AND l4.activity = 1 " .
-    "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "LEFT JOIN codes AS cf ON cf.code_type = ? AND cp.related_code IS NOT NULL AND " .
     "cp.related_code LIKE '%FUND:%' AND " .
     "cf.code = SUBSTR(cp.related_code, LOCATE('FUND:', cp.related_code) + 5, $fundcodelen) " .
@@ -612,6 +611,7 @@ if ($_POST['form_orderby']) {
     "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter AND " .
     "fe.date >= ? AND fe.date <= ? $factest " .
     "JOIN patient_data AS pd ON pd.pid = fe.pid " .
+    "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "JOIN code_types AS ct ON ct.ct_key = b.code_type " .
     "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
     "LEFT JOIN codes AS cp ON cp.code_type = ? AND c.related_code LIKE '%PROJ:%' AND " .
@@ -636,9 +636,10 @@ if ($_POST['form_orderby']) {
     "JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter AND " .
     "fe.date >= ? AND fe.date <= ? $factest " .
     "JOIN patient_data AS pd ON pd.pid = fe.pid " .
+    "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
-    "LEFT JOIN codes AS cp ON cp.code_type = ? AND d.related_code LIKE '%PROJ:%' AND " .
-    "cp.code = SUBSTR(d.related_code, LOCATE('PROJ:', d.related_code) + 5, $projcodelen) " .
+    "LEFT JOIN codes AS cp ON cp.code_type = ? AND f.related_code LIKE '%PROJ:%' AND " .
+    "cp.code = SUBSTR(f.related_code, LOCATE('PROJ:', f.related_code) + 5, $projcodelen) " .
     $morejoins .
     "WHERE s.fee != 0 " .
     ") ORDER BY $orderby";

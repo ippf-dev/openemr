@@ -152,6 +152,43 @@ function displayAlert()
 	else if(document.getElementById('primary_business_entity').checked==true)
 	alert("<?php echo addslashes(xl('Once the Primary Business Facility is set, it should not be changed. Changing the facility will affect the working in NewCrop ePrescription.'));?>");
 }
+
+// This is for callback by the find-code popup.
+// Appends to or erases the current list of related codes.
+function set_related(codetype, code, selector, codedesc) {
+ var f = document.forms[0];
+ var s = f.form_related_code.value;
+ if (code) {
+  if (codetype != 'PROD') {
+   if (s.indexOf(codetype + ':') == 0 || s.indexOf(';' + codetype + ':') > 0) {
+    return '<?php echo xl('A code of this type is already selected. Erase the field first if you need to replace it.') ?>';
+   }
+  }     
+  if (s.length > 0) s += ';';
+  s += codetype + ':' + code;
+ } else {
+  s = '';
+ }
+ f.form_related_code.value = s;
+}
+
+// This is for callback by the find-code popup.
+// Returns the array of currently selected codes with each element in codetype:code format.
+function get_related() {
+ return document.forms[0].form_related_code.value.split(';');
+}
+
+// This is for callback by the find-code popup.
+// Deletes the specified codetype:code from the currently selected list.
+function del_related(s) {
+ my_del_related(s, document.forms[0].form_related_code, false);
+}
+
+// This invokes the find-code popup.
+function sel_related() {
+ dlgopen('../patient_file/encounter/find_code_dynamic.php', '_blank', 900, 600);
+}
+
 </script>
 <link rel="stylesheet" href="<?php echo $css_header;?>" type="text/css">
 
@@ -262,6 +299,13 @@ function displayAlert()
         <tr>
             <td><span class="text"><?php xl('CLIA Number','e'); ?>:</span></td>
             <td colspan="4"><input type="text" name="domain_identifier" size="45"></td>
+        </tr>
+        <tr>
+            <td><span class="text"><?php echo xlt('Related Codes'); ?>:</span></td>
+            <td colspan="4"><input type='text' size='45' name='form_related_code'
+             value='' onclick='sel_related()'
+             title='<?php echo xla('Click to select related code'); ?>'
+             readonly /></td>
         </tr>
 
         <tr height="25" style="valign:bottom;">

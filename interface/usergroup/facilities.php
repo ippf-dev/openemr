@@ -29,6 +29,7 @@ if (isset($_POST["mode"]) && $_POST["mode"] == "facility" && $_POST["newmode"] !
   "extra_validation = '" . trim(formData('extra_validation')) . "', ".
   "pos_code = '"  . trim(formData('pos_code' )) . "', " .
   "domain_identifier = '"  . trim(formData('domain_identifier' )) . "', " .
+  "related_code = '"  . formData('form_related_code') . "', " .
   "attn = '"  . trim(formData('attn' )) . "', " .
   "tax_id_type = '"  . trim(formData('tax_id_type' )) . "', " .
   "primary_business_entity = '"  . trim(formData('primary_business_entity' )) . "', ".
@@ -59,6 +60,7 @@ if ($_POST["mode"] == "facility" && $_POST["newmode"] == "admin_facility")
 		extra_validation='" . trim(formData('extra_validation')) . "',                    
 		pos_code='" . trim(formData('pos_code')) . "',
 		domain_identifier='" . trim(formData('domain_identifier')) . "',
+    related_code = '"  . formData('form_related_code') . "',
 		facility_npi='" . trim(formData('facility_npi')) . "',
 		attn='" . trim(formData('attn')) . "' ,
 		primary_business_entity='" . trim(formData('primary_business_entity')) . "' ,
@@ -121,11 +123,6 @@ $(document).ready(function(){
         <div>
 <table cellpadding="1" cellspacing="0" class="showborder">
   <tr class="showborder_head" height="22">
-    <!--
-		<th style="border-style:1px solid #000" width="140px"><?php xl('Name','e'); ?></th>
-		<th style="border-style:1px solid #000" width="320px"><?php xl('Address','e'); ?></th>
-		<th style="border-style:1px solid #000"><?php xl('Phone','e'); ?></th>
-    -->
     <th style="border-style:1px solid #000"><?php echo xlt('Name'); ?></th>
     <th style="border-style:1px solid #000"><?php echo xlt('Address'); ?></th>
     <th style="border-style:1px solid #000"><?php echo xlt('Phone'); ?></th>
