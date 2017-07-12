@@ -215,12 +215,14 @@ td { font-size:10pt; }
 
   // display attributes
   var showQuantity     = true;
+  var showOnHand       = true;
   var showSaleDate     = true;
   var showCost         = true;
   var showSourceLot    = true;
   var showNotes        = true;
   var showManufacturer = true;
   var showLotNumber    = true;
+  var showWarehouse    = true;
   var showExpiration   = true;
   var showVendor       = <?php echo areVendorsUsed() ? 'true' : 'false'; ?>;
 
@@ -236,6 +238,9 @@ td { font-size:10pt; }
     roManufacturer = false;
     roLotNumber    = false;
     roExpiration   = false;
+<?php if (!$lot_id) { // target lot is not known yet ?>
+    showOnHand     = false;
+<?php } ?>
   }
   else if (type == '3') { // return
     showSourceLot    = false;
@@ -248,6 +253,11 @@ td { font-size:10pt; }
     showVendor       = false;
     showLotNumber    = false;
     showExpiration   = false;
+<?php if ($lot_id) { // disallow warehouse change on xfer to existing lot ?>
+    showWarehouse    = false;
+<?php } else { // target lot is not known yet ?>
+    showOnHand       = false;
+<?php } ?>
     labelWarehouse = '<?php echo xlt('Destination Warehouse'); ?>';
   }
   else if (type == '5') { // adjustment
@@ -273,6 +283,7 @@ td { font-size:10pt; }
     roExpiration   = false;
   }
   document.getElementById('row_quantity'    ).style.display = showQuantity     ? '' : 'none';
+  document.getElementById('row_on_hand'     ).style.display = showOnHand       ? '' : 'none';
   document.getElementById('row_sale_date'   ).style.display = showSaleDate     ? '' : 'none';
   document.getElementById('row_cost'        ).style.display = showCost         ? '' : 'none';
   document.getElementById('row_source_lot'  ).style.display = showSourceLot    ? '' : 'none';
@@ -280,6 +291,7 @@ td { font-size:10pt; }
   document.getElementById('row_manufacturer').style.display = showManufacturer ? '' : 'none';
   document.getElementById('row_vendor'      ).style.display = showVendor       ? '' : 'none';
   document.getElementById('row_lot_number'  ).style.display = showLotNumber    ? '' : 'none';
+  document.getElementById('row_warehouse'   ).style.display = showWarehouse    ? '' : 'none';
   document.getElementById('row_expiration'  ).style.display = showExpiration   ? '' : 'none';
 
   f.form_manufacturer.readOnly = roManufacturer;
@@ -369,6 +381,22 @@ if ($_POST['form_save']) {
   }
 
   if (!$info_msg) {
+
+    // If purchase or transfer with no destination lot specified, see if one already exists.
+    if (!$lot_id && $form_lot_number && ($form_trans_type == 2 || $form_trans_type == 4)) {
+      $erow = sqlQuery("SELECT * FROM drug_inventory WHERE " .
+        "drug_id = ? AND warehouse_id = ? AND lot_number = ? AND destroy_date IS NULL " .
+        "ORDER BY inventory_id DESC LIMIT 1",
+        array($drug_id, $form_warehouse_id, $form_lot_number));
+      if (!empty($erow['inventory_id'])) {
+        // Yes a matching lot exists, use it and its values.
+        $lot_id = $erow['inventory_id'];
+        if (empty($form_expiration  )) $form_expiration   = $erow['expiration'  ];
+        if (empty($form_manufacturer)) $form_manufacturer = $erow['manufacturer'];
+        if (empty($form_vendor_id   )) $form_vendor_id    = $erow['vendor_id'   ];
+      }
+    }
+
     // Destination lot already exists.
     if ($lot_id) {
       if ($_POST['form_save']) {
@@ -510,8 +538,8 @@ foreach (array(
     echo " disabled";
   }
   else if (
-    // $lot_id  && in_array($key, array('2', '4')) ||
-    $lot_id  && in_array($key, array('2')) ||
+    $lot_id  && in_array($key, array('2', '4')) ||
+    // $lot_id  && in_array($key, array('2')) ||
     !$lot_id && in_array($key, array('0', '3', '5', '7'))
   ) {
     echo " disabled";
@@ -596,7 +624,7 @@ generate_form_field(array('data_type' => 14, 'field_id' => 'vendor_id',
   </td>
  </tr>
 
- <tr>
+ <tr id='row_warehouse'>
   <td valign='top' nowrap><b id='label_warehouse'><?php echo xlt('Warehouse'); ?>:</b></td>
   <td>
 <?php
@@ -609,7 +637,7 @@ generate_form_field(array('data_type' => 14, 'field_id' => 'vendor_id',
   </td>
  </tr>
 
- <tr>
+ <tr id='row_on_hand'>
   <td valign='top' nowrap><b><?php echo xlt('On Hand'); ?>:</b></td>
   <td>
    <?php echo text($row['on_hand'] + 0); ?>

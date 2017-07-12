@@ -242,8 +242,8 @@ $(document).ready(function() {
   <td title='<?php echo xlt('Measurement Units'); ?>'>
    <?php echo xlt('Unit'); ?>
   </td>
-  <td title='<?php echo xla('Click to receive (add) new lot'); ?>'>
-   <?php echo xlt('New'); ?>
+  <td title='<?php echo xla('Purchase or Transfer'); ?>'>
+   <?php echo xlt('Tran'); ?>
   </td>
   <td title='<?php echo xla('Click to edit'); ?>'>
    <a href="#" onclick="return dosort('lot')"
@@ -304,8 +304,8 @@ $(document).ready(function() {
 	 generate_display_field(array('data_type'=>'1','list_id'=>'drug_units'), $row['unit']) .
 	 "</td>\n";
    if ($auth_lots && $row['dispensable']) {
-    echo "  <td onclick='doiclick($lastid,0)' title='" . xla('Add or Transfer to Create a New Lot') . "' style='padding:0'>" .
-     "<input type='button' value='" . xla('New') . "'style='padding:0' /></td>\n";
+    echo "  <td onclick='doiclick($lastid,0)' title='" . xla('Purchase or Transfer') . "' style='padding:0'>" .
+     "<input type='button' value='" . xla('Tran') . "'style='padding:0' /></td>\n";
    }
    else {
     echo "  <td title='" . xlt('Not applicable') . "'>&nbsp;</td>\n";
@@ -318,7 +318,7 @@ $(document).ready(function() {
    $lot_number = htmlspecialchars($row['lot_number']);
    $expired = !empty($row['expiration']) && strcmp($row['expiration'], $today) <= 0;      
    if ($auth_lots) {
-    echo "  <td title='" . xla('Adjustment, Consumption, Return, or Transfer to an Existing Lot') .
+    echo "  <td title='" . xla('Adjustment, Consumption, Return, or Edit') .
      "' onclick='doiclick(" . attr($lastid) . "," . attr($row['inventory_id']) . ")'>" .
      "<a href='' onclick='return false'>" . text($row['lot_number']) . "</a></td>\n";
    }

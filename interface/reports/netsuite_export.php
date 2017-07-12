@@ -651,7 +651,7 @@ if ($_POST['form_orderby']) {
   $deptid = empty($code_types['DEPT']) ? 0 : $code_types['DEPT']['id'];
   $sobjid = empty($code_types['SOBJ']) ? 0 : $code_types['SOBJ']['id'];
 
-  // if (! $_POST['form_csvexport']) echo "<!-- $query\n $dt1 $dt2 $tmp -->\n"; // debugging
+  // if (! $_POST['form_csvexport']) echo "<!-- $query\n '$dt1' '$dt2' '$projid' '$fundid' '$deptid' '$sobjid' -->\n"; // debugging
 
   $res = sqlStatement($query, array($dt1, $dt2, $projid, $fundid, $deptid, $sobjid,
     $dt1, $dt2, $projid, $fundid, $deptid, $sobjid));
