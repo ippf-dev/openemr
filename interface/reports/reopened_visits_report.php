@@ -602,6 +602,9 @@ if (!empty($_POST['form_orderby'])) {
     // function storeRow($row, $changedate, $comments, $user, $codetype='', $code='', $selector='',
     //   $pricelevel='', $fee='', $units='', $newvalue='', $sequence_no=0)
 
+    // The void's user applies to the remainder.
+    if ($form_user && $form_user != $row['username']) continue;
+
     // This gets charges and adjustments that were deleted for this void.
     $query = "SELECT code_type, code, pay_amount, adj_amount, sequence_no, memo, deleted " .
       "FROM ar_activity WHERE " .
