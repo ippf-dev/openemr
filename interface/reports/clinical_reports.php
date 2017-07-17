@@ -46,7 +46,7 @@ $fake_register_globals=false;
 	$sql_ethnicity = $_POST["ethnicity"];
 	$sql_race=$_POST["race"];
 	$form_drug_name = trim($_POST["form_drug_name"]);
-	$form_diagnosis = trim($_POST["form_diagnosis"]);
+	$form_diagnosis = empty($_POST['form_diagnosis']) ? '' : trim($_POST['form_diagnosis']);
 	$form_lab_results = trim($_POST["form_lab_results"]);
 	$form_service_codes = trim($_POST["form_service_codes"]);
 
@@ -240,7 +240,7 @@ Search options include diagnosis, procedure, prescription, medical history, and 
 							<input name='age_from' class="numeric_only" type='text' id="age_from" value="<?php echo htmlspecialchars($age_from,ENT_QUOTES); ?>" size='3' maxlength='3' /> <?php echo htmlspecialchars(xl('To'),ENT_NOQUOTES); ?> 
 							<input name='age_to' class="numeric_only" type='text' id="age_to" value="<?php echo htmlspecialchars($age_to,ENT_QUOTES); ?>" size='3' maxlength='3' /></td>
 						<td class='label'><?php echo htmlspecialchars(xl('Problem DX'),ENT_NOQUOTES); ?>:</td>
-						<td><input type='text' name='form_diagnosis' size='10' maxlength='250' value='<?php echo htmlspecialchars($form_diagnosis,ENT_QUOTES); ?>' onclick='sel_diagnosis(this)' title='<?php echo htmlspecialchars(xl('Click to select or change diagnoses'),ENT_QUOTES); ?>' readonly /></td>
+						<td><input type='text' name='form_diagnosis' size='10' maxlength='250' value='<?php echo xla($form_diagnosis); ?>' onclick='sel_diagnosis(this)' title='<?php echo xla('Click to select or change diagnoses'); ?>' readonly /></td>
                                                	<td>&nbsp;</td>
 <!-- Visolve -->
 					</tr>
@@ -344,11 +344,11 @@ $sqlstmt = "select
                 pd.sex AS patient_sex,
                 pd.race AS patient_race,pd.ethnicity AS patient_ethinic,
                 concat(u.fname, ' ', u.lname)  AS users_provider";
-	if(strlen($form_diagnosis) > 0)	{
-		$sqlstmt=$sqlstmt.",li.date AS lists_date,
-                   li.diagnosis AS lists_diagnosis,
-                        li.title AS lists_title";
-	}
+
+  if ($form_diagnosis)	{
+    $sqlstmt .= ", li.begdate AS lists_date, li.diagnosis AS lists_diagnosis, li.title AS lists_title";
+  }
+
 	if(strlen($form_drug_name) > 0)	{
 
 		$sqlstmt=$sqlstmt.",r.id as id, r.date_modified AS prescriptions_date_modified, r.dosage as dosage, r.route as route, r.interval as hinterval, r.refills as refills, r.drug as drug, 
@@ -395,9 +395,9 @@ $sqlstmt = "select
 	$sqlstmt=$sqlstmt." from patient_data as pd left outer join users as u on u.id = pd.providerid
             left outer join facility as f on f.id = u.facility_id";
 	
-	if(strlen($form_diagnosis) > 0 ){	
-		$sqlstmt = $sqlstmt." left outer join lists as li on li.pid  = pd.pid ";
-	}
+  if ($form_diagnosis) {
+    $sqlstmt .= " left outer join lists as li on li.pid = pd.pid ";
+  }
 
   if ( $type == 'Procedure' ||( strlen($form_lab_results)!=0) ) {
     $sqlstmt = $sqlstmt." left outer join procedure_order as po on po.patient_id = pd.pid
@@ -420,17 +420,19 @@ $sqlstmt = "select
             or isnull(hd.alcohol)  = 0
             or isnull(hd.recreational_drugs)  = 0)";
       }
-      if($type == 'Service Codes') {
+       if($type == 'Service Codes') {
             $sqlstmt = $sqlstmt." left outer join billing as b on b.pid = pd.pid
             left outer join form_encounter as fe on fe.encounter = b.encounter and b.code_type = 'CPT4'
             left outer join codes as c on c.code = b.code ";
       }
 //where
       $whr_stmt="where 1=1";
-      if(strlen($form_diagnosis) > 0 ) {
-	    $whr_stmt=$whr_stmt." AND li.date >= ? AND li.date < DATE_ADD(?, INTERVAL 1 DAY) AND li.date <= ?";
-	    array_push($sqlBindArray, $sql_date_from, $sql_date_to, date("Y-m-d H:i:s"));
-	}
+
+  if ($form_diagnosis) {
+    $whr_stmt .= " AND (li.enddate is null or li.enddate >= ?) AND (li.begdate is null or (li.begdate <= ? AND li.begdate <= ?))";
+    array_push($sqlBindArray, $sql_date_from, $sql_date_to, date("Y-m-d"));
+  }
+
 	if(strlen($form_lab_results)!=0 ) {
               $whr_stmt=$whr_stmt." AND pr.date >= ? AND pr.date < DATE_ADD(?, INTERVAL 1 DAY) AND pr.date <= ?";
               array_push($sqlBindArray, $sql_date_from, $sql_date_to, date("Y-m-d H:i:s"));
@@ -498,10 +500,18 @@ $sqlstmt = "select
         $whr_stmt = $whr_stmt."   and f.id = ? ";
         array_push($sqlBindArray, $facility);
   }
-  if(strlen($form_diagnosis) > 0) {
-        $whr_stmt = $whr_stmt." AND (li.diagnosis LIKE ? or li.diagnosis LIKE ? or li.diagnosis LIKE ? or li.diagnosis = ?) ";
-        array_push($sqlBindArray, $form_diagnosis.";%", '%;'.$form_diagnosis.';%', '%;'.$form_diagnosis, $form_diagnosis);
+
+  if ($form_diagnosis) {
+    $whr_stmt .= " AND li.diagnosis IS NOT NULL AND (1 = 0";
+    $tmpcodes = explode(';', $form_diagnosis);
+    foreach ($tmpcodes as $tmp) {
+      if ($tmp == '') continue;
+      $whr_stmt .= " OR li.diagnosis LIKE ? OR li.diagnosis LIKE ? OR li.diagnosis LIKE ? OR li.diagnosis = ?";
+      array_push($sqlBindArray, "$tmp;%", "%;$tmp;%", "%;$tmp", $tmp);
+    }
+    $whr_stmt .= ")";
   }
+
 // order by
   $odrstmt = $odrstmt."ORDER BY patient_id";
   if ($_POST['form_pt_name'] == true){
@@ -532,6 +542,8 @@ $sqlstmt = "select
   }
   else
 	$sqlstmt=$sqlstmt." ".$whr_stmt." ".$odrstmt;
+
+echo "\n<!-- $sqlstmt\n"; foreach ($sqlBindArray as $tmp) echo " '$tmp'"; echo " -->\n"; // debugging
 
 $result = sqlStatement($sqlstmt,$sqlBindArray);
 
