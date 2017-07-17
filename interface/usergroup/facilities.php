@@ -91,7 +91,7 @@ $(document).ready(function(){
 	$(".addfac_modal").fancybox( {
 		'overlayOpacity' : 0.0,
 		'showCloseButton' : true,
-		'frameHeight' : 460,
+		'frameHeight' : 600,
 		'frameWidth' : 650
 	});
 
@@ -99,7 +99,7 @@ $(document).ready(function(){
 	$(".medium_modal").fancybox( {
 		'overlayOpacity' : 0.0,
 		'showCloseButton' : true,
-		'frameHeight' : 460,
+		'frameHeight' : 600,
 		'frameWidth' : 650
 	});
 
@@ -119,14 +119,19 @@ $(document).ready(function(){
 		 </td></tr>
 	</table>
     </div>
-    <div class="tabContainer" style="width:550px;">
+    <!-- div class="tabContainer" style="width:550px;" -->
+    <div class="tabContainer">
         <div>
-<table cellpadding="1" cellspacing="0" class="showborder">
+<table cellpadding="1" cellspacing="0" class="showborder" style="width:100%">
   <tr class="showborder_head" height="22">
     <th style="border-style:1px solid #000"><?php echo xlt('Name'); ?></th>
     <th style="border-style:1px solid #000"><?php echo xlt('Address'); ?></th>
     <th style="border-style:1px solid #000"><?php echo xlt('Phone'); ?></th>
     <th style="border-style:1px solid #000"><?php echo xlt('CLIA Number'); ?></th>
+    <th style="border-style:1px solid #000"><?php echo xlt('Billing Location'); ?></th>
+    <th style="border-style:1px solid #000"><?php echo xlt('Service Location'); ?></th>
+    <th style="border-style:1px solid #000"><?php echo xlt('Facility Code'); ?></th>
+    <th style="border-style:1px solid #000"><?php echo xlt('POS Code'); ?></th>
   </tr>
      <?php
         $fres = 0;
@@ -149,6 +154,10 @@ $(document).ready(function(){
        <td valign="top" class="text"><?php echo htmlspecialchars($varstreet.$varcity.$varstate.$iter3{country_code}." ".$iter3{postal_code}); ?>&nbsp;</td>
        <td><?php echo htmlspecialchars($iter3{phone});?>&nbsp;</td>
        <td><?php echo text($iter3['domain_identifier']); ?>&nbsp;</td>
+       <td><?php echo $iter3['billing_location'] ? xlt('Yes') : xlt('No'); ?>&nbsp;</td>
+       <td><?php echo $iter3['service_location'] ? xlt('Yes') : xlt('No'); ?>&nbsp;</td>
+       <td><?php echo text($iter3['facility_npi']); ?>&nbsp;</td>
+       <td><?php echo text($iter3['pos_code']); ?>&nbsp;</td>
     </tr>
 <?php
   }
