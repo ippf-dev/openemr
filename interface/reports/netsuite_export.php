@@ -22,6 +22,10 @@ $ORDERHASH = array(
   'invoice' => 'invoiceno, svcdate, itemcode, pid, encounter',
   'payor'   => 'payor, svcdate, invoiceno, itemcode, pid, encounter',
   'project' => 'proj_name, svcdate, invoiceno, itemcode, pid, encounter',
+  'sobj'    => 'sobj_name, svcdate, invoiceno, itemcode, pid, encounter',
+  'fund'    => 'fund_name, svcdate, invoiceno, itemcode, pid, encounter',
+  'dept'    => 'dept_name, svcdate, invoiceno, itemcode, pid, encounter',
+  'site'    => 'facility_npi, svcdate, invoiceno, itemcode, pid, encounter',
 );
 
 function bucks($amount) {
@@ -542,10 +546,14 @@ echo "   </select>\n";
    <?php echo xlt('Terms'); ?>
   </td>
   <td class="dehead">
-   <?php echo xlt('Strategic Obj'); ?>
+   <a href="#" onclick="return dosort('sobj')"
+   <?php if ($form_orderby == "sobj") echo " style=\"color:#00cc00\""; ?>
+   ><?php echo xlt('Strategic Obj'); ?></a>
   </td>
   <td class="dehead">
-   <?php echo xlt('Site'); ?>
+   <a href="#" onclick="return dosort('site')"
+   <?php if ($form_orderby == "site") echo " style=\"color:#00cc00\""; ?>
+   ><?php echo xlt('Site'); ?></a>
   </td>
   <td class="dehead">
    <a href="#" onclick="return dosort('project')"
@@ -553,13 +561,17 @@ echo "   </select>\n";
    ><?php echo xlt('Project'); ?></a>
   </td>
   <td class="dehead">
-   <?php echo xlt('Fund'); ?>
+   <a href="#" onclick="return dosort('fund')"
+   <?php if ($form_orderby == "fund") echo " style=\"color:#00cc00\""; ?>
+   ><?php echo xlt('Fund'); ?></a>
   </td>
   <td class="dehead">
    <?php echo xlt('Activity'); ?>
   </td>
   <td class="dehead">
-   <?php echo xlt('Department'); ?>
+   <a href="#" onclick="return dosort('dept')"
+   <?php if ($form_orderby == "dept") echo " style=\"color:#00cc00\""; ?>
+   ><?php echo xlt('Department'); ?></a>
   </td>
  </tr>
  </thead>
