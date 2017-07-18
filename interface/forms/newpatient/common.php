@@ -77,9 +77,11 @@ $ires = sqlStatement("SELECT id, type, title, begdate FROM lists WHERE " .
  // Array of past visit dates for validation.
 <?php
 echo " var arrVisitDates = [";
-$vdres = sqlStatement("SELECT date FROM form_encounter WHERE pid = ?", array($pid));
-while ($vdrow = sqlFetchArray($vdres)) {
-  echo "'" . substr($vdrow['date'], 0, 10) . "', ";
+if (!$viewmode) {
+  $vdres = sqlStatement("SELECT date FROM form_encounter WHERE pid = ?", array($pid));
+  while ($vdrow = sqlFetchArray($vdres)) {
+    echo "'" . substr($vdrow['date'], 0, 10) . "', ";
+  }
 }
 echo "];\n";
 ?>
