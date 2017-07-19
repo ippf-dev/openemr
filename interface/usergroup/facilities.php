@@ -3,6 +3,7 @@ require_once("../globals.php");
 require_once("../../library/acl.inc");
 require_once("$srcdir/sql.inc");
 require_once("$srcdir/formdata.inc.php");
+require_once("$srcdir/classes/POSRef.class.php");
 
 $alertmsg = '';
 
@@ -107,29 +108,32 @@ $(document).ready(function(){
 
 </script>
 <link rel="stylesheet" href="<?php echo $css_header;?>" type="text/css">
+
+<style>
+</style>
+
 </head>
 
 <body class="body_top">
 
 <div>
-    <div>
+ <div>
 	<table><tr><td>
         <b><?php xl('Facilities','e'); ?></b>&nbsp;</td><td>
 		 <a href="facilities_add.php" class="iframe addfac_modal css_button"><span><?php xl('Add','e');?></span></a>
 		 </td></tr>
 	</table>
     </div>
-    <!-- div class="tabContainer" style="width:550px;" -->
-    <div class="tabContainer">
+    <div class="tabContainer" style="width:auto;">
         <div>
-<table cellpadding="1" cellspacing="0" class="showborder" style="width:100%">
+<table cellpadding="1" cellspacing="0" class="showborder" style="width:auto;">
   <tr class="showborder_head" height="22">
     <th style="border-style:1px solid #000"><?php echo xlt('Name'); ?></th>
     <th style="border-style:1px solid #000"><?php echo xlt('Address'); ?></th>
     <th style="border-style:1px solid #000"><?php echo xlt('Phone'); ?></th>
     <th style="border-style:1px solid #000"><?php echo xlt('CLIA Number'); ?></th>
-    <th style="border-style:1px solid #000"><?php echo xlt('Billing Location'); ?></th>
-    <th style="border-style:1px solid #000"><?php echo xlt('Service Location'); ?></th>
+    <th style="border-style:1px solid #000;width:1%"><?php echo xlt('Billing Location'); ?></th>
+    <th style="border-style:1px solid #000;width:1%"><?php echo xlt('Service Location'); ?></th>
     <th style="border-style:1px solid #000"><?php echo xlt('Facility Code'); ?></th>
     <th style="border-style:1px solid #000"><?php echo xlt('POS Code'); ?></th>
   </tr>
@@ -148,16 +152,27 @@ $(document).ready(function(){
           if ($iter3{street }!="")$varstreet=$iter3{street }.",";
           if ($iter3{city}!="")$varcity=$iter3{city}.",";
           if ($iter3{state}!="")$varstate=$iter3{state}.",";
+
+      // Get the descriptive name of the POS code.
+      $posref = new POSRef();
+      $posval = $iter3['pos_code'];
+      foreach ($posref->get_pos_ref() as $tmp) {
+        if ($tmp['code'] == $posval) {
+          $posval = $tmp['title'];
+          break;
+        }
+      }
+      if (empty($posval)) $posval = '';
     ?>
     <tr height="22">
-       <td valign="top" class="text"><b><a href="facility_admin.php?fid=<?php echo $iter3{id};?>" class="iframe medium_modal"><span><?php echo htmlspecialchars($iter3{name});?></span></a></b>&nbsp;</td>
+       <td valign="top" class="text"><b><a href="facility_admin.php?fid=<?php echo $iter3{id};?>" class="iframe medium_modal"><span><?php echo htmlspecialchars($iter3{name});?></span></a></b></td>
        <td valign="top" class="text"><?php echo htmlspecialchars($varstreet.$varcity.$varstate.$iter3{country_code}." ".$iter3{postal_code}); ?>&nbsp;</td>
        <td><?php echo htmlspecialchars($iter3{phone});?>&nbsp;</td>
        <td><?php echo text($iter3['domain_identifier']); ?>&nbsp;</td>
        <td><?php echo $iter3['billing_location'] ? xlt('Yes') : xlt('No'); ?>&nbsp;</td>
        <td><?php echo $iter3['service_location'] ? xlt('Yes') : xlt('No'); ?>&nbsp;</td>
        <td><?php echo text($iter3['facility_npi']); ?>&nbsp;</td>
-       <td><?php echo text($iter3['pos_code']); ?>&nbsp;</td>
+       <td><?php echo text($posval); ?>&nbsp;</td>
     </tr>
 <?php
   }
