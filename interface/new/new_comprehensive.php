@@ -401,9 +401,8 @@ function queryid_clicked() {
   else {
     alert('Field pubpid does not exist in the layout.');
   }
+  checkSkipConditions(); // in case this is supported in the future
 }
-
-
 
 //-->
 
@@ -791,14 +790,11 @@ if (! $GLOBALS['simplified_demographics']) {
 <?php if (!$SHORT_FORM) echo "  <center>\n"; ?>
 <br />
 
-
-
-<!-- Test Code -->
+<!-- Test Code
 <input type="button" name='queryid' id="queryid" value='<?php echo xla('Query National ID'); ?>'
  onclick='queryid_clicked()' />
 &nbsp;&nbsp;
-
-
+-->
 
 <?php if ($WITH_SEARCH) { ?>
 <input type="button" id="search" value=<?php xl('Search','e','\'','\''); ?>
@@ -905,6 +901,10 @@ while ($lrow = sqlFetchArray($lres)) {
       echo "    \$('#form_$field_id').click(function() { selClick(this); });\n";
       echo "    \$('#form_$field_id').blur(function() { selBlur(this); });\n";
       break;
+  }
+  if ($field_id == 'pubpid' && !empty($GLOBALS['gbl_uruguay_asse_url'])) {
+    // In the Uruguay case we want to use a special onChange handler for pubpid.
+    echo "    \$('#form_$field_id').change(function() { queryid_clicked(); });\n";
   }
 }
 ?>

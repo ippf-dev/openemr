@@ -8,7 +8,7 @@ class BuscarParameters {
   function __construct($clientid) {
     $this->numeroDocumento = $clientid;
     $this->tipoDocumento = "CI";
-    $this->token_ = "test.asse:ASD23D874JADQ37RUFOASDPOAJWD9234";
+    $this->token_ = $GLOBALS['gbl_uruguay_asse_token'];
   }
 }
 
@@ -36,8 +36,8 @@ $userdata = array();
 if (empty($_GET['clientid'])) {
   $userdata['error'] = xl('There is no National ID');
 }
-else if (false) {
-  // Set above to true for testing with no SOAP connection.
+else if (strtolower(substr($GLOBALS['gbl_uruguay_asse_url'], 0, 4)) == 'test') {
+  // Testing with no SOAP connection.
   $userdata['fname' ] = 'Maria';
   $userdata['lname' ] = 'Gonzalez';
   $userdata['DOB'   ] = '2000-05-25';
@@ -50,7 +50,7 @@ else if (!class_exists('SoapClient')) {
 }
 else {
   // This host is at 10.202.200.31 but the hostname is required in the URL.
-  $client = new SoapClient("http://web03.t1lib.testing:8081/padron/services/persona/consulta?wsdl");
+  $client = new SoapClient($GLOBALS['gbl_uruguay_asse_url']);
 
   // This was for initial connection testing:
   // $userdata['functions'] = $client->__getFunctions();

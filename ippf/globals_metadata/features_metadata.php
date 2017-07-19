@@ -64,7 +64,7 @@ array(
       'text',                           // data type
       '',
       xl('This note goes on the bottom of every checkout receipt.')
-    ),    
+    ),
     
     'gbl_custom_receipt' => array(
       xl('Custom Checkout Receipt'),
@@ -82,7 +82,21 @@ array(
       'bool',                           // data type
       '0',                              // default = false
       xl('Disable the restriction of only one IPPF code per MA code in superbill')
-    ),    
+    ),
+    
+    'gbl_uruguay_asse_url' => array(
+      xl('Uruguay ASSE URL'),
+      'text',                           // data type
+      '',
+      xl('URL of ASSE SOAP server. Must be blank if not a Uruguay site. Enter "test" for dummy data.')
+    ),
+    
+    'gbl_uruguay_asse_token' => array(
+      xl('Uruguay ASSE Token'),
+      'text',                           // data type
+      '',
+      xl('Token for connection to ASSE SOAP server')
+    ),
 
 );
 ?>
