@@ -493,6 +493,10 @@ function fs_append_service(code_type, code, desc, price) {
 // Add a product line item.
 function fs_append_product(code_type, code, desc, price, warehouses) {
  var telem = document.getElementById('fs_products_table');
+ if (!telem) {
+  alert('<?php echo xla('A product was selected but there is no product section in this form.'); ?>');
+  return;
+ }
  var lino = telem.rows.length - 1;
  var trelem = telem.insertRow(telem.rows.length);
  trelem.innerHTML =
@@ -603,6 +607,18 @@ function fs_diag_clicked(cb) {
     '?codetype='   + encodeURIComponent(a[0]) +
     '&code='       + encodeURIComponent(a[1]) +
     '&pricelevel=' + encodeURIComponent(f.form_fs_pricelevel.value));
+}
+
+// Respond to selecting a package of codes.
+function fs_package_selected(sel) {
+  var f = sel.form;
+  // The option value is an encoded string of code types and codes.
+  if (sel.value) {
+    $.getScript('<?php echo $GLOBALS['web_root'] ?>/library/ajax/code_attributes_ajax.php' +
+      '?list='       + encodeURIComponent(sel.value) +
+      '&pricelevel=' + encodeURIComponent(f.form_fs_pricelevel.value));
+  }
+  sel.selectedIndex = 0;
 }
 
 // This is called back by code_attributes_ajax.php to complete the appending of a line item.
@@ -1093,10 +1109,29 @@ function warehouse_changed(sel) {
       echo "</table>\n";
     }
 
-    // A row for Search, Main Provider, Price Level.
+    // A row for Search, Add Package, Main Provider.
     $ctype = $GLOBALS['ippf_specific'] ? 'MA' : '';
     echo "<p class='bold'>";
-    echo "<input type='button' value='" . xla('Search Services') . "' onclick='sel_related(null,\"$ctype\")' />&nbsp;&nbsp;";
+    echo "<input type='button' value='" . xla('Search Services') . "' onclick='sel_related(null,\"$ctype\")' />&nbsp;&nbsp;\n";
+    $fscres = sqlStatement("SELECT * FROM fee_sheet_options ORDER BY fs_category, fs_option");
+    if (sqlNumRows($fscres)) {
+      $last_category = '';
+      echo "<select onchange='fs_package_selected(this)'>\n";
+      echo " <option value=''>" . xlt('Add Package') . "</option>\n";
+      while ($row = sqlFetchArray($fscres)) {
+        $fs_category = $row['fs_category'];
+        $fs_option   = $row['fs_option'];
+        $fs_codes    = $row['fs_codes'];
+        if($fs_category !== $last_category) {
+          if ($last_category) echo " </optgroup>\n";
+          echo " <optgroup label='" . xla(substr($fs_category, 1)) . "'>\n";
+          $last_category = $fs_category;
+        }
+        echo " <option value='" . attr($fs_codes) . "'>" . xlt(substr($fs_option, 1)) . "</option>\n";
+      }
+      if ($last_category) echo " </optgroup>\n";
+      echo "</select>&nbsp;&nbsp;\n";
+    }
     echo xlt('Main Provider') . ": ";
     echo $fs->genProviderSelect("form_fs_provid", ' ', $fs->provider_id);
     echo "\n";
