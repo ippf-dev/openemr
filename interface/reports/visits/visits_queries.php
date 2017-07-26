@@ -1,6 +1,7 @@
 <?php
 
 // Copyright (C) 2015 Kevin Yeh <kevin.y@integralemr.com>
+// Modified by Rod Roark <rod@sunsetsystems.com> 2017
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -176,16 +177,26 @@ function update_results_from_billing($source_column,$result_column,$dimensions)
         $on_phrases[]="results.".$column."=".TMP_PERIODS_DATA.".".$column;
     }
     $dimensions_list= implode($dimensions,",");
+
     $sql_update_result =
             " UPDATE ".TMP_PERIODS_DATA
-            ." INNER JOIN ("
-            ." SELECT count(".$source_column.") ".$result_column.", "
-            . $dimensions_list
+            ." INNER JOIN (";
+    if ($result_column == COL_NUMBER_SERVICES) {
+      $sql_update_result .=
+            " SELECT SUM(units) " . $result_column . ", ";
+    }
+    else {
+      $sql_update_result .=
+            " SELECT COUNT(" . $source_column . ") " . $result_column . ", ";
+    }
+    $sql_update_result .=
+            $dimensions_list
             ." FROM ".TMP_BILLING_DATA
             ." GROUP BY ".$dimensions_list
             .") results "
             ." ON ".implode($on_phrases," AND ")
             ." SET ".TMP_PERIODS_DATA.".".$result_column. "=results.".$result_column;
+
     sqlStatement($sql_update_result);
     
 }
@@ -203,6 +214,7 @@ function update_services($dimensions)
     $columns=array_merge($dimensions,array(
         COL_CODE=>"VARCHAR(20)",
         COL_CODE_TYPE=>"VARCHAR(15)",
+        'units' => "INT(11)",
         COL_ENC_ID=>"int",
         COL_PID=>"int",
         COL_ENC_DATE=>"date",
@@ -219,6 +231,7 @@ function update_services($dimensions)
                        array(
                        COL_CODE,
                        COL_CODE_TYPE,
+                       "units",
                        COL_ENC_ID,
                        COL_PID,
                        COL_ENC_DATE));
@@ -240,6 +253,7 @@ function update_services($dimensions)
     }
     $select_columns_encounters[]=TBL_BILLING.".".COL_CODE;
     $select_columns_encounters[]=TBL_BILLING.".".COL_CODE_TYPE;
+    $select_columns_encounters[]=TBL_BILLING . ".units";
     $select_columns_encounters[]=TMP_ENCOUNTERS.".".COL_ENC_ID;
     $select_columns_encounters[]=TMP_ENCOUNTERS.".".COL_PID;
     $select_columns_encounters[]=TMP_ENCOUNTERS.".".COL_ENC_DATE;
@@ -300,7 +314,7 @@ function aggregate_categories($dimension_columns)
     $query_category_totals= " SELECT "
             . implode($dimension_columns, ",")
             . ",". COL_CATEGORY
-            . ", COUNT(*) as number FROM "
+            . ", SUM(units) as number FROM "
             . TMP_BILLING_DATA
             . " GROUP BY "
             . implode($dimension_columns, ","). "," . COL_CATEGORY;
