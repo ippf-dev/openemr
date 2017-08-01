@@ -1,5 +1,5 @@
 <?php
-/* Copyright (C) 2015-2016 Rod Roark <rod@sunsetsystems.com>
+/* Copyright (C) 2015-2017 Rod Roark <rod@sunsetsystems.com>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -54,6 +54,9 @@ $layout_id = empty($_GET['layout_id']) ? '' : $_GET['layout_id'];
 
 var oTable;
 
+// Keeps track of which items have been selected during this session.
+var oChosenIDs = {};
+
 $(document).ready(function() {
 
  // Initializing the DataTable.
@@ -79,6 +82,12 @@ $(document).ready(function() {
     aoData.push({"name": "layout_id", "value": "<?php echo $layout_id; ?>"});
 <?php } ?>
   },
+  // Drawing a row, apply styling if it is previously selected.
+  "fnCreatedRow": function (nRow, aData, iDataIndex) {
+    if (oChosenIDs[nRow.id]) {
+      nRow.style.fontWeight = 'bold';
+    }
+  },
   // Language strings are included so we can translate them
   "oLanguage": {
    "sSearch"      : "<?php echo xla('Search for'); ?>:",
@@ -98,12 +107,13 @@ $(document).ready(function() {
 
  // OnClick handler for the rows
  $('#my_data_table tbody tr').live('click', function () {
-  // var a = this.id.split('|');
   var jobj = JSON.parse(this.id.substring(4));
 
+  this.style.fontWeight = 'bold';
+  oChosenIDs[this.id] = 1;
+
 <?php if ($what == 'codes') { ?>
-  // this.id is of the form "CID|codetype|code|selector|description".
-  // selcode(a[1], a[2], a[3], a[4]);
+  // this.id is of the form "CID|jsonstring".
   var codesel = jobj['code'].split('|');
   selcode(jobj['codetype'], codesel[0], codesel[1], jobj['description']);
 <?php } else if ($what == 'fields') { ?>
@@ -156,6 +166,8 @@ function delcode() {
  else {
   var sel = document.forms[0].form_delcodes;
   opener.del_related(sel.value);
+  oChosenIDs = {};
+  oTable.fnDraw();
   // window.close();
   return false;
  }
