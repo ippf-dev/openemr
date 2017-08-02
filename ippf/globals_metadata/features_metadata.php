@@ -70,7 +70,7 @@ array(
       xl('Custom Checkout Receipt'),
       array(
         '0'                                => xl('None'),
-        'checkout_receipt_general.inc.php' => xl('Guyana'),
+        'checkout_receipt_general.inc.php' => xl('POS Printer'),
         'checkout_receipt_panama.inc.php'  => xl('Panama'),
       ),
       '0',                              // default
