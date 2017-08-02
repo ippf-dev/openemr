@@ -77,8 +77,11 @@ function thisLineItem($row, $xfer=false) {
   else if ($row['trans_type'] == 7) {
     $ttype = xl('Consumption');
   }
-  else if ($row['trans_type'] != 5) {
+  else if ($row['trans_type'] == 2) {
     $ttype = xl('Purchase/Receipt');
+  }
+  else if ($row['trans_type'] == 3) {
+    $ttype = xl('Return');
   }
   else {
     $ttype = xl('Adjustment');
@@ -297,11 +300,12 @@ $(document).ready(function() {
       <?php echo htmlspecialchars(xl('Type'), ENT_NOQUOTES); ?>:
      </td>
      <td nowrap>
-      <select name='form_trans_type' onchange='trans_type_changed()'>
+      <select name='form_trans_type'>
 <?php
 foreach (array(
   '0' => xl('All'),
   '2' => xl('Purchase/Receipt'),
+  '3' => xl('Return'),
   '1' => xl('Sale'),
   // '6' => xl('Distribution'),
   '4' => xl('Transfer'),
@@ -444,7 +448,10 @@ if ($form_action) { // if submit or export
     "WHERE s.sale_date >= ? AND s.sale_date <= ? AND " .
     "( s.pid = 0 OR s.inventory_id != 0 ) ";
   if ($form_trans_type == 2) { // purchase/receipt
-    $query .= "AND s.pid = 0 AND s.xfer_inventory_id = 0 AND s.trans_type != 5 ";
+    $query .= "AND s.pid = 0 AND s.xfer_inventory_id = 0 AND s.trans_type = 2 ";
+  }
+  else if ($form_trans_type == 3) { // return
+    $query .= "AND s.pid = 0 AND s.xfer_inventory_id = 0 AND s.trans_type = 3 ";
   }
   else if ($form_trans_type == 4) { // transfer
     $query .= "AND s.xfer_inventory_id != 0 ";
