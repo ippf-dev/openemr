@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2007-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2007-2017 Rod Roark <rod@sunsetsystems.com>
 // Copyright © 2010 by Andrew Moore <amoore@cpan.org>
 // Copyright © 2010 by "Boyd Stephen Smith Jr." <bss@iguanasuicide.net>
 //
@@ -532,7 +532,7 @@ function generate_form_field($frow, $currvalue='') {
   else if ($data_type == 21) {
     // If no list then it's a single checkbox and its value is "Yes" or empty.
     if (!$list_id) {
-      echo "<input type='checkbox' name='form_{$field_id_esc}'" .
+      echo "<input type='checkbox' name='form_{$field_id_esc}' " .
         "id='form_{$field_id_esc}' value='Yes' $lbfonchange";
       if ($currvalue) echo " checked";
       echo " $disabled />";
@@ -554,7 +554,7 @@ function generate_form_field($frow, $currvalue='') {
           echo "<tr>";
         }
         echo "<td width='$tdpct%'>";
-        echo "<input type='checkbox' name='form_{$field_id_esc}[$option_id_esc]'" .
+        echo "<input type='checkbox' name='form_{$field_id_esc}[$option_id_esc]' " .
           "id='form_{$field_id_esc}[$option_id_esc]' value='1' $lbfonchange";
         if (in_array($option_id, $avalue)) echo " checked";
 
@@ -2195,7 +2195,32 @@ function disp_end_group() {
   }
 }
 
-// This checks if the given field with the given value should be skipped.
+// Accumulate action conditions into a JSON expression for the browser side.
+function accumActionConditions($field_id, &$condition_str, &$condarr) {
+  $conditions = empty($condarr) ? array() : unserialize($condarr);
+  $action = 'skip';
+  foreach ($conditions as $key => $condition) {
+    if ($key === 'action') {
+      // If specified this should be the first array item.
+      if ($condition) $action = $condition;
+      continue;
+    }
+    if (empty($condition['id'])) continue;
+    $andor = empty($condition['andor']) ? '' : $condition['andor'];
+    if ($condition_str) $condition_str .= ",\n";
+    $condition_str .= "{" .
+      "target:'"   . addslashes($field_id)              . "', " .
+      "action:'"   . addslashes($action)                . "', " .
+      "id:'"       . addslashes($condition['id'])       . "', " .
+      "itemid:'"   . addslashes($condition['itemid'])   . "', " .
+      "operator:'" . addslashes($condition['operator']) . "', " .
+      "value:'"    . addslashes($condition['value'])    . "', " .
+      "andor:'"    . addslashes($andor)                 . "'}";
+  }
+}
+
+// This checks if the given field with the given value should have an action applied.
+// Originally the only action was skip, but now you can also set the field to a specified value.
 // It somewhat mirrors the checkSkipConditions function in options.js.php.
 // If you use this for multiple layouts in the same script, you should
 // clear $sk_layout_items before each layout.
@@ -2215,13 +2240,20 @@ function isSkipped(&$frow, $currvalue) {
   $prevandor = '';
   $prevcond  = false;
   $datatype  = $frow['data_type'];
+  $action    = 'skip'; // default action if none specified
 
-  foreach ($skiprows as $skiprow) {
+  foreach ($skiprows as $key => $skiprow) {
     // id         referenced field id
     // itemid     referenced array key if applicable
     // operator   "eq", "ne", "se" or "ns"
     // value      if eq or ne, some string to compare with
     // andor      "and", "or" or empty
+
+    if ($key == 'action') {
+      // Action value is a string. It can be "skip", or "value=" followed by a value.
+      $action = $skiprow;
+      continue;
+    }
 
     if (empty($skiprow['id'])) continue;
 
@@ -2268,7 +2300,7 @@ function isSkipped(&$frow, $currvalue) {
     $prevandor = $skiprow['andor'];
     $prevcond = $condition;
   }
-  return $prevcond;
+  return $prevcond ? $action : '';
 }
 
 function display_layout_rows($formtype, $result1, $result2='') {
@@ -2454,7 +2486,7 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 					  if (isset($result1[$field_id])) $currvalue = $result1[$field_id];
 					}
 
-          // Skip this field if skip conditions call for that.
+          // Skip this field if action conditions call for that.
           // Note this also accumulates info for subsequent skip tests.
           $skip_this_field = isSkipped($group_fields, $currvalue);
 
@@ -2571,22 +2603,10 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
 					$field_id   = $group_fields['field_id'];
 					$list_id    = $group_fields['list_id'];
 					$currvalue  = '';
+          $action     = 'skip';
 
-          // Accumulate skip conditions into a JSON expression for the browser side.
-          // Cloned from interface/forms/LBF/new.php.
-          $conditions = empty($group_fields['conditions']) ? array() : unserialize($group_fields['conditions']);
-          foreach ($conditions as $condition) {
-            if (empty($condition['id'])) continue;
-            $andor = empty($condition['andor']) ? '' : $condition['andor'];
-            if ($condition_str) $condition_str .= ",\n";
-            $condition_str .= "{" .
-              "target:'"   . addslashes($field_id)              . "', " .
-              "id:'"       . addslashes($condition['id'])       . "', " .
-              "itemid:'"   . addslashes($condition['itemid'])   . "', " .
-              "operator:'" . addslashes($condition['operator']) . "', " .
-              "value:'"    . addslashes($condition['value'])    . "', " .
-              "andor:'"    . addslashes($andor)                 . "'}";
-          }
+          // Accumulate action conditions into a JSON expression for the browser side.
+          accumActionConditions($field_id, $condition_str, $group_fields['conditions']);
 
 					if ($formtype == 'DEM') {
 					  if ($GLOBALS['athletic_team']) {
@@ -2631,7 +2651,7 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
 					  disp_end_cell();
 					  $titlecols_esc = htmlspecialchars( $titlecols, ENT_QUOTES);
 					  echo "<td class='label' colspan='$titlecols_esc' ";
-            // This ID is used by skip conditions.
+            // This ID is used by action conditions.
             echo " id='label_id_" . attr($field_id) . "'";
 					  echo ">";
 					  $cell_count += $titlecols;
@@ -2654,7 +2674,7 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
 					  disp_end_cell();
 					  $datacols_esc = htmlspecialchars( $datacols, ENT_QUOTES);
 					  echo "<td class='text data' colspan='$datacols_esc'";
-            // This ID is used by skip conditions.
+            // This ID is used by action conditions.
             echo " id='value_id_" . attr($field_id) . "'";
 					  echo ">";
 					  $cell_count += $datacols;

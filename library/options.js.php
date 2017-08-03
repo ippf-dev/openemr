@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2014-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2014-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -71,6 +71,7 @@ function checkSkipConditions() {
     var itemid   = skipArray[i].itemid;
     var operator = skipArray[i].operator;
     var value    = skipArray[i].value;
+    var action   = skipArray[i].action;
 
     var tofind = id;
     if (itemid) tofind += '[' + itemid + ']';
@@ -99,26 +100,43 @@ function checkSkipConditions() {
     var j = i + 1;
     if (j < skipArray.length && skipArray[j].target == target) continue;
 
-    // At this point condition indicates if the target should be hidden.
+    // At this point condition indicates the target should be hidden or have its value set.
 
-    var trgelem1 = document.getElementById('label_id_' + target);
-    var trgelem2 = document.getElementById('value_id_' + target);
-    if (trgelem1 == null && trgelem2 == null) {
-      if (!cskerror) alert('Cannot find a skip target field for "' + target + '"');
-      myerror = true;
-      continue;
+    if (action == 'skip') {
+      var trgelem1 = document.getElementById('label_id_' + target);
+      var trgelem2 = document.getElementById('value_id_' + target);
+      if (trgelem1 == null && trgelem2 == null) {
+        if (!cskerror) alert('Cannot find a skip target field for "' + target + '"');
+        myerror = true;
+        continue;
+      }
+      // If the item occupies a whole row then undisplay its row, otherwise hide its cells.
+      var colspan = 0;
+      if (trgelem1) colspan += trgelem1.colSpan;
+      if (trgelem2) colspan += trgelem2.colSpan;
+      if (colspan < 4) {
+        if (trgelem1) trgelem1.style.visibility = condition ? 'hidden' : 'visible';
+        if (trgelem2) trgelem2.style.visibility = condition ? 'hidden' : 'visible';
+      }
+      else {
+        if (trgelem1) trgelem1.parentNode.style.display = condition ? 'none' : '';
+        else          trgelem2.parentNode.style.display = condition ? 'none' : '';
+      }
     }
-    // If the item occupies a whole row then undisplay its row, otherwise hide its cells.
-    var colspan = 0;
-    if (trgelem1) colspan += trgelem1.colSpan;
-    if (trgelem2) colspan += trgelem2.colSpan;
-    if (colspan < 4) {
-      if (trgelem1) trgelem1.style.visibility = condition ? 'hidden' : 'visible';
-      if (trgelem2) trgelem2.style.visibility = condition ? 'hidden' : 'visible';
-    }
-    else {
-      if (trgelem1) trgelem1.parentNode.style.display = condition ? 'none' : '';
-      else          trgelem2.parentNode.style.display = condition ? 'none' : '';
+    else if (condition) { // action starts with "value="
+      var trgelem = document.getElementById('form_' + target);
+      if (trgelem == null) {
+        if (!cskerror) alert('Cannot find a value target field "' + trgelem + '"');
+        myerror = true;
+        continue;
+      }
+      var action_value = action.substring(6);
+      if (trgelem.type == 'checkbox') {
+        trgelem.checked = !(action_value == '0' || action_value == '');
+      }
+      else {
+        trgelem.value = action_value;
+      }
     }
   }
   // If any errors, all show in the first pass and none in subsequent passes.

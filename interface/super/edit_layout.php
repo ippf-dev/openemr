@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2014-2016 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2014-2017 Rod Roark <rod@sunsetsystems.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -248,10 +248,13 @@ if ($_POST['formaction'] == "save" && $layout_id) {
         $field_id_original = formTrim($iter['originalid']);
         $data_type = formTrim($iter['datatype']);
         $listval = $data_type == 34 ? formTrim($iter['contextName']) : formTrim($iter['listid']);
+        $action = $iter['action'];
+        if ($action == 'value') $action = 'value=' . $iter['value'];
 
         // Skip conditions for the line are stored as a serialized array.
-        $condarr = array();
-        for ($cix = 0; !empty($iter['condition_id'][$cix]); ++$cix) {
+        $condarr = array('action' => strip_escape_custom($action));
+        $cix = 0;
+        for (; !empty($iter['condition_id'][$cix]); ++$cix) {
           $andor = empty($iter['condition_andor'][$cix]) ? '' : $iter['condition_andor'][$cix];
           $condarr[$cix] = array(
             'id'       => strip_escape_custom($iter['condition_id'      ][$cix]),
@@ -261,7 +264,7 @@ if ($_POST['formaction'] == "save" && $layout_id) {
             'andor'    => strip_escape_custom($andor),
           );
         }
-        $conditions = empty($condarr) ? '' : serialize($condarr);
+        $conditions = $cix ? serialize($condarr) : '';
 
         if ($field_id) {
             sqlStatement("UPDATE layout_options SET " .
@@ -728,6 +731,8 @@ function writeFieldLine($linedata) {
     $conditions = empty($linedata['conditions']) ?
       array(0 => array('id' => '', 'itemid' => '', 'operator' => '', 'value' => '')) :
       unserialize($linedata['conditions']);
+    $action = empty($conditions['action']) ? 'skip' : $conditions['action'];
+    $action_value = $action == 'skip' ? '' : substr($action, 6);
     //
     $extra_html .= "<div id='ext_$fld_line_no' " .
       "style='position:absolute;width:750px;border:1px solid black;" .
@@ -735,8 +740,15 @@ function writeFieldLine($linedata) {
       "z-index:1000;left:-1000px;top:0px;font-size:8pt;'>\n" .
       "<table width='100%'>\n" .
       " <tr>\n" .
-      "  <th colspan='3' align='left' class='bold'>\"" . text($linedata['field_id']) . "\" " .
-      xlt('will be hidden if') . ":</th>\n" .
+      "  <th colspan='3' align='left' class='bold'>" .
+      xlt('For') . " " . text($linedata['field_id']) . " " .
+      "<select name='fld[$fld_line_no][action]' onchange='actionChanged($fld_line_no)'>" .
+      "<option value='skip'  " . ($action == 'skip' ? 'selected' : '') . ">" . xlt('hide this field') . "</option>" .
+      "<option value='value' " . ($action != 'skip' ? 'selected' : '') . ">" . xlt('set value to'   ) . "</option>" .
+      "</select>" .
+      "<input type='text' name='fld[$fld_line_no][value]' value='" . attr($action_value) . "' size='15' />" .
+      " " . xlt('if') .
+      "</th>\n" .
       "  <th colspan='2' align='right' class='text'><input type='button' " .
       "value='" . xla('Close') . "' onclick='extShow($fld_line_no, false)' />&nbsp;</th>\n" .
       " </tr>\n" .
@@ -749,6 +761,7 @@ function writeFieldLine($linedata) {
       " </tr>\n";
     // There may be multiple condition lines for each field.
     foreach ($conditions as $i => $condition) {
+      if (!is_numeric($i)) continue; // skip if 'action'
       $extra_html .=
         " <tr>\n" .
         "  <td align='left'>\n" .
@@ -780,7 +793,7 @@ function writeFieldLine($linedata) {
         "   <input type='text' name='fld[$fld_line_no][condition_value][$i]' value='" .
         attr($condition['value']) . "' size='15' maxlength='63' />\n" .
         "  </td>\n";
-      if (count($conditions) == $i + 1) {
+      if (!isset($conditions[$i + 1])) {
         $extra_html .=
           "  <td align='right' title='" . xla('Add a condition') . "'>\n" .
           "   <input type='button' value='+' onclick='extAddCondition($fld_line_no,this)' />\n" .
@@ -903,6 +916,14 @@ function extShow(lino, show) {
  else {
   extdiv = null;
  }
+}
+
+// Show or hide the value field for a "Set value to" condition.
+function actionChanged(lino) {
+  var f = document.forms[0];
+  var eaction = f['fld[' + lino + '][action]'];
+  var evalue  = f['fld[' + lino + '][value]'];
+  evalue.style.display = eaction.value == 'skip' ? 'none' : '';
 }
 
 // Add an extra condition line for the given row.
@@ -1740,12 +1761,13 @@ $(document).ready(function(){
       }
     };
 
-    // Initialize the list item selectors in skip conditions.
+    // Initialize list item selectors and value field visibilities in skip conditions.
     var f = document.forms[0];
     for (var lino = 1; f['fld[' + lino + '][id]']; ++lino) {
       for (var seq = 0; f['fld[' + lino + '][condition_itemid][' + seq + ']']; ++seq) {
         setListItemOptions(lino, seq, true);
       }
+      actionChanged(lino);
     }
 
   // Support for beforeunload handler.

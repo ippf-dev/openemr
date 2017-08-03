@@ -379,21 +379,8 @@ while ($frow = sqlFetchArray($fres)) {
   $field_id   = $frow['field_id'];
   $list_id    = $frow['list_id'];
 
-  // Accumulate skip conditions into a JSON expression for the browser side.
-  // Cloned from interface/forms/LBF/new.php.
-  $conditions = empty($frow['conditions']) ? array() : unserialize($frow['conditions']);
-  foreach ($conditions as $condition) {
-    if (empty($condition['id'])) continue;
-    $andor = empty($condition['andor']) ? '' : $condition['andor'];
-    if ($condition_str) $condition_str .= ",\n";
-    $condition_str .= "{" .
-      "target:'"   . addslashes($field_id)              . "', " .
-      "id:'"       . addslashes($condition['id'])       . "', " .
-      "itemid:'"   . addslashes($condition['itemid'])   . "', " .
-      "operator:'" . addslashes($condition['operator']) . "', " .
-      "value:'"    . addslashes($condition['value'])    . "', " .
-      "andor:'"    . addslashes($andor)                 . "'}";
-  }
+  // Accumulate action conditions into a JSON expression for the browser side.
+  accumActionConditions($field_id, $condition_str, $frow['conditions']);
 
   $currvalue  = '';
   if (isset($trow[$field_id])) $currvalue = $trow[$field_id];
@@ -438,7 +425,7 @@ while ($frow = sqlFetchArray($fres)) {
     echo "<td width='70' valign='top' colspan='$titlecols_esc'";
     echo ($frow['uor'] == 2) ? " class='required'" : " class='bold'";
     if ($cell_count == 2) echo " style='padding-left:10pt'";
-    // This ID is used by skip conditions.
+    // This ID is used by action conditions.
     echo " id='label_id_" . attr($field_id) . "'";
     echo ">";
     $cell_count += $titlecols;
@@ -457,7 +444,7 @@ while ($frow = sqlFetchArray($fres)) {
     end_cell();
     $datacols_esc = htmlspecialchars( $datacols, ENT_QUOTES);
     echo "<td valign='top' colspan='$datacols_esc' class='text'";
-    // This ID is used by skip conditions.
+    // This ID is used by action conditions.
     echo " id='value_id_" . attr($field_id) . "'";
     if ($cell_count > 0) echo " style='padding-left:5pt'";
     echo ">";
@@ -484,7 +471,7 @@ end_group();
 
 <script language="JavaScript">
 
-// Array of skip conditions for the checkSkipConditions() function.
+// Array of action conditions for the checkSkipConditions() function.
 var skipArray = [
 <?php echo $condition_str; ?>
 ];

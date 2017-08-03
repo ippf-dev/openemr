@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2016 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2009-2017 Rod Roark <rod@sunsetsystems.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -767,20 +767,8 @@ function warehouse_changed(sel) {
     $graphable  = strpos($edit_options, 'G') !== FALSE;
     if ($graphable) $form_is_graphable = true;
 
-    // Accumulate skip conditions into a JavaScript string literal.
-    $conditions = empty($frow['conditions']) ? array() : unserialize($frow['conditions']);
-    foreach ($conditions as $condition) {
-      if (empty($condition['id'])) continue;
-      $andor = empty($condition['andor']) ? '' : $condition['andor'];
-      if ($condition_str) $condition_str .= ",\n";
-      $condition_str .= "{" .
-        "target:'"   . addslashes($field_id)              . "', " .
-        "id:'"       . addslashes($condition['id'])       . "', " .
-        "itemid:'"   . addslashes($condition['itemid'])   . "', " .
-        "operator:'" . addslashes($condition['operator']) . "', " .
-        "value:'"    . addslashes($condition['value'])    . "', " .
-        "andor:'"    . addslashes($andor)                 . "'}";
-    }
+    // Accumulate action conditions into a JSON expression for the browser side.
+    accumActionConditions($field_id, $condition_str, $frow['conditions']);
 
     $currvalue  = '';
 
@@ -984,7 +972,7 @@ function warehouse_changed(sel) {
       if ($graphable) echo " graph";
       echo "'";
       if ($cell_count > 0) echo " style='padding-left:10pt'";
-      // This ID is used by skip conditions and also show_graph().
+      // This ID is used by action conditions and also show_graph().
       echo " id='label_id_" . attr($field_id) . "'";
       echo ">";
 
@@ -1014,7 +1002,7 @@ function warehouse_changed(sel) {
     if ($datacols > 0) {
       end_cell();
       echo "<td valign='top' colspan='" . attr($datacols) . "' class='text'";
-      // This ID is used by skip conditions.
+      // This ID is used by action conditions.
       echo " id='value_id_" . attr($field_id) . "'";
       if ($cell_count > 0) echo " style='padding-left:5pt'";
       echo ">";
@@ -1382,7 +1370,7 @@ if (function_exists($formname . '_additional_buttons')) {
 
 <script language="JavaScript">
 
-// Array of skip conditions for the checkSkipConditions() function.
+// Array of action conditions for the checkSkipConditions() function.
 var skipArray = [
 <?php echo $condition_str; ?>
 ];
