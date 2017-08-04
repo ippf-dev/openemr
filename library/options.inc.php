@@ -2234,13 +2234,15 @@ function isSkipped(&$frow, $currvalue) {
     $operator = $skiprow['operator'];
     $skipval  = $skiprow['value'];
     $srcvalue = $sk_layout_items[$id]['value'];
+    $src_datatype = $sk_layout_items[$id]['row']['data_type'];
+    $src_list_id  = $sk_layout_items[$id]['row']['list_id'];
 
     // Some data types use itemid and we have to dig for their value.
-    if ($datatype == 21 && $frow['list_id']) { // array of checkboxes
+    if ($src_datatype == 21 && $src_list_id) { // array of checkboxes
       $tmp = explode('|', $srcvalue);
       $srcvalue = in_array($itemid, $tmp);
     }
-    else if ($datatype == 22 || $datatype == 23 || $datatype == 25) {
+    else if ($src_datatype == 22 || $src_datatype == 23 || $src_datatype == 25) {
       $tmp = explode('|', $srcvalue);
       $srcvalue = '';
       foreach ($tmp as $tmp2) {
@@ -2454,10 +2456,10 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 
           // Skip this field if skip conditions call for that.
           // Note this also accumulates info for subsequent skip tests.
-          if (isSkipped($group_fields, $currvalue)) continue;
+          $skip_this_field = isSkipped($group_fields, $currvalue);
 
           // Skip this field if its do-not-print option is set.
-          if (strpos($edit_options, 'X') !== FALSE) continue;
+          if (strpos($edit_options, 'X') !== FALSE) $skip_this_field = true;
 
 					// Handle a data category (group) change.
 					if (strcmp($this_group, $last_group) != 0) {
@@ -2488,7 +2490,10 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 					++$item_count;
 
           // Added 5-09 by BM - Translate label if applicable
-          if ($group_fields['title']) {
+          if ($skip_this_field) {
+            // No label because skipping
+          }
+          else if ($group_fields['title']) {
             $tmp = xl_layout_label($group_fields['title']);
             echo text($tmp);
             // Append colon only if label does not end with punctuation.
@@ -2508,8 +2513,11 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 					}
 
 					++$item_count;
-					echo generate_display_field($group_fields, $currvalue);
-				  }
+
+          if (!$skip_this_field) {
+            echo generate_display_field($group_fields, $currvalue);
+          }
+        }
 
         disp_end_row();
 			?>
