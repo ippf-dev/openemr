@@ -127,7 +127,8 @@ $eventname = formData('eventname','G');
 
 // Get the users list.
 $sqlQuery = "SELECT username, fname, lname FROM users " .
-  "WHERE active = 1 AND ( info IS NULL OR info NOT LIKE '%Inactive%' ) ";
+  "WHERE active = 1 AND ( info IS NULL OR info NOT LIKE '%Inactive%' ) " .
+  "ORDER BY lname, fname, id";
 
 $ures = sqlStatement($sqlQuery); 
 $get_sdate=$start_date ? $start_date : date("Y-m-d");
