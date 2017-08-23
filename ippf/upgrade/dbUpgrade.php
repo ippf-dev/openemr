@@ -34,7 +34,7 @@ verify_file("$translation_files_directory/english_to_english.csv",1);
 
 if($new_database_setup) {
     $patches = array(
-        '3_2_0-to-3_3_0_upgrade.sql',
+        // '3_2_0-to-3_3_0_upgrade.sql', // Removed by Rod
         'ippf_merge_changes.sql',
         'ippf2_categories.sql',
     );
@@ -134,7 +134,7 @@ foreach($user_settings as $setting)
   foreach ($GLOBALS_METADATA as $grpname => $grparr) {
     foreach ($grparr as $fldid => $fldarr) {
       list($fldname, $fldtype, $flddef, $flddesc) = $fldarr;
-      if (substr($fldtype, 0, 2) !== 'm_') {
+      if (is_array($fldtype) || substr($fldtype, 0, 2) !== 'm_') {
         $row = sqlQuery("SELECT count(*) AS count FROM globals WHERE gl_name = '$fldid'");
         if (empty($row['count'])) {
           sqlStatement("INSERT INTO globals ( gl_name, gl_index, gl_value ) " .

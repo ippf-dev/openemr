@@ -45,7 +45,7 @@ $insurancei = getInsuranceProviders();
 
 $fres = sqlStatement("SELECT * FROM layout_options " .
   "WHERE form_id = 'DEM' AND uor > 0 " .
-  "ORDER BY group_name, seq");
+  "ORDER BY group_id, seq");
 ?>
 <html>
 <head>

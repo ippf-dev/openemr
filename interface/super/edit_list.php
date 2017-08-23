@@ -476,9 +476,9 @@ function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping=''
     echo "  <td align='center' class='optcell'>";
     echo "<input type='text' name='opt[$opt_line_no][notes]' value='" .
         htmlspecialchars($notes, ENT_QUOTES) . "' size='25' maxlength='255' class='optin' ";
-    if ($list_id == 'lbfnames') {
-      echo "onclick='edit_layout_props($opt_line_no)' ";
-    }
+    // if ($list_id == 'lbfnames') {
+    //   echo "onclick='edit_layout_props($opt_line_no)' ";
+    // }
     echo "/>";
     echo "</td>\n";
   }
@@ -791,10 +791,10 @@ function select_clin_term_code(e) {
 }
 
 // This invokes the popup to edit properties in the "notes" column.
-function edit_layout_props(lineno) {
- var layoutid = document.forms[0]['opt[' + lineno + '][id]'].value;
- dlgopen('edit_layout_props.php?layout_id=' + layoutid + '&lineno=' + lineno, '_blank', 600, 300);
-}
+// function edit_layout_props(lineno) {
+//  var layoutid = document.forms[0]['opt[' + lineno + '][id]'].value;
+//  dlgopen('edit_layout_props.php?layout_id=' + layoutid + '&lineno=' + lineno, '_blank', 600, 300);
+// }
 
 // This is for callback by the find-code popup.
 function set_related(codetype, code, selector, codedesc) {

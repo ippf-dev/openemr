@@ -474,7 +474,8 @@ function getPatientId($pid = "%", $given = "pid, id, lname, fname, mname, provid
 function getByPatientDemographics($searchTerm = "%", $given = "pid, id, lname, fname, mname, providerID, DATE_FORMAT(DOB,'%m/%d/%Y') as DOB_TS", $orderby = "lname ASC, fname ASC", $limit="all", $start="0", $exact=false, $condition='')
 {
   $wild = $exact ? '' : '%';
-  $layoutCols = sqlStatement( "SELECT field_id FROM layout_options WHERE form_id='DEM' AND group_name not like (? ) AND uor !=0", array("%".Employer."%") );
+  $layoutCols = sqlStatement("SELECT field_id FROM layout_options WHERE form_id='DEM' AND field_id not like ? AND uor !=0",
+    array('em\_%'));
 
   $sqlBindArray = array();
   $where = "";

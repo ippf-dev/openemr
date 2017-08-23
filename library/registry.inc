@@ -121,20 +121,24 @@ function getFormsByCategory($state='1', $lbfonly=false) {
       }
     }
   }
+
   // Merge LBF form types into the registry array of form types.
   // Note that the mapping value is used as the category name.
-  $lres = sqlStatement("SELECT * FROM list_options " .
-  "WHERE list_id = 'lbfnames' AND activity = 1 ORDER BY mapping, seq, title");
+
+  $lres = sqlStatement("SELECT * FROM layout_group_properties " .
+    "WHERE grp_form_id LIKE 'LBF%' AND grp_group_id = '' AND grp_activity = 1 " .
+    "ORDER BY grp_mapping, grp_seq, grp_title");
   while ($lrow = sqlFetchArray($lres)) {
     $rrow = array();
-    $rrow['category']  = $lrow['mapping'] ? $lrow['mapping'] : 'Clinical';
-    $rrow['name']      = $lrow['title'];
-    $rrow['nickname']  = $lrow['title'];
-    $rrow['directory'] = $lrow['option_id']; // should start with LBF
-    $rrow['priority']  = $lrow['seq'];
+    $rrow['category']  = $lrow['grp_mapping'] ? $lrow['grp_mapping'] : 'Clinical';
+    $rrow['name']      = $lrow['grp_title'];
+    $rrow['nickname']  = $lrow['grp_title'];
+    $rrow['directory'] = $lrow['grp_form_id']; // should start with LBF
+    $rrow['priority']  = $lrow['grp_seq'];
     $rrow['LBF']       = true; // Flag this form as LBF
     $all[] = $rrow;
   }
+
   // Sort by category, priority, is lbf, name.
   usort($all, function ($a, $b) {
     // Anonymous functions supported as of PHP 5.3. Yay!

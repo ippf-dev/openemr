@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009-2013 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2013, 2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -60,9 +60,13 @@ if ($patientid) {
   // $irow = getInsuranceProviders(); // needed?
 }
 
+// Load array of properties for this layout and its groups.
+$grparr = array();
+getLayoutProperties('DEM', $grparr);
+
 $fres = sqlStatement("SELECT * FROM layout_options " .
   "WHERE form_id = 'DEM' AND uor > 0 " .
-  "ORDER BY group_name, seq");
+  "ORDER BY group_id, seq");
 
 ?>
 <?php if (!$PDF_OUTPUT) { ?>
@@ -232,7 +236,7 @@ $cell_count = 0;
 $item_count = 0;
 
 while ($frow = sqlFetchArray($fres)) {
-  $this_group = $frow['group_name'];
+  $this_group = $frow['group_id'];
   $titlecols  = $frow['titlecols'];
   $datacols   = $frow['datacols'];
   $data_type  = $frow['data_type'];
@@ -265,7 +269,7 @@ while ($frow = sqlFetchArray($fres)) {
     // start on a new page if there is not otherwise room for it on this page.
     echo "<nobreak>\n"; // grasping
 
-    $group_name = substr($this_group, 1);
+    $group_name = $grparr[$this_group]['grp_title'];
     $last_group = $this_group;
     echo "<p class='grpheader'>" . xl_layout_label($group_name) . "</p>\n";
     echo "<div class='section'>\n";

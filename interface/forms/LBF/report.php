@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -16,25 +16,22 @@ include_once($GLOBALS["srcdir"] . "/api.inc");
 function lbf_report($pid, $encounter, $cols, $id, $formname) {
   global $CPR;
   require_once($GLOBALS["srcdir"] . "/options.inc.php");
-  // $CPR is defined in options.inc.php and we reset it here to respect the option for
-  // specifying it in the form's list item.
-  $CPR = 4;
-  $tmp = sqlQuery("SELECT notes FROM list_options WHERE " .
-    "list_id = 'lbfnames' AND option_id = ? AND activity = 1", array($formname) );
-  $jobj = json_decode($tmp['notes'], true);
-  if (!empty($jobj['columns'])) $CPR = intval($jobj['columns']);
+
+  $grparr = array();
+  getLayoutProperties($formname, $grparr, '*');
   // Check access control.
-  if (!empty($jobj['aco'])) $LBF_ACO = explode('|', $jobj['aco']);
+  if (!empty($grparr['']['grp_aco_spec'])) $LBF_ACO = explode('|', $grparr['']['grp_aco_spec']);
   if (!acl_check('admin', 'super') && !empty($LBF_ACO)) {
     if (!acl_check($LBF_ACO[0], $LBF_ACO[1])) {
       die(xlt('Access denied'));
     }
   }
+
   $arr = array();
   $shrow = getHistoryData($pid);
   $fres = sqlStatement("SELECT * FROM layout_options " .
     "WHERE form_id = ? AND uor > 0 " .
-    "ORDER BY group_name, seq", array($formname));
+    "ORDER BY group_id, seq", array($formname));
   while ($frow = sqlFetchArray($fres)) {
     $field_id  = $frow['field_id'];
     $currvalue = '';

@@ -2290,8 +2290,8 @@ if ($alertmsg) {
 
 if ($gcac_related_visit && !$gcac_service_provided) {
   // Skip this warning if the GCAC visit form is not allowed.
-  $grow = sqlQuery("SELECT COUNT(*) AS count FROM list_options " .
-    "WHERE list_id = 'lbfnames' AND option_id = 'LBFgcac' AND activity = 1");
+  $grow = sqlQuery("SELECT COUNT(*) AS count FROM layout_group_properties " .
+    "WHERE grp_form_id = 'LBFgcac' grp_group_id = '' AND grp_activity = 1");
   if (!empty($grow['count'])) { // if gcac is used
     // Skip this warning if referral or abortion in TS.
     $grow = sqlQuery("SELECT COUNT(*) AS count FROM transactions " .

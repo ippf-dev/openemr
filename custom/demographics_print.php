@@ -522,7 +522,7 @@ $table = array();
 
 //  Start of while statement that loops through array
 while ($frow = sqlFetchArray($fres)) {
-  $this_group = $frow['group_name'];
+  $this_group = $frow['group_id'];
   $titlecols  = $frow['titlecols'];
   $datacols   = $frow['datacols'];
   $data_type  = $frow['data_type'];

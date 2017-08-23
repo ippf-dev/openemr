@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2005-2016 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2005-2017 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -319,8 +319,8 @@ $(document).ready(function() {
   // Determine if the IPPF GCAC form is in use.
   $ippf_gcac_applies = false;
   if ($GLOBALS['ippf_specific']) {
-    $grow = sqlQuery("SELECT COUNT(*) AS count FROM list_options " .
-      "WHERE list_id = 'lbfnames' AND option_id = 'LBFgcac' AND activity = 1");
+    $grow = sqlQuery("SELECT COUNT(*) AS count FROM layout_group_properties " .
+      "WHERE grp_form_id = 'LBFgcac' AND grp_group_id = '' AND grp_activity = 1");
     $ippf_gcac_applies = !empty($grow['count']);
   }
 

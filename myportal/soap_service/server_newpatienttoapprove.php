@@ -206,7 +206,7 @@ class newpatienttoapprove {
             case 'P2':
             $query="select * from  layout_options " .
               "WHERE form_id = 'DEM' AND uor > 0 AND field_id != '' " .
-              "ORDER BY group_name, seq";
+              "ORDER BY group_id, seq";
             return array($query);
             break;
             
@@ -255,7 +255,7 @@ class newpatienttoapprove {
             
             case 'P7':
                 $query=" select * from layout_options WHERE form_id = 'DEM' AND uor > 0 AND field_id != '' " .
-                "ORDER BY group_name, seq";
+                "ORDER BY group_id, seq";
             
             return array($query);
             break;

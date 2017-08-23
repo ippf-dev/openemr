@@ -37,20 +37,18 @@ $isform = empty($_REQUEST['isform']) ? 0 : 1;
 
 $CPR = 4; // cells per row
 
-// Collect some top-level information about this layout.
-$tmp = sqlQuery("SELECT title, notes FROM list_options WHERE " .
-  "list_id = 'lbfnames' AND option_id = ? AND activity = 1 LIMIT 1", array($formname) );
-$formtitle = $tmp['title'];
-
-$jobj = json_decode($tmp['notes'], true);
-if (!empty($jobj['columns'])) $CPR = intval($jobj['columns']);
-if (!empty($jobj['size'   ])) $FONTSIZE = intval($jobj['size']);
-if (isset($jobj['services'])) $LBF_SERVICES_SECTION = $jobj['services'];
-if (isset($jobj['products'])) $LBF_PRODUCTS_SECTION = $jobj['products'];
-if (isset($jobj['diags'   ])) $LBF_DIAGS_SECTION = $jobj['diags'];
+$grparr = array();
+getLayoutProperties($formname, $grparr, '*');
+$lobj = $grparr[''];
+$formtitle = $lobj['grp_title'];
+if (!empty($lobj['grp_columns'])) $CPR = intval($lobj['grp_columns']);
+if (!empty($lobj['grp_size'   ])) $FONTSIZE = intval($lobj['grp_size']);
+if ($lobj['grp_services']) $LBF_SERVICES_SECTION = $lobj['grp_services'] == '*' ? '' : $lobj['grp_services'];
+if ($lobj['grp_products']) $LBF_PRODUCTS_SECTION = $lobj['grp_products'] == '*' ? '' : $lobj['grp_products'];
+if ($lobj['grp_diags'   ]) $LBF_DIAGS_SECTION    = $lobj['grp_diags'   ] == '*' ? '' : $lobj['grp_diags'   ];
 
 // Check access control.
-if (!empty($jobj['aco'])) $LBF_ACO = explode('|', $jobj['aco']);
+if (!empty($lobj['aco_spec'])) $LBF_ACO = explode('|', $lobj['aco_spec']);
 if (!acl_check('admin', 'super') && !empty($LBF_ACO)) {
   if (!acl_check($LBF_ACO[0], $LBF_ACO[1])) {
     die(xlt('Access denied'));
@@ -91,7 +89,7 @@ if ($visitid && (isset($LBF_SERVICES_SECTION) || isset($LBF_DIAGS_SECTION) || is
 
 $fres = sqlStatement("SELECT * FROM layout_options " .
   "WHERE form_id = ? AND uor > 0 " .
-  "ORDER BY group_name, seq", array($formname) );
+  "ORDER BY group_id, seq", array($formname) );
 ?>
 <?php if (!$PDF_OUTPUT) { ?>
 <html>
@@ -290,15 +288,14 @@ function getContent() {
 $cell_count = 0;
 $item_count = 0;
 
-// This is an array of the active group levels. Each entry is a group or
-// subgroup name (with its order prefix) and represents a level of nesting.
-$group_levels = array();
+// This string is the active group levels. Each leading substring represents an instance of nesting.
+$group_levels = '';
 
 // This indicates if </table> will need to be written to end the fields in a group.
 $group_table_active = false;
 
 while ($frow = sqlFetchArray($fres)) {
-  $this_group   = $frow['group_name'];
+  $this_group   = $frow['group_id'];
   $titlecols    = $frow['titlecols'];
   $datacols     = $frow['datacols'];
   $data_type    = $frow['data_type'];
@@ -324,43 +321,43 @@ while ($frow = sqlFetchArray($fres)) {
   // Skip this field if its do-not-print option is set.
   if (strpos($edit_options, 'X') !== FALSE) continue;
 
-  $this_levels = explode('|', $this_group);
+  $this_levels = $this_group;
   $i = 0;
-  $mincount = min(count($this_levels), count($group_levels));
+  $mincount = min(strlen($this_levels), strlen($group_levels));
   while ($i < $mincount && $this_levels[$i] == $group_levels[$i]) ++$i;
   // $i is now the number of initial matching levels.
 
   // If ending a group or starting a subgroup, terminate the current row and its table.
-  if ($group_table_active && ($i != count($group_levels) || $i != count($this_levels))) {
+  if ($group_table_active && ($i != strlen($group_levels) || $i != strlen($this_levels))) {
     end_row();
     echo " </table>\n";
     $group_table_active = false;
   }
 
   // Close any groups that we are done with.
-  while (count($group_levels) > $i) {
-    $gname = array_pop($group_levels);
+  while (strlen($group_levels) > $i) {
+    $gname = $grparr[$group_levels]['grp_title'];
+    $group_levels = substr($group_levels, 0, -1); // remove last character
     echo "</div>\n";
-    // echo "</nobreak><br /><div><table><tr><td>&nbsp;</td></tr></table></div><br />\n";
     echo "</nobreak>\n";
   }
 
   // If there are any new groups, open them.
-  while ($i < count($this_levels)) {
+  while ($i < strlen($this_levels)) {
     end_row();
     if ($group_table_active) {
       echo " </table>\n";
       $group_table_active = false;
     }
-    $gname = $this_levels[$i++];
-    array_push($group_levels, $gname);
+
+    $group_levels .= $this_levels[$i++];
+    $gname = $grparr[substr($group_levels, 0, $i)]['grp_title'];
 
     // This is also for html2pdf. Telling it that the following stuff should
     // start on a new page if there is not otherwise room for it on this page.
     echo "<nobreak>\n";
 
-    // echo "<p class='grpheader'>" . text(xl_layout_label(str_replace('_', ' ', substr($gname, 1)))) . "</p>\n";
-    echo "<div class='grpheader'>" . text(xl_layout_label(str_replace('_', ' ', substr($gname, 1)))) . "</div>\n";
+    echo "<div class='grpheader'>" . text(xl_layout_label($gname)) . "</div>\n";
     echo "<div class='section'>\n";
     echo " <table border='0' cellpadding='0'>\n";
     echo "  <tr>";
@@ -433,8 +430,9 @@ if ($group_table_active) {
   echo " </table>\n";
   $group_table_active = false;
 }
-while (count($group_levels)) {
-  $gname = array_pop($group_levels);
+while (strlen($group_levels)) {
+  $gname = $grparr[$group_levels]['grp_title'];
+  $group_levels = substr($group_levels, 0, -1); // remove last character
   echo "</div>\n";
   echo "</nobreak>\n";
 }

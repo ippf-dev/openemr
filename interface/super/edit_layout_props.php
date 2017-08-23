@@ -2,7 +2,7 @@
 /**
  * Edit Layout Properties.
  *
- * Copyright (C) 2016 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2016-2017 Rod Roark <rod@sunsetsystems.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -29,13 +29,120 @@ require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/htmlspecialchars.inc.php");
 require_once("$phpgacl_location/gacl_api.class.php");
 
-$info_msg = "";
+$alertmsg = "";
 
 // Check authorization.
 $thisauth = acl_check('admin', 'super');
 if (!$thisauth) die(xl('Not authorized'));
 
-$opt_line_no = intval($_GET['lineno']);
+$layout_id = empty($_GET['layout_id']) ? '' : $_GET['layout_id'];
+$group_id  = empty($_GET['group_id' ]) ? '' : $_GET['group_id' ];
+
+if ($_POST['form_submit'] && !$alertmsg) {
+  if ($group_id) {
+    $sets =
+      "grp_subtitle = ?, "   .
+      "grp_columns = ?";
+    $sqlvars = array(
+      $_POST['form_subtitle'],
+      intval($_POST['form_columns']),
+    );
+  }
+  else {
+    $sets =
+      "grp_title = ?, "      .
+      "grp_subtitle = ?, "   .
+      "grp_mapping = ?, "    .
+      "grp_seq = ?, "        .
+      "grp_activity = ?, "   .
+      "grp_repeats = ?, "    .
+      "grp_columns = ?, "    .
+      "grp_size = ?, "       .
+      "grp_issue_type = ?, " .
+      "grp_aco_spec = ?, "   .
+      "grp_services = ?, "   .
+      "grp_products = ?, "   .
+      "grp_diags = ?";
+    $sqlvars = array(
+      $_POST['form_title'],
+      $_POST['form_subtitle'],
+      $_POST['form_mapping'],
+      intval($_POST['form_seq']),
+      empty($_POST['form_activity']) ? 0 : 1,
+      intval($_POST['form_repeats']),
+      intval($_POST['form_columns']),
+      intval($_POST['form_size']),
+      $_POST['form_issue'],
+      $_POST['form_aco'],
+      empty($_POST['form_services']) ? '' : (empty($_POST['form_services_codes']) ? '*' : $_POST['form_services_codes']),
+      empty($_POST['form_products']) ? '' : (empty($_POST['form_products_codes']) ? '*' : $_POST['form_products_codes']),
+      empty($_POST['form_diags'   ]) ? '' : (empty($_POST['form_diags_codes'   ]) ? '*' : $_POST['form_diags_codes'   ]),
+    );
+  }
+
+  if ($layout_id) {
+    // They have edited an existing layout.
+    $sqlvars[] = $layout_id;
+    sqlStatement("UPDATE layout_group_properties SET $sets " .
+      "WHERE grp_form_id = ? AND grp_group_id = '$group_id'",
+      $sqlvars);
+  }
+  else if (!$group_id) {
+    // They want to add a new layout. New groups not supported here.
+    $form_form_id = $_POST['form_form_id'];
+    if (preg_match('/(LBF|LBT)[0-9A-Za-z_]+/', $form_form_id)) {
+      $tmp = sqlQuery("SELECT grp_form_id FROM layout_group_properties WHERE " .
+        "grp_form_id = ? AND grp_group_id = ''",
+        array($form_form_id));
+      if (empty($row)) {
+        $sqlvars[] = $form_form_id;
+        sqlStatement("INSERT INTO layout_group_properties " .
+          "SET $sets, grp_form_id = ?, grp_group_id = ''",
+          $sqlvars);
+        $layout_id = $form_form_id;
+      }
+      else {
+        $alertmsg = xl('This layout ID already exists');
+      }
+    }
+    else {
+      $alertmsg = xl('Invalid layout ID');
+    }
+  }
+
+  // Close this window and redisplay the layout editor.
+  //
+  echo "<html><body><script language='JavaScript'>\n";
+  if ($alertmsg) echo " alert('$alertmsg');\n";
+  echo " if (opener.refreshme) opener.refreshme('$layout_id');\n";
+  echo " window.close();\n";
+  echo "</script></body></html>\n";
+  exit();
+}
+
+$row = array(
+  'grp_form_id'    => '',
+  'grp_title'      => '',
+  'grp_subtitle'   => '',
+  'grp_mapping'    => 'Clinical',
+  'grp_seq'        => '0',
+  'grp_activity'   => '1',
+  'grp_repeats'    => '0',
+  'grp_columns'    => '4',
+  'grp_size'       => '9',
+  'grp_issue_type' => '',
+  'grp_aco_spec'   => '',
+  'grp_services'   => '',
+  'grp_products'   => '',
+  'grp_diags'      => '',
+);
+
+if ($layout_id) {
+  $row = sqlQuery("SELECT * FROM layout_group_properties WHERE " .
+    "grp_form_id = ? AND grp_group_id = ?",
+    array($layout_id, $group_id));
+  if (empty($row)) die(xl('This layout does not exist.'));
+}
 ?>
 <html>
 <head>
@@ -56,36 +163,6 @@ td { font-size:10pt; }
 <?php require($GLOBALS['srcdir'] . "/restoreSession.php"); ?>
 
 var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
-var target = opener.document.forms[0]['opt[<?php echo $opt_line_no; ?>][notes]'];
-
-$(document).ready(function () {
-  var f = document.forms[0];
-  var jobj = {};
-  if (target.value.length) {
-    try {
-      jobj = JSON.parse(target.value);
-    }
-    catch (e) {
-      alert('<?php echo xls('Invalid data, will be ignored and replaced.'); ?>');
-    }
-  }
-  if (jobj['size'    ]) f.form_size.value     = jobj['size'];
-  if (jobj['columns' ]) f.form_columns.value  = jobj['columns'];
-  if (jobj['issue'   ]) f.form_issue.value    = jobj['issue'];
-  if (jobj['aco'     ]) f.form_aco.value      = jobj['aco'];
-  if (jobj.hasOwnProperty('services')) {
-    f.form_services.checked = true;
-    f.form_services_codes.value = jobj['services'];
-  }
-  if (jobj.hasOwnProperty('products')) {
-    f.form_products.checked = true;
-    f.form_products_codes.value = jobj['products'];
-  }
-  if (jobj.hasOwnProperty('diags')) {
-    f.form_diags.checked = true;
-    f.form_diags_codes.value = jobj['diags'];
-  }
-});
 
 // The name of the input element to receive a found code.
 var current_sel_name = '';
@@ -134,31 +211,93 @@ function get_related() {
   return new Array();
 }
 
-// Onclick handler for Submit button.
-function submitProps() {
-  var f = document.forms[0];
-  var jobj = {};
-  if (f.form_size.value          ) jobj['size'    ] = f.form_size.value;
-  if (f.form_columns.value != '4') jobj['columns' ] = f.form_columns.value;
-  if (f.form_issue.value         ) jobj['issue'   ] = f.form_issue.value;
-  if (f.form_aco.value           ) jobj['aco'     ] = f.form_aco.value;
-  if (f.form_services.checked    ) jobj['services'] = f.form_services_codes.value;
-  if (f.form_products.checked    ) jobj['products'] = f.form_products_codes.value;
-  if (f.form_diags.checked       ) jobj['diags'   ] = f.form_diags_codes.value;
-  target.value = JSON.stringify(jobj);
-  window.close();
-}
-
 </script>
 
 </head>
 
 <body class="body_top">
 
-<form method='post'>
+<form method='post' action='edit_layout_props.php?<?php echo "layout_id=$layout_id&group_id=$group_id"; ?>'>
 <center>
 
 <table border='0' width='100%'>
+<?php if (empty($layout_id)) { ?>
+ <tr>
+  <td valign='top' width='1%' nowrap>
+   <?php echo xls('Layout ID'); ?>
+  </td>
+  <td>
+   <input type='text' size='31' maxlength='31' name='form_form_id'
+    value='' /><br />
+    <?php echo xlt('Visit form ID must start with LBF. Transaction form ID must start with LBT.') ?>
+  </td>
+ </tr>
+<?php } ?>
+
+<?php if (empty($group_id)) { ?>
+ <tr>
+  <td valign='top' width='1%' nowrap>
+   <?php echo xls('Title'); ?>
+  </td>
+  <td>
+   <input type='text' size='40' name='form_title' style='width:100%'
+    value='<?php echo attr($row['grp_title']); ?>' />
+  </td>
+ </tr>
+<?php } ?>
+
+ <tr>
+  <td valign='top' width='1%' nowrap>
+   <?php echo xls('Subtitle'); ?>
+  </td>
+  <td>
+   <input type='text' size='40' name='form_subtitle' style='width:100%'
+    value='<?php echo attr($row['grp_subtitle']); ?>' />
+  </td>
+ </tr>
+
+<?php if (empty($group_id)) { ?>
+
+ <tr>
+  <td valign='top' width='1%' nowrap>
+   <?php echo xls('Category'); ?>
+  </td>
+  <td>
+   <input type='text' size='40' name='form_mapping' style='width:100%'
+    value='<?php echo attr($row['grp_mapping']); ?>' />
+  </td>
+ </tr>
+
+ <tr>
+  <td valign='top' width='1%' nowrap>
+   <?php echo xls('Active'); ?>
+  </td>
+  <td>
+   <input type='checkbox' name='form_activity' <?php if ($row['grp_activity']) echo "checked"; ?> />
+  </td>
+ </tr>
+
+ <tr>
+  <td valign='top' width='1%' nowrap>
+   <?php echo xls('Sequence'); ?>
+  </td>
+  <td>
+   <input type='text' size='4' name='form_seq'
+    value='<?php echo attr($row['grp_seq']); ?>' />
+  </td>
+ </tr>
+
+ <tr>
+  <td valign='top' width='1%' nowrap>
+   <?php echo xls('Repeats'); ?>
+  </td>
+  <td>
+   <input type='text' size='4' name='form_repeats'
+    value='<?php echo attr($row['grp_repeats']); ?>' />
+  </td>
+ </tr>
+
+<?php } ?>
 
  <tr>
   <td valign='top' nowrap>
@@ -167,15 +306,18 @@ function submitProps() {
   <td>
    <select name='form_columns'>
 <?php
+  echo "<option value='0'>" . xlt('Default') . "</option>\n";
   for ($cols = 2; $cols <= 10; ++$cols) {
     echo "<option value='$cols'";
-    if ($cols == 4) echo " selected";
+    if ($cols == $row['grp_columns']) echo " selected";
     echo ">$cols</option>\n";
   }
 ?>
    </select>
   </td>
  </tr>
+
+<?php if (empty($group_id)) { ?>
 
  <tr>
   <td valign='top' nowrap>
@@ -184,9 +326,10 @@ function submitProps() {
   <td>
    <select name='form_size'>
 <?php
-  echo "<option value=''>" . xlt('Default') . "</option>\n";
+  echo "<option value='0'>" . xlt('Default') . "</option>\n";
   for ($size = 5; $size <= 15; ++$size) {
     echo "<option value='$size'";
+    if ($size == $row['grp_size']) echo " selected";
     echo ">$size</option>\n";
   }
 ?>
@@ -207,6 +350,7 @@ function submitProps() {
     array($GLOBALS['ippf_specific'] ? 'ippf_specific' : 'default'));
   while ($itrow = sqlFetchArray($itres)) {
     echo "<option value='" . attr($itrow['type']) . "'";
+    if ($itrow['type'] == $row['grp_issue_type']) echo " selected";
     echo ">" . xls($itrow['singular']) . "</option>\n";
   }
 ?>
@@ -233,10 +377,12 @@ function submitProps() {
     $aco_section_title = $aco_section_data[3];
     echo " <optgroup label='" . xls($aco_section_title) . "'>\n";
     foreach($list_aco_objects[$seckey] as $acokey) {
-      $aco_id = $gacl->get_object_id($seckey, $acokey,'ACO');
+      $aco_id = $gacl->get_object_id($seckey, $acokey, 'ACO');
       $aco_data = $gacl->get_object_data($aco_id, 'ACO');
       $aco_title = $aco_data[0][3];
-      echo "  <option value='" . attr("$seckey|$acokey") . "'>" . xls($aco_title) . "</option>\n";
+      echo "  <option value='" . attr("$seckey|$acokey") . "'";
+      if ("$seckey|$acokey" == $row['grp_aco_spec']) echo " selected";
+      echo ">" . xls($aco_title) . "</option>\n";
     }
     echo " </optgroup>\n";
   }
@@ -247,38 +393,43 @@ function submitProps() {
 
  <tr>
   <td valign='top' width='1%' nowrap>
-   <input type='checkbox' name='form_services' />
+   <input type='checkbox' name='form_services' <?php if ($row['grp_services']) echo "checked"; ?> />
    <?php echo xls('Show Services Section'); ?>
   </td>
   <td>
-   <input type='text' size='40' name='form_services_codes' onclick='sel_related(this, "MA")' style='width:100%' />
+   <input type='text' size='40' name='form_services_codes' onclick='sel_related(this, "MA")' style='width:100%'
+    value='<?php if ($row['grp_services'] != '*') echo $row['grp_services']; ?>' />
   </td>
  </tr>
 
  <tr>
   <td valign='top' width='1%' nowrap>
-   <input type='checkbox' name='form_products' />
+   <input type='checkbox' name='form_products' <?php if ($row['grp_products']) echo "checked"; ?> />
    <?php echo xls('Show Products Section'); ?>
   </td>
   <td>
-   <input type='text' size='40' name='form_products_codes' onclick='sel_related(this, "PROD")' style='width:100%' />
+   <input type='text' size='40' name='form_products_codes' onclick='sel_related(this, "PROD")' style='width:100%'
+    value='<?php if ($row['grp_products'] != '*') echo $row['grp_products']; ?>' />
   </td>
  </tr>
 
  <tr>
   <td valign='top' width='1%' nowrap>
-   <input type='checkbox' name='form_diags' />
+   <input type='checkbox' name='form_diags' <?php if ($row['grp_diags']) echo "checked"; ?> />
    <?php echo xls('Show Diagnoses Section'); ?>
   </td>
   <td>
-   <input type='text' size='40' name='form_diags_codes' onclick='sel_related(this, "ICD10")' style='width:100%' />
+   <input type='text' size='40' name='form_diags_codes' onclick='sel_related(this, "ICD10")' style='width:100%'
+    value='<?php if ($row['grp_diags'] != '*') echo $row['grp_diags']; ?>' />
   </td>
  </tr>
+
+<?php } ?>
 
 </table>
 
 <p>
-<input type='button' value='<?php echo xla('Submit'); ?>' onclick='submitProps()' />
+<input type='submit' name='form_submit' value='<?php echo xla('Submit'); ?>' />
 
 &nbsp;
 <input type='button' value='<?php echo xla('Cancel'); ?>' onclick='window.close()' />
@@ -288,8 +439,8 @@ function submitProps() {
 </form>
 <script language='JavaScript'>
 <?php
-if ($info_msg) {
-  echo " alert('".addslashes($info_msg)."');\n";
+if ($alertmsg) {
+  echo " alert('" . addslashes($alertmsg) . "');\n";
   echo " window.close();\n";
 }
 ?>

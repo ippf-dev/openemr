@@ -33,6 +33,10 @@ $mode    = empty($_POST['mode' ]) ? '' : $_POST['mode' ];
 // $inmode    = $_GET['inmode'];
 $body_onload_code = "";
 
+// Load array of properties for this layout and its groups.
+$grparr = array();
+getLayoutProperties($form_id, $grparr);
+
 if ($mode) {
   $sets = "title = ?, user = ?, groupname = ?, authorized = ?, date = NOW()";
   $sqlBindArray = array($form_id, $_SESSION['authUser'], $_SESSION['authProvider'], $userauthorized);
@@ -49,7 +53,7 @@ if ($mode) {
 
   $fres = sqlStatement("SELECT * FROM layout_options " .
     "WHERE form_id = ? AND uor > 0 AND field_id != '' " .
-    "ORDER BY group_name, seq", array($form_id));
+    "ORDER BY group_id, seq", array($form_id));
 
   while ($frow = sqlFetchArray($fres)) {
     $data_type = $frow['data_type'];
@@ -307,7 +311,22 @@ div.tab {
 	<table class="text">
 	    <tr><td>
         <?php echo htmlspecialchars( xl('Transaction Type'), ENT_NOQUOTES); ?>:&nbsp;</td><td>
-	<?php echo generate_select_list('title','transactions',$form_id,'','','','titleChanged()'); ?>
+<?php
+// echo generate_select_list('title','transactions',$form_id,'','','','titleChanged()');
+// <select name='title' id='title' onchange='titleChanged()' title=''><option value='LBTptreq' selected>* LBTptreq *</option></select>
+
+$ttres = sqlStatement("SELECT grp_form_id, grp_title " .
+  "FROM layout_group_properties WHERE " .
+  "grp_form_id LIKE 'LBT%' AND grp_group_id = '' ORDER BY grp_seq, grp_title");
+echo "<select name='title' id='title' onchange='titleChanged()'>\n";
+while ($ttrow = sqlFetchArray($ttres)) {
+  $thisid = $ttrow['grp_form_id'];
+  echo "<option value='" . attr($thisid) . "'";
+  if ($thisid == $form_id) echo ' selected';
+  echo ">" . text($ttrow['grp_title']) . "</option>\n";
+}
+echo "</select>\n";
+?>
         </td></tr>
 	</table>
 
@@ -334,15 +353,18 @@ div.tab {
 <?php
 $fres = sqlStatement("SELECT * FROM layout_options " .
   "WHERE form_id = ? AND uor > 0 " .
-  "ORDER BY group_name, seq", array($form_id));
+  "ORDER BY group_id, seq", array($form_id));
 $last_group = '';
 
 while ($frow = sqlFetchArray($fres)) {
-  $this_group = $frow['group_name'];
+  $this_group = $frow['group_id'];
   // Handle a data category (group) change.
   if (strcmp($this_group, $last_group) != 0) {
     $group_seq  = substr($this_group, 0, 1);
-    $group_name = substr($this_group, 1);
+
+    // $group_name = substr($this_group, 1);
+    $group_name = $grparr[$this_group]['grp_title'];
+
     $last_group = $this_group;
     if ($group_seq == 1) {
       echo "<li class='current'>";
@@ -363,7 +385,7 @@ while ($frow = sqlFetchArray($fres)) {
 								<?php
 $fres = sqlStatement("SELECT * FROM layout_options " .
   "WHERE form_id = ? AND uor > 0 " .
-  "ORDER BY group_name, seq", array($form_id));
+  "ORDER BY group_id, seq", array($form_id));
 
 $last_group = '';
 $cell_count = 0;
@@ -372,7 +394,7 @@ $display_style = 'block';
 $condition_str = '';
 
 while ($frow = sqlFetchArray($fres)) {
-  $this_group = $frow['group_name'];
+  $this_group = $frow['group_id'];
   $titlecols  = $frow['titlecols'];
   $datacols   = $frow['datacols'];
   $data_type  = $frow['data_type'];
@@ -401,7 +423,7 @@ while ($frow = sqlFetchArray($fres)) {
   if (strcmp($this_group, $last_group) != 0) {
     end_group();
     $group_seq  = substr($this_group, 0, 1);
-    $group_name = substr($this_group, 1);
+    $group_name = $grparr[$this_group]['grp_title'];
     $last_group = $this_group;
     $group_seq_esc = htmlspecialchars( $group_seq, ENT_QUOTES);
     if($group_seq == 1)	echo "<div class='tab current' id='div_$group_seq_esc'>";

@@ -104,11 +104,11 @@ require_once("$srcdir/sql.inc");
 			echo "</td>\n";
     }
 
-		$layoutCols = sqlStatement( "SELECT field_id, title, description, group_name "
+		$layoutCols = sqlStatement( "SELECT field_id, title, description, group_id "
       . "FROM layout_options "
       . "WHERE form_id='DEM' "
-      . "AND group_name not like ('%Employer%' ) AND uor != 0 "
-      . "ORDER BY group_name,seq"
+      . "AND field_id not like 'em\_%' AND uor != 0 "
+      . "ORDER BY group_id,seq"
 		);
 
 		echo "<table>";

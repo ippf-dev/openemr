@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2015-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2015-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -227,7 +227,7 @@ else if ($what == 'fields') {
   }
   else if ($source == 'E') {
     $sellist = "lo.field_id, " .
-      "MIN(lo.group_name  ) AS group_name, "   .
+      "MIN(lo.group_id    ) AS group_id, "     .
       "MIN(lo.title       ) AS title, "        .
       "MIN(lo.data_type   ) AS data_type, "    .
       "MIN(lo.uor         ) AS uor, "          .
@@ -248,11 +248,9 @@ else if ($what == 'fields') {
     }
   }
   else if ($source == 'D' || $source == 'H') {
-    $sellist = $source == 'E' ? 'DISTINCT ' : '';
-    $sellist .= "lo.*";
+    $sellist = "lo.*";
     $from = "layout_options AS lo";
     $where1 = "WHERE lo.form_id LIKE '$layout_id' AND lo.uor > 0";
-    if ($source == 'E') $where1 .= " AND lo.source = 'E'";
     if (isset($_GET['sSearch']) && $_GET['sSearch'] !== "") {
       $sSearch = add_escape_custom($_GET['sSearch']);
       $where2 = "AND (lo.field_id LIKE '%$sSearch%' OR lo.title LIKE '%$sSearch%')";
@@ -269,12 +267,12 @@ else if ($what == 'lists') {
   }
 }
 else if ($what == 'groups') {
-  $sellist .= "DISTINCT lo.group_name AS code, SUBSTRING(lo.group_name, 2) AS description";
-  $from = "layout_options AS lo";
-  $where1 = "WHERE lo.form_id LIKE '$layout_id'";
+  $sellist .= "DISTINCT lo.group_id AS code, lp.grp_title AS description";
+  $from = "layout_options AS lo, layout_group_properties AS lp";
+  $where1 = "WHERE lo.form_id LIKE '$layout_id' AND lp.grp_form_id = lo.form_id AND lp.grp_group_id = lo.group_id";
   if (isset($_GET['sSearch']) && $_GET['sSearch'] !== "") {
     $sSearch = add_escape_custom($_GET['sSearch']);
-    $where2 = "AND lo.group_name LIKE '%$sSearch%'";
+    $where2 = "AND lp.grp_title LIKE '%$sSearch%'";
   }
 }
 else {

@@ -54,7 +54,7 @@ if (!empty($GLOBALS['patient_search_results_style'])) {
     "field_id NOT LIKE 'ss' AND " .
     "field_id NOT LIKE 'DOB' AND " .
     "field_id NOT LIKE 'pubpid' " .
-    "ORDER BY group_name, seq LIMIT 5");
+    "ORDER BY group_id, seq LIMIT 5");
   while ($trow = sqlFetchArray($tres)) {
     $extracols[$trow['field_id']] = $trow;
     if ($trow['field_id'] == 'home_facility') $use_facility_checkbox = true;
@@ -213,7 +213,7 @@ if ($popup) {
   $where = "1 = 1";
   $fres = sqlStatement("SELECT * FROM layout_options " .
     "WHERE form_id = 'DEM' AND uor > 0 AND field_id != '' " .
-    "ORDER BY group_name, seq");
+    "ORDER BY group_id, seq");
   while ($frow = sqlFetchArray($fres)) {
     $field_id  = $frow['field_id'];
     if (strpos($field_id, 'em_') === 0) continue;

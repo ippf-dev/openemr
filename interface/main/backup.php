@@ -320,7 +320,7 @@ if ($form_step == 7) {   // create the final compressed tar containing all files
 if ($form_step == 101) {
   echo "<p><b>&nbsp;" . xl('Select the configuration items to export') . ":</b></p>";
 
-  echo "<table cellspacing='10' cellpadding='0'>\n<tr>\n<td valign='top'>\n";
+  echo "<table cellspacing='10' cellpadding='0'>\n<tr>\n<td valign='top' nowrap>\n";
 
   echo "<b>" . xlt('Tables') . "</b><br />\n";
   echo "<input type='checkbox' name='form_cb_services' value='1' />\n";
@@ -353,17 +353,14 @@ if ($form_step == 101) {
   echo "</td><td valign='top'>\n";
   echo "<b>" . xlt('Layouts') . "</b><br />\n";
   echo "<select multiple name='form_sel_layouts[]' size='15'>";
-  echo "<option value='DEM'   >" . xlt('Demographics'          ) . "</option>\n";
-  echo "<option value='HIS'   >" . xlt('History'               ) . "</option>\n";
-  echo "<option value='REF'   >" . xlt('Referrals'             ) . "</option>\n";
-  echo "<option value='FACUSR'>" . xlt('Facility User Settings') . "</option>\n";
-  $lres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-    "list_id = 'lbfnames' AND activity = 1 ORDER BY title, seq");
+  $lres = sqlStatement("SELECT grp_form_id, grp_title FROM layout_group_properties WHERE " .
+    "grp_group_id = '' AND grp_activity = 1 ORDER BY grp_form_id");
   while ($lrow = sqlFetchArray($lres)) {
-    $key = $lrow['option_id'];
-    echo "<option value='$key'";
-    echo ">" . text(xl_layout_label($lrow['title'])) . "</option>\n";
+    $key = $lrow['grp_form_id'];
+    echo "<option value='" . attr($key) . "'";
+    echo ">" . text($key) . ": " . text(xl_layout_label($lrow['grp_title'])) . "</option>\n";
   }
+
   echo "</select>\n";
 
   echo "</td>\n</tr>\n</table>\n";
@@ -414,15 +411,13 @@ if ($form_step == 102) {
     if (is_array($_POST['form_sel_layouts'])) {
       foreach ($_POST['form_sel_layouts'] as $layoutid) {
         $cmd .= "echo \"DELETE FROM layout_options WHERE form_id = '$layoutid';\" >> $EXPORT_FILE;";
-        if (strpos($layoutid, 'LBF') === 0) {
-          $cmd .= "echo \"DELETE FROM list_options WHERE list_id = 'lbfnames' AND option_id = '$layoutid';\" >> $EXPORT_FILE;";
-          $cmd .= $dumppfx .
-            " --where=\"list_id = 'lbfnames' AND option_id = '$layoutid'\" " .
-            escapeshellarg($sqlconf["dbase"]) . " list_options" .
-            " >> $EXPORT_FILE;";
-        }
+        $cmd .= "echo \"DELETE FROM layout_group_properties WHERE grp_form_id = '$layoutid';\" >> $EXPORT_FILE;";
         $cmd .= $dumppfx .
-          " --where=\"form_id = '$layoutid' ORDER BY group_name, seq, title\" " .
+          " --where=\"grp_form_id = '$layoutid'\" " .
+          escapeshellarg($sqlconf["dbase"]) . " layout_group_properties" .
+          " >> $EXPORT_FILE;";
+        $cmd .= $dumppfx .
+          " --where=\"form_id = '$layoutid' ORDER BY group_id, seq, title\" " .
           escapeshellarg($sqlconf["dbase"]) . " layout_options" .
           " >> $EXPORT_FILE;";
       }

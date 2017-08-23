@@ -370,15 +370,15 @@ $(document).ready(function(){
 
 <?php
   // Initialize for each applicable LBF form.
-  $gfres = sqlStatement("SELECT option_id FROM list_options WHERE " .
-    "list_id = 'lbfnames' AND option_value > 0 AND activity = 1 ORDER BY seq, title");
-  while($gfrow = sqlFetchArray($gfres)) {
+  $gfres = sqlStatement("SELECT grp_form_id FROM layout_group_properties WHERE " .
+    "grp_form_id LIKE 'LBF%' AND grp_group_id = '' AND grp_repeats > 0 AND grp_activity = 1 " .
+    "ORDER BY grp_seq, grp_title");
+  while ($gfrow = sqlFetchArray($gfres)) {
 ?>
-    $("#<?php echo $gfrow['option_id']; ?>_ps_expand").load("lbf_fragment.php?formname=<?php echo $gfrow['option_id']; ?>");
+    $("#<?php echo $gfrow['grp_form_id']; ?>_ps_expand").load("lbf_fragment.php?formname=<?php echo $gfrow['grp_form_id']; ?>");
 <?php
   }
 ?>
-
     // fancy box
     enable_modals();
 
@@ -504,10 +504,34 @@ $(window).load(function() {
 </script>
 
 <style type="css/text">
+
 #pnotes_ps_expand {
   height:auto;
   width:100%;
 }
+
+<?php
+// This is for layout font size override.
+$grparr = array();
+getLayoutProperties('DEM', $grparr, 'grp_size');
+if (!empty($grparr['']['grp_size'])) {
+  $FONTSIZE = $grparr['']['grp_size'];
+?>
+/* Override font sizes in the theme. */
+#DEM .groupname {
+  font-size: <?php echo $FONTSIZE; ?>pt;
+}
+#DEM .label {
+  font-size: <?php echo $FONTSIZE; ?>pt;
+}
+#DEM .data {
+  font-size: <?php echo $FONTSIZE; ?>pt;
+}
+#DEM .data td {
+  font-size: <?php echo $FONTSIZE; ?>pt;
+}
+<?php } ?>
+
 </style>
 
 </head>
@@ -1040,10 +1064,10 @@ expand_collapse_widget($widgetTitle, $widgetLabel, $widgetButtonLabel,
   // This generates a section similar to Vitals for each LBF form that
   // supports charting.  The form ID is used as the "widget label".
   //
-  $gfres = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-    "list_id = 'lbfnames' AND " .
-    "option_value > 0 AND activity = 1 " .
-    "ORDER BY seq, title");
+  $gfres = sqlStatement("SELECT grp_form_id AS option_id, grp_title AS title " .
+    "FROM layout_group_properties WHERE " .
+    "grp_form_id LIKE 'LBF%' AND grp_group_id = '' AND grp_repeats > 0 AND grp_activity = 1 " .
+    "ORDER BY grp_seq, grp_title");
   while($gfrow = sqlFetchArray($gfres)) {
 ?>
     <tr>

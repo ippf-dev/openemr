@@ -34,7 +34,7 @@ foreach ($_POST as $key => $val) {
 $newdata = array();
 $fres = sqlStatement("SELECT * FROM layout_options " .
   "WHERE form_id = 'HIS' AND uor > 0 AND field_id != '' " .
-  "ORDER BY group_name, seq");
+  "ORDER BY group_id, seq");
 while ($frow = sqlFetchArray($fres)) {
   $field_id  = $frow['field_id'];
   $newdata[$field_id] = get_layout_form_value($frow);

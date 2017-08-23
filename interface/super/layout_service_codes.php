@@ -106,28 +106,15 @@ if (!empty($_POST['bn_upload'])) {
 
     // Now zap the found service codes into the parameters for each layout.
     foreach ($thecodes as $layoutid => $arr) {
-      $lorow = sqlQuery("SELECT notes FROM list_options WHERE " .
-        "list_id = 'lbfnames' AND option_id = ? AND activity = 1 LIMIT 1",
-        array($layoutid));
-      if (empty($lorow)) {
-        echo "<p style='color:red'>" . xlt('There is no layout') . " '$layoutid'.</p>\n";
-        continue;
-      }
-      $jobj = array();
-      if ($lorow['notes']) $jobj = json_decode($lorow['notes'], true);
       $services = '';
       foreach ($arr as $key => $description) {
         if ($services) $services .= ';';
         $services .= $key;
-        // echo "<span style='color:green'>" . xlt('Layout') . " '$layoutid' " .
-        //   ($form_dryrun ? xlt('would include') : xlt('includes')) .
-        //   " $key " . text($description) . "</span><br />\n";
       }
-      $jobj['services'] = $services;
       if (!$form_dryrun) {
-        sqlStatement("UPDATE list_options SET notes = ? WHERE " .
-          "list_id = 'lbfnames' AND option_id = ?",
-          array(json_encode($jobj, JSON_FORCE_OBJECT), $layoutid));
+        sqlStatement("UPDATE layout_group_properties SET grp_services = ? WHERE " .
+          "grp_form_id = ? AND grp_group_id = ''",
+          array($services, $layoutid));
       }
     }
   } // end upload logic
@@ -186,26 +173,28 @@ if (!empty($_POST['bn_upload'])) {
 <?php
 $lastcat = '';
 $lastlayout = '';
-$res = sqlStatement("SELECT option_id, title, mapping, notes FROM list_options " .
-  "WHERE list_id = 'lbfnames' AND notes != '' AND activity = 1 ORDER BY mapping, title, option_id");
+
+$res = sqlStatement("SELECT grp_form_id, grp_title, grp_mapping, grp_services FROM layout_group_properties " .
+  "WHERE grp_group_id = '' AND activity = 1 AND grp_services != '' ORDER BY grp_mapping, grp_title, grp_form_id");
+
 while ($row = sqlFetchArray($res)) {
-  $jobj = json_decode($row['notes'], true);
-  if (!isset($jobj['services'])) continue;
-  $codes = explode(';', $jobj['services']);
+  // $jobj = json_decode($row['notes'], true);
+  if ($row['grp_services'] == '*') $row['grp_services'] = '';
+  $codes = explode(';', $row['grp_services']);
   foreach ($codes as $codestring) {
     echo " <tr>\n";
 
     echo "  <td class='detail'>";
-    if ($row['mapping'] != $lastcat) {
-      $lastcat = $row['mapping'];
+    if ($row['grp_mapping'] != $lastcat) {
+      $lastcat = $row['grp_mapping'];
       echo text($lastcat);
     }
     echo "&nbsp;</td>\n";
 
     echo "  <td class='detail'>";
-    if ($row['option_id'] != $lastlayout) {
-      $lastlayout = $row['option_id'];
-      echo text($row['title']);
+    if ($row['grp_form_id'] != $lastlayout) {
+      $lastlayout = $row['grp_form_id'];
+      echo text($row['grp_title']);
     }
     echo "&nbsp;</td>\n";
 

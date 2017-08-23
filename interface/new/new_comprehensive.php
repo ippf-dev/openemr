@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2009-2015 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2009-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -24,12 +24,15 @@ $searchcolor = empty($GLOBALS['layout_search_color']) ?
 $WITH_SEARCH = ($GLOBALS['full_new_patient_form'] == '1' || $GLOBALS['full_new_patient_form'] == '2');
 $SHORT_FORM  = ($GLOBALS['full_new_patient_form'] == '2' || $GLOBALS['full_new_patient_form'] == '3');
 
+$grparr = array();
+getLayoutProperties('DEM', $grparr);
+
 function getLayoutRes() {
   global $SHORT_FORM;
   return sqlStatement("SELECT * FROM layout_options " .
     "WHERE form_id = 'DEM' AND uor > 0 AND field_id != '' " .
     ($SHORT_FORM ? "AND ( uor > 1 OR edit_options LIKE '%N%' ) " : "") .
-    "ORDER BY group_name, seq");
+    "ORDER BY group_id, seq");
 }
 
 // Determine layout field search treatment from its data type:
@@ -455,7 +458,7 @@ $display_style = 'block';
 $group_seq     = 0; // this gives the DIV blocks unique IDs
 
 while ($frow = sqlFetchArray($fres)) {
-  $this_group = $frow['group_name'];
+  $this_group = $frow['group_id'];
   $titlecols  = $frow['titlecols'];
   $datacols   = $frow['datacols'];
   $data_type  = $frow['data_type'];
@@ -479,7 +482,10 @@ while ($frow = sqlFetchArray($fres)) {
     if (!$SHORT_FORM) {
       end_group();
       $group_seq++;    // ID for DIV tags
-      $group_name = substr($this_group, 1);
+
+      // $group_name = substr($this_group, 1);
+      $group_name = $grparr[$this_group]['grp_title'];
+
       if (strlen($last_group) > 0) echo "<br />";
       echo "<span class='bold'><input type='checkbox' name='form_cb_$group_seq' id='form_cb_$group_seq' value='1' " .
         "onclick='return divclick(this,\"div_$group_seq\");'";
@@ -862,7 +868,7 @@ $mflist = "";
 $mfres = sqlStatement("SELECT * FROM layout_options " .
   "WHERE form_id = 'DEM' AND uor > 0 AND field_id != '' AND " .
   "edit_options LIKE '%D%' " .
-  "ORDER BY group_name, seq");
+  "ORDER BY group_id, seq");
 while ($mfrow = sqlFetchArray($mfres)) {
   $field_id  = $mfrow['field_id'];
   if (strpos($field_id, 'em_') === 0) continue;

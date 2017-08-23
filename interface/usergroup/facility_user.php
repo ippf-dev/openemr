@@ -49,7 +49,7 @@ if ( isset($_POST["mode"]) && $_POST["mode"] == "facility_user_id" && isset($_PO
   // Inserting/Updating new facility specific user information
   $fres = sqlStatement("SELECT * FROM `layout_options` " .
                        "WHERE `form_id` = 'FACUSR' AND `uor` > 0 AND `field_id` != '' " .
-                       "ORDER BY `group_name`, `seq`");
+                       "ORDER BY `group_id`, `seq`");
   while ($frow = sqlFetchArray($fres)) {
     $value = get_layout_form_value($frow);
     $entry_id = sqlQuery("SELECT `id` FROM `facility_user_ids` WHERE `uid` = ? AND `facility_id` = ? AND `field_id` =?", array($_POST["user_id"],$_POST["fac_id"],$frow['field_id']) );
@@ -116,7 +116,7 @@ for($i=0; $row=sqlFetchArray($f_res); $i++) {
 // Collect layout information and store them in an array
 $l_res = sqlStatement("SELECT * FROM layout_options " .
                       "WHERE form_id = 'FACUSR' AND uor > 0 AND field_id != '' " .
-                      "ORDER BY group_name, seq");
+                      "ORDER BY group_id, seq");
 $l_arr = array();
 for($i=0; $row=sqlFetchArray($l_res); $i++) {
   $l_arr[$i]=$row;
