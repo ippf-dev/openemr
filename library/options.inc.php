@@ -553,7 +553,7 @@ function generate_form_field($frow, $currvalue='') {
           if ($count) echo "</tr>";
           echo "<tr>";
         }
-        echo "<td width='$tdpct%'>";
+        echo "<td width='$tdpct%' nowrap>";
         echo "<input type='checkbox' name='form_{$field_id_esc}[$option_id_esc]' " .
           "id='form_{$field_id_esc}[$option_id_esc]' value='1' $lbfonchange";
         if (in_array($option_id, $avalue)) echo " checked";
@@ -2249,7 +2249,7 @@ function isSkipped(&$frow, $currvalue) {
     // value      if eq or ne, some string to compare with
     // andor      "and", "or" or empty
 
-    if ($key == 'action') {
+    if ($key === 'action') {
       // Action value is a string. It can be "skip", or "value=" followed by a value.
       $action = $skiprow;
       continue;
@@ -2520,7 +2520,7 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 
           // Skip this field if action conditions call for that.
           // Note this also accumulates info for subsequent skip tests.
-          $skip_this_field = isSkipped($group_fields, $currvalue);
+          $skip_this_field = isSkipped($group_fields, $currvalue) == 'skip';
 
           // Skip this field if its do-not-print option is set.
           if (strpos($edit_options, 'X') !== FALSE) $skip_this_field = true;

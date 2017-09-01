@@ -310,7 +310,7 @@ while ($frow = sqlFetchArray($fres)) {
 
   // Skip this field if skip conditions call for that.
   // Note this also accumulates info for subsequent skip tests.
-  if (isSkipped($frow, $currvalue)) continue;
+  if (isSkipped($frow, $currvalue) == 'skip') continue;
 
   if ($currvalue === FALSE) {
     // Should not happen.
