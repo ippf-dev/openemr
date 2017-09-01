@@ -2570,14 +2570,18 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
             echo "&nbsp;";
           }
 
-					// Handle starting of a new data cell.
-					if ($datacols > 0) {
-					  disp_end_cell();
-					  $datacols_esc = htmlspecialchars( $datacols, ENT_QUOTES);
-					  echo "<td class='text data' colspan='$datacols_esc'";
-					  echo ">";
-					  $cell_count += $datacols;
-					}
+          // Handle starting of a new data cell.
+          if ($datacols > 0) {
+            disp_end_cell();
+            $datacols_esc = htmlspecialchars( $datacols, ENT_QUOTES);
+            echo "<td class='text data' colspan='$datacols_esc'";
+            if (!$skip_this_field && $data_type == 3) {
+              // Textarea gets a light grey border per CV request 2017-08-31.
+              echo " style='border:1px solid #cccccc'";
+            }
+            echo ">";
+            $cell_count += $datacols;
+          }
 
 					++$item_count;
 
