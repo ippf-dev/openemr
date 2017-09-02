@@ -2470,14 +2470,9 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 	$first = true;
 	while ($frow = sqlFetchArray($fres)) {
 		$this_group = isset($frow['group_id']) ? $frow['group_id'] : "" ;
-		$titlecols  = isset($frow['titlecols']) ? $frow['titlecols'] : "";
-		$datacols   = isset($frow['datacols']) ? $frow['datacols'] : "";
-		$data_type  = isset($frow['data_type']) ? $frow['data_type'] : "";
-		$field_id   = isset($frow['field_id']) ? $frow['field_id'] : "";
-		$list_id    = isset($frow['list_id']) ? $frow['list_id'] : "";
-		$currvalue  = '';
 
     $CPR = empty($grparr[$this_group]['grp_columns']) ? $TOPCPR : $grparr[$this_group]['grp_columns'];
+    $subtitle = empty($grparr[$this_group]['grp_subtitle']) ? '' : $grparr[$this_group]['grp_subtitle'];
 
 		$group_fields_query = sqlStatement("SELECT * FROM layout_options " .
 		"WHERE form_id = ? AND uor > 0 AND group_id = ? " .
@@ -2539,6 +2534,12 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 					// Handle starting of a new row.
 					if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0) {
 					  disp_end_row();
+            if ($subtitle) {
+              // Group subtitle exists and is not displayed yet.
+              echo "<tr><td class='label' style='background-color:#dddddd;padding:3pt' colspan='$CPR'>" . text($subtitle) . "</td></tr>\n";
+              echo "<tr><td class='label' style='height:4pt' colspan='$CPR'></td></tr>\n";
+              $subtitle = '';
+            }
 					  echo "<tr>";
 					}
 
@@ -2623,14 +2624,9 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
 		$this_group = $frow['group_id'];
     $group_name = $grparr[$this_group]['grp_title'];
     $group_name_esc = text($group_name);
-		$titlecols  = $frow['titlecols'];
-		$datacols   = $frow['datacols'];
-		$data_type  = $frow['data_type'];
-		$field_id   = $frow['field_id'];
-		$list_id    = $frow['list_id'];
-		$currvalue  = '';
 
     $CPR = empty($grparr[$this_group]['grp_columns']) ? $TOPCPR : $grparr[$this_group]['grp_columns'];
+    $subtitle = empty($grparr[$this_group]['grp_subtitle']) ? '' : $grparr[$this_group]['grp_subtitle'];
 
 		$group_fields_query = sqlStatement("SELECT * FROM layout_options " .
 		"WHERE form_id = ? AND uor > 0 AND group_id = ? " .
@@ -2686,6 +2682,12 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
 					// Handle starting of a new row.
 					if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0) {
 					  disp_end_row();
+            if ($subtitle) {
+              // Group subtitle exists and is not displayed yet.
+              echo "<tr><td class='label' style='background-color:#dddddd;padding:3pt' colspan='$CPR'>" . text($subtitle) . "</td></tr>\n";
+              echo "<tr><td class='label' style='height:4pt' colspan='$CPR'></td></tr>\n";
+              $subtitle = '';
+            }
 					  echo "<tr>";
 					}
 

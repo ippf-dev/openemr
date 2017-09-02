@@ -352,6 +352,7 @@ while ($frow = sqlFetchArray($fres)) {
 
     $group_levels .= $this_levels[$i++];
     $gname = $grparr[substr($group_levels, 0, $i)]['grp_title'];
+    $subtitle = $grparr[substr($group_levels, 0, $i)]['grp_subtitle'];
 
     // This is also for html2pdf. Telling it that the following stuff should
     // start on a new page if there is not otherwise room for it on this page.
@@ -366,6 +367,11 @@ while ($frow = sqlFetchArray($fres)) {
       echo "<td class='$tmp'></td>";
     }
     echo "</tr>\n";
+    if ($subtitle) {
+      // There is a group subtitle so show it.
+      echo "<tr><td class='bold' style='color:#0000ff' colspan='$CPR'>" . text($subtitle) . "</td></tr>\n";
+      echo "<tr><td class='bold' style='height:4pt' colspan='$CPR'></td></tr>\n";
+    }
     $group_table_active = true;
   }
 
