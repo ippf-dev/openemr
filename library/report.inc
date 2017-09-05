@@ -265,8 +265,19 @@ function printPatientTransactions($pid) {
 	}
 }
 
-function printPatientBilling($pid) {
-  $res = sqlStatement("select * from billing where pid='$pid' order by date");
+function printPatientBilling($pid, $with_products=false) {
+  if ($with_products) {
+    $res = sqlStatement("(select date, code, code_type, code_text from billing where pid='$pid') " .
+    " UNION ALL " .
+    "(select s.sale_date as date, s.drug_id as code, 'PROD' as code_type, d.name as code_text " .
+    "from drug_sales as s " .
+    "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
+    "where s.pid = '$pid') " .
+    "order by date");
+  }
+  else {
+    $res = sqlStatement("select date, code, code_type, code_text from billing where pid='$pid' order by date");
+  }
   while($result = sqlFetchArray($res)) {
     echo "<span class=bold>" . oeFormatSDFT(strtotime($result{"date"})) . " : </span>";
     echo "<span class=text>(".$result{"code_type"}.") ";
@@ -276,15 +287,7 @@ function printPatientBilling($pid) {
 	}
 }
 
-function getPatientBillingEncounter($pid, $encounter) {
-  /*******************************************************************
-	$sql = "SELECT billing.*, u.id, u.fname, u.mname, u.lname, " .
-    "CONCAT(u.fname,' ', u.lname) AS provider_name, u.federaltaxid " .
-    "FROM billing LEFT JOIN users AS u ON u.id = billing.provider_id " .
-    "WHERE pid='" . add_escape_custom($pid) . "' AND " .
-    "encounter = '" . add_escape_custom($encounter) .
-    "' AND activity='1' ORDER BY date";
-  *******************************************************************/
+function getPatientBillingEncounter($pid, $encounter, $with_products=false) {
   $erow = sqlQuery("SELECT provider_id FROM form_encounter WHERE " .
     "pid = '$pid' AND encounter = '$encounter' " .
     "ORDER BY id DESC LIMIT 1");
@@ -298,12 +301,30 @@ function getPatientBillingEncounter($pid, $encounter) {
     "WHERE pid='" . add_escape_custom($pid) . "' AND " .
     "encounter = '" . add_escape_custom($encounter) .
     "' AND activity = '1' ORDER BY date";
-  /******************************************************************/
+  // echo "<!-- $sql -->\n"; // debugging
 	$res = sqlStatement($sql);
 	$billings = array();
 	while($result = sqlFetchArray($res)) {
 		$billings[] = $result;
 	}
+  if ($with_products) {
+    $sql = "SELECT 'PROD' AS code_type, s.drug_id AS code, '' AS modifier, d.name AS code_text, " .
+      "u.id AS provider_id, s.sale_date AS date, s.quantity AS units, " .
+      "'' AS user, s.fee, s.billed, s.bill_date, s.pricelevel, '1' AS activity, " .
+      "u.id, u.fname, u.mname, u.lname, " .
+      "CONCAT(u.fname,' ', u.lname) AS provider_name, u.federaltaxid " .
+      "FROM drug_sales AS s " .
+      "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
+      "LEFT JOIN users AS u ON u.id = '" . add_escape_custom($inv_provider) . "' " .
+      "WHERE s.pid='" . add_escape_custom($pid) . "' AND " .
+      "s.encounter = '" . add_escape_custom($encounter) . "' " .
+      "ORDER BY date";
+    // echo "<!-- $sql -->\n"; // debugging
+    $res = sqlStatement($sql);
+    while($result = sqlFetchArray($res)) {
+      $billings[] = $result;
+    }
+  }
 	return $billings;
 }
 

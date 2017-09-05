@@ -628,7 +628,7 @@ foreach ($ar as $key => $val) {
                 $copays = 0.00;
                 foreach ($ar['newpatient'] as $be) {
                     $ta = explode(":",$be);
-                    $billing = getPatientBillingEncounter($pid,$ta[1]);
+                    $billing = getPatientBillingEncounter($pid, $ta[1], true);
                     $billings[] = $billing;
                     foreach ($billing as $b) {
                         echo "<tr>\n";
@@ -654,7 +654,7 @@ foreach ($ar as $key => $val) {
                 //print_r($billings);
                 echo "</pre>";
             } else {
-                printPatientBilling($pid);
+                printPatientBilling($pid, true);
             }
             echo "</div>\n"; // end of billing DIV
 
@@ -933,7 +933,8 @@ foreach ($ar as $key => $val) {
 
                 if ($res[1] == 'newpatient') {
                     echo "<div class='text encounter'>\n";
-                    echo "<h1>" . xl($formres["form_name"]) . "</h1>";
+                    // echo "<h1>" . xl($formres["form_name"]) . "</h1>";
+                    echo "<h1>" . xlt('Patient Encounter') . "</h1>";
                 }
                 else {
                     echo "<div class='text encounter_form'>";
@@ -980,6 +981,17 @@ foreach ($ar as $key => $val) {
                     while ($brow=sqlFetchArray($bres)) {
                         echo "<span class='bold'>&nbsp;".xl('Procedure').": </span><span class='text'>" .
                             $brow['code'] . " " . $brow['code_text'] . "</span><br>\n";
+                    }
+                    // Display products provided.
+                    $pres = sqlStatement("SELECT s.sale_date AS date, s.drug_id AS code, d.name AS code_text " .
+                      "FROM drug_sales AS s " .
+                      "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
+                      "WHERE s.pid = ? AND s.encounter = ? " .
+                      "ORDER BY date",
+                      array($pid, $form_encounter));
+                    while ($prow=sqlFetchArray($pres)) {
+                        echo "<span class='bold'>&nbsp;" . xlt('Product') . ": </span><span class='text'>" .
+                            $prow['code'] . " " . $prow['code_text'] . "</span><br>\n";
                     }
                 }
 
