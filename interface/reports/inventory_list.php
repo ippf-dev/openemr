@@ -88,7 +88,8 @@ function checkReorder($drug_id, $min, $warehouse='') {
 //
 function genUserWarehouses($userid=0) {
   $list = '';
-  $res = sqlStatement("SELECT DISTINCT option_id, option_value FROM list_options");
+  $res = sqlStatement("SELECT DISTINCT option_id, option_value FROM list_options WHERE " .
+    "list_id = 'warehouse' AND activity = 1");
   while ($row = sqlFetchArray($res)) {
     if (isWarehouseAllowed($row['option_value'], $row['option_id'], $userid)) {
       if ($list != '') $list .= ', ';
