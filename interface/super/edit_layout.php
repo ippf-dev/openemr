@@ -233,7 +233,7 @@ if ($_POST['formaction'] == "save" && $layout_id) {
         $data_type = formTrim($iter['datatype']);
         $listval = $data_type == 34 ? formTrim($iter['contextName']) : formTrim($iter['listid']);
         $action = $iter['action'];
-        if ($action == 'value') $action = 'value=' . $iter['value'];
+        if ($action == 'value' || $action == 'hsval') $action .= '=' . $iter['value'];
 
         // Skip conditions for the line are stored as a serialized array.
         $condarr = array('action' => strip_escape_custom($action));
@@ -691,7 +691,11 @@ function writeFieldLine($linedata) {
       array(0 => array('id' => '', 'itemid' => '', 'operator' => '', 'value' => '')) :
       unserialize($linedata['conditions']);
     $action = empty($conditions['action']) ? 'skip' : $conditions['action'];
-    $action_value = $action == 'skip' ? '' : substr($action, 6);
+    $action_value = '';
+    if ($action != 'skip') {
+      $action_value = substr($action, 6);
+      $action = substr($action, 0, 5); // "value" or "hsval"
+    }
     //
     $extra_html .= "<div id='ext_$fld_line_no' " .
       "style='position:absolute;width:750px;border:1px solid black;" .
@@ -702,8 +706,9 @@ function writeFieldLine($linedata) {
       "  <th colspan='3' align='left' class='bold'>" .
       xlt('For') . " " . text($linedata['field_id']) . " " .
       "<select name='fld[$fld_line_no][action]' onchange='actionChanged($fld_line_no)'>" .
-      "<option value='skip'  " . ($action == 'skip' ? 'selected' : '') . ">" . xlt('hide this field') . "</option>" .
-      "<option value='value' " . ($action != 'skip' ? 'selected' : '') . ">" . xlt('set value to'   ) . "</option>" .
+      "<option value='skip'  " . ($action == 'skip'  ? 'selected' : '') . ">" . xlt('hide this field' ) . "</option>" .
+      "<option value='value' " . ($action == 'value' ? 'selected' : '') . ">" . xlt('set value to'    ) . "</option>" .
+      "<option value='hsval' " . ($action == 'hsval' ? 'selected' : '') . ">" . xlt('hide else set to') . "</option>" .
       "</select>" .
       "<input type='text' name='fld[$fld_line_no][value]' value='" . attr($action_value) . "' size='15' />" .
       " " . xlt('if') .

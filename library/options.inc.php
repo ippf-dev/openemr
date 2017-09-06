@@ -2220,7 +2220,8 @@ function accumActionConditions($field_id, &$condition_str, &$condarr) {
 }
 
 // This checks if the given field with the given value should have an action applied.
-// Originally the only action was skip, but now you can also set the field to a specified value.
+// Originally the only action was skip, but now you can also set the field to a
+// specified value, or "skip and otherwise set a value".
 // It somewhat mirrors the checkSkipConditions function in options.js.php.
 // If you use this for multiple layouts in the same script, you should
 // clear $sk_layout_items before each layout.
@@ -2250,7 +2251,7 @@ function isSkipped(&$frow, $currvalue) {
     // andor      "and", "or" or empty
 
     if ($key === 'action') {
-      // Action value is a string. It can be "skip", or "value=" followed by a value.
+      // Action value is a string. It can be "skip", or "value=" or "hsval=" followed by a value.
       $action = $skiprow;
       continue;
     }
@@ -2299,6 +2300,10 @@ function isSkipped(&$frow, $currvalue) {
     if ($prevandor == 'or' ) $condition = $condition || $prevcond;
     $prevandor = $skiprow['andor'];
     $prevcond = $condition;
+  }
+
+  if (substr($action, 0, 6) == 'hsval=') {
+    return $prevcond ? 'skip' : ('value=' . substr($action, 6));
   }
   return $prevcond ? $action : '';
 }

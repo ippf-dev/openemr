@@ -102,7 +102,21 @@ function checkSkipConditions() {
 
     // At this point condition indicates the target should be hidden or have its value set.
 
-    if (action == 'skip') {
+    var skip = condition;
+
+    if (action.substring(0, 5) == 'value') {
+      skip = false;
+    }
+    else if (action.substring(0, 5) == 'hsval') {
+      // This action means hide if true, set value if false.
+      if (!condition) {
+        action = 'value=' + action.substring(6);
+        skip = false;
+      }
+    }
+
+    // if (action == 'skip') {
+    if (true) {
       var trgelem1 = document.getElementById('label_id_' + target);
       var trgelem2 = document.getElementById('value_id_' + target);
       if (trgelem1 == null && trgelem2 == null) {
@@ -115,15 +129,16 @@ function checkSkipConditions() {
       if (trgelem1) colspan += trgelem1.colSpan;
       if (trgelem2) colspan += trgelem2.colSpan;
       if (colspan < 4) {
-        if (trgelem1) trgelem1.style.visibility = condition ? 'hidden' : 'visible';
-        if (trgelem2) trgelem2.style.visibility = condition ? 'hidden' : 'visible';
+        if (trgelem1) trgelem1.style.visibility = skip ? 'hidden' : 'visible';
+        if (trgelem2) trgelem2.style.visibility = skip ? 'hidden' : 'visible';
       }
       else {
-        if (trgelem1) trgelem1.parentNode.style.display = condition ? 'none' : '';
-        else          trgelem2.parentNode.style.display = condition ? 'none' : '';
+        if (trgelem1) trgelem1.parentNode.style.display = skip ? 'none' : '';
+        else          trgelem2.parentNode.style.display = skip ? 'none' : '';
       }
     }
-    else if (condition) { // action starts with "value="
+    // else if (condition) { // action starts with "value="
+    if (action.substring(0, 5) == 'value' || (action.substring(0, 5) == 'hsval' && !condition)) {
       var trgelem = document.getElementById('form_' + target);
       if (trgelem == null) {
         if (!cskerror) alert('Cannot find a value target field "' + trgelem + '"');
