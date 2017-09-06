@@ -612,13 +612,15 @@ if ($_POST['form_orderby']) {
     "b.pid, b.encounter, b.code_type, b.code AS itemcode, b.code_text AS description, b.units, b.fee, " .
     "b.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
     "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, l4.notes AS terms, " .
-    "IF((SELECT a.memo FROM ar_activity AS a " .
+    // "IF((SELECT a.memo FROM ar_activity AS a " .
+    "COALESCE((SELECT a.memo FROM ar_activity AS a " .
     "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
     "WHERE " .
     "a.pid = fe.pid AND a.encounter = fe.encounter AND a.deleted IS NULL AND " .
     "(a.code_type = '' OR (a.code_type = b.code_type AND a.code = b.code)) AND " .
     "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
-    "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1) IS NULL, '', pd.userlist4) AS payor " .
+    // "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1) IS NULL, '', pd.userlist4) AS payor " .
+    "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1), '') AS payor " .
     "FROM billing AS b " .
     "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter AND " .
     "fe.date >= ? AND fe.date <= ? $factest " .
@@ -637,13 +639,15 @@ if ($_POST['form_orderby']) {
     "s.quantity AS units, s.fee, " .
     "s.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
     "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, l4.notes AS terms, " .
-    "IF((SELECT a.memo FROM ar_activity AS a " .
+    // "IF((SELECT a.memo FROM ar_activity AS a " .
+    "COALESCE((SELECT a.memo FROM ar_activity AS a " .
     "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
     "WHERE " .
     "a.pid = fe.pid AND a.encounter = fe.encounter AND a.deleted IS NULL AND " .
     "(a.code_type = '' OR (a.code_type = 'PROD' AND a.code = s.drug_id)) AND " .
     "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
-    "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1) IS NULL, '', pd.userlist4) AS payor " .
+    // "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1) IS NULL, '', pd.userlist4) AS payor " .
+    "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1), '') AS payor " .
     "FROM drug_sales AS s " .
     "JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter AND " .
     "fe.date >= ? AND fe.date <= ? $factest " .
