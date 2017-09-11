@@ -287,7 +287,7 @@ else {
   // For this report the insurers are certain adjustment reasons.
   //
   $ires = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-  "list_id = 'adjreason' AND activity = 1 AND (notes LIKE '%=Ins%' OR option_id = 'CASH') " .
+  "list_id = 'adjreason' AND activity = 1 AND (notes LIKE '%=Ins%' OR option_id = 'C00001') " .
   "ORDER by seq, title");
   echo "   <select name='form_insurer'>\n";
   echo "    <option value=''>-- " . xlt('All Insurers') . " --</option>\n";
@@ -388,7 +388,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
 
   // Main loop is on insurer.
   $query = "SELECT option_id AS insid, title AS insname FROM list_options " .
-    "WHERE list_id = 'adjreason' AND activity = 1 AND (notes LIKE '%=Ins%' OR option_id = 'CASH')";
+    "WHERE list_id = 'adjreason' AND activity = 1 AND (notes LIKE '%=Ins%' OR option_id = 'C00001')";
   $qparms = array();
   // If an insurer was specified.
   if ($form_insurer) {
@@ -445,7 +445,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
       "WHERE fe.date >= ? AND fe.date <= ? AND ";
     $qparms = array("$form_from_date 00:00:00", "$form_to_date 23:59:59", $insid);
-    if ($insid == 'CASH') {
+    if ($insid == 'C00001') {
       $query .= "a.memo = ?";
     }
     else {
@@ -545,7 +545,7 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
       "WHERE fe.date >= ? AND fe.date <= ? AND ";
     $qparms = array("$form_from_date 00:00:00", "$form_to_date 23:59:59", $insid);
-    if ($insid == 'CASH') {
+    if ($insid == 'C00001') {
       $query .= "a.memo = ?";
     }
     else {
