@@ -367,7 +367,7 @@ function writeOptionLine($option_id, $title, $seq, $default, $value, $mapping=''
 
   echo "  <td align='center' class='optcell'>";
   echo "<input type='text' name='opt[$opt_line_no][title]' value='" .
-       htmlspecialchars($title, ENT_QUOTES) . "' size='20' maxlength='63' class='optin' />";
+       htmlspecialchars($title, ENT_QUOTES) . "' size='30' maxlength='63' class='optin' />";
   echo "</td>\n";
 
   // if not english and translating lists then show the translation
