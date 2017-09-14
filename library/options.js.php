@@ -124,17 +124,24 @@ function checkSkipConditions() {
         myerror = true;
         continue;
       }
-      // If the item occupies a whole row then undisplay its row, otherwise hide its cells.
+
+      // Find the target row and count its cells, accounting for colspans.
+      var trgrow = trgelem1 ? trgelem1.parentNode : trgelem2.parentNode;
+      var rowcells = 0;
+      for (var itmp = 0; itmp < trgrow.cells.length; ++itmp) {
+        rowcells += trgrow.cells[itmp].colSpan;
+      }
+
+      // If the item occupies the whole row then undisplay its row, otherwise hide its cells.
       var colspan = 0;
       if (trgelem1) colspan += trgelem1.colSpan;
       if (trgelem2) colspan += trgelem2.colSpan;
-      if (colspan < 4) {
+      if (colspan < rowcells) {
         if (trgelem1) trgelem1.style.visibility = skip ? 'hidden' : 'visible';
         if (trgelem2) trgelem2.style.visibility = skip ? 'hidden' : 'visible';
       }
       else {
-        if (trgelem1) trgelem1.parentNode.style.display = skip ? 'none' : '';
-        else          trgelem2.parentNode.style.display = skip ? 'none' : '';
+        trgrow.style.display = skip ? 'none' : '';
       }
     }
     // else if (condition) { // action starts with "value="

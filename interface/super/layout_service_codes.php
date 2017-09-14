@@ -175,7 +175,7 @@ $lastcat = '';
 $lastlayout = '';
 
 $res = sqlStatement("SELECT grp_form_id, grp_title, grp_mapping, grp_services FROM layout_group_properties " .
-  "WHERE grp_group_id = '' AND activity = 1 AND grp_services != '' ORDER BY grp_mapping, grp_title, grp_form_id");
+  "WHERE grp_group_id = '' AND grp_activity = 1 AND grp_services != '' ORDER BY grp_mapping, grp_title, grp_form_id");
 
 while ($row = sqlFetchArray($res)) {
   // $jobj = json_decode($row['notes'], true);
