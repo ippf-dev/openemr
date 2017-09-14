@@ -420,6 +420,16 @@ if ($form_step == 102) {
           " --where=\"form_id = '$layoutid' ORDER BY group_id, seq, title\" " .
           escapeshellarg($sqlconf["dbase"]) . " layout_options" .
           " >> $EXPORT_FILE;";
+
+        if ($layoutid == 'HIS') {
+          $cres = sqlStatement("select field_id from layout_options " .
+            "where form_id = 'HIS' and uor > 0");
+          while ($crow = sqlFetchArray($cres)) {
+            $fldid = $crow['field_id'];
+            $cmd .= "echo \"ALTER TABLE history_data ADD \`$fldid\` TEXT NOT NULL;\" >> $EXPORT_FILE;";
+          }
+        }
+
       }
     }
   }
@@ -454,7 +464,8 @@ if ($form_step == 202) {
       $form_status .= xl('Applying') . "...<br />";
       echo nl2br($form_status);
       $cmd = "$mysql_cmd -u" . escapeshellarg($sqlconf["login"]) .
-        " -p" . escapeshellarg($sqlconf["pass"]) . " " .
+        // "-f" is used to ignore errors. This is a kludge for adding columns that may already exist.
+        " -f -p" . escapeshellarg($sqlconf["pass"]) . " " .
         escapeshellarg($sqlconf["dbase"]) .
         " < $EXPORT_FILE";
     }
