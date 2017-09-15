@@ -684,6 +684,12 @@ function generate_form_field($frow, $currvalue='') {
 
   // a set of labeled checkboxes, each with a text field:
   else if ($data_type == 25) {
+    // Specify the number of label/checkbox/textbox triplets per row.
+    $cols = 1;
+    if (preg_match('/\\bcols=([0-9]*)/', $description, $matches)) {
+      $cols = intval($matches[1]);
+      if ($cols < 1 || $cols > 9) $cols = 1;
+    }
     $tmp = explode('|', $currvalue);
     $avalue = array();
     foreach ($tmp as $value) {
@@ -699,20 +705,22 @@ function generate_form_field($frow, $currvalue='') {
     $lres = sqlStatement("SELECT * FROM list_options " .
       "WHERE list_id = ? AND activity = 1 ORDER BY seq, title", array($list_id) );
     echo "<table cellpadding='0' cellspacing='0'>";
-    while ($lrow = sqlFetchArray($lres)) {
+    // while ($lrow = sqlFetchArray($lres)) {
+    for ($count = 0; $lrow = sqlFetchArray($lres); ++$count) {
       $option_id = $lrow['option_id'];
       $option_id_esc = htmlspecialchars( $option_id, ENT_QUOTES);
       $restype = substr($avalue[$option_id], 0, 1);
       $resnote = substr($avalue[$option_id], 2);
-
-      // Added 5-09 by BM - Translate label if applicable
-      echo "<tr><td>" . htmlspecialchars( xl_list_label($lrow['title']), ENT_NOQUOTES) . "&nbsp;</td>";
-	
+      if ($count % $cols == 0) {
+        if ($count) echo "</tr>";
+        echo "<tr>";
+      }
+      echo "<td>" . text(xl_list_label($lrow['title'])) . "</td>";
       $option_id = htmlspecialchars( $option_id, ENT_QUOTES);
       echo "<td><input type='checkbox' name='check_{$field_id_esc}[$option_id_esc]'" .
         " id='check_{$field_id_esc}[$option_id_esc]' value='1' $lbfonchange";
       if ($restype) echo " checked";
-      echo " $disabled />&nbsp;</td>";
+      echo " $disabled /></td>";
       $fldlength = htmlspecialchars( $fldlength, ENT_QUOTES);
       $resnote = htmlspecialchars( $resnote, ENT_QUOTES);
       echo "<td><input type='text'" .
@@ -720,8 +728,19 @@ function generate_form_field($frow, $currvalue='') {
         " id='form_{$field_id_esc}[$option_id_esc]'" .
         " size='$fldlength'" .
         " $string_maxlength" .
-        " value='$resnote' $disabled /></td>";
+        " value='$resnote' $disabled />";
+      if (($count + 1) % $cols != 0) {
+        // Add some space after each triplet except the last in a row.
+        echo "&nbsp;&nbsp;";
+      }
+      echo "</td>";
+    }
+    if ($count) {
       echo "</tr>";
+      if ($count > $cols) {
+        // Add some space after multiple rows.
+        echo "<tr><td colspan='" . ($cols * 3) . "' style='height:0.7em'></td></tr>";
+      }
     }
     echo "</table>";
   }

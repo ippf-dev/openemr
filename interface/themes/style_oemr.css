@@ -289,7 +289,7 @@ font-weight: bold;
     vertical-align: top;
     text-align: right;
 }
-#DEM .data {
+#DEM .data, #DEM .data td {
     font-size: 0.8em;
     vertical-align: top;
     text-align: left;
@@ -311,11 +311,11 @@ font-weight: bold;
     font-size: 9pt;
     vertical-align: top;
 }
-#HIS .data {
+#HIS .data, #HIS .data td {
     font-size: 9pt;
     vertical-align: top;
     text-align: left;
-    padding-right: 10px;
+    padding-right: 5px;
 }
 
 

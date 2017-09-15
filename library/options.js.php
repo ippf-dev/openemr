@@ -115,37 +115,36 @@ function checkSkipConditions() {
       }
     }
 
-    // if (action == 'skip') {
-    if (true) {
-      var trgelem1 = document.getElementById('label_id_' + target);
-      var trgelem2 = document.getElementById('value_id_' + target);
-      if (trgelem1 == null && trgelem2 == null) {
-        if (!cskerror) alert('Cannot find a skip target field for "' + target + '"');
-        myerror = true;
-        continue;
-      }
-
-      // Find the target row and count its cells, accounting for colspans.
-      var trgrow = trgelem1 ? trgelem1.parentNode : trgelem2.parentNode;
-      var rowcells = 0;
-      for (var itmp = 0; itmp < trgrow.cells.length; ++itmp) {
-        rowcells += trgrow.cells[itmp].colSpan;
-      }
-
-      // If the item occupies the whole row then undisplay its row, otherwise hide its cells.
-      var colspan = 0;
-      if (trgelem1) colspan += trgelem1.colSpan;
-      if (trgelem2) colspan += trgelem2.colSpan;
-      if (colspan < rowcells) {
-        if (trgelem1) trgelem1.style.visibility = skip ? 'hidden' : 'visible';
-        if (trgelem2) trgelem2.style.visibility = skip ? 'hidden' : 'visible';
-      }
-      else {
-        trgrow.style.display = skip ? 'none' : '';
-      }
+    var trgelem1 = document.getElementById('label_id_' + target);
+    var trgelem2 = document.getElementById('value_id_' + target);
+    if (trgelem1 == null && trgelem2 == null) {
+      if (!cskerror) alert('Cannot find a skip target field for "' + target + '"');
+      myerror = true;
+      continue;
     }
-    // else if (condition) { // action starts with "value="
-    if (action.substring(0, 5) == 'value' || (action.substring(0, 5) == 'hsval' && !condition)) {
+
+    // Find the target row and count its cells, accounting for colspans.
+    var trgrow = trgelem1 ? trgelem1.parentNode : trgelem2.parentNode;
+    var rowcells = 0;
+    for (var itmp = 0; itmp < trgrow.cells.length; ++itmp) {
+      rowcells += trgrow.cells[itmp].colSpan;
+    }
+
+    // If the item occupies the whole row then undisplay its row, otherwise hide its cells.
+    var colspan = 0;
+    if (trgelem1) colspan += trgelem1.colSpan;
+    if (trgelem2) colspan += trgelem2.colSpan;
+    if (colspan < rowcells) {
+      if (trgelem1) trgelem1.style.visibility = skip ? 'hidden' : 'visible';
+      if (trgelem2) trgelem2.style.visibility = skip ? 'hidden' : 'visible';
+    }
+    else {
+      trgrow.style.display = skip ? 'none' : '';
+    }
+
+    if ((condition && action.substring(0, 5) == 'value') ||
+        (!condition && action.substring(0, 5) == 'hsval'))
+    {
       var trgelem = document.getElementById('form_' + target);
       if (trgelem == null) {
         if (!cskerror) alert('Cannot find a value target field "' + trgelem + '"');

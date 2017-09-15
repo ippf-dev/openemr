@@ -54,6 +54,7 @@ if ( !acl_check('patients','med','',array('write','addonly') ))
  font-family: Arial, Helvetica, sans-serif;
  font-size: 10pt;
 }
+
 </style>
 
 <style type="text/css">@import url(../../../library/dynarch_calendar.css);</style>
