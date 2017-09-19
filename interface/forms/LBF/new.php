@@ -766,6 +766,7 @@ function warehouse_changed(sel) {
     $list_id    = $frow['list_id'];
     $edit_options = $frow['edit_options'];
     $source       = $frow['source'];
+    $prepend_blank_row = strpos($edit_options, 'K') !== FALSE;
 
     $graphable  = strpos($edit_options, 'G') !== FALSE;
     if ($graphable) $form_is_graphable = true;
@@ -903,8 +904,11 @@ function warehouse_changed(sel) {
     }
 
     // Handle starting of a new row.
-    if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0) {
+    if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0 || $prepend_blank_row) {
       end_row();
+      if ($prepend_blank_row) {
+        echo "<tr><td class='text' colspan='$CPR'>&nbsp;</td></tr>\n";
+      }
       echo " <tr>";
       // Clear historical data string.
       foreach ($historical_ids as $key => $dummy) {

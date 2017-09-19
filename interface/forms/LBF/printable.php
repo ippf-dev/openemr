@@ -302,6 +302,7 @@ while ($frow = sqlFetchArray($fres)) {
   $field_id     = $frow['field_id'];
   $list_id      = $frow['list_id'];
   $edit_options = $frow['edit_options'];
+  $prepend_blank_row = strpos($edit_options, 'K') !== FALSE;
 
   $currvalue = '';
   if ($formid || $visitid) {
@@ -376,10 +377,11 @@ while ($frow = sqlFetchArray($fres)) {
   }
 
   // Handle starting of a new row.
-  // if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0) {
   if (($cell_count + $titlecols + $datacols) > $CPR || $cell_count == 0) {
     end_row();
-    // echo "  <tr style='height:30pt'>";
+    if ($prepend_blank_row) {
+      echo "  <tr><td class='text' colspan='$CPR'>&nbsp;</td></tr>\n";
+    }
     echo "  <tr>";
   }
 

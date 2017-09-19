@@ -2357,6 +2357,7 @@ function display_layout_rows($formtype, $result1, $result2='') {
     $field_id   = $frow['field_id'];
     $list_id    = $frow['list_id'];
     $currvalue  = '';
+    $prepend_blank_row = strpos($frow['edit_options'], 'K') !== FALSE;
 
     $CPR = empty($grparr[$this_group]['grp_columns']) ? $TOPCPR : $grparr[$this_group]['grp_columns'];
 
@@ -2392,15 +2393,15 @@ function display_layout_rows($formtype, $result1, $result2='') {
     // filter out all the empty field data from the patient report.
     if (!empty($currvalue) && !($currvalue == '0000-00-00 00:00:00')) {
       // Handle starting of a new row.
-      if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0) {
+      if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0 || $prepend_blank_row) {
         disp_end_row();
+        if ($prepend_blank_row) {
+          echo "<tr><td class='label' colspan='" . ($CPR + 1) . "'>&nbsp;</td></tr>\n";
+        }
         echo "<tr>";
         if ($group_name) {
           echo "<td class='groupname'>";
-
-          // echo text(xl_layout_label(preg_replace("/[|]./", " / ", $group_name)));
           echo text(xl_layout_label($group_name));
-
           $group_name = '';
         } else {
           echo "<td valign='top'>&nbsp;";
@@ -2516,6 +2517,7 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 					$list_id    = $group_fields['list_id'];
 					$currvalue  = '';
           $edit_options = $group_fields['edit_options'];
+          $prepend_blank_row = strpos($edit_options, 'K') !== FALSE;
 
 					if ($formtype == 'DEM') {
             if ($GLOBALS['athletic_team']) {
@@ -2556,13 +2558,16 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 					}
 
 					// Handle starting of a new row.
-					if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0) {
+					if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0 || $prepend_blank_row) {
 					  disp_end_row();
             if ($subtitle) {
               // Group subtitle exists and is not displayed yet.
               echo "<tr><td class='label' style='background-color:#dddddd;padding:3pt' colspan='$CPR'>" . text($subtitle) . "</td></tr>\n";
               echo "<tr><td class='label' style='height:4pt' colspan='$CPR'></td></tr>\n";
               $subtitle = '';
+            }
+            if ($prepend_blank_row) {
+              echo "<tr><td class='label' colspan='$CPR'>&nbsp;</td></tr>\n";
             }
 					  echo "<tr>";
 					}
@@ -2670,6 +2675,7 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
 					$list_id    = $group_fields['list_id'];
 					$currvalue  = '';
           $action     = 'skip';
+          $prepend_blank_row = strpos($group_fields['edit_options'], 'K') !== FALSE;
 
           // Accumulate action conditions into a JSON expression for the browser side.
           accumActionConditions($field_id, $condition_str, $group_fields['conditions']);
@@ -2704,13 +2710,16 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
 					}
 
 					// Handle starting of a new row.
-					if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0) {
+					if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0 || $prepend_blank_row) {
 					  disp_end_row();
             if ($subtitle) {
               // Group subtitle exists and is not displayed yet.
               echo "<tr><td class='label' style='background-color:#dddddd;padding:3pt' colspan='$CPR'>" . text($subtitle) . "</td></tr>\n";
               echo "<tr><td class='label' style='height:4pt' colspan='$CPR'></td></tr>\n";
               $subtitle = '';
+            }
+            if ($prepend_blank_row) {
+              echo "<tr><td class='label' colspan='$CPR'>&nbsp;</td></tr>\n";
             }
 					  echo "<tr>";
 					}
