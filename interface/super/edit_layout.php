@@ -683,7 +683,7 @@ function writeFieldLine($linedata) {
         ", D = " . xla('Dup Check') .
         ", G = " . xla('Graphable') .
         ", I = " . xla('Initially Open Group') .
-        ", K = " . xla('Prepend Blank Row') .
+        ", K = " . xla('Blank row above') .
         ", L = " . xla('Lab Order') .
         ", N = " . xla('New Patient Form') .
         ", O = " . xla('Order Processor') .

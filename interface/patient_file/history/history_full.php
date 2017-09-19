@@ -201,6 +201,12 @@ function set_related(codetype, code, selector, codedesc) {
  return '';
 }
 
+// This is for callback by the find-code popup.
+// Deletes the specified codetype:code from the currently selected list.
+function del_related(s) {
+ my_del_related(s, document.forms[0][current_sel_name], false);
+}
+
 // This invokes the "dynamic" find-code popup.
 function sel_related(elem, codetype) {
  current_sel_name = elem ? elem.name : '';

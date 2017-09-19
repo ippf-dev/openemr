@@ -142,12 +142,14 @@ function checkSkipConditions() {
       trgrow.style.display = skip ? 'none' : '';
     }
 
-    if ((condition && action.substring(0, 5) == 'value') ||
-        (!condition && action.substring(0, 5) == 'hsval'))
+    // if ((condition && action.substring(0, 5) == 'value') ||
+    //     (!condition && action.substring(0, 5) == 'hsval'))
+    if (action.substring(0, 5) == 'value')
     {
-      var trgelem = document.getElementById('form_' + target);
+      // var trgelem = document.getElementById('form_' + target);
+      var trgelem = document.forms[0]['form_' + target];
       if (trgelem == null) {
-        if (!cskerror) alert('Cannot find a value target field "' + trgelem + '"');
+        if (!cskerror) alert('Cannot find a value target field for "' + target + '"');
         myerror = true;
         continue;
       }
