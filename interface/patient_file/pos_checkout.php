@@ -39,6 +39,7 @@ require_once("$srcdir/appointment_status.inc.php");
 require_once("$srcdir/options.inc.php");
 require_once("$srcdir/sl_eob.inc.php");
 require_once($GLOBALS['srcdir'] . "/checkout_receipt_array.inc.php");
+require_once("$srcdir/FeeSheet.class.php");
 
 $currdecimals = $GLOBALS['currency_decimals'];
 
@@ -643,8 +644,9 @@ body, td {
     $billtime = $inrow['billed'] ? $inrow['bill_date'] : '';
     $tmpname = $inrow['name'];
     if ($tmpname !== $inrow['selector']) $tmpname .= ' / ' . $inrow['selector'];
+    $units = $inrow['quantity'] / FeeSheet::getBasicUnits($inrow['drug_id'], $inrow['selector']);
     receiptDetailLine('PROD', $inrow['drug_id'], $tmpname,
-      $inrow['quantity'], $inrow['fee'], $aTotals, 'P:' . $inrow['sale_id'], $billtime, $svcdate);
+      $units, $inrow['fee'], $aTotals, 'P:' . $inrow['sale_id'], $billtime, $svcdate);
   }
 
   // Service items.
@@ -1986,8 +1988,10 @@ while ($drow = sqlFetchArray($dres)) {
   $tmpname = $drow['name'];
   if ($tmpname !== $drow['selector']) $tmpname .= ' / ' . $drow['selector'];
 
+  $units = $drow['quantity'] / FeeSheet::getBasicUnits($drow['drug_id'], $drow['selector']);
+
   write_form_line('PROD', $drow['drug_id'], $drow['sale_id'], $thisdate,
-    $tmpname, $drow['fee'], $drow['quantity'], $taxrates, $billtime);
+    $tmpname, $drow['fee'], $units, $taxrates, $billtime);
 }
 
 /*********************************************************************

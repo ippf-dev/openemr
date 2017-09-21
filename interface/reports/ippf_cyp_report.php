@@ -324,7 +324,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     $quantity = $row['quantity'];
     // if (strpos($row['related_code'], 'IPPFCM:4450') !== false) {
     // Package quantity was designed to affect CYP quantity for male condoms, but make it work for anything.
-    if (!empty($row['pkgqty'])) $quantity *= floatval($row['pkgqty']);
+    // if (!empty($row['pkgqty'])) $quantity *= floatval($row['pkgqty']);
     // }
     thisLineItem($row['pid'], $row['encounter'], $row['name'],
       substr($row['date'], 0, 10), $quantity, $row['related_code'],

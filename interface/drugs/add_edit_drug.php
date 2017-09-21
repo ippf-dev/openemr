@@ -60,9 +60,13 @@ function writeTemplateLine($selector, $dosage, $period, $quantity, $refills, $pr
   echo "  <td class='tmplcell drugsonly'>";
   echo "<input type='text' name='form_tmpl[$tmpl_line_no][refills]' value='" . attr($refills) . "' size='3' maxlength='5'>";
   echo "</td>\n";
+
+  /********************************************************************
   echo "  <td class='tmplcell drugsonly'>";
   echo "<input type='text' name='form_tmpl[$tmpl_line_no][pkgqty]' value='" . attr($pkgqty) . "' size='3' maxlength='5'>";
   echo "</td>\n";
+  ********************************************************************/
+
   foreach ($prices as $pricelevel => $price) {
     echo "  <td class='tmplcell'>";
     echo "<input type='text' name='form_tmpl[$tmpl_line_no][price][" . attr($pricelevel) . "]' value='" . attr($price) . "' size='6' maxlength='12'>";
@@ -288,7 +292,8 @@ if (($_POST['form_save'] || $_POST['form_delete']) && !$alertmsg) {
       "drug_id, selector, dosage, period, quantity, refills, taxrates, pkgqty " .
       ") VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )",
       array($drug_id, $selector, trim($iter['dosage']), trim($iter['period']),
-      trim($iter['quantity']), trim($iter['refills']), $taxrates, floatval(trim($iter['pkgqty']))));
+      // trim($iter['quantity']), trim($iter['refills']), $taxrates, floatval(trim($iter['pkgqty']))));
+      trim($iter['quantity']), trim($iter['refills']), $taxrates, 1.0));
 
      // Add prices for this drug ID and selector.
      foreach ($iter['price'] as $key => $value) {
@@ -537,9 +542,9 @@ else {
      <td class='drugsonly'><b><?php echo xlt('Name'    ); ?></b></td>
      <td class='drugsonly'><b><?php echo xlt('Schedule'); ?></b></td>
      <td class='drugsonly'><b><?php echo xlt('Interval'); ?></b></td>
-     <td class='drugsonly'><b><?php echo xlt('Sales Units'); ?></b></td>
-     <td class='drugsonly'><b><?php echo xlt('Refills' ); ?></b></td>
      <td class='drugsonly'><b><?php echo xlt('Basic Units'); ?></b></td>
+     <td class='drugsonly'><b><?php echo xlt('Refills' ); ?></b></td>
+     <!-- <td class='drugsonly'><b><?php // echo xlt('Basic Units'); ?></b></td> -->
 <?php
   // Show a heading for each price level.  Also create an array of prices
   // for new template lines.

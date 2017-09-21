@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2005-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2005-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -1155,7 +1155,8 @@ while ($srow = sqlFetchArray($sres)) {
     'sale_id'      => $sale_id,
     'billed'       => $billed,
     'warehouse_id' => $warehouse_id,
-  ));
+  ),
+  true);
 }
 
 // Echo new product items from this form here, but omit any line
@@ -1187,7 +1188,8 @@ if ($_POST['prod']) {
       'units'        => $units,
       'fee'          => $fee,
       'warehouse_id' => $warehouse_id,
-    ));
+    ),
+    false);
   }
 }
 
@@ -1234,8 +1236,9 @@ if ($_POST['newcodes'] && !$alertmsg) {
         "FROM drug_templates AS dt, drugs AS d WHERE " .
         "dt.drug_id = ? AND dt.selector = ? AND " .
         "d.drug_id = dt.drug_id",array($newcode,$newsel));
-      $units = intval($result['quantity']);
-      if (!$units) $units = 1;
+      // $units = intval($result['quantity']);
+      // if (!$units) $units = 1;
+      $units = 1; // user units, not inventory units
       // By default create a prescription if drug route is set.
       $rx = !empty($result['route']);
       $fs->addProductLineItem(array(
@@ -1243,7 +1246,8 @@ if ($_POST['newcodes'] && !$alertmsg) {
         'selector'     => $newsel,
         'rx'           => $rx,
         'units'        => $units,
-      ));
+      ),
+      false);
     }
     else {
       list($code, $modifier) = explode(":", $newcode);

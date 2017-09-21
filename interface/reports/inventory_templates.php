@@ -94,7 +94,7 @@ $(document).ready(function() {
    <th><?php echo xlt('Relate To'); ?></th>
    <th><?php echo xlt('Template'); ?></th>
    <th><?php echo xlt('Schedule'); ?></th>
-   <th align='right'><?php echo xlt('Sales Units'); ?></th>
+   <!-- <th align='right'><?php // echo xlt('Sales Units'); ?></th> -->
    <th align='right'><?php echo xlt('Basic Units'); ?></th>
    <th align='right'><?php echo xlt('Refills'); ?></th>
 <?php
@@ -140,7 +140,7 @@ while ($row = sqlFetchArray($res)) {
     generate_display_field(array('data_type'=>'1','list_id'=>'drug_interval'),
     $row['period']) . "</td>\n";
   echo "  <td align='right'>" . $row['quantity'] . "</td>\n";
-  echo "  <td align='right'>" . $row['pkgqty'] . "</td>\n";
+  // echo "  <td align='right'>" . $row['pkgqty'] . "</td>\n";
   echo "  <td align='right'>" . $row['refills'] . "</td>\n";
 
   // Prices.

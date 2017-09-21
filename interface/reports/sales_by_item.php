@@ -15,6 +15,7 @@ require_once("$srcdir/sql-ledger.inc");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/options.inc.php");
+require_once("$srcdir/FeeSheet.class.php");
 
 function bucks($amount) {
   if ($amount) echo oeFormatMoney($amount);
@@ -723,8 +724,11 @@ $(document).ready(function() {
       }
       $prodcode = $row['drug_id'];
       if (!empty($row['selector'])) $prodcode .= ':' . $row['selector'];
+
+      $units = $row['quantity'] / FeeSheet::getBasicUnits($row['drug_id'], $row['selector']);
+
       thisLineItem($row['pid'], $row['encounter'], 'PROD', $prodcode,
-        xl('Products'), $description, substr($row['date'], 0, 10), $row['quantity'],
+        xl('Products'), $description, substr($row['date'], 0, 10), $units,
         $row['fee'], $row['invoice_refno'], $row['sale_id']);
     }
 

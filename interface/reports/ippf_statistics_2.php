@@ -2012,7 +2012,7 @@ if ($_POST['form_submit']) {
 
         // Product quantities are multiplied by "Basic Units" for contraception stats reporting.
         $quantity = $row['quantity'];
-        if (!empty($row['pkgqty'])) $quantity *= floatval($row['pkgqty']);
+        // if (!empty($row['pkgqty'])) $quantity *= floatval($row['pkgqty']);
 
         // At this point $prodcode is the desired IPPFCM code, or empty if none.
         process_ippfcm_code($row, $prodcode, $quantity);

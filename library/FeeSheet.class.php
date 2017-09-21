@@ -147,6 +147,19 @@ class FeeSheet {
     return $age;
   }
 
+  public static function getBasicUnits($drug_id, $selector) {
+    $basic_units = 1;
+    $tmp = sqlQuery("SELECT quantity FROM drug_templates WHERE drug_id = ? AND selector = ?",
+        array($drug_id, $selector));
+    if (!empty($tmp['quantity'])) {
+        $basic_units = 0 + $tmp['quantity'];
+        if (!$basic_units) {
+            $basic_units = 1;
+        }
+    }
+    return $basic_units;
+  }
+
   // Log a message that is easy for the Re-Opened Visits Report to interpret.
   // The optional $logarr contains these line item attributes:
   //    Code Type
@@ -393,7 +406,10 @@ class FeeSheet {
   //  warehouse_id
   //  pricelevel
   //
-  public function addProductLineItem($args) {
+  // Pass true for the 2nd argument if the data is coming from the database;
+  // if from user input, make it false.
+  //
+  public function addProductLineItem($args, $convert_units=true) {
     global $code_types;
 
     $li = array();
@@ -410,6 +426,13 @@ class FeeSheet {
     $fee          = isset($args['fee']) ? (0 + $args['fee']) : 0;
     $pricelevel   = isset($args['pricelevel']) ? $args['pricelevel'] : $this->patient_pricelevel;
     $warehouse_id = isset($args['warehouse_id']) ? $args['warehouse_id'] : '';
+
+    if ($convert_units) {
+        // "Basic Units" is the quantity from the product template and is the number of
+        // inventory items in the package that the template represents.
+        // Units seen by the user should be inventory units divided by template quantity.
+        $units = $units / $this->getBasicUnits($drug_id, $selector);
+    }
 
     $drow = sqlQuery("SELECT name, related_code FROM drugs WHERE drug_id = ?", array($drug_id) );
     $code_text = $drow['name'];
@@ -511,7 +534,8 @@ class FeeSheet {
         'pricelevel'   => $srow['pricelevel'],
         'billed'       => $srow['billed'],
         'warehouse_id' => $srow['warehouse_id'],
-      ));
+      ),
+      true);
     }
   }
 
@@ -528,6 +552,8 @@ class FeeSheet {
       $drug_id   = $iter['drug_id'];
       $sale_id     = empty($iter['sale_id']) ? 0 : intval($iter['sale_id']); // present only if already saved
       $units     = empty($iter['units']) ? 1 : intval($iter['units']);
+      $selector  = empty($iter['selector']) ? '' : $iter['selector'];
+      $inv_units = $units * $this->getBasicUnits($drug_id, $selector);
       $warehouse_id = empty($iter['warehouse']) ? '' : $iter['warehouse'];
 
       // Deleting always works.
@@ -545,13 +571,13 @@ class FeeSheet {
           if ($warehouse_id && $warehouse_id != $dirow['warehouse_id']) {
             // Changing warehouse so check inventory in the new warehouse.
             // Nothing is updated by this call.
-            if (!sellDrug($drug_id, $units, 0, $this->pid, $this->encounter, 0,
+            if (!sellDrug($drug_id, $inv_units, 0, $this->pid, $this->encounter, 0,
               $this->visit_date, '', $warehouse_id, true, $expiredlots)) {
               $insufficient = $drug_id;
             }
           }
           else {
-            if (($dirow['on_hand'] + $dirow['quantity'] - $units) < 0) {
+            if (($dirow['on_hand'] + $dirow['quantity'] - $inv_units) < 0) {
               $insufficient = $drug_id;
             }
           }
@@ -560,7 +586,7 @@ class FeeSheet {
       // Otherwise it's a new item...
       else {
         // This only checks for sufficient inventory, nothing is updated.
-        if (!sellDrug($drug_id, $units, 0, $this->pid, $this->encounter, 0,
+        if (!sellDrug($drug_id, $inv_units, 0, $this->pid, $this->encounter, 0,
           $this->visit_date, '', $warehouse_id, true, $expiredlots)) {
           $insufficient = $drug_id;
         }
@@ -771,11 +797,17 @@ class FeeSheet {
         *****/
         else {
           // Otherwise get its price for the given price level and product.
+          // Note price is directly from the prices table.
+          // This price (now like TS price) is for the template quantity, not per inventory unit.
           $price = $this->getPrice($pricelevel, 'PROD', $drug_id, $selector);
         }
       }
 
       $fee = sprintf('%01.2f', $price * $units);
+
+      // $units is the user view, multipliers of Basic Units.
+      // Need to compute inventory units for the save logic below.
+      $inv_units = $units * $this->getBasicUnits($drug_id, $selector);
 
       // If the item is already in the database...
       if ($sale_id) {
@@ -810,7 +842,7 @@ class FeeSheet {
           // Modify the sale and adjust inventory accordingly.
           if (!empty($tmprow)) {
             foreach (array(
-              'quantity'    => $units,
+              'quantity'    => $inv_units,
               'fee'         => $fee,
               'pricelevel'  => $pricelevel,
               'selector'    => $selector,
@@ -826,7 +858,7 @@ class FeeSheet {
                   array($value, $sale_id));
                 if ($key == 'quantity' && $tmprow['inventory_id']) {
                   sqlStatement("UPDATE drug_inventory SET on_hand = on_hand - ? WHERE inventory_id = ?",
-                    array($units - $tmprow['quantity'], $tmprow['inventory_id']));
+                    array($inv_units - $tmprow['quantity'], $tmprow['inventory_id']));
                 }
               }
             }
@@ -836,9 +868,9 @@ class FeeSheet {
               $this->logFSMessage(xl('Warehouse changed'), $warehouse_id, $logarr);
               sqlStatement("DELETE FROM drug_sales WHERE sale_id = ?", array($sale_id));
               sqlStatement("UPDATE drug_inventory SET on_hand = on_hand + ? WHERE inventory_id = ?",
-                array($units, $tmprow['inventory_id']));
+                array($inv_units, $tmprow['inventory_id']));
               $tmpnull = null;
-              $sale_id = sellDrug($drug_id, $units, $fee, $this->pid, $this->encounter,
+              $sale_id = sellDrug($drug_id, $inv_units, $fee, $this->pid, $this->encounter,
                 (empty($iter['rx']) ? 0 : $rxid), $this->visit_date, '', $warehouse_id,
                 false, $tmpnull, $pricelevel, $selector);
             }
@@ -854,10 +886,10 @@ class FeeSheet {
       // Otherwise it's a new item...
       else if (! $del) {
         $somechange = true;
-        $logarr = array('PROD', $drug_id, $selector, $pricelevel, $fee, $units, '', $warehouse_id);
+        $logarr = array('PROD', $drug_id, $selector, $pricelevel, $fee, $inv_units, '', $warehouse_id);
         $this->logFSMessage(xl('Item added'), '', $logarr);
         $tmpnull = null;
-        $sale_id = sellDrug($drug_id, $units, $fee, $this->pid, $this->encounter, 0,
+        $sale_id = sellDrug($drug_id, $inv_units, $fee, $this->pid, $this->encounter, 0,
           $this->visit_date, '', $warehouse_id, false, $tmpnull, $pricelevel, $selector);
         if (!$sale_id) die(xlt("Insufficient inventory for product ID") . " \"" . text($drug_id) . "\".");
       }
@@ -879,8 +911,8 @@ class FeeSheet {
           $rxobj->set_patient_id($this->pid);
           $rxobj->set_provider_id(isset($main_provid) ? $main_provid : $this->provider_id);
           $rxobj->set_drug_id($drug_id);
-          $rxobj->set_quantity($units);
-          $rxobj->set_per_refill($units);
+          $rxobj->set_quantity($inv_units);
+          $rxobj->set_per_refill($inv_units);
           $rxobj->set_start_date_y(substr($this->visit_date,0,4));
           $rxobj->set_start_date_m(substr($this->visit_date,5,2));
           $rxobj->set_start_date_d(substr($this->visit_date,8,2));
