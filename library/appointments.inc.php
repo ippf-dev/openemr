@@ -19,6 +19,7 @@ require_once(dirname(__FILE__)."/../interface/main/calendar/modules/PostCalendar
 
 $COMPARE_FUNCTION_HASH = array(
     'doctor' => 'compareAppointmentsByDoctorName',
+    'user' => 'compareAppointmentsByUserName',
     'patient' => 'compareAppointmentsByPatientName',
     'pubpid' => 'compareAppointmentsByPatientId',
     'date' => 'compareAppointmentsByDate',
@@ -32,6 +33,7 @@ $COMPARE_FUNCTION_HASH = array(
 
 $ORDERHASH = array(
   	'doctor' => array( 'doctor', 'date', 'time' ),
+  	'user' => array( 'user', 'date', 'time' ),
   	'patient' => array( 'patient', 'date', 'time' ),
   	'pubpid' => array( 'pubpid', 'date', 'time' ),
   	'date' => array( 'date', 'time', 'type', 'patient' ),
@@ -80,16 +82,19 @@ function fetchEvents( $from_date, $to_date, $where_param = null, $orderby_param 
     }
 
     $query = "SELECT " .
-    "e.pc_eventDate, e.pc_endDate, e.pc_startTime, e.pc_endTime, e.pc_duration, e.pc_recurrtype, e.pc_recurrspec, e.pc_recurrfreq, e.pc_catid, e.pc_eid, " .
-    "e.pc_title, e.pc_hometext, e.pc_apptstatus, " .
+    "e.pc_eventDate, e.pc_endDate, e.pc_startTime, e.pc_endTime, e.pc_duration, e.pc_recurrtype, " .
+    "e.pc_recurrspec, e.pc_recurrfreq, e.pc_catid, e.pc_eid, " .
+    "e.pc_title, e.pc_hometext, e.pc_apptstatus, e.pc_informant, " .
     "p.fname, p.mname, p.lname, p.pid, p.pubpid, p.phone_home, p.phone_cell, " .
     "u.fname AS ufname, u.mname AS umname, u.lname AS ulname, u.id AS uprovider_id, " .
+    "b.fname AS bfname, b.mname AS bmname, b.lname AS blname, " .
     "$tracker_fields" .
     "c.pc_catname, c.pc_catid " .
     "FROM openemr_postcalendar_events AS e " .
     "$tracker_joins" .
     "LEFT OUTER JOIN patient_data AS p ON p.pid = e.pc_pid " .
     "LEFT OUTER JOIN users AS u ON u.id = e.pc_aid " .
+    "LEFT OUTER JOIN users AS b ON b.id = e.pc_informant " .
     "LEFT OUTER JOIN openemr_postcalendar_categories AS c ON c.pc_catid = e.pc_catid " .
     "WHERE $where " . 
     "ORDER BY $order_by";
@@ -241,7 +246,7 @@ function fetchEvents( $from_date, $to_date, $where_param = null, $orderby_param 
 }
 //////////////////////
 
-function fetchAllEvents( $from_date, $to_date, $provider_id = null, $facility_id = null )
+function fetchAllEvents($from_date, $to_date, $provider_id = null, $facility_id = null)
 {
 	$where = "";
 	if ( $provider_id ) $where .= " AND e.pc_aid = '$provider_id'";
@@ -258,10 +263,13 @@ function fetchAllEvents( $from_date, $to_date, $provider_id = null, $facility_id
 	return $appointments;
 }
 
-function fetchAppointments( $from_date, $to_date, $patient_id = null, $provider_id = null, $facility_id = null, $pc_appstatus = null, $with_out_provider = null, $with_out_facility = null, $pc_catid = null, $tracker_board = false, $flagPSM = false )
+function fetchAppointments($from_date, $to_date, $patient_id = null, $provider_id = null,
+  $facility_id = null, $pc_appstatus = null, $with_out_provider = null, $with_out_facility = null,
+  $pc_catid = null, $tracker_board = false, $flagPSM = false, $user_id = null)
 {
 	$where = "";
 	if ( $provider_id ) $where .= " AND e.pc_aid = '$provider_id'";
+	if ($user_id) $where .= " AND e.pc_informant = '$user_id'";
 	if ( $patient_id ) {
 		$where .= " AND e.pc_pid = '$patient_id'";
 	} else {
@@ -465,6 +473,19 @@ function compareAppointmentsByDoctorName( $appointment1, $appointment2 )
 		return compareBasic( $name1, $name2 );
 	}
 
+	return $cmp;
+}
+
+function compareAppointmentsByUserName($appointment1, $appointment2)
+{
+	$name1 = $appointment1['blname'];
+	$name2 = $appointment2['blname'];
+	$cmp = compareBasic($name1, $name2);
+	if ($cmp == 0) {
+		$name1 = $appointment1['bfname'];
+		$name2 = $appointment2['bfname'];
+		return compareBasic($name1, $name2);
+	}
 	return $cmp;
 }
 

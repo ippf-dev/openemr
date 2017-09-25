@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2005-2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2005-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -48,9 +48,9 @@ if ( $_POST['with_out_facility'] ) {
 
 //$to_date   = fixDate($_POST['form_to_date'], '');
 $provider  = $_POST['form_provider'];
+$form_user = empty($_POST['form_user']) ? 0 : intval($_POST['form_user']);
 $facility  = $_POST['form_facility'];  //(CHEMED) facility filter
 $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['form_orderby'] : 'date';
-
 ?>
 
 <html>
@@ -136,39 +136,55 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
 		<div style='float: left'>
 
 		<table class='text'>
+
 			<tr>
 				<td class='label'><?php xl('Facility','e'); ?>:</td>
 				<td><?php dropdown_facility(strip_escape_custom($facility), 'form_facility'); ?>
 				</td>
 				<td class='label'><?php xl('Provider','e'); ?>:</td>
 				<td><?php
-
 				// Build a drop-down list of providers.
-				//
-
 				$query = "SELECT id, lname, fname FROM users WHERE ".
 				  " active=1 AND authorized = 1 $provider_facility_filter ORDER BY lname, fname"; //(CHEMED) facility filter
-
 				$ures = sqlStatement($query);
-
 				echo "   <select name='form_provider'>\n";
 				echo "    <option value=''>-- " . xl('All') . " --\n";
-
 				while ($urow = sqlFetchArray($ures)) {
 					$provid = $urow['id'];
 					echo "    <option value='$provid'";
 					if ($provid == $_POST['form_provider']) echo " selected";
 					echo ">" . $urow['lname'] . ", " . $urow['fname'] . "\n";
 				}
-
 				echo "   </select>\n";
-
 				?></td>
-				<td><input type='checkbox' name='form_show_available'
-					title='<?php xl('Show Available Times','e'); ?>'
-					<?php  if ( $show_available_times ) echo ' checked'; ?>> <?php  xl( 'Show Available Times','e' ); ?>
-				</td>
 			</tr>
+
+			<tr>
+				<td class='label'>&nbsp;</td>
+				<td><input type='checkbox' name='form_show_available'
+					title='<?php echo xlt('Show Available Times'); ?>'
+					<?php  if ( $show_available_times ) echo ' checked'; ?>> <?php echo xlt('Show Available Times'); ?>
+				</td>
+				<td class='label'><?php echo xlt('Booked By'); ?>:</td>
+				<td>
+<?php
+				// Build a drop-down list of users.
+				$query = "SELECT id, lname, fname FROM users WHERE ".
+				  " active=1 ORDER BY lname, fname";
+				$ures = sqlStatement($query);
+				echo "   <select name='form_user'>\n";
+				echo "    <option value=''>-- " . xl('All') . " --\n";
+				while ($urow = sqlFetchArray($ures)) {
+					$userid = $urow['id'];
+					echo "    <option value='$userid'";
+					if ($userid == $_POST['form_user']) echo " selected";
+					echo ">" . $urow['lname'] . ", " . $urow['fname'] . "\n";
+				}
+				echo "   </select>\n";
+?>
+        </td>
+			</tr>
+
 			<tr>
 				<td class='label'><?php xl('From','e'); ?>:</td>
 				<td><input type='text' name='form_from_date' id="form_from_date"
@@ -187,7 +203,7 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
 					border='0' alt='[?]' style='cursor: pointer'
 					title='<?php xl('Click here to choose a date','e'); ?>'></td>
 			</tr>
-			
+
 			<tr>
 				<td class='label'><?php xl('Status','e'); ?>:</td>
 				<td><?php generate_form_field(array('data_type'=>1,'field_id'=>'apptstatus','list_id'=>'apptstat','empty_title'=>'All'),$_POST['form_apptstatus']);?></td>
@@ -210,12 +226,12 @@ $form_orderby = getComparisonOrder( $_REQUEST['form_orderby'] ) ?  $_REQUEST['fo
                                     </select>
                                 </td>
 			</tr>
-			
+
 			<tr>
 				<td colspan="2"><input type="checkbox" name="with_out_provider" id="with_out_provider" <?php if($chk_with_out_provider) echo "checked";?>>&nbsp;<?php xl('Without Provider','e'); ?></td>
 				<td colspan="2"><input type="checkbox" name="with_out_facility" id="with_out_facility" <?php if($chk_with_out_facility) echo "checked";?>>&nbsp;<?php xl('Without Facility','e'); ?></td>
 			</tr>
-			
+
 		</table>
 
 		</div>
@@ -282,6 +298,10 @@ if ($_POST['form_refresh'] || $_POST['form_orderby']) {
 			<?php if ($form_orderby == "status") echo " style=\"color:#00cc00\"" ?>><?php  xl('Status','e'); ?></a>
 		</th>
 
+		<th><a href="nojs.php" onclick="return dosort('user')"
+	<?php if ($form_orderby == "user") echo " style=\"color:#00cc00\"" ?>><?php echo xlt('Booked By'); ?>
+		</a></th>
+
 		<th><a href="nojs.php" onclick="return dosort('comment')"
 	<?php if ($form_orderby == "comment") echo " style=\"color:#00cc00\"" ?>><?php  xl('Comment','e'); ?></a>
 		</th>
@@ -314,7 +334,21 @@ if ($_POST['form_refresh'] || $_POST['form_orderby']) {
 	if( isset($_POST['with_out_facility']) ){
 		$with_out_facility = $_POST['with_out_facility'];
 	}
-	$appointments = fetchAppointments( $from_date, $to_date, $patient, $provider, $facility, $form_apptstatus, $with_out_provider, $with_out_facility,$form_apptcat );
+
+	$appointments = fetchAppointments(
+    $from_date,
+    $to_date,
+    $patient,
+    $provider,
+    $facility,
+    $form_apptstatus,
+    $with_out_provider,
+    $with_out_facility,
+    $form_apptcat,
+    false,
+    false,
+    $form_user
+  );
 	
 	if ( $show_available_times ) {
 		$availableSlots = getAvailableSlots( $from_date, $to_date, $provider, $facility );
@@ -329,7 +363,8 @@ if ($_POST['form_refresh'] || $_POST['form_orderby']) {
                 array_push($pid_list,$appointment['pid']);
 		$patient_id = $appointment['pid'];
 		$docname  = $appointment['ulname'] . ', ' . $appointment['ufname'] . ' ' . $appointment['umname'];
-                
+    $username  = $appointment['blname'] . ', ' . $appointment['bfname'] . ' ' . $appointment['bmname'];
+
         $errmsg  = "";
 		$pc_apptstatus = $appointment['pc_apptstatus'];
 
@@ -366,6 +401,8 @@ if ($_POST['form_refresh'] || $_POST['form_orderby']) {
 				}
 			?>
 		</td>
+
+    <td class="detail">&nbsp;<?php echo text($username); ?></td>
 
 		<td class="detail">&nbsp;<?php echo $appointment['pc_hometext'] ?></td>
 
@@ -415,4 +452,3 @@ if ($alertmsg) { echo " alert('$alertmsg');\n"; }
 </script>
 
 </html>
-
