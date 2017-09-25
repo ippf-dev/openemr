@@ -842,7 +842,7 @@ function warehouse_changed(sel) {
       }
       $group_levels .= $this_levels[$i++];
       $gname = $grparr[substr($group_levels, 0, $i)]['grp_title'];
-      $subtitle = $grparr[substr($group_levels, 0, $i)]['grp_subtitle'];
+      $subtitle = xl_layout_label($grparr[substr($group_levels, 0, $i)]['grp_subtitle']);
       // Compute a short unique identifier for this group.
       $group_seq = 'lbf' . $group_levels;
       $group_name = $gname;

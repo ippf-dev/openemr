@@ -2497,7 +2497,7 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 		$this_group = isset($frow['group_id']) ? $frow['group_id'] : "" ;
 
     $CPR = empty($grparr[$this_group]['grp_columns']) ? $TOPCPR : $grparr[$this_group]['grp_columns'];
-    $subtitle = empty($grparr[$this_group]['grp_subtitle']) ? '' : $grparr[$this_group]['grp_subtitle'];
+    $subtitle = empty($grparr[$this_group]['grp_subtitle']) ? '' : xl_layout_label($grparr[$this_group]['grp_subtitle']);
 
 		$group_fields_query = sqlStatement("SELECT * FROM layout_options " .
 		"WHERE form_id = ? AND uor > 0 AND group_id = ? " .
@@ -2655,7 +2655,7 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
     $group_name_esc = text($group_name);
 
     $CPR = empty($grparr[$this_group]['grp_columns']) ? $TOPCPR : $grparr[$this_group]['grp_columns'];
-    $subtitle = empty($grparr[$this_group]['grp_subtitle']) ? '' : $grparr[$this_group]['grp_subtitle'];
+    $subtitle = empty($grparr[$this_group]['grp_subtitle']) ? '' : xl_layout_label($grparr[$this_group]['grp_subtitle']);
 
 		$group_fields_query = sqlStatement("SELECT * FROM layout_options " .
 		"WHERE form_id = ? AND uor > 0 AND group_id = ? " .
