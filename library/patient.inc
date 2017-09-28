@@ -431,7 +431,9 @@ function getPatientLnames($lname = "%", $given = "pid, id, lname, fname, mname, 
     if ($condition) $where .= "AND ( $condition ) ";
     
     $sql="SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
-    if ($limit != "all") $sql .= " LIMIT $start, $limit";
+    if ($limit != "all") {
+        $sql .= " limit " . escape_limit($start) . ", " . escape_limit($limit);
+    }
 
     $rez = sqlStatement($sql, $sqlBindArray);
 
@@ -577,7 +579,9 @@ function getPatientPID($args)
     if (strstr($pid,"%")) $command = "like";
 
     $sql="select $given from patient_data where pid $command '$pid' order by $orderby";
-    if ($limit != "all") $sql .= " limit $start, $limit";
+    if ($limit != "all") {
+        $sql .= " limit " . escape_limit($start) . ", " . escape_limit($limit);
+    }
 
     $rez = sqlStatement($sql);
     for($iter=0; $row=sqlFetchArray($rez); $iter++)
@@ -616,7 +620,9 @@ function getPatientDOB($DOB = "%",
     
     $sql="SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
 
-    if ($limit != "all") $sql .= " LIMIT $start, $limit";
+    if ($limit != "all") {
+        $sql .= " limit " . escape_limit($start) . ", " . escape_limit($limit);
+    }
 
     $rez = sqlStatement($sql, $sqlBindArray);
     for($iter=0; $row=sqlFetchArray($rez); $iter++)
@@ -639,7 +645,9 @@ function getPatientSSN($ss = "%",
     if ($condition) $where .= "AND ( $condition ) ";    
     
     $sql="SELECT $given FROM patient_data WHERE $where ORDER BY $orderby";
-    if ($limit != "all") $sql .= " LIMIT $start, $limit";
+    if ($limit != "all") {
+        $sql .= " limit " . escape_limit($start) . ", " . escape_limit($limit);
+    }
 
     $rez = sqlStatement($sql, $sqlBindArray);
     for($iter=0; $row=sqlFetchArray($rez); $iter++)
@@ -679,8 +687,9 @@ function getPatientIds($given = "pid, id, lname, fname, mname", $orderby = "id A
 {
     $sql="select $given from patient_data order by $orderby";
 
-    if ($limit != "all")
-        $sql .= " limit $start, $limit";
+    if ($limit != "all") {
+        $sql .= " limit " . escape_limit($start) . ", " . escape_limit($limit);
+    }
 
     $rez = sqlStatement($sql);
     for($iter=0; $row=sqlFetchArray($rez); $iter++)

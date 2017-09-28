@@ -254,7 +254,8 @@ if ($popup) {
   if ($condition) $where .= " AND $condition";
   
   $sql = "SELECT $given FROM patient_data " .
-    "WHERE $where ORDER BY $orderby LIMIT $fstart, $sqllimit";
+    "WHERE $where ORDER BY " . escape_limit($fstart) . ", " . escape_limit($sqllimit);
+
   $rez = sqlStatement($sql,$sqlBindArray);
   $result = array();
   while ($row = sqlFetchArray($rez)) $result[] = $row;

@@ -24,7 +24,7 @@ class C_Document extends Controller {
 		parent::__construct();
 		$this->documents = array();
 		$this->template_mod = $template_mod;
-		$this->assign("FORM_ACTION", $GLOBALS['webroot']."/controller.php?" . $_SERVER['QUERY_STRING']);
+        $this->assign("FORM_ACTION", $GLOBALS['webroot']."/controller.php?" . attr($_SERVER['QUERY_STRING']));
 		$this->assign("CURRENT_ACTION", $GLOBALS['webroot']."/controller.php?" . "document&");
 		
 		//get global config options for this namespace

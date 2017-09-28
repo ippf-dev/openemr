@@ -5,6 +5,9 @@ include_once("$srcdir/forms.inc");
 //function called to set the global session variable for encounter number
 function setencounter($enc) {
 	
+    // Escape $enc by forcing it to an integer to protect from sql injection
+    $enc = intval($enc);
+
 	$return_val = 1;
 	global $encounter;
 	global $pid;
