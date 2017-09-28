@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2017 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -25,12 +25,13 @@ require_once("../drugs/drugs.inc.php");
 // For each sorting option, specify the ORDER BY argument.
 //
 $ORDERHASH = array(
-  'date' => 's.sale_date, s.sale_id',
-  'tran' => 's.trans_type, s.sale_date, s.sale_id',
-  'prod' => 'd.name, s.sale_date, s.sale_id',
-  'wh'   => 'warehouse, s.sale_date, s.sale_id',
-  'lot'  => 'di.lot_number, d.name, s.sale_date, s.sale_id',
-  'invoice' => '(isnull(fe.invoice_refno) OR fe.invoice_refno=""), fe.invoice_refno, s.pid, s.encounter'
+  'date' => 's.sale_date, s.sale_id, xfer_inventory_id != di_inventory_id',
+  'tran' => 's.trans_type, s.sale_date, s.sale_id, xfer_inventory_id != di_inventory_id',
+  'prod' => 'd.name, s.sale_date, s.sale_id, xfer_inventory_id != di_inventory_id',
+  'fac'  => 'facname, s.sale_date, s.sale_id, xfer_inventory_id != di_inventory_id',
+  'wh'   => 'warehouse, s.sale_date, s.sale_id, xfer_inventory_id != di_inventory_id',
+  'lot'  => 'di.lot_number, d.name, s.sale_date, s.sale_id, xfer_inventory_id != di_inventory_id',
+  'invoice' => '(isnull(fe.invoice_refno) OR fe.invoice_refno=""), fe.invoice_refno, s.pid, s.encounter, xfer_inventory_id != di_inventory_id'
   // 'who'  => 'plname, pfname, pmname, s.sale_date, s.sale_id',
 );
 
@@ -46,11 +47,16 @@ function esc4Export($str) {
 function thisLineItem($row, $xfer=false) {
   global $grandtotal, $grandqty, $encount, $form_action;
 
-  // If this row is for the target lot of a transfer, invert quantity and fee.
+  $ttype = '';
+  // If this row is for the source lot of a transfer, invert quantity and fee.
   if (!empty($row['xfer_inventory_id'])) {
     if ($row['di_inventory_id'] == $row['xfer_inventory_id']) {
+      $ttype = xl('Transfer Out');
       $row['quantity'] = 0 - $row['quantity'];
       $row['fee'] = 0 - $row['fee'];
+    }
+    else {
+      $ttype = xl('Transfer In');
     }
   }
 
@@ -72,7 +78,7 @@ function thisLineItem($row, $xfer=false) {
       "$patient_id.$encounter_id" : $row['invoice_refno'];
   }
   else if (!empty($row['xfer_inventory_id']) || $xfer) {
-    $ttype = xl('Transfer');
+    if (!$ttype) $ttype = xl('Transfer');
   }
   else if ($row['trans_type'] == 7) {
     $ttype = xl('Consumption');
@@ -92,6 +98,7 @@ function thisLineItem($row, $xfer=false) {
     echo '"' . $ttype                               . '",';
     echo '"' . esc4Export($row['name'])             . '",';
     echo '"' . esc4Export($row['lot_number'])       . '",';
+    echo '"' . esc4Export($row['facname'])          . '",';
     echo '"' . esc4Export($row['warehouse'])        . '",';
     echo '"' . esc4Export($invnumber)               . '",';
     echo '"' . (0 - $row['quantity'])               . '",';
@@ -115,6 +122,9 @@ function thisLineItem($row, $xfer=false) {
   </td>
   <td class="detail">
    <?php echo htmlspecialchars($row['lot_number']); ?>
+  </td>
+  <td class="detail">
+   <?php echo text($row['facname']); ?>
   </td>
   <td class="detail">
    <?php echo htmlspecialchars($row['warehouse']); ?>
@@ -149,6 +159,73 @@ function thisLineItem($row, $xfer=false) {
 
 } // end function
 
+// Build a drop-down list of facilities.
+//
+function genFacilitySelector($tagname, $toptext, $default='') {
+  global $is_user_restricted;
+  $fres = sqlStatement("SELECT id, name FROM facility ORDER BY name");
+  $s = "<select name='" . $tagname . "'>";
+  $s .= "<option value=''>" . text($toptext) . "</option>";
+  while ($frow = sqlFetchArray($fres)) {
+    $facid = $frow['id'];
+    if ($is_user_restricted && !isFacilityAllowed($facid)) continue;
+    $s .= "<option value='$facid'";
+    if ($facid == $default) $s .= " selected";
+    $s .= ">" . text($frow['name']) . "</option>";
+  }
+  $s .= "</select>";
+  return $s;
+}
+
+// Build a drop-down list of warehouses.
+//
+function genWarehouseSelector($tagname, $toptext, $default='') {
+  $s = "<select name='" . attr($tagname) . "'";
+  $s .= ">";
+  $s .= "<option value=''>" . text($toptext) . "</option>";
+  $lres = sqlStatement("SELECT * FROM list_options " .
+    "WHERE list_id = 'warehouse' AND activity = 1 ORDER BY seq, title");
+  while ($lrow = sqlFetchArray($lres)) {
+    $s .= "<option value='" . attr($lrow['option_id']) . "'";
+
+    if (strlen($default) > 0 && $lrow['option_id'] == $default) {
+      $s .= " selected";
+    }
+    $s .= ">" . text(xl_list_label($lrow['title'])) . "</option>\n";
+  }
+  $s .= "</select>";
+  return $s;
+}
+
+// Build a drop-down list of products.
+//
+function genProductSelector($tagname, $toptext, $default='') {
+  $query = "SELECT drug_id, name FROM drugs ORDER BY name, drug_id";
+  $pres = sqlStatement($query);
+  $s = "<select name='" . attr($tagname) . "'>";
+  $s .= "<option value=''>" . text($toptext) . "</option>";
+  while ($prow = sqlFetchArray($pres)) {
+    $drug_id = $prow['drug_id'];
+    $s .= "<option value='$drug_id'";
+    if ($drug_id == $default) $s .= " selected";
+    $s .= ">" . text($prow['name']) . "</option>";
+  }
+  $s .= "</select>";
+  return $s;
+}
+
+// Build a date widget.
+//
+function genDateSelector($tagname, $imgid, $default='') {
+  return "<input type='text' name='" . attr($tagname) . "' id='" . attr($tagname) . "' size='10'
+       value='" . attr($default) . "'
+       title='" . xla('yyyy-mm-dd') . "'
+       onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'>
+      <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
+       id='" . attr($imgid) . "' border='0' alt='[?]' style='cursor:pointer'
+       title='" . xla('Click here to choose a date') . "'>";
+}
+
 // Check permission for this report.
 $auth_drug_reports = $GLOBALS['inhouse_pharmacy'] && (
   acl_check('admin'    , 'drugs'    ) ||
@@ -164,8 +241,12 @@ $is_user_restricted = isUserRestricted();
 $form_action = $_POST['form_action'];
 
 $form_from_date  = fixDate($_POST['form_from_date'], date('Y-m-d'));
-$form_to_date    = fixDate($_POST['form_to_date']  , date('Y-m-d'));
+$form_to_date    = fixDate($_POST['form_to_date'  ], date('Y-m-d'));
 $form_trans_type = isset($_POST['form_trans_type']) ? $_POST['form_trans_type'] : '0';
+$form_product    = isset($_POST['form_product'   ]) ? intval($_POST['form_product']) : 0;
+$form_consumable = isset($_POST['form_consumable']) ? intval($_POST['form_consumable']) : 0;
+$form_from_wh    = isset($_POST['form_from_wh'   ]) ? $_POST['form_from_wh'] : '';
+$form_to_wh      = isset($_POST['form_to_wh'     ]) ? $_POST['form_to_wh'] : '';
 
 // The selected facility ID, if any.
 $form_facility = 0 + empty($_POST['form_facility']) ? 0 : $_POST['form_facility'];
@@ -187,6 +268,7 @@ if ($form_action == 'export') {
   echo '"' . xl('Transaction') . '",';
   echo '"' . xl('Product'    ) . '",';
   echo '"' . xl('Lot'        ) . '",';
+  echo '"' . xl('Facility'   ) . '",';
   echo '"' . xl('Warehouse'  ) . '",';
   echo '"' . xl('Invoice'    ) . '",';
   echo '"' . xl('Qty'        ) . '",';
@@ -257,8 +339,14 @@ else {
  }
 
 $(document).ready(function() {
+  transTypeChanged();
   oeFixedHeaderSetup(document.getElementById('mymaintable'));
 });
+
+function transTypeChanged() {
+  var sel = document.forms[0]['form_trans_type'];
+  document.getElementById('row_transfer').style.display = sel.value == '4' ? '' : 'none';
+}
 
 </script>
 
@@ -276,96 +364,87 @@ $(document).ready(function() {
 <input type='hidden' name='form_action' value='' />
 <table>
  <tr>
-  <td width='50%'>
+  <td width='75%'>
    <table class='text'>
+
     <tr>
      <td nowrap>
-<?php
-  // Build a drop-down list of facilities.
-  //
-  $fres = sqlStatement("SELECT id, name FROM facility ORDER BY name");
-  echo "   <select name='form_facility'>\n";
-  echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
-  while ($frow = sqlFetchArray($fres)) {
-    $facid = $frow['id'];
-    if ($is_user_restricted && !isFacilityAllowed($facid)) continue;
-    echo "    <option value='$facid'";
-    if ($facid == $form_facility) echo " selected";
-    echo ">" . $frow['name'] . "</option>\n";
-  }
-  echo "   </select>\n&nbsp;";
-?>
-     </td>
-     <td class='label'>
-      <?php echo htmlspecialchars(xl('Type'), ENT_NOQUOTES); ?>:
+      <?php echo genFacilitySelector('form_facility', '-- ' . xl('All Facilities') . ' --', $form_facility); ?>
      </td>
      <td nowrap>
-      <select name='form_trans_type'>
-<?php
-foreach (array(
-  '0' => xl('All'),
-  '2' => xl('Purchase/Receipt'),
-  '3' => xl('Return'),
-  '1' => xl('Sale'),
-  // '6' => xl('Distribution'),
-  '4' => xl('Transfer'),
-  '7' => xl('Consumption'),
-  '5' => xl('Adjustment'),
-) as $key => $value)
-{
-  echo "       <option value='$key'";
-  if ($key == $form_trans_type) echo " selected";
-  echo ">" . htmlspecialchars($value, ENT_NOQUOTES) . "</option>\n";
-}
-?>
-      </select>
-     </td>
-     <td class='label'>
-      <?php echo htmlspecialchars(xl('From'), ENT_NOQUOTES); ?>:
+      <?php echo genProductSelector('form_product', '-- ' . xl('All Products') . ' --', $form_product); ?>
      </td>
      <td nowrap>
-      <input type='text' name='form_from_date' id="form_from_date" size='10'
-       value='<?php echo htmlspecialchars($form_from_date, ENT_QUOTES) ?>'
-       title='<?php echo htmlspecialchars(xl('yyyy-mm-dd'), ENT_QUOTES) ?>'
-       onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'>
-      <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
-       id='img_from_date' border='0' alt='[?]' style='cursor:pointer'
-       title='<?php echo htmlspecialchars(xl('Click here to choose a date'), ENT_QUOTES); ?>'>
-     </td>
-     <td class='label'>
-      <?php xl('To','e'); ?>:
-     </td>
-     <td nowrap>
-      <input type='text' name='form_to_date' id="form_to_date" size='10'
-       value='<?php echo htmlspecialchars($form_to_date, ENT_QUOTES) ?>'
-       title='<?php echo htmlspecialchars(xl('yyyy-mm-dd'), ENT_QUOTES) ?>'
-       onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'>
-      <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
-       id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
-       title='<?php echo htmlspecialchars(xl('Click here to choose a date'), ENT_QUOTES); ?>'>
+      <select name='form_consumable'><?php
+        foreach (array(
+          '0' => xl('All Consumption Types'),
+          '1' => xl('Consumable Only'),
+          '2' => xl('Non-Consumable Only'),
+        ) as $key => $value) {
+          echo "<option value='$key'";
+          if ($key == $form_consumable) echo " selected";
+          echo ">" . text($value) . "</option>";
+        }
+        ?></select>
      </td>
     </tr>
+
+    <tr>
+     <td nowrap>
+      <select name='form_trans_type' onchange='transTypeChanged()'><?php
+        foreach (array(
+          '0' => xl('All Transaction Types'),
+          '2' => xl('Purchase/Receipt'),
+          '3' => xl('Return'),
+          '1' => xl('Sale'),
+          // '6' => xl('Distribution'),
+          '4' => xl('Transfer'),
+          '7' => xl('Consumption'),
+          '5' => xl('Adjustment'),
+        ) as $key => $value) {
+          echo "<option value='$key'";
+          if ($key == $form_trans_type) echo " selected";
+          echo ">" . text($value) . "</option>";
+        }
+        ?></select>
+     </td>
+     <td nowrap>
+      <?php echo xlt('From') . ': ' . genDateSelector('form_from_date', 'img_from_date', $form_from_date); ?>
+     </td>
+     <td nowrap>
+      <?php echo xlt('To') . ': ' . genDateSelector('form_to_date', 'img_to_date', $form_to_date); ?>
+     </td>
+    </tr>
+
+    <tr id='row_transfer'>
+     <td nowrap>
+      <?php echo genWarehouseSelector('form_from_wh', '-- ' . xl('From Any Warehouse') . ' --', $form_from_wh); ?>
+     </td>
+     <td nowrap>
+      <?php echo genWarehouseSelector('form_to_wh', '-- ' . xl('To Any Warehouse') . ' --', $form_to_wh); ?>
+     </td>
+     <td nowrap>
+      &nbsp;
+     </td>
+    </tr>
+
    </table>
   </td>
+
   <td align='left' valign='middle'>
-   <table style='border-left:1px solid; width:100%; height:100%'>
-    <tr>
-     <td valign='middle'>
-      <a href='#' class='css_button' onclick='mysubmit("submit")' style='margin-left:1em'>
-       <span><?php echo htmlspecialchars(xl('Submit'), ENT_NOQUOTES); ?></span>
-      </a>
+   <a href='#' class='css_button' onclick='mysubmit("submit")' style='margin-left:1em'>
+    <span><?php echo htmlspecialchars(xl('Submit'), ENT_NOQUOTES); ?></span>
+   </a>
 <?php if ($form_action) { ?>
-      <a href='#' class='css_button' onclick='window.print()' style='margin-left:1em'>
-       <span><?php echo htmlspecialchars(xl('Print'), ENT_NOQUOTES); ?></span>
-      </a>
-      <a href='#' class='css_button' onclick='mysubmit("export")' style='margin-left:1em'>
-       <span><?php echo htmlspecialchars(xl('CSV Export'), ENT_NOQUOTES); ?></span>
-      </a>
+   <a href='#' class='css_button' onclick='window.print()' style='margin-left:1em'>
+    <span><?php echo htmlspecialchars(xl('Print'), ENT_NOQUOTES); ?></span>
+   </a>
+   <a href='#' class='css_button' onclick='mysubmit("export")' style='margin-left:1em'>
+    <span><?php echo htmlspecialchars(xl('CSV Export'), ENT_NOQUOTES); ?></span>
+   </a>
 <?php } ?>
-     </td>
-    </tr>
-   </table>
   </td>
+
  </tr>
 </table>
 </div>
@@ -396,6 +475,11 @@ foreach (array(
    <?php if ($form_orderby == "lot") echo " style=\"color:#00cc00\""; ?>>
    <?php echo xlt('Lot'); ?>
    </a>
+  </td>
+  <td class="dehead">
+   <a href="#" onclick="return dosort('fac')"
+   <?php if ($form_orderby == "fac") echo " style=\"color:#00cc00\""; ?>>
+   <?php echo xlt('Facility'); ?> </a>
   </td>
   <td class="dehead">
    <a href="#" onclick="return dosort('wh')"
@@ -434,19 +518,21 @@ if ($form_action) { // if submit or export
   $grandqty = 0;
 
   $query = "SELECT s.sale_date, s.fee, s.quantity, s.pid, s.encounter, " .
-    "s.billed, s.notes, s.distributor_id, s.xfer_inventory_id, s.trans_type, " .
+    "s.billed, s.notes, s.distributor_id, s.inventory_id, s.xfer_inventory_id, s.trans_type, " .
     "p.fname AS pfname, p.mname AS pmname, p.lname AS plname, " .
     "d.name, fe.date, fe.invoice_refno, " .
     "di.lot_number, di.warehouse_id, di.inventory_id AS di_inventory_id, " .
-    "lo.title AS warehouse, lo.option_value AS facid " .
+    "lo.title AS warehouse, lo.option_value AS facid, fac.name AS facname " .
     "FROM drug_sales AS s " .
     "JOIN drugs AS d ON d.drug_id = s.drug_id " .
     "LEFT JOIN patient_data AS p ON p.pid = s.pid " .
     "LEFT JOIN drug_inventory AS di ON di.inventory_id = s.inventory_id OR di.inventory_id = s.xfer_inventory_id " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+    "LEFT JOIN facility AS fac ON fac.id = lo.option_value " .
     "LEFT JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter " .
     "WHERE s.sale_date >= ? AND s.sale_date <= ? AND " .
     "( s.pid = 0 OR s.inventory_id != 0 ) ";
+
   if ($form_trans_type == 2) { // purchase/receipt
     $query .= "AND s.pid = 0 AND s.xfer_inventory_id = 0 AND s.trans_type = 2 ";
   }
@@ -465,9 +551,26 @@ if ($form_action) { // if submit or export
   else if ($form_trans_type == 1) { // sale
     $query .= "AND s.pid != 0 ";
   }
+
   if ($form_facility) {
     $query .= "AND ((lo.option_value IS NOT NULL AND lo.option_value = '$form_facility')) ";
   }
+
+  if ($form_product) {
+    $query .= "AND s.drug_id = '$form_product' ";
+  }
+
+  if ($form_consumable) {
+    if ($form_consumable == 1) {
+      $query .= "AND d.consumable = '1' ";
+    } else {
+      $query .= "AND d.consumable != '1' ";
+    }
+  }
+
+
+
+
   $query .= "ORDER BY $orderby";
 
   $res = sqlStatement($query, array($from_date, $to_date));
@@ -475,6 +578,24 @@ if ($form_action) { // if submit or export
     // Skip this row if user is disallowed from its warehouse.
     if ($is_user_restricted && !isWarehouseAllowed($row['facid'], $row['warehouse_id'])) {
       continue;
+    }
+    if ($form_trans_type == 4) { // reporting transfers only
+      if ($form_from_wh) {
+        $dirow = sqlQuery("SELECT warehouse_id FROM drug_inventory WHERE " .
+          "inventory_id = ? AND warehouse_id = ?",
+          array($row['xfer_inventory_id'], $form_from_wh));
+        if (empty($dirow)) {
+          continue;
+        }
+      }
+      if ($form_to_wh) {
+        $dirow = sqlQuery("SELECT warehouse_id FROM drug_inventory WHERE " .
+          "inventory_id = ? AND warehouse_id = ?",
+          array($row['inventory_id'], $form_to_wh));
+        if (empty($dirow)) {
+          continue;
+        }
+      }
     }
     thisLineItem($row);
   }
@@ -484,7 +605,7 @@ if ($form_action) { // if submit or export
 ?>
 
  <tr bgcolor="#dddddd">
-  <td class="dehead" colspan="6">
+  <td class="dehead" colspan="7">
    <?php echo htmlspecialchars(xl('Grand Total'), ENT_NOQUOTES); ?>
   </td>
   <td class="dehead" align="right">
