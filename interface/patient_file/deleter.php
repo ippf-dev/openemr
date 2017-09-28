@@ -415,7 +415,10 @@ function popup_close() {
  }
 ?>
 
-<form method='post' name="deletefrm" action='deleter.php?patient=<?php echo $patient ?>&encounterid=<?php echo $encounterid ?>&formid=<?php echo $formid ?>&issue=<?php echo $issue ?>&document=<?php echo attr($document) ?>&payment=<?php echo $payment ?>&billing=<?php echo $billing ?>&transaction=<?php echo $transaction ?>' onsubmit="javascript:alert('1');document.deleform.submit();">
+<form method='post' name="deletefrm" action='deleter.php?patient=<?php echo $patient ?>&encounterid=<?php echo $encounterid
+ ?>&formid=<?php echo $formid ?>&issue=<?php echo $issue ?>&document=<?php echo attr($document) ?>&payment=<?php echo $payment
+ ?>&billing=<?php echo $billing ?>&transaction=<?php echo $transaction ?>'
+ onsubmit='javascript:return false;'>
 
 <p class="bold">&nbsp;<br><?php xl('Do you really want to delete','e'); ?>
 
