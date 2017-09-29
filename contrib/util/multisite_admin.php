@@ -87,6 +87,7 @@ if (!empty($_POST['form_submit'])) {
     if (!is_file($confname)) continue;
     include($confname);
     $link = mysqli_connect($host, $login, $pass, $dbase, $port);
+    if (empty($link)) continue;
     $siteslist[$sfname] = $link;
   }
   closedir($dh);
