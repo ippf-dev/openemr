@@ -65,12 +65,25 @@ else {
   }
   else {
     $personas = $response->return->personas;
-    $userdata['fname' ] = $personas->primerNombre;
-    $userdata['lname' ] = $personas->segundoNombre;
+    $userdata['fname'] = $personas->primerNombre;
+    if (!empty($personas->segundoNombre)) {
+      $userdata['fname'] .= ' ' . $personas->segundoNombre;
+    }
+    $userdata['lname'] = $personas->primerApellido;
+    if (!empty($personas->segundoApellido)) {
+      $userdata['lname'] .= ' ' . $personas->segundoApellido;
+    }
     $userdata['DOB'   ] = translateDate($personas->fechaNacimiento);
     $userdata['sex'   ] = translateSex($personas->sexo);
     $userdata['state' ] = translateState($personas->departamento);
     $userdata['street'] = $personas->calle;
+    if (!empty($personas->numeroPuerta)) {
+      $userdata['street'] .= ' - ' . $personas->numeroPuerta;
+    }
+    if (!empty($personas->apartamento)) {
+      $userdata['street'] .= ' - ' . $personas->apartamento;
+    }
+    $userdata['phone_contact'] = $personas->telefonoPrimario;
   }
 }
 
