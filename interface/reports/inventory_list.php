@@ -11,6 +11,14 @@
  require_once("$srcdir/options.inc.php");
  require_once("$include_root/drugs/drugs.inc.php");
 
+// For each sorting option, specify the ORDER BY argument.
+//
+$ORDERHASH = array(
+  'name' => 'd.name, d.drug_id',
+  'act'  => 'd.active, d.name, d.drug_id',
+  'con'  => 'd.consumable, d.name, d.drug_id',
+);
+
 // Check permission for this report.
 $auth_drug_reports = $GLOBALS['inhouse_pharmacy'] && (
   acl_check('admin'    , 'drugs'      ) ||
@@ -23,8 +31,8 @@ if (!$auth_drug_reports) {
 $is_user_restricted = isUserRestricted();
 
 function addWarning($msg) {
-  global $warnings;
-  $break = empty($_POST['form_csvexport']) ? '<br />' : '; ';
+  global $warnings, $form_action;
+  $break = $form_action != 'export' ? '<br />' : '; ';
   if ($warnings) $warnings .= $break;
   $warnings .= $msg;
 }
@@ -215,9 +223,9 @@ function zeroDays($product_id, $begdate, $extracond, $min_sale=1) {
 function write_report_line(&$row) {
   global $form_details, $wrl_last_drug_id, $warnings, $encount, $fwcond, $uwcond, $form_days;
   global $gbl_expired_lot_warning_days;
-  global $form_facility, $form_warehouse;
+  global $form_facility, $form_warehouse, $form_action;
 
-  $emptyvalue = empty($_POST['form_csvexport']) ? '&nbsp;' : '';
+  $emptyvalue = $form_action != 'export' ? '&nbsp;' : '';
   $drug_id = 0 + $row['drug_id'];
   $on_hand = 0 + $row['on_hand'];
   // $inventory_id = 0 + (empty($row['inventory_id']) ? 0 : $row['inventory_id']);
@@ -416,11 +424,12 @@ function write_report_line(&$row) {
     $relcodes .= $codestring;
   }
 
-  if (!empty($_POST['form_csvexport'])) {
+  if ($form_action == 'export') {
     echo '"' . output_csv($row['name'])                          . '",';
     echo '"' . output_csv($relcodes)                             . '",';
     echo '"' . output_csv($row['ndc_number'])                    . '",';
     echo '"' . output_csv($row['active'] ? xl('Yes') : xl('No')) . '",';
+    echo '"' . output_csv($row['consumable'] ? xl('Yes') : xl('No')) . '",';
     echo '"' . output_csv(generate_display_field(array(
       'data_type'=>'1', 'list_id'=>'drug_form'), $row['form']))  . '",';
     if ($form_details) {
@@ -447,13 +456,14 @@ function write_report_line(&$row) {
   else {
     echo " <tr class='detail' bgcolor='$bgcolor'>\n";
     if ($drug_id == $wrl_last_drug_id) {
-      echo "  <td colspan='5'>&nbsp;</td>\n";
+      echo "  <td colspan='6'>&nbsp;</td>\n";
     }
     else {
       echo "  <td>" . htmlspecialchars($row['name'])                       . "</td>\n";
       echo "  <td>" . htmlspecialchars($relcodes)                          . "</td>\n";
       echo "  <td>" . htmlspecialchars($row['ndc_number'])                 . "</td>\n";
       echo "  <td>" . ($row['active'] ? xl('Yes') : xl('No'))              . "</td>\n";
+      echo "  <td>" . ($row['consumable'] ? xl('Yes') : xl('No'))          . "</td>\n";
       echo "  <td>" . generate_display_field(array('data_type'=>'1',
         'list_id'=>'drug_form'), $row['form'])                             . "</td>\n";
     }
@@ -488,11 +498,15 @@ else {
   $form_days = sprintf('%d', (strtotime(date('Y-m-d')) - strtotime(date('Y-01-01'))) / (60 * 60 * 24) + 1);
 }
 
+// this is "" or "submit" or "export".
+$form_action = empty($_POST['form_action']) ? '' : $_POST['form_action'];
+
 $form_inactive = empty($_REQUEST['form_inactive']) ? 0 : 1;
-
 $form_details = empty($_REQUEST['form_details']) ? 0 : intval($_REQUEST['form_details']);
-
 $form_facility = 0 + empty($_REQUEST['form_facility']) ? 0 : $_REQUEST['form_facility'];
+$form_consumable = isset($_REQUEST['form_consumable']) ? intval($_REQUEST['form_consumable']) : 0;
+$form_orderby = $ORDERHASH[$_REQUEST['form_orderby']] ? $_REQUEST['form_orderby'] : 'name';
+$orderby = $ORDERHASH[$form_orderby];
 
 // Incoming form_warehouse, if not empty is in the form "warehouse/facility".
 // The facility part is an attribute used by JavaScript logic.
@@ -511,9 +525,16 @@ if ($form_warehouse) $fwcond .=
 
 $uwcond = $is_user_restricted ? ("AND di.warehouse_id IS NOT NULL AND di.warehouse_id IN (" . genUserWarehouses() . ")") : "";
 
-// Compute WHERE condition for filtering on activity.
+// Compute WHERE condition for filtering on activity and consumability (drugs table).
 $actcond = '';
 if (!$form_inactive) $actcond .= " AND d.active = 1";
+if ($form_consumable) {
+  if ($form_consumable == 1) {
+    $actcond .= " AND d.consumable = '1'";
+  } else {
+    $actcond .= " AND d.consumable != '1'";
+  }
+}
 
 if ($form_details == 1) {
   // Query for the main loop if facility details are wanted.
@@ -528,7 +549,7 @@ if ($form_details == 1) {
     "LEFT JOIN product_warehouse AS pw ON pw.pw_drug_id = d.drug_id AND " .
     "pw.pw_warehouse = di.warehouse_id " .
     "WHERE 1 = 1 $fwcond $uwcond $actcond " .
-    "GROUP BY d.name, d.drug_id, lo.option_value ORDER BY d.name, d.drug_id, lo.option_value";
+    "GROUP BY d.name, d.drug_id, lo.option_value ORDER BY $orderby, lo.option_value";
 }
 else if ($form_details == 2) {
   // Query for the main loop if warehouse/lot details are wanted.
@@ -545,7 +566,7 @@ else if ($form_details == 2) {
     "LEFT JOIN product_warehouse AS pw ON pw.pw_drug_id = d.drug_id AND " .
     "pw.pw_warehouse = di.warehouse_id " .
     "WHERE 1 = 1 $fwcond $uwcond $actcond " .
-    "ORDER BY d.name, d.drug_id, lo.title, di.warehouse_id, di.lot_number, di.inventory_id";
+    "ORDER BY $orderby, lo.title, di.warehouse_id, di.lot_number, di.inventory_id";
 }
 else {
   // Query for the main loop if summary report.
@@ -558,12 +579,12 @@ else {
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "WHERE 1 = 1 $fwcond $uwcond $actcond " .
-    "GROUP BY d.name, d.drug_id ORDER BY d.name, d.drug_id";
+    "GROUP BY $orderby ORDER BY $orderby";
 }
 
 $res = sqlStatement($query);
 
-if (!empty($_POST['form_csvexport'])) {
+if ($form_action == 'export') {
   header("Pragma: public");
   header("Expires: 0");
   header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
@@ -581,6 +602,7 @@ if (!empty($_POST['form_csvexport'])) {
   echo '"' . xl('Relates To'  ) . '",';
   echo '"' . xl('NDC'         ) . '",';
   echo '"' . xl('Active'      ) . '",';
+  echo '"' . xl('Consumable'  ) . '",';
   echo '"' . xl('Form'        ) . '",';
   if ($form_details) {
     echo '"' . xl('Facility'  ) . '",';
@@ -642,6 +664,22 @@ function facchanged() {
  }
 }
 
+function mysubmit(action) {
+ var f = document.forms[0];
+ f.form_action.value = action;
+ top.restoreSession();
+ f.submit();
+}
+
+function dosort(orderby) {
+ var f = document.forms[0];
+ f.form_orderby.value = orderby;
+ f.form_action.value = 'submit';
+ top.restoreSession();
+ f.submit();
+ return false;
+}
+
 $(document).ready(function() {
   oeFixedHeaderSetup(document.getElementById('mymaintable'));
 });
@@ -654,6 +692,10 @@ $(document).ready(function() {
 <center>
 
 <form method='post' action='inventory_list.php' name='theform'>
+
+<!-- form_action is set to "submit" or "export" at form submit time -->
+<input type='hidden' name='form_action' value='' />
+
 <table border='0' cellpadding='5' cellspacing='0' width='98%'>
  <tr>
   <td class='title'>
@@ -693,11 +735,26 @@ $(document).ready(function() {
   }
   echo "   </select>&nbsp;\n";
 ?>
+
    <?php echo xlt('For the past'); ?>
    <input type="input" name="form_days" size='3' value="<?php echo $form_days; ?>" />
    <?php echo xlt('days'); ?>&nbsp;
+
+   <select name='form_consumable'><?php
+    foreach (array(
+      '0' => xl('All Product Types'),
+      '1' => xl('Consumable Only'),
+      '2' => xl('Non-Consumable Only'),
+    ) as $key => $value) {
+      echo "<option value='$key'";
+      if ($key == $form_consumable) echo " selected";
+      echo ">" . text($value) . "</option>";
+    }
+    ?></select>&nbsp;
+
    <input type='checkbox' name='form_inactive' value='1'<?php if ($form_inactive) echo " checked"; ?>
    /><?php echo xlt('Include Inactive'); ?>&nbsp;
+
 <?php
   echo "   <select name='form_details'>\n";
   $tmparr = array(0 => xl('Summary'), 1 => xl('Facility Details'), 2 => xl('Warehouse Details'));
@@ -708,9 +765,11 @@ $(document).ready(function() {
   }
   echo "   </select>&nbsp;\n";
 ?>
-   <input type="submit" value="<?php echo xla('Refresh'); ?>" />&nbsp;
-   <input type="submit" name="form_csvexport" value="<?php echo xla('Export to CSV'); ?>">&nbsp;
+
+   <input type="button" onclick='mysubmit("submit")' value="<?php echo xla('Refresh'); ?>" />&nbsp;
+   <input type="button" onclick='mysubmit("export")' value="<?php echo xla('Export to CSV'); ?>">&nbsp;
    <input type="button" value="<?php echo xla('Print'); ?>" onclick="window.print()" />
+   <input type="hidden" name="form_orderby" value="<?php echo $form_orderby ?>" />
   </td>
  </tr>
 </table>
@@ -719,10 +778,23 @@ $(document).ready(function() {
 <table width='98%' id='mymaintable' class='mymaintable'>
  <thead style='display:table-header-group'>
   <tr class='head'>
-   <th><?php echo xlt('Name'      ); ?></th>
+   <th>
+    <a href="#" onclick="return dosort('name')"
+    <?php if ($form_orderby == "name") echo " style=\"color:#00cc00\""; ?>>
+    <?php echo xlt('Name'); ?> </a>
+   </th>
    <th><?php echo xlt('Relates To'); ?></th>
    <th><?php echo xlt('NDC'       ); ?></th>
-   <th><?php echo xlt('Active'    ); ?></th>
+   <th>
+    <a href="#" onclick="return dosort('act')"
+    <?php if ($form_orderby == "act") echo " style=\"color:#00cc00\""; ?>>
+    <?php echo xlt('Active'); ?> </a>
+   </th>
+   <th>
+    <a href="#" onclick="return dosort('con')"
+    <?php if ($form_orderby == "con") echo " style=\"color:#00cc00\""; ?>>
+    <?php echo xlt('Consumable'); ?> </a>
+   </th>
    <th><?php echo xlt('Form'      ); ?></th>
 <?php if ($form_details) { ?>
    <th><?php echo xlt('Facility'  ); ?></th>
@@ -774,7 +846,7 @@ if ($form_details == 2) {
   }
 }
 
-if (empty($_POST['form_csvexport'])) {
+if ($form_action != 'export') {
 ?>
  </tbody>
 </table>

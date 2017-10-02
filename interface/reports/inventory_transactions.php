@@ -377,7 +377,7 @@ function transTypeChanged() {
      <td nowrap>
       <select name='form_consumable'><?php
         foreach (array(
-          '0' => xl('All Consumption Types'),
+          '0' => xl('All Product Types'),
           '1' => xl('Consumable Only'),
           '2' => xl('Non-Consumable Only'),
         ) as $key => $value) {
