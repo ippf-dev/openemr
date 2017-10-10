@@ -45,7 +45,7 @@ function esc4Export($str) {
 }
 
 function thisLineItem($row, $xfer=false) {
-  global $grandtotal, $grandqty, $encount, $form_action;
+  global $grandtotal, $grandqty, $encount, $form_action, $include_sales_info;
 
   $ttype = '';
   // If this row is for the source lot of a transfer, invert quantity and fee.
@@ -100,10 +100,14 @@ function thisLineItem($row, $xfer=false) {
     echo '"' . esc4Export($row['lot_number'])       . '",';
     echo '"' . esc4Export($row['facname'])          . '",';
     echo '"' . esc4Export($row['warehouse'])        . '",';
-    echo '"' . esc4Export($invnumber)               . '",';
+    if ($include_sales_info) {
+      echo '"' . esc4Export($invnumber)             . '",';
+    }
     echo '"' . (0 - $row['quantity'])               . '",';
     echo '"' . bucks($row['fee'])                   . '",';
-    echo '"' . $row['billed']                       . '",';
+    if ($include_sales_info) {
+      echo '"' . $row['billed']                     . '",';
+    }
     echo '"' . esc4Export($row['notes'])            . '"' . "\n";
   }
   else {
@@ -130,13 +134,15 @@ function thisLineItem($row, $xfer=false) {
    <?php echo htmlspecialchars($row['warehouse']); ?>
   </td>
 <?php
-  if ($patient_id) {
-    echo "  <td class='delink' onclick='doinvopen($patient_id,$encounter_id)'>\n";
+  if ($include_sales_info) {
+    if ($patient_id) {
+      echo "  <td class='delink' onclick='doinvopen($patient_id,$encounter_id)'>\n";
+    }
+    else {
+      echo "  <td class='detail'>\n";
+    }
+    echo "   " . text($invnumber) . "\n  </td>\n";
   }
-  else {
-    echo "  <td class='detail'>\n";
-  }
-  echo "   " . text($invnumber) . "\n  </td>\n";
 ?>
   <td class="detail" align="right">
    <?php echo htmlspecialchars(0 - $row['quantity']); ?>
@@ -144,9 +150,11 @@ function thisLineItem($row, $xfer=false) {
   <td class="detail" align="right">
    <?php echo htmlspecialchars(bucks($row['fee'])); ?>
   </td>
+<?php if ($include_sales_info) { ?>
   <td class="detail" align="center">
    <?php echo empty($row['billed']) ? '&nbsp;' : '*'; ?>
   </td>
+<?php } ?>
   <td class="detail">
    <?php echo htmlspecialchars($row['notes']); ?>
   </td>
@@ -248,6 +256,8 @@ $form_consumable = isset($_POST['form_consumable']) ? intval($_POST['form_consum
 $form_from_wh    = isset($_POST['form_from_wh'   ]) ? $_POST['form_from_wh'] : '';
 $form_to_wh      = isset($_POST['form_to_wh'     ]) ? $_POST['form_to_wh'] : '';
 
+$include_sales_info = $form_trans_type == '0' || $form_trans_type == '1';
+
 // The selected facility ID, if any.
 $form_facility = 0 + empty($_POST['form_facility']) ? 0 : $_POST['form_facility'];
 
@@ -270,10 +280,14 @@ if ($form_action == 'export') {
   echo '"' . xl('Lot'        ) . '",';
   echo '"' . xl('Facility'   ) . '",';
   echo '"' . xl('Warehouse'  ) . '",';
-  echo '"' . xl('Invoice'    ) . '",';
+  if ($include_sales_info) {
+    echo '"' . xl('Invoice'  ) . '",';
+  }
   echo '"' . xl('Qty'        ) . '",';
   echo '"' . xl('Amount'     ) . '",';
-  echo '"' . xl('Billed'     ) . '",';
+  if ($include_sales_info) {
+    echo '"' . xl('Billed'   ) . '",';
+  }
   echo '"' . xl('Notes'      ) . '"' . "\n";
 } // end export
 else {
@@ -486,20 +500,24 @@ function transTypeChanged() {
    <?php if ($form_orderby == "wh") echo " style=\"color:#00cc00\""; ?>>
    <?php echo xlt('Warehouse'); ?> </a>
   </td>
+<?php if ($include_sales_info) { ?>
   <td class="dehead">
    <a href="#" onclick="return dosort('invoice')"
    <?php if ($form_orderby == "invoice") echo " style=\"color:#00cc00\""; ?>>
    <?php echo xlt('Invoice'); ?> </a>
   </td>
+<?php } ?>
   <td class="dehead" align="right">
    <?php echo xlt('Qty'); ?>
   </td>
   <td class="dehead" align="right">
    <?php echo xlt('Amount'); ?>
   </td>
+<?php if ($include_sales_info) { ?>
   <td class="dehead" align="Center">
    <?php echo xlt('Billed'); ?>
   </td>
+<?php } ?>
   <td class="dehead">
    <?php echo xlt('Notes'); ?>
   </td>
@@ -567,9 +585,6 @@ if ($form_action) { // if submit or export
       $query .= "AND d.consumable != '1' ";
     }
   }
-
-
-
 
   $query .= "ORDER BY $orderby";
 
