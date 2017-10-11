@@ -187,6 +187,26 @@ function ensureLineAmounts($patient_id, $encounter_id) {
   return $invno;
 }
 
+// Compute price per unit preferring number of decimals for the locale, but increasing
+// that up to a reasonable limit when there would otherwise be rounding error.
+//
+function oeFormatMoneySpreadsheet($amount, $blankifzero=false) {
+  $d = $GLOBALS['currency_decimals'];
+  $max_decimals = $d + 4;
+  $amount = round($amount, $max_decimals);
+  if ($amount == 0) {
+    if ($blankifzero) return '';
+    // Workaround for results of -0.00.
+    $amount = 0;
+  }
+  for (; $d < $max_decimals; ++$d) {
+    if ($amount == round($amount, $d)) {
+      break;
+    }
+  }
+  return sprintf('%01.' . $d . 'f', $amount);
+}
+
 $previous_invno = array();
 
 function thisLineItem($patient_id, $encounter_id, $code_type, $code,
@@ -235,7 +255,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
     echo '"' . display_desc($disp_code) . '",';
     echo '"' . display_desc($description) . '",';
     echo '"' . display_desc($qty      ) . '",';
-    echo '"' . sprintf('%01.2f', $amount / $qty) . '",';
+    echo '"' . oeFormatMoneySpreadsheet($amount / $qty) . '",';
     echo '"' . display_desc($memo_header) . '",';
     echo '"' . display_desc($memo) . '",';
     echo '"' . display_desc($payor == '' ? 'C00001' : $payor) . '",';
@@ -273,7 +293,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
    <?php echo $qty; ?>
   </td>
   <td class="detail" align="right">
-   <?php echo $overpaid; bucks($amount / $qty); ?>
+   <?php echo $overpaid . oeFormatMoneySpreadsheet($amount / $qty, true); ?>
   </td>
   <td class="detail">
    <?php echo display_desc($memo_header); ?>
