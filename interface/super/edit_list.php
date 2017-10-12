@@ -60,6 +60,53 @@ function listChecksum($list_id) {
   return (0 + $row['checksum']);
 }
 
+function csvtext($s) {
+  return str_replace('"', '""', $s);
+}
+
+if ($_POST['formaction'] == 'csvexport') {
+  header("Pragma: public");
+  header("Expires: 0");
+  header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+  header("Content-Type: application/force-download; charset=utf-8");
+  header("Content-Disposition: attachment; filename=$list_id.csv");
+  header("Content-Description: File Transfer");
+  // Prepend a BOM (Byte Order Mark) header to mark the data as UTF-8.  See:
+  // http://stackoverflow.com/questions/155097/microsoft-excel-mangles-diacritics-in-csv-files
+  // http://crashcoursing.blogspot.com/2011/05/exporting-csv-with-special-characters.html
+  echo "\xEF\xBB\xBF";
+
+  // CSV headers:
+  echo '"' . xl('List'     ) . '",';
+  echo '"' . xl('ID'       ) . '",';
+  echo '"' . xl('Title'    ) . '",';
+  echo '"' . xl('Order'    ) . '",';
+  echo '"' . xl('Default'  ) . '",';
+  echo '"' . xl('Active'   ) . '",';
+  echo '"' . xl('Global ID') . '",';
+  echo '"' . xl('Notes'    ) . '",';
+  echo '"' . xl('Codes'    ) . '"';
+  echo "\n";
+
+  $res = sqlStatement("SELECT * FROM list_options WHERE list_id = ? ORDER BY seq, title",
+    array($list_id));
+
+  while ($row = sqlFetchArray($res)) {
+    echo '"' . csvtext($row['list_id']) . '",';
+    echo '"' . csvtext($row['option_id']) . '",';
+    echo '"' . csvtext($row['title']) . '",';
+    echo '"' . csvtext($row['seq']) . '",';
+    echo '"' . csvtext($row['is_default']) . '",';
+    echo '"' . csvtext($row['activity']) . '",';
+    echo '"' . csvtext($row['mapping']) . '",';
+    echo '"' . csvtext($row['notes']) . '",';
+    echo '"' . csvtext($row['codes']) . '"';
+    echo "\n";
+  }
+
+  exit(0);
+}
+
 $alertmsg = '';
 
 $current_checksum = listChecksum($list_id);
@@ -1002,6 +1049,11 @@ while ($row = sqlFetchArray($res)) {
 </select>
 <input type="button" id="<?php echo $list_id; ?>" class="deletelist" value=<?php xl('Delete List','e','\'','\''); ?>>
 <input type="button" id="newlist" class="newlist" value=<?php xl('New List','e','\'','\''); ?>>
+
+<?php if ($list_id && $list_id != 'feesheet' && $list_id != 'code_types' && $list_id != 'issue_types') { ?>
+<input type="button" id="form_csvexport" value='<?php echo xla('Export to CSV'); ?>' />
+<?php } ?>
+
 </p>
 
 <center>
@@ -1188,6 +1240,11 @@ $(document).ready(function(){
     $(".savenewlist").click(function() { SaveNewList(this); });
     $(".deletelist").click(function() { DeleteList(this); });
     $(".cancelnewlist").click(function() { CancelNewList(this); });
+
+    $("#form_csvexport").click(function() {
+      $('#formaction').val('csvexport');
+      $('#theform').submit();
+    });
 
     var SaveChanges = function() {
         $("#formaction").val("save");
