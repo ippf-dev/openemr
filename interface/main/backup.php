@@ -42,6 +42,10 @@ if (!acl_check('admin', 'super')) die(xl('Not authorized','','','!'));
 
 include_once("Archive/Tar.php");
 
+function csvtext($s) {
+  return str_replace('"', '""', $s);
+}
+
 // Set up method, which will depend on OS and if pear tar.php is installed
 if (class_exists('Archive_Tar')) {
  # pear tar.php is installed so can use os independent method
@@ -108,12 +112,135 @@ if ($form_step == 104) {
   unlink($EXPORT_FILE);
   exit(0);
 }
+
+// CSV export of lists.
+//
+if ($form_step == 102.1) {
+  if (is_array($_POST['form_sel_lists'])) {
+    header("Pragma: public");
+    header("Expires: 0");
+    header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+    header("Content-Type: application/force-download; charset=utf-8");
+    header("Content-Disposition: attachment; filename=lists.csv");
+    header("Content-Description: File Transfer");
+    // Prepend a BOM (Byte Order Mark) header to mark the data as UTF-8.  See:
+    // http://stackoverflow.com/questions/155097/microsoft-excel-mangles-diacritics-in-csv-files
+    // http://crashcoursing.blogspot.com/2011/05/exporting-csv-with-special-characters.html
+    echo "\xEF\xBB\xBF";
+    // CSV headers:
+    echo '"' . xl('List'     ) . '",';
+    echo '"' . xl('ID'       ) . '",';
+    echo '"' . xl('Title'    ) . '",';
+    echo '"' . xl('Order'    ) . '",';
+    echo '"' . xl('Default'  ) . '",';
+    echo '"' . xl('Active'   ) . '",';
+    echo '"' . xl('Global ID') . '",';
+    echo '"' . xl('Notes'    ) . '",';
+    echo '"' . xl('Codes'    ) . '"';
+    echo "\n";
+    foreach ($_POST['form_sel_lists'] as $listid) {
+      $res = sqlStatement("SELECT * FROM list_options WHERE list_id = ? ORDER BY seq, title",
+        array($listid));
+      while ($row = sqlFetchArray($res)) {
+        echo '"' . csvtext($row['list_id']) . '",';
+        echo '"' . csvtext($row['option_id']) . '",';
+        echo '"' . csvtext($row['title']) . '",';
+        echo '"' . csvtext($row['seq']) . '",';
+        echo '"' . csvtext($row['is_default']) . '",';
+        echo '"' . csvtext($row['activity']) . '",';
+        echo '"' . csvtext($row['mapping']) . '",';
+        echo '"' . csvtext($row['notes']) . '",';
+        echo '"' . csvtext($row['codes']) . '"';
+        echo "\n";
+      }
+    }
+  }
+  exit(0);
+}
+
+// CSV export of layouts.
+//
+if ($form_step == 102.2) {
+  if (is_array($_POST['form_sel_layouts'])) {
+    header("Pragma: public");
+    header("Expires: 0");
+    header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+    header("Content-Type: application/force-download; charset=utf-8");
+    header("Content-Disposition: attachment; filename=layouts.csv");
+    header("Content-Description: File Transfer");
+    // Prepend a BOM (Byte Order Mark) header to mark the data as UTF-8.  See:
+    // http://stackoverflow.com/questions/155097/microsoft-excel-mangles-diacritics-in-csv-files
+    // http://crashcoursing.blogspot.com/2011/05/exporting-csv-with-special-characters.html
+    echo "\xEF\xBB\xBF";
+    // CSV headers:
+    echo '"' . xl('Form'       ) . '",';
+    echo '"' . xl('Order'      ) . '",';
+    echo '"' . xl('Source'     ) . '",';
+    echo '"' . xl('Group'      ) . '",';
+    echo '"' . xl('ID'         ) . '",';
+    echo '"' . xl('Label'      ) . '",';
+    echo '"' . xl('UOR'        ) . '",';
+    echo '"' . xl('Type'       ) . '",';
+    echo '"' . xl('Width'      ) . '",';
+    echo '"' . xl('Height'     ) . '",';
+    echo '"' . xl('Max'        ) . '",';
+    echo '"' . xl('List'       ) . '",';
+    echo '"' . xl('Label Cols' ) . '",';
+    echo '"' . xl('Data Cols'  ) . '",';
+    echo '"' . xl('Options'    ) . '",';
+    echo '"' . xl('Description') . '",';
+    echo '"' . xl('Conditions' ) . '"';
+    echo "\n";
+    foreach ($_POST['form_sel_layouts'] as $layoutid) {
+      $res = sqlStatement("SELECT * FROM layout_options WHERE form_id = ? ORDER BY group_id, seq, title",
+        array($layoutid));
+      while ($row = sqlFetchArray($res)) {
+        echo '"' . csvtext($row['form_id'     ]) . '",';
+        echo '"' . csvtext($row['seq'         ]) . '",';
+        echo '"' . csvtext($row['source'      ]) . '",';
+        echo '"' . csvtext($row['group_id'    ]) . '",';
+        echo '"' . csvtext($row['field_id'    ]) . '",';
+        echo '"' . csvtext($row['title'       ]) . '",';
+        echo '"' . csvtext($row['uor'         ]) . '",';
+        echo '"' . csvtext($row['data_type'   ]) . '",';
+        echo '"' . csvtext($row['fld_length'  ]) . '",';
+        echo '"' . csvtext($row['fld_rows'    ]) . '",';
+        echo '"' . csvtext($row['max_length'  ]) . '",';
+        echo '"' . csvtext($row['list_id'     ]) . '",';
+        echo '"' . csvtext($row['titlecols'   ]) . '",';
+        echo '"' . csvtext($row['datacols'    ]) . '",';
+        echo '"' . csvtext($row['edit_options']) . '",';
+        echo '"' . csvtext($row['description' ]) . '",';
+        echo '"' . csvtext($row['conditions'  ]) . '"';
+        echo "\n";
+      }
+    }
+  }
+  exit(0);
+}
 ?>
 <html>
 
 <head>
 <link rel="stylesheet" href='<?php echo $css_header ?>' type='text/css'>
 <title><?php xl('Backup','e'); ?></title>
+
+<script language="JavaScript">
+
+// Called from export page to specify what it will do.
+//   102   = SQL export of selected tables, lists and layouts
+//   102.1 = Download selected lists as CSV
+//   102.2 = download selected layouts as CSV
+//
+function export_submit(step) {
+ var f = document.forms[0];
+ f.form_step.value = step;
+ top.restoreSession();
+ f.submit();
+}
+
+</script>
+
 </head>
 
 <body class="body_top">
@@ -348,6 +475,7 @@ if ($form_step == 101) {
     echo ">" . text(xl_list_label($lrow['title'])) . "</option>\n";
   }
   echo "</select>\n";
+  echo "<br /><a href='#' onclick='export_submit(102.1)'>" . xlt('Download CSV') . "</a>";
 
   // Multi-select for layouts.
   echo "</td><td valign='top'>\n";
@@ -360,11 +488,11 @@ if ($form_step == 101) {
     echo "<option value='" . attr($key) . "'";
     echo ">" . text($key) . ": " . text(xl_layout_label($lrow['grp_title'])) . "</option>\n";
   }
-
   echo "</select>\n";
+  echo "<br /><a href='#' onclick='export_submit(102.2)'>" . xlt('Download CSV') . "</a>";
 
   echo "</td>\n</tr>\n</table>\n";
-  echo "&nbsp;<br /><input type='submit' value='" . xl('Continue') . "' />\n";
+  echo "&nbsp;<br /><input type='button' onclick='export_submit(102)' value='" . xla('Continue') . "' />\n";
 }
 
 if ($form_step == 102) {
