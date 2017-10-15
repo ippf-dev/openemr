@@ -1,13 +1,16 @@
 <?php
- // Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
- //
- // This program is free software; you can redistribute it and/or
- // modify it under the terms of the GNU General Public License
- // as published by the Free Software Foundation; either version 2
- // of the License, or (at your option) any later version.
-
- // This report lists patients that were seen within a given date
- // range.
+/**
+ * This report lists patients that were seen within a given date
+ * range.
+ *
+ * @package   OpenEMR
+ * @link      http://www.open-emr.org
+ * @author    Rod Roark <rod@sunsetsystems.com>
+ * @author    Brady Miller <brady.g.miller@gmail.com>
+ * @copyright Copyright (c) 2006-2016 Rod Roark <rod@sunsetsystems.com>
+ * @copyright Copyright (c) 2017 Brady Miller <brady.g.miller@gmail.com>
+ * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
+ */
 
 require_once("../globals.php");
 require_once("$srcdir/patient.inc");
@@ -55,7 +58,7 @@ if (!acl_check('patients', 'demo')) die(xl("Unauthorized access."));
     }
 }
 </style>
-<title><?php xl('Front Office Receipts','e'); ?></title>
+<title><?php echo xlt('Front Office Receipts'); ?></title>
 
 <script type="text/javascript" src="../../library/overlib_mini.js"></script>
 <script type="text/javascript" src="../../library/textformat.js"></script>
@@ -97,13 +100,13 @@ if (!acl_check('patients', 'demo')) die(xl("Unauthorized access."));
 <!-- Required for the popup date selectors -->
 <div id="overDiv" style="position:absolute; visibility:hidden; z-index:1000;"></div>
 
-<span class='title'><?php xl('Report','e'); ?> - <?php xl('Unique Seen Patients','e'); ?></span>
+<span class='title'><?php echo xlt('Report'); ?> - <?php echo xlt('Unique Seen Patients'); ?></span>
 
 <div id="report_parameters_daterange">
-<?php echo date("d F Y", strtotime($form_from_date)) ." &nbsp; to &nbsp; ". date("d F Y", strtotime($form_to_date)); ?>
+<?php echo oeFormatShortDate($form_from_date) ." &nbsp; " . xlt("to") . " &nbsp; ". oeFormatShortDate($form_to_date); ?>
 </div>
 
-<form name='theform' method='post' action='unique_seen_patients_report.php' id='theform'>
+<form name='theform' method='post' action='unique_seen_patients_report.php' id='theform' onsubmit='return top.restoreSession()'>
 
 <div id="report_parameters">
 <input type='hidden' name='form_refresh' id='form_refresh' value=''/>
@@ -117,24 +120,24 @@ if (!acl_check('patients', 'demo')) die(xl("Unauthorized access."));
 	<table class='text'>
 		<tr>
 			<td class='label'>
-			   <?php xl('Visits From','e'); ?>:
+			   <?php echo xlt('Visits From'); ?>:
 			</td>
 			<td>
 			   <input type='text' name='form_from_date' id="form_from_date" size='10' value='<?php echo $form_from_date ?>'
 				onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='yyyy-mm-dd'>
 			   <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
 				id='img_from_date' border='0' alt='[?]' style='cursor:pointer'
-				title='<?php xl('Click here to choose a date','e'); ?>'>
+				title='<?php echo xlt('Click here to choose a date'); ?>'>
 			</td>
 			<td class='label'>
-			   <?php xl('To','e'); ?>:
+			   <?php echo xlt('To'); ?>:
 			</td>
 			<td>
 			   <input type='text' name='form_to_date' id="form_to_date" size='10' value='<?php echo $form_to_date ?>'
 				onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='yyyy-mm-dd'>
 			   <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
 				id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
-				title='<?php xl('Click here to choose a date','e'); ?>'>
+				title='<?php echo xlt('Click here to choose a date'); ?>'>
 			</td>
 		</tr>
 	</table>
@@ -149,19 +152,19 @@ if (!acl_check('patients', 'demo')) die(xl("Unauthorized access."));
 				<div style='margin-left:15px'>
 					<a href='#' class='css_button' onclick='$("#form_refresh").attr("value","true"); $("#theform").submit();'>
 					<span>
-						<?php xl('Submit','e'); ?>
+						<?php echo xlt('Submit'); ?>
 					</span>
 					</a>
 
 					<?php if ($_POST['form_refresh']) { ?>
 					<a href='#' class='css_button' onclick='window.print()'>
 						<span>
-							<?php xl('Print','e'); ?>
+							<?php echo xlt('Print'); ?>
 						</span>
 					</a>
 					<a href='#' class='css_button' onclick='$("#form_labels").attr("value","true"); $("#theform").submit();'>
 					<span>
-						<?php xl('Labels','e'); ?>
+						<?php echo xlt('Labels'); ?>
 					</span>
 					</a>
 					<?php } ?>
@@ -178,14 +181,14 @@ if (!acl_check('patients', 'demo')) die(xl("Unauthorized access."));
 <table>
 
  <thead>
-  <th> <?php xl('Last Visit','e'); ?> </th>
-  <th> <?php xl('Patient','e'); ?> </th>
-  <th align='right'> <?php xl('Visits','e'); ?> </th>
-  <th align='right'> <?php xl('Age','e'); ?> </th>
-  <th> <?php xl('Sex','e'); ?> </th>
-  <th> <?php xl('Race','e'); ?> </th>
-  <th> <?php xl('Primary Insurance','e'); ?> </th>
-  <th> <?php xl('Secondary Insurance','e'); ?> </th>
+  <th> <?php echo xlt('Last Visit'); ?> </th>
+  <th> <?php echo xlt('Patient'); ?> </th>
+  <th align='right'> <?php echo xlt('Visits'); ?> </th>
+  <th align='right'> <?php echo xlt('Age'); ?> </th>
+  <th> <?php echo xlt('Sex'); ?> </th>
+  <th> <?php echo xlt('Race'); ?> </th>
+  <th> <?php echo xlt('Primary Insurance'); ?> </th>
+  <th> <?php echo xlt('Secondary Insurance'); ?> </th>
  </thead>
  <tbody>
 <?php
@@ -275,7 +278,7 @@ if (!acl_check('patients', 'demo')) die(xl("Unauthorized access."));
 ?>
  <tr class='report_totals'>
   <td colspan='2'>
-   <?php xl('Total Number of Patients','e'); ?>
+   <?php echo xlt('Total Number of Patients'); ?>
   </td>
   <td style="padding-left: 20px;">
    <?php echo $totalpts ?>
