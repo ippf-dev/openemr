@@ -221,18 +221,21 @@ function get_related() {
 <center>
 
 <table border='0' width='100%'>
-<?php if (empty($layout_id)) { ?>
+
  <tr>
   <td valign='top' width='1%' nowrap>
    <?php echo xls('Layout ID'); ?>
   </td>
   <td>
+<?php if (empty($layout_id)) { ?>
    <input type='text' size='31' maxlength='31' name='form_form_id'
     value='' /><br />
     <?php echo xlt('Visit form ID must start with LBF. Transaction form ID must start with LBT.') ?>
+<?php } else { ?>
+    <?php echo text($layout_id); ?>
+<?php } ?>
   </td>
  </tr>
-<?php } ?>
 
 <?php if (empty($group_id)) { ?>
  <tr>
