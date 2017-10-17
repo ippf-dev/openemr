@@ -37,6 +37,7 @@ set_time_limit(0);
 require_once("../globals.php");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/log.inc");
+require_once("$srcdir/layout.inc.php");
 
 if (!acl_check('admin', 'super')) die(xl('Not authorized','','','!'));
 
@@ -192,17 +193,19 @@ if ($form_step == 102.2) {
     echo '"' . xl('Conditions' ) . '"';
     echo "\n";
     foreach ($_POST['form_sel_layouts'] as $layoutid) {
-      $res = sqlStatement("SELECT * FROM layout_options WHERE form_id = ? ORDER BY group_id, seq, title",
+      $res = sqlStatement("SELECT l.*, p.grp_title FROM layout_options AS l " .
+        "JOIN layout_group_properties AS p ON p.grp_form_id = l.form_id AND p.grp_group_id = l.group_id AND p.grp_activity = 1 " .
+        "WHERE l.form_id = ? ORDER BY l.group_id, l.seq, l.title",
         array($layoutid));
       while ($row = sqlFetchArray($res)) {
         echo '"' . csvtext($row['form_id'     ]) . '",';
         echo '"' . csvtext($row['seq'         ]) . '",';
-        echo '"' . csvtext($row['source'      ]) . '",';
-        echo '"' . csvtext($row['group_id'    ]) . '",';
+        echo '"' . csvtext($sources[$row['source']]) . '",';
+        echo '"' . csvtext($row['grp_title'   ]) . '",';
         echo '"' . csvtext($row['field_id'    ]) . '",';
         echo '"' . csvtext($row['title'       ]) . '",';
-        echo '"' . csvtext($row['uor'         ]) . '",';
-        echo '"' . csvtext($row['data_type'   ]) . '",';
+        echo '"' . csvtext($UOR[$row['uor']]   ) . '",';
+        echo '"' . csvtext($datatypes[$row['data_type']]) . '",';
         echo '"' . csvtext($row['fld_length'  ]) . '",';
         echo '"' . csvtext($row['fld_rows'    ]) . '",';
         echo '"' . csvtext($row['max_length'  ]) . '",';

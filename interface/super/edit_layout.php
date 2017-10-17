@@ -25,6 +25,7 @@ require_once("../globals.php");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/log.inc");
 require_once("$srcdir/formdata.inc.php");
+require_once("$srcdir/layout.inc.php");
 
 function collectLayoutNames($condition, $mapping='') {
   global $layouts;
@@ -42,43 +43,6 @@ $layouts = array();
 collectLayoutNames("grp_form_id NOT LIKE 'LBF%' AND grp_form_id NOT LIKE 'LBT%'", xl('Core'));
 collectLayoutNames("grp_form_id LIKE 'LBT%'", xl('Transactions'));
 collectLayoutNames("grp_form_id LIKE 'LBF%'", '');
-
-// array of the data_types of the fields
-$datatypes = array(
-  "1"  => xl("List box"), 
-  "2"  => xl("Textbox"),
-  "3"  => xl("Textarea"),
-  "4"  => xl("Text-date"),
-  "10" => xl("Providers"),
-  "11" => xl("Providers NPI"),
-  "12" => xl("Pharmacies"),
-  "13" => xl("Squads"),
-  "14" => xl("Organizations"),
-  "15" => xl("Billing codes"),
-  "18" => xl("Visit Categories"),
-  "21" => xl("Checkbox(es)"),
-  "22" => xl("Textbox list"),
-  "23" => xl("Exam results"),
-  "24" => xl("Patient allergies"),
-  "25" => xl("Checkboxes w/text"),
-  "26" => xl("List box w/add"),
-  "27" => xl("Radio buttons"),
-  "28" => xl("Lifestyle status"),
-  "31" => xl("Static Text"),
-  "32" => xl("Smoking Status"),
-  "33" => xl("Race/Ethnicity"),
-  "34" => xl("NationNotes"),
-  "35" => xl("Facilities"),
-  "40" => xl("Image canvas"),
-);
-
-$sources = array(
-  'F' => xl('Form'),
-  'D' => xl('Patient'),
-  'H' => xl('History'),
-  'E' => xl('Visit'),
-  'V' => xl('VisForm'),
-);
 
 function nextGroupOrder($order) {
   if ($order == '9') $order = 'A';
@@ -574,7 +538,7 @@ function writeFieldLine($linedata) {
 	
     echo "  <td align='center' class='optcell' style='width:4%'>";
     echo "<select name='fld[$fld_line_no][uor]' class='optin'>";
-    foreach (array(0 =>xl('Unused'), 1 =>xl('Optional'), 2 =>xl('Required')) as $key => $value) {
+    foreach ($UOR as $key => $value) {
         echo "<option value='$key'";
         if ($key == $linedata['uor']) echo " selected";
         echo ">$value</option>\n";
