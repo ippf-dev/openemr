@@ -485,7 +485,7 @@ function genFieldOptionList($current='') {
 // Write one option line to the form.
 //
 function writeFieldLine($linedata) {
-    global $fld_line_no, $sources, $lbfonly, $extra_html;
+    global $fld_line_no, $sources, $lbfonly, $extra_html, $UOR;
     ++$fld_line_no;
     $checked = $linedata['default_value'] ? " checked" : "";
   

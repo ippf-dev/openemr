@@ -45,7 +45,7 @@ function esc4Export($str) {
 }
 
 function thisLineItem($row, $xfer=false) {
-  global $grandtotal, $grandqty, $encount, $form_action, $include_sales_info;
+  global $grandtotal, $grandqty, $encount, $form_action, $include_sales_info, $include_amount;
 
   $ttype = '';
   // If this row is for the source lot of a transfer, invert quantity and fee.
@@ -104,7 +104,9 @@ function thisLineItem($row, $xfer=false) {
       echo '"' . esc4Export($invnumber)             . '",';
     }
     echo '"' . (0 - $row['quantity'])               . '",';
-    echo '"' . bucks($row['fee'])                   . '",';
+    if ($include_amount) {
+      echo '"' . bucks($row['fee'])                 . '",';
+    }
     if ($include_sales_info) {
       echo '"' . $row['billed']                     . '",';
     }
@@ -147,9 +149,11 @@ function thisLineItem($row, $xfer=false) {
   <td class="detail" align="right">
    <?php echo htmlspecialchars(0 - $row['quantity']); ?>
   </td>
+<?php if ($include_amount) { ?>
   <td class="detail" align="right">
    <?php echo htmlspecialchars(bucks($row['fee'])); ?>
   </td>
+<?php } ?>
 <?php if ($include_sales_info) { ?>
   <td class="detail" align="center">
    <?php echo empty($row['billed']) ? '&nbsp;' : '*'; ?>
@@ -257,6 +261,7 @@ $form_from_wh    = isset($_POST['form_from_wh'   ]) ? $_POST['form_from_wh'] : '
 $form_to_wh      = isset($_POST['form_to_wh'     ]) ? $_POST['form_to_wh'] : '';
 
 $include_sales_info = $form_trans_type == '0' || $form_trans_type == '1';
+$include_amount = $form_trans_type <= '3'; // all, sale, purchase or return
 
 // The selected facility ID, if any.
 $form_facility = 0 + empty($_POST['form_facility']) ? 0 : $_POST['form_facility'];
@@ -284,7 +289,9 @@ if ($form_action == 'export') {
     echo '"' . xl('Invoice'  ) . '",';
   }
   echo '"' . xl('Qty'        ) . '",';
-  echo '"' . xl('Amount'     ) . '",';
+  if ($include_amount) {
+    echo '"' . xl('Amount'   ) . '",';
+  }
   if ($include_sales_info) {
     echo '"' . xl('Billed'   ) . '",';
   }
@@ -510,9 +517,11 @@ function transTypeChanged() {
   <td class="dehead" align="right">
    <?php echo xlt('Qty'); ?>
   </td>
+<?php if ($include_amount) { ?>
   <td class="dehead" align="right">
    <?php echo xlt('Amount'); ?>
   </td>
+<?php } ?>
 <?php if ($include_sales_info) { ?>
   <td class="dehead" align="Center">
    <?php echo xlt('Billed'); ?>
@@ -620,16 +629,18 @@ if ($form_action) { // if submit or export
 ?>
 
  <tr bgcolor="#dddddd">
-  <td class="dehead" colspan="7">
+  <td class="dehead" colspan="<?php echo $include_sales_info ? 7 : 6; ?>">
    <?php echo htmlspecialchars(xl('Grand Total'), ENT_NOQUOTES); ?>
   </td>
   <td class="dehead" align="right">
    <?php echo htmlspecialchars($grandqty, ENT_NOQUOTES); ?>
   </td>
+<?php if ($include_amount) { ?>
   <td class="dehead" align="right">
    <?php echo htmlspecialchars(bucks($grandtotal), ENT_NOQUOTES); ?>
   </td>
-  <td class="dehead" colspan="2">
+<?php } ?>
+  <td class="dehead" colspan="<?php echo $include_sales_info ? 2 : 1; ?>">
 
   </td>
  </tr>
