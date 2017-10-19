@@ -75,13 +75,32 @@ else {
     }
     $userdata['DOB'   ] = translateDate($personas->fechaNacimiento);
     $userdata['sex'   ] = translateSex($personas->sexo);
-    $userdata['state' ] = translateState($personas->departamento);
-    $userdata['street'] = $personas->calle;
+    // $userdata['state' ] = translateState($personas->departamento);
+    $userdata['state' ] = $personas->departamento;
+    $userdata['city'  ] = $personas->localidad;
+    $userdata['street'] = '';
+    if (!empty($personas->domicilio)) {
+      // Seems to be the main street name.
+      if ($userdata['street'] !== '') $userdata['street'] .= ' ';
+      $userdata['street'] .= $personas->domicilio;
+    }
+    if (!empty($personas->calle)) {
+      // But it might be this, however I think it is the cross street. Either way it goes here.
+      if ($userdata['street'] !== '') $userdata['street'] .= ' ';
+      $userdata['street'] .= $personas->calle;
+    }
+    if (!empty($personas->entreCalle)) {
+      // This name suggests it is the cross street but I think it's unused.
+      if ($userdata['street'] !== '') $userdata['street'] .= ' ';
+      $userdata['street'] .= $personas->entreCalle;
+    }
     if (!empty($personas->numeroPuerta)) {
-      $userdata['street'] .= ' - ' . $personas->numeroPuerta;
+      if ($userdata['street'] !== '') $userdata['street'] .= ' ';
+      $userdata['street'] .= $personas->numeroPuerta;
     }
     if (!empty($personas->apartamento)) {
-      $userdata['street'] .= ' - ' . $personas->apartamento;
+      if ($userdata['street'] !== '') $userdata['street'] .= ' ';
+      $userdata['street'] .= $personas->apartamento;
     }
     $userdata['phone_contact'] = $personas->telefonoPrimario;
   }
