@@ -583,7 +583,7 @@ if ($form_step == 201) {
   echo xl('otherwise you will destroy references to/from existing data.') . "\n";
   echo "<br />&nbsp;<br />\n";
   echo xl('File to upload') . ":\n";
-  echo "<input type='hidden' name='MAX_FILE_SIZE' value='4000000' />\n";
+  echo "<input type='hidden' name='MAX_FILE_SIZE' value='16000000' />\n";
   echo "<input type='file' name='userfile' /><br />&nbsp;<br />\n";
   echo "<input type='submit' value='" . xl('Continue') . "' />\n";
 }
