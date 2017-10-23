@@ -1,4 +1,4 @@
-  <?php
+<?php
 /** 
 * library/patient_tracker.inc.php Functions used in the Patient Flow Board. 
 * 
@@ -365,4 +365,3 @@ function getApptStatus($appointments){
     }
     return $astat;
 }
-?>
