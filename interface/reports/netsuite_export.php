@@ -12,6 +12,7 @@ require_once("$srcdir/sql-ledger.inc");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/options.inc.php");
+require_once("$srcdir/checkout_receipt_array.inc.php");
 require_once("../../custom/code_types.inc.php");
 
 // For each sorting option, specify the ORDER BY argument.
@@ -215,10 +216,17 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
 {
   global $aItems, $aTaxNames, $overpayments, $previous_invno;
 
-  if (empty($qty)) $qty = 1;
+  // Invoice number will be displayed with a suffix to indicate checkout sequence number.
+  // Zero suffix indicates there was no checkout for the line item.
   $invnumber = $irnumber ? $irnumber : "$patient_id.$encounter_id";
+  $checkout_times = craGetTimestamps($patient_id, $encounter_id);
+  $tmp = array_search($paydate, $checkout_times);
+  $tmp = $tmp === FALSE ? 0 : ($tmp + 1);
+  $invnumber_display = "$invnumber-$tmp";
+  // echo "<!--\n"; print_r($checkout_times); echo "\npaydate='$paydate' -->\n"; // debugging
+  
+  if (empty($qty)) $qty = 1;
   $rowamount = sprintf('%01.2f', $amount);
-
   $disp_code = $code;
   if ($code_type == 'PROD') {
     $disp_code = $description;
@@ -232,8 +240,9 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   $codekey = $code_type . ':' . $code;
   $rowadj = $aItems[$invno][$codekey][1];
   $rowpay = $aItems[$invno][$codekey][2];
-  $memo = "OpenEMR Inv " . $invnumber;
-  $memo_header = '';
+  $memo = "OpenEMR Inv " . $invnumber_display;
+  // $memo_header = '';
+  $memo_header = $memo;
 
   // Compute Discount Rate which is the negative sum of adjustments for the invoice.
   // Do this only for the first item of each invoice.
@@ -244,14 +253,14 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
       $discount_rate -= $aItems[$invno][$tmpcodekey][1];
       // $memo .= " $tmpcodekey:" . $aItems[$invno][$tmpcodekey][1]; // debugging
     }
-    $memo_header = $memo;
+    // $memo_header = $memo;
   }
   $discount_item = $discount_rate == 0.00 ? '' : xl('Discount Item');
 
   if ($_POST['form_csvexport']) {
     echo '"' . oeFormatShortDate(display_desc($svcdate)) . '",';
     echo '"' . oeFormatShortDate(display_desc($paydate)) . '",';
-    echo '"' . display_desc($invnumber) . '",';
+    echo '"' . display_desc($invnumber_display) . '",';
     echo '"' . display_desc($disp_code) . '",';
     echo '"' . display_desc($description) . '",';
     echo '"' . display_desc($qty      ) . '",';
@@ -286,7 +295,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
    <?php echo oeFormatShortDate($paydate); ?>
   </td>
   <td class='delink' onclick='doinvopen(<?php echo "$patient_id,$encounter_id"; ?>)'>
-   <?php echo $invnumber; ?>
+   <?php echo $invnumber_display; ?>
   </td>
   <td class="detail">
    <?php echo display_desc($disp_code); ?>
@@ -705,7 +714,7 @@ if ($_POST['form_orderby']) {
     if ($form_payor == 'i' && $payor == '') continue;
 
     thisLineItem($row['pid'], $row['encounter'], $row['code_type'], $row['itemcode'],
-      $row['description'], substr($row['svcdate'], 0, 10), substr($row['paydate'], 0, 10),
+      $row['description'], substr($row['svcdate'], 0, 10), $row['paydate'],
       $row['units'], $row['fee'], $row['invoiceno'],
       $payor, $row['facility_npi'], $row['proj_name'], $row['fund_name'], $terms,
       $row['dept_name'], $row['sobj_name']);
