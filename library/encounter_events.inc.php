@@ -133,9 +133,12 @@ function calendar_arrived($form_pid) {
 //===============================================================================
 // Checks for the patient's encounter ID for today, creating it if there is none.
 //
-function todaysEncounterCheck($patient_id, $enc_date = '', $reason = '', $fac_id = '', $billing_fac = '', $provider = '', $cat = '', $return_existing = true){
-  global $today;
-	$encounter = todaysEncounterIf($patient_id);
+function todaysEncounterCheck($patient_id, $enc_date = '', $reason = '', $fac_id = '', $billing_fac = '',
+  $provider = '', $cat = '', $return_existing = true)
+{
+  // global $today;
+  $today = date('Y-m-d');
+  $encounter = todaysEncounterIf($patient_id);
 	if($encounter){
 		if($return_existing){
 			return $encounter;
@@ -176,7 +179,8 @@ function todaysEncounterCheck($patient_id, $enc_date = '', $reason = '', $fac_id
 // In the case of more than one encounter today, pick the last one.
 //
 function todaysEncounterIf($patient_id) {
-  global $today;
+  // global $today;
+  $today = date('Y-m-d');
   $tmprow = sqlQuery("SELECT encounter FROM form_encounter WHERE " .
     "pid = ? AND date = ? " .
     "ORDER BY encounter DESC LIMIT 1",array($patient_id,"$today 00:00:00"));
@@ -187,7 +191,9 @@ function todaysEncounterIf($patient_id) {
 // Get the patient's encounter ID for today, creating it if there is none.
 //
 function todaysEncounter($patient_id, $reason='') {
-  global $today, $userauthorized;
+  // global $today, $userauthorized;
+  global $userauthorized;
+  $today = date('Y-m-d');
 
   if (empty($reason)) $reason = xl('Please indicate visit reason');
 

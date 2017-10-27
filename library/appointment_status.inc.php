@@ -47,7 +47,7 @@ function updateAppointmentStatus($pid, $encdate, $newstatus)
             $tmp['pc_billing_location'],
             $tmp['pc_aid'],
             $tmp['pc_catid'],
-            false
+            true
         );
         manage_tracker_status(
             $tmp['pc_eventDate'],
