@@ -216,21 +216,31 @@ $auth_drug_reports = $GLOBALS['inhouse_pharmacy'] && (
         $primary_docs[$name][2] . "')\">" . $title . ($name == 'msg' ? ' <span id="reminderCountSpan" class="bold"></span>' : '')."</a></li>";
   }
  }
- function genMiscLink($frame, $name, $level, $title, $url, $mono=false) {
-  global $disallowed;
-  if (empty($disallowed[$name])) {
-   $id = $name . $level;
-   echo "<li><a href='' id='$id' onclick=\"";
-   if ($mono) {
-    if ($frame == 'RTop')
-     echo "forceSpec(true,false);";
-    else
-     echo "forceSpec(false,true);";
-   }
-   echo "return loadFrame2('$id','$frame','" .
-        $url . "')\">" . $title . "</a></li>";
-  }
- }
+
+function genMiscLink($frame, $name, $level, $title, $url, $mono=false, $encform=false) {
+    global $disallowed;
+    if (empty($disallowed[$name])) {
+        $id = $name . $level;
+        echo "<li><a href='' id='$id' onclick=\"";
+        if ($mono) {
+            if ($frame == 'RTop') {
+                echo "forceSpec(true,false);";
+            }
+            else {
+                echo "forceSpec(false,true);";
+            }
+        }
+        if ($encform) {
+            // In this case $url is an encounter form name, not a URL.
+            echo "loadNewForm('" . addslashes(trim($url)) . "', '" . addslashes(trim($title)) . "');";
+        }
+        else {
+            echo "loadFrame2('$id','$frame','" . $url . "');";
+        }
+        echo "return false;\">" . text($title) . "</a></li>";
+    }
+}
+
  function genPopLink($title, $url, $linkid='') {
   echo "<li><a href='' ";
   if ($linkid) echo "id='$linkid' ";
@@ -475,6 +485,21 @@ function genFindBlock() {
   if (frame == 'RTop') topName = fname; else botName = fname;
   return false;
  }
+
+// Special handling to load a new encounter form into an existing encounter.
+function loadNewForm(formname, formdesc) {
+  var url = '<?php echo "$rootdir/patient_file/encounter/load_form.php?formname=" ?>' + formname;
+  if (parent.RBot.twAddFrameTab) {
+    parent.RBot.twAddFrameTab('enctabs', formdesc, url);
+  }
+  else if (parent.RTop.twAddFrameTab) {
+    parent.RTop.twAddFrameTab('enctabs', formdesc, url);
+  }
+  else {
+    loadFrame2('enc2','RBot','patient_file/encounter/encounter_top.php' +
+      '?formname=' + formname + '&formdesc=' + formdesc);
+  }
+}
 
  // Make sure the the top and bottom frames are open or closed, as specified.
  function forceSpec(istop, isbot) {
@@ -1134,8 +1159,7 @@ if ($GLOBALS['athletic_team']) {
       echo "        <li><a class='collapsed_lv3'><span>" . xlt($entry['category']) . "</span></a><ul>\n";
       $reglastcat = $entry['category'];
     }
-    genMiscLink('RBot','cod','2',xl_form_title($title),
-      "patient_file/encounter/load_form.php?formname=" . urlencode($option_id));
+    genMiscLink('RBot','enc','2', xl_form_title($title), $option_id, false, true);
   }
   if ($reglastcat) echo "        </ul></li>\n";
 ?>
@@ -1155,7 +1179,7 @@ if ($GLOBALS['athletic_team']) {
   <?php if(!isset($GLOBALS['enable_fees_in_left_menu']) || $GLOBALS['enable_fees_in_left_menu'] == 1){ ?>
   <li><a class="collapsed" id="feeimg" ><span><?php xl('Fees','e') ?></span></a>
     <ul>
-      <?php genMiscLink('RBot','cod','2',xl('Fee Sheet'),'patient_file/encounter/load_form.php?formname=fee_sheet'); ?>
+      <?php genMiscLink('RBot', 'cod', '2', xl('Fee Sheet'), 'fee_sheet', false, true); ?>
       <?php if ($GLOBALS['use_charges_panel']) genTreeLink('RBot','cod',xl('Charges')); ?>
       <?php genMiscLink('RBot','pay','1',xl('Payment'   ),'patient_file/front_payment.php?feat=1'); ?>
       <?php genMiscLink('RBot','pay','1',xl('Adjustment'),'patient_file/front_payment.php?feat=2'); ?>

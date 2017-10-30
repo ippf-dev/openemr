@@ -1304,7 +1304,12 @@ if (function_exists($formname . '_additional_buttons')) {
 }
 ?>
 &nbsp;
+
+<!--
 <input type='button' value='<?php echo xla('Cancel') ?>' onclick="top.restoreSession();location='<?php echo $GLOBALS['form_exit_url']; ?>'" />
+-->
+<input type='button' value='<?php echo xla('Cancel') ?>' onclick="parent.closeTab(window.name, false)" />
+
 <?php if ($form_is_graphable) { ?>
 &nbsp;
 <input type='button' value='<?php echo xla('Show Graph') ?>' onclick="top.restoreSession();location='../../patient_file/encounter/trend_form.php?formname=<?php echo attr($formname); ?>'" />

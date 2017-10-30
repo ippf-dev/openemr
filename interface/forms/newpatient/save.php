@@ -175,19 +175,25 @@ $result4 = sqlStatement("SELECT fe.encounter,fe.date,openemr_postcalendar_catego
  var w = window;
  for (; w.parent != top; w = w.parent);
  var my_win_name = w.name;
-
  my_left_nav.setPatientEncounter(EncounterIdArray,EncounterDateArray,CalendarCategoryArray);
-<?php } ?>
+<?php } // end concurrent layout ?>
+
  top.restoreSession();
 <?php if ($GLOBALS['concurrent_layout']) { ?>
 <?php if ($mode == 'new') { ?>
  my_left_nav.setEncounter(<?php echo "'" . oeFormatShortDate($date) . "', " . attr($encounter) . ", window.name"; ?>);
  my_left_nav.setRadio(window.name, 'enc');
-<?php } // end if new encounter ?>
- my_left_nav.loadFrame('enc2', my_win_name, '<?php echo $nexturl; ?>');
+ // Load the tab set for the new encounter, w is usually the RBot frame.
+ w.location.href = '<?php echo "$rootdir/patient_file/encounter/encounter_top.php"; ?>';
+<?php } else { // not new encounter ?>
+ // my_left_nav.loadFrame('enc2', my_win_name, '<?php echo $nexturl; ?>');
+ // Always return to encounter summary page.
+ window.location.href = '<?php echo "$rootdir/patient_file/encounter/forms.php"; ?>';
+<?php } // end if not new encounter ?>
 <?php } else { // end if concurrent layout ?>
- window.location="<?php echo $nexturl; ?>";
+ window.location.href = "<?php echo $nexturl; ?>";
 <?php } // end not concurrent layout ?>
+
 </script>
 
 </body>

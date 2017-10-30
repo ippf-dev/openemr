@@ -178,8 +178,15 @@ echo "<form method='post' name='my_form' " .
 		<td></td>
     <td><input type='submit'  value='<?php echo xlt('Save');?>' class="button-css">&nbsp;
 <input type='button'  value="Print" onclick="window.print()" class="button-css">&nbsp;
+
+<?php if ($GLOBALS['concurrent_layout']) { ?>
+  <input type='button' class="button-css" value='<?php echo xla('Cancel'); ?>' onclick="parent.closeTab(window.name, false)" />
+<?php } else { ?>
 	<input type='button' class="button-css" value='<?php echo xlt('Cancel');?>'
- onclick="top.restoreSession();location='<?php echo "$rootdir/patient_file/encounter/$returnurl" ?>'" /></td>
+   onclick="top.restoreSession();location='<?php echo "$rootdir/patient_file/encounter/patient_encounter.php" ?>'" />
+<?php } ?>
+
+    </td>
 	</tr>
 </table>
 </form>

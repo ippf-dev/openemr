@@ -16,30 +16,26 @@ $esignApi = new Esign\Api();
 
 <script language="JavaScript">
 
-function openNewForm(sel) {
+function openNewForm(sel, label) {
  top.restoreSession();
 <?php if ($GLOBALS['concurrent_layout']) { ?>
-  FormNameValueArray = sel.split('formname=');
+  var FormNameValueArray = sel.split('formname=');
   if (FormNameValueArray[1] == 'newpatient') {
-    parent.location.href = sel;
-  }
-  else if (parent.Forms && (parent.name == 'RTop' || parent.name == 'RBot')) {
-    parent.Forms.location.href = sel;
-  }
-  else if (window.Forms) {
-    window.Forms.location.href = sel;
+    // TBD: Make this work when it's not the first frame.
+    parent.frames[0].location.href = sel;
   }
   else {
-    window.location.href = sel;
+    parent.twAddFrameTab('enctabs', label, sel);
   }
 <?php } else { ?>
   top.frames['Main'].location.href = sel;
 <?php } ?>
 }
+
 function toggleFrame1(fnum) {
   top.frames['left_nav'].document.forms[0].cb_top.checked=false;
   top.window.parent.left_nav.toggleFrame(fnum);
- }
+}
 </script>
 <style type="text/css">
 #sddm
@@ -172,7 +168,7 @@ if (!empty($reg)) {
         $new_nickname = trim($entry['nickname']);
         if ($new_category == '') {$new_category = 'Miscellaneous';}
         if ($new_nickname != '') {$nickname = $new_nickname;}
-        else {$nickname = $entry['name'];}
+        else {$nickname = trim($entry['name']);}
         if ($old_category != $new_category) {
           $new_category_ = $new_category;
           $new_category_ = str_replace(' ','_',$new_category_);
@@ -182,8 +178,10 @@ if (!empty($reg)) {
           $old_category = $new_category;
           $DivId++;
         }
-        $StringEcho.= "<tr><td style='border-top: 1px solid #000000;padding:0px;'><a onclick=\"openNewForm('" . $rootdir .'/patient_file/encounter/load_form.php?formname=' .urlencode($entry['directory']) .
-        "')\" href='JavaScript:void(0);'>" . text(xl_form_title($nickname)) . "</a></td></tr>";
+        $StringEcho .= "<tr><td style='border-top: 1px solid #000000;padding:0px;'><a onclick=\"openNewForm('" .
+          $rootdir . "/patient_file/encounter/load_form.php?formname=" . urlencode($entry['directory']) .
+          "', '" . addslashes(xl_form_title($nickname)) . "')\" href='JavaScript:void(0);'>" .
+          text(xl_form_title($nickname)) . "</a></td></tr>";
       }
   }
   $StringEcho.= '</table></div></li>';
@@ -216,7 +214,10 @@ function gotoFee_sheet() {
   for (var p = window; p && p != p.parent && p.name != 'RTop' && p.name != 'RBot'; p = p.parent);
   var istop = p.window.name == 'RTop';
   p.parent.left_nav.forceSpec(istop, !istop);        
-  openNewForm('<?php echo $GLOBALS['webroot'];?>/interface/patient_file/encounter/load_form.php?formname=fee_sheet');
+  openNewForm(
+    '<?php echo $GLOBALS['webroot'];?>/interface/patient_file/encounter/load_form.php?formname=fee_sheet',
+    '<?php echo xls('Fee Sheet'); ?>'
+  );
 }
 </script>
 <table cellspacing="0" cellpadding="0" align="center">

@@ -3,7 +3,6 @@
 include_once("../../globals.php");
 include_once("../../../library/api.inc");
 formHeader("Form: CAMOS");
-$returnurl = $GLOBALS['concurrent_layout'] ? 'encounter_top.php' : 'patient_encounter.php';
 $textarea_rows = 22;
 $textarea_cols = 90;
 ?>
@@ -54,7 +53,7 @@ function show_edit(t) {
 <input type="submit" name="delete" value="<?php xl('Delete Selected Items','e'); ?>" />
 <input type="submit" name="update" value="<?php xl('Update Selected Items','e'); ?>" />
 <?php
-echo "<a href='".$GLOBALS['webroot'] . "/interface/patient_file/encounter/$returnurl'>[" . xl('do nothing') . "]</a>";
+echo "<a href='{$GLOBALS['form_exit_url']}'>[" . xlt('do nothing') . "]</a>";
 ?>
 <br/><br/>
 <input type='button' value='<?php xl('Select All','e'); ?>'

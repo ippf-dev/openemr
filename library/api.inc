@@ -6,7 +6,8 @@ include_once("{$GLOBALS['srcdir']}/billing.inc");
 include_once("{$GLOBALS['srcdir']}/formdata.inc.php");
 
 $GLOBALS['form_exit_url'] = $GLOBALS['concurrent_layout'] ?
-	"$rootdir/patient_file/encounter/forms.php" :
+	// "$rootdir/patient_file/encounter/forms.php" :
+  "javascript:parent.closeTab(window.name, false)" :
 	"$rootdir/patient_file/encounter/patient_encounter.php";
 
 function formHeader ($title = "My Form")
@@ -95,13 +96,18 @@ function formUpdate ($tableName, $values, $id, $authorized = "0")
 	return sqlInsert($sql);
 }
 
-
-function formJump ($address = "0")
+function formJump($address = '')
 {
-	$returnurl = $GLOBALS['concurrent_layout'] ? 'encounter_top.php' : 'patient_encounter.php';
-	if ($address == "0")
-		$address = "{$GLOBALS['rootdir']}/patient_file/encounter/$returnurl";
-	echo "\n<script language='Javascript'>top.restoreSession();window.location='$address';</script>\n";
+  echo "<script>\n";
+  if ($address) {
+    echo "top.restoreSession();\n";
+    echo "location.href = '" . addslashes($address) . "';\n";
+  }
+  else {
+    echo "parent.closeTab(window.name, true);\n";
+  }
+  echo "</script>\n";
+  // TBD: Exit seems wrong here, but that's how it has been forever.
 	exit;
 }
 

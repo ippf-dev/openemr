@@ -101,6 +101,24 @@ $(document).ready( function() {
 <?php } ?>
  }
 
+// Called to open the data entry form a specified encounter form instance.
+function openEncounterForm(formdir, formname, formid) {
+  var url = '<?php echo "$rootdir/patient_file/encounter/view_form.php?formname=" ?>' +
+    formdir + '&id=' + formid;
+  if (formdir == 'newpatient' || !parent.twAddFrameTab) {
+    location.href = url;
+  }
+  else {
+    parent.twAddFrameTab('enctabs', formname, url);
+  }
+  return false;
+}
+
+// Called when an encounter form may changed something that requires a refresh here.
+function refreshVisitDisplay() {
+  location.href = '<?php echo $rootdir; ?>/patient_file/encounter/forms.php';
+}
+
 </script>
 
 <script language="javascript">
@@ -403,10 +421,11 @@ if ( $esign->isButtonViewable() ) {
             echo "<a class='css_button_small form-edit-button' " .
                     "id='form-edit-button-" . attr($formdir) . "-" . attr($iter['id']) . "' " .
                     "$mytarget " .
-                    "href='$rootdir/patient_file/encounter/view_form.php?" .
-                    "formname=" . attr($formdir) . "&id=" . attr($iter['form_id']) . "' " .
+                    "href='#' " .
                     "title='" . xla('Edit this form') . "' " .
-                    "onclick='top.restoreSession()'>";
+                    "onclick=\"return openEncounterForm('" . attr($formdir) . "', '" .
+                    attr($form_name) . "', '" . attr($iter['form_id']) . "')\">";
+
             echo "<span>" . xlt('Edit') . "</span></a>";
         }
                 if ( $esign->isButtonViewable() ) {
@@ -579,6 +598,7 @@ $(document).ready(function(){
 
     // $(".deleteme").click(function(evt) { deleteme(); evt.stopPropogation(); });
 
+    // TBD: Following seems to be unused.
     var GotoForm = function(obj) {
         var parts = $(obj).attr("id").split("~");
         top.restoreSession();

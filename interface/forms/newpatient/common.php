@@ -130,17 +130,30 @@ var facility=document.forms[0].facility_id.value;
 ajax_bill_loc(pid,dte,facility);
 }
 
-// Handler for Cancel clicked when creating a new encounter.
+// Handler for Cancel clicked when creating a new encounter with modern layouts.
 // Show demographics or encounters list depending on what frame we're in.
-function cancelClicked() {
- if (window.name == 'RBot') {
-  parent.left_nav.setRadio(window.name, 'ens');
-  parent.left_nav.loadFrame('ens1', window.name, 'patient_file/history/encounters.php');
+function cancelClickedNew() {
+ var target = window;
+ while (target != top) {
+  if (target.name == 'RBot') {
+   target.parent.left_nav.setRadio(window.name, 'ens');
+   target.parent.left_nav.loadFrame('ens1', window.name, 'patient_file/history/encounters.php');
+   break;
+  }
+  else if (target.name == 'RTop') {
+   target.parent.left_nav.setRadio(window.name, 'dem');
+   target.parent.left_nav.loadFrame('dem1', window.name, 'patient_file/summary/demographics.php');
+   break;
+  }
+  target = target.parent;
  }
- else {
-  parent.left_nav.setRadio(window.name, 'dem');
-  parent.left_nav.loadFrame('dem1', window.name, 'patient_file/summary/demographics.php');
- }
+ return false;
+}
+
+// Handler for cancel clicked when not creating a new encounter with modern layouts.
+// Just reload the view mode.
+function cancelClickedOld() {
+ location.href = '<?php echo "$rootdir/patient_file/encounter/forms.php"; ?>';
  return false;
 }
 
@@ -173,22 +186,30 @@ function cancelClicked() {
 <div>
     <div style = 'float:left; margin-left:8px;margin-top:-3px'>
       <a href="javascript:saveClicked();" class="css_button link_submit"><span><?php echo xlt('Save'); ?></span></a>
-      <?php if ($viewmode || !isset($_GET["autoloaded"]) || $_GET["autoloaded"] != "1") { ?>
-    </div>
 
+<?php if ($viewmode || empty($_GET["autoloaded"])) { // not creating new encounter ?>
+    </div>
     <div style = 'float:left; margin-top:-3px'>
+
   <?php if ($GLOBALS['concurrent_layout']) { ?>
+      <!--
       <a href="<?php echo "$rootdir/patient_file/encounter/encounter_top.php"; ?>"
         class="css_button link_submit" onClick="top.restoreSession()"><span><?php echo xlt('Cancel'); ?></span></a>
-  <?php } else { ?>
+      -->
+      <a href="" class="css_button link_submit" onClick="return cancelClickedOld()">
+      <span><?php echo xlt('Cancel'); ?></span></a>
+
+  <?php } else { // obsolete layout ?>
       <a href="<?php echo "$rootdir/patient_file/encounter/patient_encounter.php"; ?>"
         class="css_button link_submit" target='Main' onClick="top.restoreSession()">
       <span><?php echo xlt('Cancel'); ?>]</span></a>
   <?php } // end not concurrent layout ?>
-  <?php } else if ($GLOBALS['concurrent_layout']) { // not $viewmode ?>
-      <a href="" class="css_button link_submit" onClick="return cancelClicked()">
+
+<?php } else if ($GLOBALS['concurrent_layout']) { // creating new encounter ?>
+      <a href="" class="css_button link_submit" onClick="return cancelClickedNew()">
       <span><?php echo xlt('Cancel'); ?></span></a>
-  <?php } // end not $viewmode ?>
+<?php } // end creating new encounter ?>
+
     </div>
  </div>
 
