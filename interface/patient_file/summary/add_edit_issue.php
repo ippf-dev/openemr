@@ -301,7 +301,8 @@ ul.tabNav li.current a { background:#ffffff; }
   echo " aopts[$i] = new Array();\n";
   $qry = sqlStatement("SELECT * FROM list_options WHERE list_id = ? AND activity = 1",array($key."_issue_list"));
   while($res = sqlFetchArray($qry)){
-    echo " aopts[$i][aopts[$i].length] = new Option('".attr(trim($res['option_id']))."', '".attr(xl_list_label(trim($res['title'])))."', false, false);\n";
+    echo " aopts[$i][aopts[$i].length] = new Option('" . attr(xl_list_label(trim($res['title']))) .
+      "', '" . attr(trim($res['option_id'])) . "', false, false);\n";
   }
   ++$i;
  }
