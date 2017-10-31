@@ -209,22 +209,31 @@ function oeFormatMoneySpreadsheet($amount, $blankifzero=false) {
 }
 
 $previous_invno = array();
+$previous_invnumber_display = '';
 
 function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   $description, $svcdate, $paydate, $qty, $amount, $irnumber='',
   $payor, $sitecode, $project, $fund_name, $terms='', $dept_name='', $sobj_name='')
 {
-  global $aItems, $aTaxNames, $overpayments, $previous_invno;
+  global $aItems, $aTaxNames, $overpayments, $previous_invno, $previous_invnumber_display;
 
   // Invoice number will be displayed with a suffix to indicate checkout sequence number.
   // Zero suffix indicates there was no checkout for the line item.
   $invnumber = $irnumber ? $irnumber : "$patient_id.$encounter_id";
+
+  /********************************************************************
   $checkout_times = craGetTimestamps($patient_id, $encounter_id);
   $tmp = array_search($paydate, $checkout_times);
   $tmp = $tmp === FALSE ? 0 : ($tmp + 1);
   $invnumber_display = "$invnumber-$tmp";
   // echo "<!--\n"; print_r($checkout_times); echo "\npaydate='$paydate' -->\n"; // debugging
-  
+  ********************************************************************/
+
+  $invnumber_display = $invnumber;
+  if ($payor) {
+    $invnumber_display .= '_' . substr($payor, -3);
+  }
+
   if (empty($qty)) $qty = 1;
   $rowamount = sprintf('%01.2f', $amount);
   $disp_code = $code;
@@ -241,8 +250,12 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   $rowadj = $aItems[$invno][$codekey][1];
   $rowpay = $aItems[$invno][$codekey][2];
   $memo = "OpenEMR Inv " . $invnumber_display;
-  // $memo_header = '';
-  $memo_header = $memo;
+
+  $memo_header = '';
+  if ($previous_invnumber_display != $invnumber_display) {
+    $memo_header = $memo;
+    $previous_invnumber_display = $invnumber_display;
+  }
 
   // Compute Discount Rate which is the negative sum of adjustments for the invoice.
   // Do this only for the first item of each invoice.
