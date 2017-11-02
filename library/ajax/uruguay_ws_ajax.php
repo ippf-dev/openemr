@@ -84,6 +84,7 @@ else {
       if ($userdata['street'] !== '') $userdata['street'] .= ' ';
       $userdata['street'] .= $personas->domicilio;
     }
+    /******************************************************************
     if (!empty($personas->calle)) {
       // But it might be this, however I think it is the cross street. Either way it goes here.
       if ($userdata['street'] !== '') $userdata['street'] .= ' ';
@@ -94,14 +95,17 @@ else {
       if ($userdata['street'] !== '') $userdata['street'] .= ' ';
       $userdata['street'] .= $personas->entreCalle;
     }
+    ******************************************************************/
     if (!empty($personas->numeroPuerta)) {
       if ($userdata['street'] !== '') $userdata['street'] .= ' ';
       $userdata['street'] .= $personas->numeroPuerta;
     }
+    /******************************************************************
     if (!empty($personas->apartamento)) {
       if ($userdata['street'] !== '') $userdata['street'] .= ' ';
       $userdata['street'] .= $personas->apartamento;
     }
+    ******************************************************************/
     $userdata['phone_contact'] = $personas->telefonoPrimario;
   }
 }
