@@ -182,6 +182,37 @@ if (!empty($_POST['form_submit'])) {
     }
   } // end form_history
 
+  if (!empty($_POST['form_forms'])) {
+    if (!$GSDEBUG) {
+      // Write header row.
+      echo output_csv('Site', false);
+      echo output_csv('Form Name');
+      echo output_csv('Form ID');
+      echo output_csv('Count');
+      echo output_csv('Date of Last');
+      echo "\n";
+    }
+    // Write detail rows.
+    $begdate = date('Y-m-d 00:00:00', time() - 60 * 60 * 24 * 365); // 1 year ago
+    foreach ($siteslist as $name => $link) {
+      $res = sqlSelect($link, "SELECT p.grp_title, f.formdir, MAX(f.date) AS maxdate, " .
+        "COUNT(f.id) AS count " .
+        "FROM forms AS f " .
+        "JOIN layout_group_properties AS p ON p.grp_form_id = f.formdir AND p.grp_group_id = '' " .
+        "WHERE f.deleted = 0 AND f.date > '$begdate' " .
+        "GROUP BY p.grp_title, f.formdir ORDER BY p.grp_title, f.formdir");
+      while ($row = mysqli_fetch_assoc($res)) {
+        echo output_csv($name, false);
+        echo output_csv($row['grp_title']);
+        echo output_csv($row['formdir']);
+        echo output_csv($row['count']);
+        echo output_csv($row['maxdate']);
+        echo "\n";
+      }
+      mysqli_free_result($res);
+    }
+  } // end form_forms
+
   foreach ($siteslist as $link) mysqli_close($link);
   exit;
 }
@@ -193,7 +224,8 @@ if (!empty($_POST['form_submit'])) {
    <p>Multiple Sites Administration</p>
    <input type='submit' name='form_globals' value='Download Global Settings' />
    <input type='submit' name='form_history' value='Download History Usage' />
-   <input type='hidden' name='form_submit' value='1' />
+   <input type='submit' name='form_forms'   value='Download Form Usage in Past 12 Months' />
+   <input type='hidden' name='form_submit'  value='1' />
    </center>
   </form>
  </body>
