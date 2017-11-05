@@ -14,7 +14,7 @@ if (file_exists($deleteform)) {
 // if no custom 'delete' form, then use a generic one
 
 // when the Cancel button is pressed, where do we go?
-$returnurl = $GLOBALS['concurrent_layout'] ? 'encounter_top.php' : 'patient_encounter.php';
+$returnurl = $GLOBALS['concurrent_layout'] ? 'forms.php' : 'patient_encounter.php';
 
 if ($_POST['confirm']) {
     if ($_POST['id'] != "*" && $_POST['id'] != '') {
