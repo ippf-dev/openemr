@@ -236,7 +236,7 @@ function divclick(cb, divid) {
 <p style='text-align:center'>
 <input type='submit' name='bn_save' value='Save' />
 &nbsp;
-<input type='button' value='Cancel' onclick="top.restoreSession();location='<?php echo $GLOBALS['form_exit_url']; ?>'" />
+<input type='button' value='Cancel' onclick="parent.closeTab(window.name, false)" />
 &nbsp;
 </p>
 

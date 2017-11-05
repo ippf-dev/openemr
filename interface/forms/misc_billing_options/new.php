@@ -72,7 +72,7 @@ echo "<form method='post' name='my_form' " .
 
 <a href="javascript:top.restoreSession();document.my_form.submit();" class="link_submit">[<?php xl('Save','e'); ?>]</a>
 <br>
-<a href="<?php echo "$rootdir/patient_file/encounter/encounter_top.php";?>"
+<a href="<?php echo $GLOBALS['form_exit_url']; ?>"
  class="link" onclick="top.restoreSession()">[<?php xl('Don\'t Save Changes','e'); ?>]</a>
 </form>
 <?php

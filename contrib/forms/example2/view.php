@@ -153,7 +153,7 @@ Calendar.setup({inputField:"sig_date", ifFormat:"%Y-%m-%d", button:"img_sig_date
 
 $(document).ready(function(){
     $(".save").click(function() { top.restoreSession(); document.my_form.submit(); });
-    $(".dontsave").click(function() { location.href='<?php echo "$rootdir/patient_file/encounter/$returnurl";?>'; });
+    $(".dontsave").click(function() { parent.closeTab(window.name, false); });
     $(".printform").click(function() { PrintForm(); });
 });
 

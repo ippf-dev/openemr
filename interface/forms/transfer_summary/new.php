@@ -144,7 +144,7 @@ echo "<form method='post' name='my_form' " .
     <td><input type='submit'  value='<?php echo xlt('Save');?>' class="button-css">&nbsp;
 	 <input type='button'  value="Print" onclick="window.print()" class="button-css">&nbsp;
 	<input type='button' class="button-css" value='<?php echo xlt('Cancel');?>'
- onclick="top.restoreSession();location='<?php echo "$rootdir/patient_file/encounter/$returnurl" ?>'" />
+ onclick="parent.closeTab(window.name, false)" />
 
  </td>
 	</tr>

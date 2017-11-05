@@ -193,7 +193,7 @@ function cancelClickedOld() {
 
   <?php if ($GLOBALS['concurrent_layout']) { ?>
       <!--
-      <a href="<?php echo "$rootdir/patient_file/encounter/encounter_top.php"; ?>"
+      <a href="<?php echo $GLOBALS['form_exit_url']; ?>"
         class="css_button link_submit" onClick="top.restoreSession()"><span><?php echo xlt('Cancel'); ?></span></a>
       -->
       <a href="" class="css_button link_submit" onClick="return cancelClickedOld()">
