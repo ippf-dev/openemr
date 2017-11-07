@@ -170,19 +170,20 @@ if (!empty($reg)) {
       foreach ($reg as $entry) {
         $new_category = trim($entry['category']);
         $new_nickname = trim($entry['nickname']);
-        if ($new_category == '') {$new_category = htmlspecialchars(xl('Miscellaneous'),ENT_QUOTES);}
+        if ($new_category == '') {$new_category = 'Miscellaneous';}
         if ($new_nickname != '') {$nickname = $new_nickname;}
         else {$nickname = $entry['name'];}
         if ($old_category != $new_category) {
           $new_category_ = $new_category;
           $new_category_ = str_replace(' ','_',$new_category_);
           if ($old_category != '') {$StringEcho.= "</table></div></li>";}
-          $StringEcho.= "<li class=\"encounter-form-category-li\"><a href='JavaScript:void(0);' onClick=\"mopen('$DivId');\" >$new_category</a><div id='$DivId' ><table border='0' cellspacing='0' cellpadding='0'>";
+          $StringEcho.= "<li class=\"encounter-form-category-li\"><a href='JavaScript:void(0);' onClick=\"mopen('$DivId');\" >" .
+            text(xl_form_title($new_category)) . "</a><div id='$DivId' ><table border='0' cellspacing='0' cellpadding='0'>";
           $old_category = $new_category;
           $DivId++;
         }
         $StringEcho.= "<tr><td style='border-top: 1px solid #000000;padding:0px;'><a onclick=\"openNewForm('" . $rootdir .'/patient_file/encounter/load_form.php?formname=' .urlencode($entry['directory']) .
-        "')\" href='JavaScript:void(0);'>" . xl_form_title($nickname) . "</a></td></tr>";
+        "')\" href='JavaScript:void(0);'>" . text(xl_form_title($nickname)) . "</a></td></tr>";
       }
   }
   $StringEcho.= '</table></div></li>';

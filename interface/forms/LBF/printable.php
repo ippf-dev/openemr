@@ -235,7 +235,7 @@ if (is_file("$webserver_root/$ma_logo_path")) {
 else {
   $logo = "<!-- '$ma_logo_path' does not exist. -->";
 }
-echo genFacilityTitle($formtitle, -1, $logo);
+echo genFacilityTitle(xl_form_title($formtitle), -1, $logo);
 ?>
 
 <?php if ($isform) { ?>

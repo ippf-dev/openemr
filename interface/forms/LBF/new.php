@@ -673,7 +673,7 @@ function warehouse_changed(sel) {
       "f.formdir = 'newpatient' AND f.deleted = 0 AND " .
       "fe.id = f.form_id LIMIT 1", array($pid, $pid, $visitid));
     // echo "<p class='title' style='margin-top:8px;margin-bottom:8px;text-align:center'>\n";
-    echo text($formtitle) . " " . xlt('for') . ' ';
+    echo text(xl_form_title($formtitle)) . " " . xlt('for') . ' ';
     echo text($enrow['fname']) . ' ' . text($enrow['mname']) . ' ' . text($enrow['lname']);
     echo ' ' . xlt('on') . ' ' . text(oeFormatShortDate(substr($enrow['date'], 0, 10)));
     // echo "</p>\n";
