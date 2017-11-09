@@ -94,7 +94,7 @@ function sellDrug($drug_id, $quantity, $fee, $patient_id=0, $encounter_id=0,
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "WHERE " .
-    "di.drug_id = '$drug_id' AND di.destroy_date IS NULL ";
+    "di.drug_id = '$drug_id' AND di.destroy_date IS NULL AND di.on_hand != 0 ";
   if ($GLOBALS['SELL_FROM_ONE_WAREHOUSE'] && $default_warehouse) $query .=
     "AND di.warehouse_id = '$default_warehouse' ";
   $query .= "ORDER BY $orderby";

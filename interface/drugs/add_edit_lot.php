@@ -24,7 +24,7 @@ function QuotedOrNull($fld) {
 function checkWarehouseUsed($warehouse_id) {
   global $drug_id;
   $row = sqlQuery("SELECT count(*) AS count FROM drug_inventory WHERE " .
-    "drug_id = ? AND " .
+    "drug_id = ? AND on_hand != 0 AND " .
     "destroy_date IS NULL AND warehouse_id = ?", array($drug_id,$warehouse_id) );
   return $row['count'];
 }
@@ -385,7 +385,7 @@ if ($_POST['form_save']) {
     // If purchase or transfer with no destination lot specified, see if one already exists.
     if (!$lot_id && $form_lot_number && ($form_trans_type == 2 || $form_trans_type == 4)) {
       $erow = sqlQuery("SELECT * FROM drug_inventory WHERE " .
-        "drug_id = ? AND warehouse_id = ? AND lot_number = ? AND destroy_date IS NULL " .
+        "drug_id = ? AND warehouse_id = ? AND lot_number = ? AND destroy_date IS NULL AND on_hand != 0 " .
         "ORDER BY inventory_id DESC LIMIT 1",
         array($drug_id, $form_warehouse_id, $form_lot_number));
       if (!empty($erow['inventory_id'])) {
@@ -433,6 +433,7 @@ if ($_POST['form_save']) {
           "AND drug_id = '"      . $drug_id                    . "' " .
           "AND warehouse_id = '" . $form_warehouse_id          . "' " .
           "AND $exptest " .
+          "AND on_hand != 0 " .
           "AND destroy_date IS NULL");
         if ($crow['count']) {
           $info_msg = xl('Transaction failed, duplicate lot');

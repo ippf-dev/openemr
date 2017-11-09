@@ -1,5 +1,5 @@
 <?php
- // Copyright (C) 2006-2016 Rod Roark <rod@sunsetsystems.com>
+ // Copyright (C) 2006-2017 Rod Roark <rod@sunsetsystems.com>
  //
  // This program is free software; you can redistribute it and/or
  // modify it under the terms of the GNU General Public License
@@ -35,6 +35,7 @@ $is_user_restricted = isUserRestricted();
 
 $form_from_date  = fixDate($_POST['form_from_date'], date('Y-01-01'));
 $form_to_date    = fixDate($_POST['form_to_date']  , date('Y-m-d'));
+$form_automatic  = !empty($_POST['form_automatic']);
 
 // The selected facility ID, if any.
 $form_facility = 0 + empty($_REQUEST['form_facility']) ? 0 : $_REQUEST['form_facility'];
@@ -45,7 +46,7 @@ $orderby = $ORDERHASH[$form_orderby];
 <html>
 <head>
 <?php html_header_show();?>
-<title><?php xl('Destroyed Drugs','e'); ?></title>
+<title><?php echo xlt('Destroyed Inventory'); ?></title>
 <link rel='stylesheet' href='<?php echo $css_header ?>' type='text/css'>
 
 <style  type="text/css">@import url(../../library/dynarch_calendar.css);</style>
@@ -92,7 +93,7 @@ $(document).ready(function() {
 
 <center>
 
-<h2><?php xl('Destroyed Drugs','e'); ?></h2>
+<h2><?php echo xlt('Destroyed Inventory'); ?></h2>
 
 <form name='theform' method='post' action='destroyed_drugs_report.php'>
 
@@ -132,6 +133,10 @@ echo "   </select>&nbsp;\n";
    <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
     id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
     title=<?php xl('Click here to choose a date','e','\'','\''); ?>>
+
+   &nbsp;
+   <input type='checkbox' name='form_automatic' value='1' <?php if ($form_automatic) echo 'checked'; ?> />
+   <?php echo xlt('Include Automatic'); ?>
 
    &nbsp;
    <input type='submit' name='form_refresh' value=<?php xl('Refresh','e'); ?>>
@@ -198,6 +203,11 @@ echo "   </select>&nbsp;\n";
 
   if ($form_facility) {
     $where .= " AND lo.option_value IS NOT NULL AND lo.option_value = '$form_facility'";
+  }
+
+  if (!$form_automatic) {
+    $where .= " AND i.destroy_method IS NOT NULL AND i.destroy_method != '" .
+      add_escape_custom(xl('Automatic from sale')) . "'";
   }
 
   $query = "SELECT i.inventory_id, i.lot_number, i.on_hand, i.drug_id, " .

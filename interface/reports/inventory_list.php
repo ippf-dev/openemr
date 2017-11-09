@@ -542,7 +542,7 @@ if ($form_details == 1) {
     "SUM(pw.pw_min_level) AS pw_min_level, SUM(pw.pw_max_level) AS pw_max_level " .
     "FROM drugs AS d " .
     "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
-    "AND di.destroy_date IS NULL " .
+    "AND di.on_hand != 0 AND di.destroy_date IS NULL " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "LEFT JOIN facility AS fac ON fac.id = lo.option_value " .
@@ -558,8 +558,8 @@ else if ($form_details == 2) {
     "pw.pw_min_level, pw.pw_max_level " .
     "FROM drugs AS d " .
     "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
-    // "AND di.on_hand != 0 AND di.destroy_date IS NULL " .
-    "AND di.destroy_date IS NULL " .
+    "AND di.on_hand != 0 AND di.destroy_date IS NULL " .
+    // "AND di.destroy_date IS NULL " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "LEFT JOIN facility AS fac ON fac.id = lo.option_value " .
@@ -573,8 +573,8 @@ else {
   $query = "SELECT d.*, SUM(di.on_hand) AS on_hand " .
     "FROM drugs AS d " .
     "LEFT JOIN drug_inventory AS di ON di.drug_id = d.drug_id " .
-    // "AND di.on_hand != 0 AND di.destroy_date IS NULL " .
-    "AND di.destroy_date IS NULL " .
+    "AND di.on_hand != 0 AND di.destroy_date IS NULL " .
+    // "AND di.destroy_date IS NULL " .
     // Join with list_options needed to support facility filter ($fwcond).
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
