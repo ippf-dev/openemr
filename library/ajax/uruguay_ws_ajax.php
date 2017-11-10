@@ -49,64 +49,71 @@ else if (!class_exists('SoapClient')) {
   $userdata['error'] = xl('PHP SOAP extension is required but not loaded');
 }
 else {
-  // This host is at 10.202.200.31 but the hostname is required in the URL.
-  $client = new SoapClient($GLOBALS['gbl_uruguay_asse_url']);
+  try {
+    // This host is at 10.202.200.31 but the hostname is required in the URL.
+    $client = new SoapClient($GLOBALS['gbl_uruguay_asse_url']);
 
-  // This was for initial connection testing:
-  // $userdata['functions'] = $client->__getFunctions();
-  // $userdata['types'    ] = $client->__getTypes();
+    // This was for initial connection testing:
+    // $userdata['functions'] = $client->__getFunctions();
+    // $userdata['types'    ] = $client->__getTypes();
 
-  $response = $client->buscarPersonaPorTipoYNumeroDocumento(array(
-    'buscarPersonaPorTipoYNumeroDocumentoInParameters' => new BuscarParameters($_GET['clientid'])
-  ));
-
-  if (empty($response->return->personas) || $response->return->personas->estado == 'BAJ') {
-    $userdata['error'] = xl('No match');
+    $response = $client->buscarPersonaPorTipoYNumeroDocumento(array(
+      'buscarPersonaPorTipoYNumeroDocumentoInParameters' => new BuscarParameters($_GET['clientid'])
+    ));
   }
-  else {
-    $personas = $response->return->personas;
-    $userdata['fname'] = $personas->primerNombre;
-    if (!empty($personas->segundoNombre)) {
-      $userdata['fname'] .= ' ' . $personas->segundoNombre;
+  catch (Exception $e) {
+    $userdata['error'] = xl('SOAP error') . ': ' . $e->getMessage();
+  } 
+
+  if (empty($userdata['error'])) {
+    if (empty($response->return->personas) || $response->return->personas->estado == 'BAJ') {
+      $userdata['error'] = xl('No match');
     }
-    $userdata['lname'] = $personas->primerApellido;
-    if (!empty($personas->segundoApellido)) {
-      $userdata['lname'] .= ' ' . $personas->segundoApellido;
+    else {
+      $personas = $response->return->personas;
+      $userdata['fname'] = $personas->primerNombre;
+      if (!empty($personas->segundoNombre)) {
+        $userdata['fname'] .= ' ' . $personas->segundoNombre;
+      }
+      $userdata['lname'] = $personas->primerApellido;
+      if (!empty($personas->segundoApellido)) {
+        $userdata['lname'] .= ' ' . $personas->segundoApellido;
+      }
+      $userdata['DOB'   ] = translateDate($personas->fechaNacimiento);
+      $userdata['sex'   ] = translateSex($personas->sexo);
+      // $userdata['state' ] = translateState($personas->departamento);
+      $userdata['state' ] = $personas->departamento;
+      $userdata['city'  ] = $personas->localidad;
+      $userdata['street'] = '';
+      if (!empty($personas->domicilio)) {
+        // Seems to be the main street name.
+        if ($userdata['street'] !== '') $userdata['street'] .= ' ';
+        $userdata['street'] .= $personas->domicilio;
+      }
+      /******************************************************************
+      if (!empty($personas->calle)) {
+        // But it might be this, however I think it is the cross street. Either way it goes here.
+        if ($userdata['street'] !== '') $userdata['street'] .= ' ';
+        $userdata['street'] .= $personas->calle;
+      }
+      if (!empty($personas->entreCalle)) {
+        // This name suggests it is the cross street but I think it's unused.
+        if ($userdata['street'] !== '') $userdata['street'] .= ' ';
+        $userdata['street'] .= $personas->entreCalle;
+      }
+      ******************************************************************/
+      if (!empty($personas->numeroPuerta)) {
+        if ($userdata['street'] !== '') $userdata['street'] .= ' ';
+        $userdata['street'] .= $personas->numeroPuerta;
+      }
+      /******************************************************************
+      if (!empty($personas->apartamento)) {
+        if ($userdata['street'] !== '') $userdata['street'] .= ' ';
+        $userdata['street'] .= $personas->apartamento;
+      }
+      ******************************************************************/
+      $userdata['phone_contact'] = $personas->telefonoPrimario;
     }
-    $userdata['DOB'   ] = translateDate($personas->fechaNacimiento);
-    $userdata['sex'   ] = translateSex($personas->sexo);
-    // $userdata['state' ] = translateState($personas->departamento);
-    $userdata['state' ] = $personas->departamento;
-    $userdata['city'  ] = $personas->localidad;
-    $userdata['street'] = '';
-    if (!empty($personas->domicilio)) {
-      // Seems to be the main street name.
-      if ($userdata['street'] !== '') $userdata['street'] .= ' ';
-      $userdata['street'] .= $personas->domicilio;
-    }
-    /******************************************************************
-    if (!empty($personas->calle)) {
-      // But it might be this, however I think it is the cross street. Either way it goes here.
-      if ($userdata['street'] !== '') $userdata['street'] .= ' ';
-      $userdata['street'] .= $personas->calle;
-    }
-    if (!empty($personas->entreCalle)) {
-      // This name suggests it is the cross street but I think it's unused.
-      if ($userdata['street'] !== '') $userdata['street'] .= ' ';
-      $userdata['street'] .= $personas->entreCalle;
-    }
-    ******************************************************************/
-    if (!empty($personas->numeroPuerta)) {
-      if ($userdata['street'] !== '') $userdata['street'] .= ' ';
-      $userdata['street'] .= $personas->numeroPuerta;
-    }
-    /******************************************************************
-    if (!empty($personas->apartamento)) {
-      if ($userdata['street'] !== '') $userdata['street'] .= ' ';
-      $userdata['street'] .= $personas->apartamento;
-    }
-    ******************************************************************/
-    $userdata['phone_contact'] = $personas->telefonoPrimario;
   }
 }
 
