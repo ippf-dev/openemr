@@ -79,15 +79,23 @@ function submitform() {
       var pwdresult = passwordvalidate(document.forms[0].stiltskin.value);
       if(pwdresult == 0) {
         flag = 1;
-        alert("<?php
-          echo xls('The password must be at least eight characters, and should'); echo '\n';
-          echo xls('contain at least three of the four following items:'); echo '\n';
-          echo xls('A number'); echo '\n';
-          echo xls('A lowercase letter'); echo '\n';
-          echo xls('An uppercase letter'); echo '\n';
-          echo xls('A special character'); echo '('; echo xls('not a letter or number'); echo ').'; echo '\n';
-          echo xls('For example:'); echo ' healthCare@09';
-        ?>");
+                            alert("<?php echo xls('The password must be at least eight characters, and should');
+                            echo '\n';
+                            echo xls('contain at least three of the four following items:');
+                            echo '\n';
+                            echo xls('A number');
+                            echo '\n';
+                            echo xls('A lowercase letter');
+                            echo '\n';
+                            echo xls('An uppercase letter');
+                            echo '\n';
+                            echo xls('A special character');
+                            echo '(';
+                            echo xls('not a letter or number');
+                            echo ').';
+                            echo '\n';
+                            echo xls('For example:');
+                            echo ' healthCare@09'; ?>");
         return false;
       }
     }
@@ -401,24 +409,24 @@ if ($fres) {
 
  <!-- tax id, drug id -->
  <TR>
-  <TD><span class="text"><?php xl('Federal Tax ID','e'); ?>: </span></TD>
+  <TD><span class="text"><?php echo xlt('Federal Tax ID'); ?>: </span></TD>
   <TD><input type="text" name="taxid" style="width:150px;"  value="<?php echo userAtt("federaltaxid") ?>" /></td>
-  <TD><span class="text"><?php xl('Federal Drug ID','e'); ?>: </span></TD>
+  <TD><span class="text"><?php echo xlt('Federal Drug ID'); ?>: </span></TD>
   <TD><input type="text" name="drugid" style="width:150px;"  value="<?php echo userAtt("federaldrugid") ?>" /></td>
  </TR>
 
  <!-- upin, see auth -->
  <tr>
-  <td><span class="text"><?php xl('UPIN','e'); ?>: </span></td>
+  <td><span class="text"><?php echo xlt('UPIN'); ?>: </span></td>
   <td><input type="text" name="upin" style="width:150px;" value="<?php echo userAtt("upin")?>" /></td>
-  <td class='text'><?php xl('See Authorizations','e'); ?>: </td>
+  <td class='text'><?php echo xlt('See Authorizations'); ?>: </td>
   <td>
    <select name="see_auth" style="width:150px;">
 <?php
 foreach (array(1 => xl('None'), 2 => xl('Only Mine'), 3 => xl('All')) as $key => $value) {
-  echo " <option value='$key'";
+  echo " <option value='" . attr($key) . "'";
   if ($key == userAtt('see_auth')) echo " selected";
-  echo ">$value</option>\n";
+  echo ">" . text($value) . "</option>\n";
 }
 ?>
    </select>
@@ -427,25 +435,25 @@ foreach (array(1 => xl('None'), 2 => xl('Only Mine'), 3 => xl('All')) as $key =>
 
  <!-- npi, job description -->
  <tr>
-  <td><span class="text"><?php xl('NPI','e'); ?>: </span></td>
+  <td><span class="text"><?php echo xlt('NPI'); ?>: </span></td>
   <td><input type="text" name="npi" style="width:150px;"  value="<?php echo userAtt("npi") ?>" /></td>
-  <td><span class="text"><?php xl('Job Description','e'); ?>: </span></td>
+  <td><span class="text"><?php echo xlt('Job Description'); ?>: </span></td>
   <td><input type="text" name="job" style="width:150px;"  value="<?php echo userAtt("specialty") ?>" /></td>
  </tr>
 
 <?php if (!empty($GLOBALS['ssi']['rh'])) { ?>
  <!-- relay health id, optional -->
  <tr>
-  <td><span class="text"><?php xl('Relay Health ID', 'e'); ?>: </span></td>
+  <td><span class="text"><?php echo xlt('Relay Health ID'); ?>: </span></td>
   <td><input type="password" name="ssi_relayhealth" style="width:150px;"  value="<?php echo userAtt("ssi_relayhealth"); ?>" /></td>
  </tr>
 <?php } ?>
 
 <!-- taxonomy, calendar ui -->
  <tr>
-  <td><span class="text"><?php xl('Taxonomy','e'); ?>: </span></td>
+  <td><span class="text"><?php echo xlt('Taxonomy'); ?>: </span></td>
   <td><input type="text" name="taxonomy" style="width:150px;"  value="<?php echo userAtt("taxonomy") ?>" /></td>
-  <td><span class="text"><?php xl('Calendar UI','e'); ?>: </span></td>
+  <td><span class="text"><?php echo xlt('Calendar UI'); ?>: </span></td>
   <td>
    <select name="cal_ui" style="width:150px;">
 <?php
@@ -461,9 +469,9 @@ foreach (array(3 => xl('Outlook'), 1 => xl('Original'), 2 => xl('Fancy')) as $ke
 
  <!-- state license, newcrop role -->
  <tr>
-  <td><span class="text"><?php xl('State License Number','e'); ?>: </span></td>
+  <td><span class="text"><?php echo xlt('State License Number'); ?>: </span></td>
   <td><input type="text" name="state_license_number" style="width:150px;"  value="<?php echo userAtt("state_license_number") ?>" /></td>
-  <td class='text'><?php xl('NewCrop eRX Role','e'); ?>:</td>
+  <td class='text'><?php echo xlt('NewCrop eRX Role'); ?>:</td>
   <td>
    <?php echo generate_select_list("erxrole", "newcrop_erx_role", userAtt('newcrop_user_role'),'','--Select Role--','','','',array('style'=>'width:150px')); ?>
   </td>
@@ -473,7 +481,7 @@ foreach (array(3 => xl('Outlook'), 1 => xl('Original'), 2 => xl('Fancy')) as $ke
 
  <!-- access control group, additional info, optional but not really -->
  <tr>
-  <td class='text'><?php xl('Access Control','e'); ?>:</td>
+  <td class='text'><?php echo xlt('Access Control'); ?>:</td>
   <td>
    <select id="access_group_id" name="access_group[]" multiple style="width:150px;">
 <?php
@@ -482,23 +490,23 @@ foreach (array(3 => xl('Outlook'), 1 => xl('Original'), 2 => xl('Fancy')) as $ke
   foreach ($list_acl_groups as $value) {
     if ($username_acl_groups && in_array($value, $username_acl_groups)) {
       // Modified 6-2009 by BM - Translate group name if applicable
-      echo " <option value='$value' selected>" . xl_gacl_group($value) . "</option>\n";
+      echo " <option value='" . attr($value) . "' selected>" . text(xl_gacl_group($value)) . "</option>\n";
     }
     else {
       // Modified 6-2009 by BM - Translate group name if applicable
-      echo " <option value='$value'>" . xl_gacl_group($value) . "</option>\n";
+        echo " <option value='" . attr($value) . "'>" . text(xl_gacl_group($value)) . "</option>\n";
     }
   }
 ?>
    </select>
   </td>
-  <td><span class=text><?php xl('Additional Info','e'); ?>:</span></td>
+  <td><span class='text'><?php echo xlt('Additional Info'); ?>:</span></td>
   <td><textarea style="width:150px;" name="comments" wrap=auto rows=4 cols=25><?php echo userAtt("info"); ?></textarea></td>
  </tr>
 
  <tr height="20" valign="bottom">
   <td colspan="4" class="text">
-   <font class="mandatory">*</font> <?php xl('You must enter your own password to change user passwords. Leave blank to keep password unchanged.','e'); ?>
+  <font class="mandatory">*</font> <?php echo xlt('You must enter your own password to change user passwords. Leave blank to keep password unchanged.'); ?>
    <!--
    Display red alert if entered password matched one of last three passwords
    Display red alert if user password was expired and the user was inactivated previously
