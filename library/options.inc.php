@@ -2340,11 +2340,23 @@ function getLayoutProperties($formtype, &$grparr, $sel="grp_title") {
 function display_layout_rows($formtype, $result1, $result2='') {
   global $item_count, $cell_count, $last_group, $CPR;
 
+  if ('HIS' == $formtype) $formtype .= '%'; // TBD: DEM also?
+  $pres = sqlStatement("SELECT grp_form_id, grp_seq, grp_title " .
+    "FROM layout_group_properties " .
+    "WHERE grp_form_id LIKE ? AND grp_group_id = '' " .
+    "ORDER BY grp_seq, grp_title, grp_form_id",
+    array("$formtype"));
+  while ($prow = sqlFetchArray($pres)) {
+    $formtype = $prow['grp_form_id'];
+    $last_group = '';
+    $cell_count = 0;
+    $item_count = 0;
+
+    // TBD: Indent the following.
+
   $grparr = array();
   getLayoutProperties($formtype, $grparr, '*');
-
   $TOPCPR = empty($grparr['']['grp_columns']) ? 4 : $grparr['']['grp_columns'];
-
   $fres = sqlStatement("SELECT * FROM layout_options " .
     "WHERE form_id = ? AND uor > 0 " .
     "ORDER BY group_id, seq", array($formtype) );
@@ -2451,10 +2463,27 @@ function display_layout_rows($formtype, $result1, $result2='') {
   }
 
   disp_end_group();
+
+  } // End this layout, there may be more in the case of history.
 }
 
 function display_layout_tabs($formtype, $result1, $result2='') {
   global $item_count, $cell_count, $last_group, $CPR;
+
+  if ('HIS' == $formtype) $formtype .= '%'; // TBD: DEM also?
+  $pres = sqlStatement("SELECT grp_form_id, grp_seq, grp_title " .
+    "FROM layout_group_properties " .
+    "WHERE grp_form_id LIKE ? AND grp_group_id = '' " .
+    "ORDER BY grp_seq, grp_title, grp_form_id",
+    array("$formtype"));
+  $first = true;
+  while ($prow = sqlFetchArray($pres)) {
+    $formtype = $prow['grp_form_id'];
+    $last_group = '';
+    $cell_count = 0;
+    $item_count = 0;
+
+    // TBD: Indent the following.
 
   $grparr = array();
   getLayoutProperties($formtype, $grparr);
@@ -2463,7 +2492,7 @@ function display_layout_tabs($formtype, $result1, $result2='') {
     "WHERE form_id = ? AND uor > 0 " .
     "ORDER BY group_id", array($formtype) );
 
-  $first = true;
+  // $first = true;
   while ($frow = sqlFetchArray($fres)) {
 	  $this_group = $frow['group_id'];
 
@@ -2478,10 +2507,27 @@ function display_layout_tabs($formtype, $result1, $result2='') {
 	  <?php
 	  $first = false;
   }
+
+  } // End this layout, there may be more in the case of history.
 }
 
 function display_layout_tabs_data($formtype, $result1, $result2='') {
   global $item_count, $cell_count, $last_group, $CPR;
+
+  if ('HIS' == $formtype) $formtype .= '%'; // TBD: DEM also?
+  $pres = sqlStatement("SELECT grp_form_id, grp_seq, grp_title " .
+    "FROM layout_group_properties " .
+    "WHERE grp_form_id LIKE ? AND grp_group_id = '' " .
+    "ORDER BY grp_seq, grp_title, grp_form_id",
+    array("$formtype"));
+  $first = true;
+  while ($prow = sqlFetchArray($pres)) {
+    $formtype = $prow['grp_form_id'];
+    $last_group = '';
+    $cell_count = 0;
+    $item_count = 0;
+
+    // TBD: Indent the following.
 
   $grparr = array();
   getLayoutProperties($formtype, $grparr, '*');
@@ -2492,7 +2538,7 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
     "WHERE form_id = ? AND uor > 0 " .
     "ORDER BY group_id", array($formtype));
 
-	$first = true;
+	// $first = true;
 	while ($frow = sqlFetchArray($fres)) {
 		$this_group = isset($frow['group_id']) ? $frow['group_id'] : "" ;
 
@@ -2630,12 +2676,29 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
 
 	$first = false;
 
-	}
+	} // End this group.
 
+  } // End this layout, there may be more in the case of history.
 }
 
 function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
   global $item_count, $cell_count, $last_group, $CPR, $condition_str;
+
+  if ('HIS' == $formtype) $formtype .= '%'; // TBD: DEM also?
+  $pres = sqlStatement("SELECT grp_form_id, grp_seq, grp_title " .
+    "FROM layout_group_properties " .
+    "WHERE grp_form_id LIKE ? AND grp_group_id = '' " .
+    "ORDER BY grp_seq, grp_title, grp_form_id",
+    array("$formtype"));
+  $first = true;
+  $condition_str = '';
+  while ($prow = sqlFetchArray($pres)) {
+    $formtype = $prow['grp_form_id'];
+    $last_group = '';
+    $cell_count = 0;
+    $item_count = 0;
+
+    // TBD: Indent the following.
 
   $grparr = array();
   getLayoutProperties($formtype, $grparr, '*');
@@ -2646,8 +2709,8 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
     "WHERE form_id = ? AND uor > 0 " .
     "ORDER BY group_id", array($formtype) );
 
-	$first = true;
-  $condition_str = '';
+	// $first = true;
+  // $condition_str = '';
 
 	while ($frow = sqlFetchArray($fres)) {
 		$this_group = $frow['group_id'];
@@ -2776,7 +2839,9 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
 
 	$first = false;
 
-	}
+	} // End this group.
+
+  } // End this layout, there may be more in the case of history.
 }
 
 // From the currently posted HTML form, this gets the value of the
@@ -2880,6 +2945,20 @@ function get_layout_form_value($frow) {
 // Generate JavaScript validation logic for the required fields.
 //
 function generate_layout_validation($form_id) {
+
+  if ('HIS' == $form_id) $form_id .= '%'; // TBD: DEM also?
+  $pres = sqlStatement("SELECT grp_form_id, grp_seq, grp_title " .
+    "FROM layout_group_properties " .
+    "WHERE grp_form_id LIKE ? AND grp_group_id = '' " .
+    "ORDER BY grp_seq, grp_title, grp_form_id",
+    array("$form_id"));
+  $first = true;
+  $condition_str = '';
+  while ($prow = sqlFetchArray($pres)) {
+    $form_id = $prow['grp_form_id'];
+
+    // TBD: Indent the following.
+
   $fres = sqlStatement("SELECT * FROM layout_options " .
     "WHERE form_id = ? AND uor > 0 AND field_id != '' " .
     "ORDER BY group_id, seq", array($form_id) );
@@ -2953,6 +3032,8 @@ function generate_layout_validation($form_id) {
     }
     echo " }\n";
   }
+
+  } // End this layout, there may be more in the case of history.
 }
 
 /**

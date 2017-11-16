@@ -142,11 +142,15 @@ function swapGroups($id1, $id2) {
 
 function tableNameFromLayout($layout_id) {
   // Skip layouts that store data in vertical tables.
-  if (substr($layout_id,0,3) == 'LBF' || substr($layout_id,0,3) == 'LBT' || $layout_id == "FACUSR") {
+  if (
+    substr($layout_id,0,3) == 'LBF' ||
+    substr($layout_id,0,3) == 'LBT' ||
+    $layout_id == "FACUSR"
+  ) {
     return '';
   }
   if      ($layout_id == "DEM") $tablename = "patient_data";
-  else if ($layout_id == "HIS") $tablename = "history_data";
+  else if (substr($layout_id, 0, 3) == "HIS") $tablename = "history_data";
   else if ($layout_id == "SRH") $tablename = "lists_ippf_srh";
   else if ($layout_id == "CON") $tablename = "lists_ippf_con";
   else if ($layout_id == "GCA") $tablename = "lists_ippf_gcac";

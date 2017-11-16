@@ -90,7 +90,7 @@ if ($_POST['form_submit'] && !$alertmsg) {
   else if (!$group_id) {
     // They want to add a new layout. New groups not supported here.
     $form_form_id = $_POST['form_form_id'];
-    if (preg_match('/(LBF|LBT)[0-9A-Za-z_]+/', $form_form_id)) {
+    if (preg_match('/(LBF|LBT|HIS)[0-9A-Za-z_]+/', $form_form_id)) {
       $tmp = sqlQuery("SELECT grp_form_id FROM layout_group_properties WHERE " .
         "grp_form_id = ? AND grp_group_id = ''",
         array($form_form_id));
