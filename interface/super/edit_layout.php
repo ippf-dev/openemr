@@ -1409,6 +1409,58 @@ function getNextSeq(group) {
   return seq + delta;
 }
 
+// Helper function for validating new fields.
+function validateNewField(idpfx) {
+  var f = document.forms[0];
+  var pfx = '#' + idpfx;
+  var newid = $(pfx + "id").val();
+
+  // seq must be numeric and <= 9999
+  if (! IsNumeric($(pfx + "seq").val(), 0, 9999)) {
+      alert("<?php echo xls('Order must be a number between 1 and 9999'); ?>");
+      return false;
+  }
+  // length must be numeric and less than 999
+  if (! IsNumeric($(pfx + "lengthWidth").val(), 0, 999)) {
+      alert("<?php echo xls('Size must be a number between 1 and 999'); ?>");
+      return false;
+  }
+  // titlecols must be numeric and less than 100
+  if (! IsNumeric($(pfx + "titlecols").val(), 0, 999)) {
+      alert("<?php echo xls('LabelCols must be a number between 1 and 999'); ?>");
+      return false;
+  }
+  // datacols must be numeric and less than 100
+  if (! IsNumeric($(pfx + "datacols").val(), 0, 999)) {
+      alert("<?php echo xls('DataCols must be a number between 1 and 999'); ?>");
+      return false;
+  }
+  // the id field can only have letters, numbers and underscores
+  if ($(pfx + "id").val() == "") {
+      alert("<?php echo xls('ID cannot be blank'); ?>");
+      return false;
+  }
+
+  // Make sure the field ID is not duplicated.
+  for (var j = 1; f['fld[' + j + '][id]']; ++j) {
+    if (newid.toLowerCase() == f['fld[' + j + '][id]'].value.toLowerCase() ||
+      newid.toLowerCase() == f['fld[' + j + '][originalid]'].value.toLowerCase())
+    {
+      alert('<?php echo xls('Error: Duplicated field ID'); ?>: ' + newid);
+      return false;
+    }
+  }
+
+  // the id field can only have letters, numbers and underscores
+  var validid = $(pfx + "id").val().replace(/(\s|\W)/g, "_"); // match any non-word characters and replace them
+  $(pfx + "id").val(validid);
+  // similarly with the listid field
+  validid = $(pfx + "listid").val().replace(/(\s|\W)/g, "_");
+  $(pfx + "listid").val(validid);
+
+  return true;
+}
+
 // jQuery stuff to make the page a little easier to use
 
 $(document).ready(function(){
@@ -1466,7 +1518,9 @@ $(document).ready(function(){
       for (var i = 1; f['fld['+i+'][id]']; ++i) {
         var ival = f['fld['+i+'][id]'].value;
         for (var j = i + 1; f['fld['+j+'][id]']; ++j) {
-          if (ival == f['fld['+j+'][id]'].value || ival == f['fld['+j+'][originalid]'].value) {
+          if (ival.toLowerCase() == f['fld['+j+'][id]'].value.toLowerCase() ||
+            ival.toLowerCase() == f['fld['+j+'][originalid]'].value.toLowerCase())
+          {
             alert('<?php echo xls('Error: Duplicated field ID'); ?>: ' + ival);
             return;
           }
@@ -1508,37 +1562,7 @@ $(document).ready(function(){
         $("#newgroupname").val(validname);
 
         // now, check the first group field values
-        
-        // seq must be numeric and <= 9999
-        if (! IsNumeric($("#gnewseq").val(), 0, 9999)) {
-            alert("<?php xl('Order must be a number between 1 and 9999','e'); ?>");
-            return false;
-        }
-        // length must be numeric and less than 999
-        if (! IsNumeric($("#gnewlengthWidth").val(), 0, 999)) {
-            alert("<?php xl('Size must be a number between 1 and 999','e'); ?>");
-            return false;
-        }
-        // titlecols must be numeric and less than 100
-        if (! IsNumeric($("#gnewtitlecols").val(), 0, 999)) {
-            alert("<?php xl('LabelCols must be a number between 1 and 999','e'); ?>");
-            return false;
-        }
-        // datacols must be numeric and less than 100
-        if (! IsNumeric($("#gnewdatacols").val(), 0, 999)) {
-            alert("<?php xl('DataCols must be a number between 1 and 999','e'); ?>");
-            return false;
-        }
-        // the id field can only have letters, numbers and underscores
-        if ($("#gnewid").val() == "") {
-            alert("<?php xl('ID cannot be blank', 'e'); ?>");
-            return false;
-        }
-        var validid = $("#gnewid").val().replace(/(\s|\W)/g, "_"); // match any non-word characters and replace them
-        $("#gnewid").val(validid);
-        // similarly with the listid field
-        validid = $("#gnewlistid").val().replace(/(\s|\W)/g, "_");
-        $("#gnewlistid").val(validid);
+        if (!validateNewField('gnew')) return false;
 
         // submit the form to add a new field to a specific group
         $("#formaction").val("addgroup");
@@ -1668,33 +1692,7 @@ $(document).ready(function(){
     // save the new field to the form
     var SaveNewField = function(btnObj) {
         // check the new field values for correct formatting
-    
-        // seq must be numeric and <= 9999
-        if (! IsNumeric($("#newseq").val(), 0, 9999)) {
-            alert("<?php xl('Order must be a number between 1 and 9999','e'); ?>");
-            return false;
-        }
-        // length must be numeric and less than 999
-        if (! IsNumeric($("#newlengthWidth").val(), 0, 999)) {
-            alert("<?php xl('Size must be a number between 1 and 999','e'); ?>");
-            return false;
-        }
-        // titlecols must be numeric and less than 100
-        if (! IsNumeric($("#newtitlecols").val(), 0, 999)) {
-            alert("<?php xl('LabelCols must be a number between 1 and 999','e'); ?>");
-            return false;
-        }
-        // datacols must be numeric and less than 100
-        if (! IsNumeric($("#newdatacols").val(), 0, 999)) {
-            alert("<?php xl('DataCols must be a number between 1 and 999','e'); ?>");
-            return false;
-        }
-        // the id field can only have letters, numbers and underscores
-        var validid = $("#newid").val().replace(/(\s|\W)/g, "_"); // match any non-word characters and replace them
-        $("#newid").val(validid);
-        // similarly with the listid field
-        validid = $("#newlistid").val().replace(/(\s|\W)/g, "_");
-        $("#newlistid").val(validid);
+        if (!validateNewField('new')) return false;
     
         // submit the form to add a new field to a specific group
         $("#formaction").val("addfield");

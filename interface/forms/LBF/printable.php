@@ -153,7 +153,7 @@ div.section table {
  width: 100%;
 }
 div.section td.stuff {
- vertical-align: bottom;
+ vertical-align: top;
 <?php if ($isform) { ?>
  height: 16pt;
 <?php } ?>
