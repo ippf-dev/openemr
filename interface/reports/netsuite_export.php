@@ -278,10 +278,12 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
     echo '"' . display_desc($description) . '",';
     echo '"' . display_desc($qty      ) . '",';
 
-    // echo '"' . oeFormatMoneySpreadsheet($amount / $qty) . '",';
+    echo '"' . oeFormatMoneySpreadsheet($amount / $qty) . '",';
+    /******************************************************************
     // The column is named "Each" but that's a misnomer. Per CV 2017-10-11,
     // what they want here is the total amount.
     echo '"' . oeFormatMoneySpreadsheet($amount) . '",';
+    ******************************************************************/
 
     echo '"' . display_desc($memo_header) . '",';
     echo '"' . display_desc($memo) . '",';
@@ -320,7 +322,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
    <?php echo $qty; ?>
   </td>
   <td class="detail" align="right">
-   <?php echo $overpaid . oeFormatMoneySpreadsheet($amount, true); ?>
+   <?php echo $overpaid . oeFormatMoneySpreadsheet($amount / $qty, true); ?>
   </td>
   <td class="detail">
    <?php echo display_desc($memo_header); ?>
