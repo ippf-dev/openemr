@@ -1042,6 +1042,7 @@ while ($row = sqlFetchArray($res)) {
   $lastkey = $key;
   echo "<option value='$key'";
   if ($key == $list_id) echo " selected";
+  echo " title='" . attr($key) . "'";
   echo ">" . $row['title'] . "</option>\n";
 }
 
