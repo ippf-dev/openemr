@@ -221,6 +221,10 @@ function renameColumn($layout_id, $old_field_id, $new_field_id) {
 $thisauth = acl_check('admin', 'super');
 if (!$thisauth) die(xl('Not authorized'));
 
+// Make a sorted version of the $datatypes array.
+$sorted_datatypes = $datatypes;
+natsort($sorted_datatypes);
+
 // The layout ID identifies the layout to be edited.
 $layout_id = empty($_REQUEST['layout_id']) ? '' : $_REQUEST['layout_id'];
 
@@ -549,8 +553,8 @@ function writeFieldLine($linedata) {
     echo "  <td align='center' class='optcell' style='width:8%'>";
     echo "<select name='fld[$fld_line_no][datatype]' id='fld[$fld_line_no][datatype]' onchange=NationNotesContext('".$fld_line_no."',this.value)>";
     echo "<option value=''></option>";
-    GLOBAL $datatypes;
-    foreach ($datatypes as $key=>$value) {
+    GLOBAL $sorted_datatypes;
+    foreach ($sorted_datatypes as $key=>$value) {
         if ($linedata['data_type'] == $key)
             echo "<option value='$key' selected>$value</option>";
         else
@@ -1263,8 +1267,8 @@ foreach ($sources as $key => $value) {
 <select name='gnewdatatype' id='gnewdatatype'>
 <option value=''></option>
 <?php
-global $datatypes;
-foreach ($datatypes as $key=>$value) {
+global $sorted_datatypes;
+foreach ($sorted_datatypes as $key=>$value) {
     echo "<option value='$key'>$value</option>";
 }
 ?>
@@ -1344,8 +1348,8 @@ foreach ($sources as $key => $value) {
     <select name='newdatatype' id='newdatatype'>
      <option value=''></option>
 <?php
-global $datatypes;
-foreach ($datatypes as $key=>$value) {
+global $sorted_datatypes;
+foreach ($sorted_datatypes as $key=>$value) {
     echo "     <option value='$key'>$value</option>\n";
 }
 ?>
