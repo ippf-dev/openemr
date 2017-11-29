@@ -5,8 +5,8 @@
 // upgrade file is the starting point for the next upgrade.
 $v_major = '4';
 $v_minor = '1';
-$v_patch = '8';
-$v_tag   = ''; // minor revision number, should be empty for production releases
+$v_patch = '9';
+$v_tag   = '-dev'; // minor revision number, should be empty for production releases
 
 // A real patch identifier. This is incremented when we release a patch for a
 // production release. Note the above $v_patch variable is a misnomer and actually
@@ -35,4 +35,3 @@ $v_offsite_portal='1.46';
 // end with "?v=$v_js_includes".  Search the code for examples of doing this.
 // All this is to keep browsers from using an older cached version.
 $v_js_includes = 1;
-?>

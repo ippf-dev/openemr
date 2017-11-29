@@ -26,7 +26,7 @@ if (isset($_GET["set_encounter"])) {
 
 $tabset = new TabsWrapper('enctabs');
 $tabset->declareInitialTab(
-    xl('Summary'),
+    xl('Forms Summary'),
     "<iframe frameborder='0' style='height:100%;width:100%;' src='forms.php'>Oops</iframe>"
 );
 // We might have been invoked to load a particular encounter form.
