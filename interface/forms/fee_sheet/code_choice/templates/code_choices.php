@@ -16,11 +16,11 @@
 <script type="text/html" id="category-options">
     <div>
         <div data-bind="text:title"></div>
-        <div data-bind="foreach:codes">
-            <div class='code-choice'>
+        <div data-bind="foreach:codes" style="-webkit-column-count:3; -moz-column-count:3; column-count:3;">
+            <div class='code-choice' style="width:100%; display:inline;">
                 <input type="checkbox" data-bind="checked: selected"/>
                 <span data-bind="text:description,click: toggle_code"></span>
-            </div>
+            </div><br />
         </div>
         <div style="clear: both;">
             <button data-bind="click:codes_ok"><?php echo xlt("OK")?></button>
