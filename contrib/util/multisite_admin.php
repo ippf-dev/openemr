@@ -3,7 +3,7 @@
 * Administration tool for doing some things with multiple sites.
 * Move this to the parent of the directory holding multiple OpenEMR installations.
 *
-* Copyright (C) 2016 Rod Roark <rod@sunsetsystems.com>
+* Copyright (C) 2016-2017 Rod Roark <rod@sunsetsystems.com>
 *
 * LICENSE: This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -195,10 +195,11 @@ if (!empty($_POST['form_submit'])) {
     // Write detail rows.
     $begdate = date('Y-m-d 00:00:00', time() - 60 * 60 * 24 * 365); // 1 year ago
     foreach ($siteslist as $name => $link) {
+      /****************************************************************
       $res = sqlSelect($link, "SELECT p.grp_title, f.formdir, MAX(f.date) AS maxdate, " .
         "COUNT(f.id) AS count " .
         "FROM forms AS f " .
-        "JOIN layout_group_properties AS p ON p.grp_form_id = f.formdir AND p.grp_group_id = '' " .
+        "LEFT JOIN layout_group_properties AS p ON p.grp_form_id = f.formdir AND p.grp_group_id = '' " .
         "WHERE f.deleted = 0 AND f.date > '$begdate' " .
         "GROUP BY p.grp_title, f.formdir ORDER BY p.grp_title, f.formdir");
       while ($row = mysqli_fetch_assoc($res)) {
@@ -209,6 +210,21 @@ if (!empty($_POST['form_submit'])) {
         echo output_csv($row['maxdate']);
         echo "\n";
       }
+      ****************************************************************/
+      $res = sqlSelect($link, "SELECT f.form_name, f.formdir, MAX(f.date) AS maxdate, " .
+        "COUNT(f.id) AS count " .
+        "FROM forms AS f " .
+        "WHERE f.deleted = 0 AND f.date > '$begdate' " .
+        "GROUP BY f.form_name, f.formdir ORDER BY f.form_name, f.formdir");
+      while ($row = mysqli_fetch_assoc($res)) {
+        echo output_csv($name, false);
+        echo output_csv($row['form_name']);
+        echo output_csv($row['formdir']);
+        echo output_csv($row['count']);
+        echo output_csv($row['maxdate']);
+        echo "\n";
+      }
+
       mysqli_free_result($res);
     }
   } // end form_forms
