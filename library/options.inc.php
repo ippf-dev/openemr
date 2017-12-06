@@ -2333,6 +2333,13 @@ function getLayoutProperties($formtype, &$grparr, $sel="grp_title") {
   $gres = sqlStatement("SELECT $sel FROM layout_group_properties WHERE grp_form_id = ? " .
     "ORDER BY grp_group_id", array($formtype));
   while ($grow = sqlFetchArray($gres)) {
+    // TBD: Remove this after grp_init_open column is implemented.
+    if ($sel == '*' && !isset($grow['grp_init_open'])) {
+      $tmprow = sqlQuery("SELECT form_id FROM layout_options " .
+        "WHERE form_id = ? AND group_id LIKE ? AND uor > 0 AND edit_options LIKE '%I%' " .
+        "LIMIT 1", array($formtype, $grow['grp_group_id'] . '%'));
+      $grow['grp_init_open'] = !empty($tmprow['form_id']);
+    }
     $grparr[$grow['grp_group_id']] = $grow;
   }
 }
@@ -2467,6 +2474,8 @@ function display_layout_rows($formtype, $result1, $result2='') {
   } // End this layout, there may be more in the case of history.
 }
 
+// This generates the tabs for a form.
+//
 function display_layout_tabs($formtype, $result1, $result2='') {
   global $item_count, $cell_count, $last_group, $CPR;
 
@@ -2483,34 +2492,35 @@ function display_layout_tabs($formtype, $result1, $result2='') {
     $cell_count = 0;
     $item_count = 0;
 
-    // TBD: Indent the following.
+    $grparr = array();
+    getLayoutProperties($formtype, $grparr);
 
-  $grparr = array();
-  getLayoutProperties($formtype, $grparr);
+    $fres = sqlStatement("SELECT distinct group_id FROM layout_options " .
+      "WHERE form_id = ? AND uor > 0 " .
+      "ORDER BY group_id", array($formtype) );
 
-  $fres = sqlStatement("SELECT distinct group_id FROM layout_options " .
-    "WHERE form_id = ? AND uor > 0 " .
-    "ORDER BY group_id", array($formtype) );
-
-  // $first = true;
-  while ($frow = sqlFetchArray($fres)) {
-	  $this_group = $frow['group_id'];
-
-      // $group_name = substr($this_group, 1);
+    $prev_group = '';
+    while ($frow = sqlFetchArray($fres)) {
+      $this_group = $frow['group_id'];
+      if (substr($prev_group, 0, 1) === substr($this_group, 0, 1)) {
+        // Skip sub-groups, they will not start a new tab.
+        continue;
+      }
+      $prev_group = $this_group;
       $group_name = $grparr[$this_group]['grp_title'];
-
-      ?>
-		<li <?php echo $first ? 'class="current"' : '' ?>>
-			<a href="/play/javascript-tabbed-navigation/" id="header_tab_<?php echo htmlspecialchars($group_name,ENT_QUOTES); ?>">
-                        <?php echo htmlspecialchars(xl_layout_label($group_name),ENT_NOQUOTES); ?></a>
-		</li>
-	  <?php
-	  $first = false;
-  }
-
+?>
+      <li <?php echo $first ? 'class="current"' : '' ?>>
+        <a href="/play/javascript-tabbed-navigation/" id="header_tab_<?php echo htmlspecialchars($group_name,ENT_QUOTES); ?>">
+                          <?php echo htmlspecialchars(xl_layout_label($group_name),ENT_NOQUOTES); ?></a>
+      </li>
+<?php
+      $first = false;
+    }
   } // End this layout, there may be more in the case of history.
 }
 
+// This generates the tab contents of the display version of a form.
+//
 function display_layout_tabs_data($formtype, $result1, $result2='') {
   global $item_count, $cell_count, $last_group, $CPR;
 
@@ -2521,166 +2531,175 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
     "ORDER BY grp_seq, grp_title, grp_form_id",
     array("$formtype"));
   $first = true;
+
+  // This loops once per layout. Only Patient History can have multiple layouts.
   while ($prow = sqlFetchArray($pres)) {
     $formtype = $prow['grp_form_id'];
     $last_group = '';
     $cell_count = 0;
     $item_count = 0;
 
-    // TBD: Indent the following.
+    $grparr = array();
+    getLayoutProperties($formtype, $grparr, '*');
 
-  $grparr = array();
-  getLayoutProperties($formtype, $grparr, '*');
+    $TOPCPR = empty($grparr['']['grp_columns']) ? 4 : $grparr['']['grp_columns'];
 
-  $TOPCPR = empty($grparr['']['grp_columns']) ? 4 : $grparr['']['grp_columns'];
+    // By selecting distinct group_id from layout_options we avoid empty groups.
+    $fres = sqlStatement("SELECT distinct group_id FROM layout_options " .
+      "WHERE form_id = ? AND uor > 0 " .
+      "ORDER BY group_id", array($formtype));
 
-  $fres = sqlStatement("SELECT distinct group_id FROM layout_options " .
-    "WHERE form_id = ? AND uor > 0 " .
-    "ORDER BY group_id", array($formtype));
+    $prev_group = '';
 
-	// $first = true;
-	while ($frow = sqlFetchArray($fres)) {
-		$this_group = isset($frow['group_id']) ? $frow['group_id'] : "" ;
+    // This loops once per group within a given layout.
+    while ($frow = sqlFetchArray($fres)) {
+      $this_group = isset($frow['group_id']) ? $frow['group_id'] : "" ;
 
-    $CPR = empty($grparr[$this_group]['grp_columns']) ? $TOPCPR : $grparr[$this_group]['grp_columns'];
-    $subtitle = empty($grparr[$this_group]['grp_subtitle']) ? '' : xl_layout_label($grparr[$this_group]['grp_subtitle']);
+      $CPR = empty($grparr[$this_group]['grp_columns']) ? $TOPCPR : $grparr[$this_group]['grp_columns'];
+      $subtitle = empty($grparr[$this_group]['grp_subtitle']) ? '' : xl_layout_label($grparr[$this_group]['grp_subtitle']);
 
-		$group_fields_query = sqlStatement("SELECT * FROM layout_options " .
-		"WHERE form_id = ? AND uor > 0 AND group_id = ? " .
-		"ORDER BY seq", array($formtype, $this_group) );
-	?>
+      $group_fields_query = sqlStatement("SELECT * FROM layout_options " .
+        "WHERE form_id = ? AND uor > 0 AND group_id = ? " .
+        "ORDER BY seq", array($formtype, $this_group) );
 
-		<div class="tab <?php echo $first ? 'current' : '' ?>">
-			<table border='0' cellpadding='0'>
+      if (substr($this_group, 0, 1) !== substr($prev_group, 0, 1)) {
+        // Each new top level group gets its own tab div.
+        if (!$first) {
+          echo "</div>\n";
+        }
+        echo "<div class='tab" . ($first ? ' current' : '') . "'>\n";
+      }
+      echo "<table border='0' cellpadding='0'>\n";
 
-			<?php
-				while ($group_fields = sqlFetchArray($group_fields_query)) {
+      // This loops once per field within a given group.
+      while ($group_fields = sqlFetchArray($group_fields_query)) {
+        $titlecols  = $group_fields['titlecols'];
+        $datacols   = $group_fields['datacols'];
+        $data_type  = $group_fields['data_type'];
+        $field_id   = $group_fields['field_id'];
+        $list_id    = $group_fields['list_id'];
+        $currvalue  = '';
+        $edit_options = $group_fields['edit_options'];
+        $prepend_blank_row = strpos($edit_options, 'K') !== FALSE;
 
-					$titlecols  = $group_fields['titlecols'];
-					$datacols   = $group_fields['datacols'];
-					$data_type  = $group_fields['data_type'];
-					$field_id   = $group_fields['field_id'];
-					$list_id    = $group_fields['list_id'];
-					$currvalue  = '';
-          $edit_options = $group_fields['edit_options'];
-          $prepend_blank_row = strpos($edit_options, 'K') !== FALSE;
-
-					if ($formtype == 'DEM') {
-            if ($GLOBALS['athletic_team']) {
-              // Skip fitness level and return-to-play date because those appear
-              // in a special display/update form on this page.
-              if ($field_id === 'fitness' || $field_id === 'userdate1') continue;
-            }
-            if (strpos($field_id, 'em_') === 0) {
-              // Skip employer related fields, if it's disabled.
-              if ($GLOBALS['omit_employers']) continue;
-              $tmp = substr($field_id, 3);
-              if (isset($result2[$tmp])) $currvalue = $result2[$tmp];
-            }
-            else {
-              if (isset($result1[$field_id])) $currvalue = $result1[$field_id];
-            }
-					}
-					else {
-					  if (isset($result1[$field_id])) $currvalue = $result1[$field_id];
-					}
-
-          // Skip this field if action conditions call for that.
-          // Note this also accumulates info for subsequent skip tests.
-          $skip_this_field = isSkipped($group_fields, $currvalue) == 'skip';
-
-          // Skip this field if its do-not-print option is set.
-          if (strpos($edit_options, 'X') !== FALSE) $skip_this_field = true;
-
-					// Handle a data category (group) change.
-					if (strcmp($this_group, $last_group) != 0) {
-
-					  // $group_name = substr($this_group, 1);
-            $group_name = $grparr[$this_group]['grp_title'];
-
-					  // totally skip generating the employer category, if it's disabled.
-					  if ($group_name === 'Employer' && $GLOBALS['omit_employers']) continue;
-					  $last_group = $this_group;
-					}
-
-					// Handle starting of a new row.
-					if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0 || $prepend_blank_row) {
-					  disp_end_row();
-            if ($subtitle) {
-              // Group subtitle exists and is not displayed yet.
-              echo "<tr><td class='label' style='background-color:#dddddd;padding:3pt' colspan='$CPR'>" . text($subtitle) . "</td></tr>\n";
-              echo "<tr><td class='label' style='height:4pt' colspan='$CPR'></td></tr>\n";
-              $subtitle = '';
-            }
-            if ($prepend_blank_row) {
-              echo "<tr><td class='label' colspan='$CPR'>&nbsp;</td></tr>\n";
-            }
-					  echo "<tr>";
-					}
-
-					if ($item_count == 0 && $titlecols == 0) {
-						$titlecols = 1;
-					}
-
-					// Handle starting of a new label cell.
-					if ($titlecols > 0) {
-					  disp_end_cell();
-					  $titlecols_esc = htmlspecialchars( $titlecols, ENT_QUOTES);
-					  echo "<td class='label' colspan='$titlecols_esc' ";
-					  echo ">";
-					  $cell_count += $titlecols;
-					}
-					++$item_count;
-
-          // Added 5-09 by BM - Translate label if applicable
-          if ($skip_this_field) {
-            // No label because skipping
+        if ($formtype == 'DEM') {
+          if ($GLOBALS['athletic_team']) {
+            // Skip fitness level and return-to-play date because those appear
+            // in a special display/update form on this page.
+            if ($field_id === 'fitness' || $field_id === 'userdate1') continue;
           }
-          else if ($group_fields['title']) {
-            $tmp = xl_layout_label($group_fields['title']);
-            echo text($tmp);
-            // Append colon only if label does not end with punctuation.
-            if (strpos('?!.,:-=', substr($tmp, -1, 1)) === FALSE) echo ':';
+          if (strpos($field_id, 'em_') === 0) {
+            // Skip employer related fields, if it's disabled.
+            if ($GLOBALS['omit_employers']) continue;
+            $tmp = substr($field_id, 3);
+            if (isset($result2[$tmp])) $currvalue = $result2[$tmp];
           }
           else {
-            echo "&nbsp;";
-          }
-
-          // Handle starting of a new data cell.
-          if ($datacols > 0) {
-            disp_end_cell();
-            $datacols_esc = htmlspecialchars( $datacols, ENT_QUOTES);
-            echo "<td class='text data' colspan='$datacols_esc'";
-            if (!$skip_this_field && $data_type == 3) {
-              // Textarea gets a light grey border per CV request 2017-08-31.
-              echo " style='border:1px solid #cccccc'";
-            }
-            echo ">";
-            $cell_count += $datacols;
-          }
-
-					++$item_count;
-
-          if (!$skip_this_field) {
-            echo generate_display_field($group_fields, $currvalue);
+            if (isset($result1[$field_id])) $currvalue = $result1[$field_id];
           }
         }
+        else {
+          if (isset($result1[$field_id])) $currvalue = $result1[$field_id];
+        }
 
-        disp_end_row();
-			?>
+        // Skip this field if action conditions call for that.
+        // Note this also accumulates info for subsequent skip tests.
+        $skip_this_field = isSkipped($group_fields, $currvalue) == 'skip';
 
-			</table>
-		</div>
+        // Skip this field if its do-not-print option is set.
+        if (strpos($edit_options, 'X') !== FALSE) $skip_this_field = true;
 
- 	 <?php
+        // Handle a data category (group) change.
+        if (strcmp($this_group, $last_group) != 0) {
 
-	$first = false;
+          // $group_name = substr($this_group, 1);
+          $group_name = $grparr[$this_group]['grp_title'];
 
-	} // End this group.
+          // totally skip generating the employer category, if it's disabled.
+          if ($group_name === 'Employer' && $GLOBALS['omit_employers']) continue;
+          $last_group = $this_group;
+        }
 
+        // Handle starting of a new row.
+        if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0 || $prepend_blank_row) {
+          disp_end_row();
+          if ($subtitle) {
+            // Group subtitle exists and is not displayed yet.
+            echo "<tr><td class='label' style='background-color:#dddddd;padding:3pt' colspan='$CPR'>" . text($subtitle) . "</td></tr>\n";
+            echo "<tr><td class='label' style='height:4pt' colspan='$CPR'></td></tr>\n";
+            $subtitle = '';
+          }
+          if ($prepend_blank_row) {
+            echo "<tr><td class='label' colspan='$CPR'>&nbsp;</td></tr>\n";
+          }
+          echo "<tr>";
+        }
+
+        if ($item_count == 0 && $titlecols == 0) {
+          $titlecols = 1;
+        }
+
+        // Handle starting of a new label cell.
+        if ($titlecols > 0) {
+          disp_end_cell();
+          $titlecols_esc = htmlspecialchars( $titlecols, ENT_QUOTES);
+          echo "<td class='label' colspan='$titlecols_esc' ";
+          echo ">";
+          $cell_count += $titlecols;
+        }
+        ++$item_count;
+
+        // Added 5-09 by BM - Translate label if applicable
+        if ($skip_this_field) {
+          // No label because skipping
+        }
+        else if ($group_fields['title']) {
+          $tmp = xl_layout_label($group_fields['title']);
+          echo text($tmp);
+          // Append colon only if label does not end with punctuation.
+          if (strpos('?!.,:-=', substr($tmp, -1, 1)) === FALSE) echo ':';
+        }
+        else {
+          echo "&nbsp;";
+        }
+
+        // Handle starting of a new data cell.
+        if ($datacols > 0) {
+          disp_end_cell();
+          $datacols_esc = htmlspecialchars( $datacols, ENT_QUOTES);
+          echo "<td class='text data' colspan='$datacols_esc'";
+          if (!$skip_this_field && $data_type == 3) {
+            // Textarea gets a light grey border per CV request 2017-08-31.
+            echo " style='border:1px solid #cccccc'";
+          }
+          echo ">";
+          $cell_count += $datacols;
+        }
+
+        ++$item_count;
+
+        if (!$skip_this_field) {
+          echo generate_display_field($group_fields, $currvalue);
+        }
+      } // end field
+
+      disp_end_row();
+
+      // End table for the group.
+      echo "</table>\n";
+
+      $prev_group = $this_group;
+      $first = false;
+
+    } // End this group.
   } // End this layout, there may be more in the case of history.
+  if (!$first) {
+    echo "</div>\n";
+  }
 }
 
+// This generates the tab contents of the data entry version of a form.
+//
 function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
   global $item_count, $cell_count, $last_group, $CPR, $condition_str;
 
@@ -2692,155 +2711,239 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
     array("$formtype"));
   $first = true;
   $condition_str = '';
+
+  // This loops once per layout. Only Patient History can have multiple layouts.
   while ($prow = sqlFetchArray($pres)) {
     $formtype = $prow['grp_form_id'];
     $last_group = '';
     $cell_count = 0;
     $item_count = 0;
 
-    // TBD: Indent the following.
+    $grparr = array();
+    getLayoutProperties($formtype, $grparr, '*');
 
-  $grparr = array();
-  getLayoutProperties($formtype, $grparr, '*');
+    $TOPCPR = empty($grparr['']['grp_columns']) ? 4 : $grparr['']['grp_columns'];
 
-  $TOPCPR = empty($grparr['']['grp_columns']) ? 4 : $grparr['']['grp_columns'];
-
-  $fres = sqlStatement("SELECT distinct group_id FROM layout_options " .
-    "WHERE form_id = ? AND uor > 0 " .
-    "ORDER BY group_id", array($formtype) );
-
-	// $first = true;
-  // $condition_str = '';
-
-	while ($frow = sqlFetchArray($fres)) {
-		$this_group = $frow['group_id'];
-    $group_name = $grparr[$this_group]['grp_title'];
-    $group_name_esc = text($group_name);
-
-    $CPR = empty($grparr[$this_group]['grp_columns']) ? $TOPCPR : $grparr[$this_group]['grp_columns'];
-    $subtitle = empty($grparr[$this_group]['grp_subtitle']) ? '' : xl_layout_label($grparr[$this_group]['grp_subtitle']);
-
-		$group_fields_query = sqlStatement("SELECT * FROM layout_options " .
-		"WHERE form_id = ? AND uor > 0 AND group_id = ? " .
-		"ORDER BY seq", array($formtype, $this_group));
-	?>
-
-		<div class="tab <?php echo $first ? 'current' : '' ?>" id="tab_<?php echo $group_name_esc?>" >
-			<table border='0' cellpadding='0'>
-
-			<?php
-				while ($group_fields = sqlFetchArray($group_fields_query)) {
-
-					$titlecols  = $group_fields['titlecols'];
-					$datacols   = $group_fields['datacols'];
-					$data_type  = $group_fields['data_type'];
-					$field_id   = $group_fields['field_id'];
-					$list_id    = $group_fields['list_id'];
-					$currvalue  = '';
-          $action     = 'skip';
-          $prepend_blank_row = strpos($group_fields['edit_options'], 'K') !== FALSE;
-
-          // Accumulate action conditions into a JSON expression for the browser side.
-          accumActionConditions($field_id, $condition_str, $group_fields['conditions']);
-
-					if ($formtype == 'DEM') {
-					  if ($GLOBALS['athletic_team']) {
-						// Skip fitness level and return-to-play date because those appear
-						// in a special display/update form on this page.
-						if ($field_id === 'fitness' || $field_id === 'userdate1') continue;
-					  }
-					  if (strpos($field_id, 'em_') === 0) {
-					// Skip employer related fields, if it's disabled.
-						if ($GLOBALS['omit_employers']) continue;
-						$tmp = substr($field_id, 3);
-						if (isset($result2[$tmp])) $currvalue = $result2[$tmp];
-					  }
-					  else {
-						if (isset($result1[$field_id])) $currvalue = $result1[$field_id];
-					  }
-					}
-					else {
-					  if (isset($result1[$field_id])) $currvalue = $result1[$field_id];
-					}
-
-					// Handle a data category (group) change.
-					if (strcmp($this_group, $last_group) != 0) {
-					  // $group_name = substr($this_group, 1);
-
-					  // totally skip generating the employer category, if it's disabled.
-					  if ($group_name === 'Employer' && $GLOBALS['omit_employers']) continue;
-					  $last_group = $this_group;
-					}
-
-					// Handle starting of a new row.
-					if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0 || $prepend_blank_row) {
-					  disp_end_row();
-            if ($subtitle) {
-              // Group subtitle exists and is not displayed yet.
-              echo "<tr><td class='label' style='background-color:#dddddd;padding:3pt' colspan='$CPR'>" . text($subtitle) . "</td></tr>\n";
-              echo "<tr><td class='label' style='height:4pt' colspan='$CPR'></td></tr>\n";
-              $subtitle = '';
+    // Check the children of each top-level group to see if any of them are initially open.
+    // If not, make the first such child initially open.
+    foreach ($grparr as $tmprow1) {
+      if (strlen($tmprow1['grp_group_id']) == 1) {
+        $got_init_open = false;
+        $keyfirst = false;
+        foreach ($grparr as $key2 => $tmprow2) {
+          if (substr($tmprow2['grp_group_id'], 0, 1) == $tmprow1['grp_group_id'] && strlen($tmprow2['grp_group_id']) == 2) {
+            if (!$keyfirst) {
+              $keyfirst = $key2;
             }
-            if ($prepend_blank_row) {
-              echo "<tr><td class='label' colspan='$CPR'>&nbsp;</td></tr>\n";
+            if ($tmprow2['grp_init_open']) {
+              $got_init_open = true;
             }
-					  echo "<tr>";
-					}
+          }
+        }
+        if (!$got_init_open && $keyfirst) {
+          $grparr[$keyfirst]['grp_init_open'] = 1;
+        }
+      }
+    }
 
-					if ($item_count == 0 && $titlecols == 0) {
-						$titlecols = 1;
-					}
+    // Variables $gs_* are context for the group set in the current tab.
+    $gs_display_style = 'block';
+    // This string is the active group levels representing the current display state.
+    // Each leading substring represents an instance of nesting.
+    // As each new group is encountered, groups will be closed and opened as needed
+    // until the display state matches the new group.
+    $gs_group_levels = '';
 
-					// Handle starting of a new label cell.
-					if ($titlecols > 0) {
-					  disp_end_cell();
-					  $titlecols_esc = htmlspecialchars( $titlecols, ENT_QUOTES);
-					  echo "<td class='label' colspan='$titlecols_esc' ";
-            // This ID is used by action conditions.
-            echo " id='label_id_" . attr($field_id) . "'";
-					  echo ">";
-					  $cell_count += $titlecols;
-					}
-					++$item_count;
+    // By selecting distinct group_id from layout_options we avoid empty groups.
+    $fres = sqlStatement("SELECT distinct group_id FROM layout_options " .
+      "WHERE form_id = ? AND uor > 0 " .
+      "ORDER BY group_id", array($formtype) );
 
-          // Added 5-09 by BM - Translate label if applicable
-          if ($group_fields['title']) {
-            $tmp = xl_layout_label($group_fields['title']);
-            echo text($tmp);
-            // Append colon only if label does not end with punctuation.
-            if (strpos('?!.,:-=', substr($tmp, -1, 1)) === FALSE) echo ':';
+    // This loops once per group within a given layout.
+    while ($frow = sqlFetchArray($fres)) {
+      $this_group = $frow['group_id'];
+      $group_name = $grparr[$this_group]['grp_title'];
+      $group_name_esc = text($group_name);
+
+      $CPR = empty($grparr[$this_group]['grp_columns']) ? $TOPCPR : $grparr[$this_group]['grp_columns'];
+      $subtitle = empty($grparr[$this_group]['grp_subtitle']) ? '' : xl_layout_label($grparr[$this_group]['grp_subtitle']);
+
+      $group_fields_query = sqlStatement("SELECT * FROM layout_options " .
+        "WHERE form_id = ? AND uor > 0 AND group_id = ? " .
+        "ORDER BY seq", array($formtype, $this_group));
+
+      $gs_this_levels = $this_group;
+      // Compute $gs_i as the number of initial matching levels.
+      $gs_i = 0;
+      $tmp = min(strlen($gs_this_levels), strlen($gs_group_levels));
+      while ($gs_i < $tmp && $gs_this_levels[$gs_i] == $gs_group_levels[$gs_i]) ++$gs_i;
+
+      // Close any groups that we are done with.
+      while (strlen($gs_group_levels) > $gs_i) {
+        // echo "</table>\n";
+        $gs_group_name = $grparr[$gs_group_levels]['grp_title'];
+        if (strlen($gs_group_levels) > 1) {
+          // No div for an empty sub-group name.
+          if (strlen($gs_group_name)) echo "</div>\n";
+        } else {
+          // This is the top group level so ending this tab and will start a new one.
+          echo "</div>\n";
+        }
+        $gs_group_levels = substr($gs_group_levels, 0, -1); // remove last character
+      }
+
+      // If there are any new groups, open them.
+      while ($gs_i < strlen($gs_this_levels)) {
+        $gs_group_levels .= $gs_this_levels[$gs_i++];
+        $gs_group_name = $grparr[substr($gs_group_levels, 0, $gs_i)]['grp_title'];
+        $gs_init_open = $grparr[substr($gs_group_levels, 0, $gs_i)]['grp_init_open'];
+        // Compute a short unique identifier for this group.
+        $gs_group_seq = "grp-$formtype-$gs_group_levels";
+        if ($gs_i <= 1) {
+          // Top level group so new tab.
+          echo "<div class='tab" . ($first ? ' current' : '') . "' id='tab_$group_name_esc'>\n";
+        } else {
+          // Not a new tab so start the group inline.
+          // If group name is blank, no checkbox or div.
+          if (strlen($gs_group_name)) {
+            echo "<br /><span class='bold'><input type='checkbox' name='form_cb_" . attr($gs_group_seq) . "' value='1' " .
+              "onclick='return divclick(this,\"div_" . attr(addslashes($gs_group_seq)) . "\");'";
+            $gs_display_style = $gs_init_open ? 'block' : 'none';
+            if ($gs_display_style == 'block') echo " checked";
+            echo " /><b>" . text(xl_layout_label($gs_group_name)) . "</b></span>\n";
+            echo "<div id='div_" . attr($gs_group_seq) . "' class='section' style='display:" . attr($gs_display_style) . ";'>\n";
+          }
+        }
+      }
+
+      // Each group or subgroup has its own separate table.
+      $gs_group_table_active = true;
+      echo " <table border='0' cellspacing='0' cellpadding='0' class='lbfdata'>\n";
+      if ($subtitle) {
+        // There is a group subtitle so show it.
+        echo "<tr><td class='bold' style='color:#0000ff' colspan='$CPR'>" . text($subtitle) . "</td></tr>\n";
+        echo "<tr><td class='bold' style='height:4pt' colspan='$CPR'></td></tr>\n";
+      }
+
+      // This loops once per field within a given group.
+      while ($group_fields = sqlFetchArray($group_fields_query)) {
+        $titlecols  = $group_fields['titlecols'];
+        $datacols   = $group_fields['datacols'];
+        $data_type  = $group_fields['data_type'];
+        $field_id   = $group_fields['field_id'];
+        $list_id    = $group_fields['list_id'];
+        $currvalue  = '';
+        $action     = 'skip';
+        $prepend_blank_row = strpos($group_fields['edit_options'], 'K') !== FALSE;
+
+        // Accumulate action conditions into a JSON expression for the browser side.
+        accumActionConditions($field_id, $condition_str, $group_fields['conditions']);
+
+        if ($formtype == 'DEM') {
+          if ($GLOBALS['athletic_team']) {
+          // Skip fitness level and return-to-play date because those appear
+          // in a special display/update form on this page.
+          if ($field_id === 'fitness' || $field_id === 'userdate1') continue;
+          }
+          if (strpos($field_id, 'em_') === 0) {
+          // Skip employer related fields, if it's disabled.
+          if ($GLOBALS['omit_employers']) continue;
+          $tmp = substr($field_id, 3);
+          if (isset($result2[$tmp])) $currvalue = $result2[$tmp];
           }
           else {
-            echo "&nbsp;";
+          if (isset($result1[$field_id])) $currvalue = $result1[$field_id];
           }
-
-					// Handle starting of a new data cell.
-					if ($datacols > 0) {
-					  disp_end_cell();
-					  $datacols_esc = htmlspecialchars( $datacols, ENT_QUOTES);
-					  echo "<td class='text data' colspan='$datacols_esc'";
-            // This ID is used by action conditions.
-            echo " id='value_id_" . attr($field_id) . "'";
-					  echo ">";
-					  $cell_count += $datacols;
-					}
-
-					++$item_count;
-					echo generate_form_field($group_fields, $currvalue);
+        }
+        else {
+          if (isset($result1[$field_id])) $currvalue = $result1[$field_id];
         }
 
-        disp_end_row();
-			?>
+        // Handle a data category (group) change.
+        if (strcmp($this_group, $last_group) != 0) {
+          // $group_name = substr($this_group, 1);
 
-			</table>
-		</div>
+          // totally skip generating the employer category, if it's disabled.
+          if ($group_name === 'Employer' && $GLOBALS['omit_employers']) continue;
+          $last_group = $this_group;
+        }
 
- 	 <?php
+        // Handle starting of a new row.
+        if (($titlecols > 0 && $cell_count >= $CPR) || $cell_count == 0 || $prepend_blank_row) {
+          disp_end_row();
+          if ($subtitle) {
+            // Group subtitle exists and is not displayed yet.
+            echo "<tr><td class='label' style='background-color:#dddddd;padding:3pt' colspan='$CPR'>" . text($subtitle) . "</td></tr>\n";
+            echo "<tr><td class='label' style='height:4pt' colspan='$CPR'></td></tr>\n";
+            $subtitle = '';
+          }
+          if ($prepend_blank_row) {
+            echo "<tr><td class='label' colspan='$CPR'>&nbsp;</td></tr>\n";
+          }
+          echo "<tr>";
+        }
 
-	$first = false;
+        if ($item_count == 0 && $titlecols == 0) {
+          $titlecols = 1;
+        }
 
-	} // End this group.
+        // Handle starting of a new label cell.
+        if ($titlecols > 0) {
+          disp_end_cell();
+          $titlecols_esc = htmlspecialchars( $titlecols, ENT_QUOTES);
+          echo "<td class='label' colspan='$titlecols_esc' ";
+          // This ID is used by action conditions.
+          echo " id='label_id_" . attr($field_id) . "'";
+          echo ">";
+          $cell_count += $titlecols;
+        }
+        ++$item_count;
 
+        // Added 5-09 by BM - Translate label if applicable
+        if ($group_fields['title']) {
+          $tmp = xl_layout_label($group_fields['title']);
+          echo text($tmp);
+          // Append colon only if label does not end with punctuation.
+          if (strpos('?!.,:-=', substr($tmp, -1, 1)) === FALSE) echo ':';
+        }
+        else {
+          echo "&nbsp;";
+        }
+
+        // Handle starting of a new data cell.
+        if ($datacols > 0) {
+          disp_end_cell();
+          $datacols_esc = htmlspecialchars( $datacols, ENT_QUOTES);
+          echo "<td class='text data' colspan='$datacols_esc'";
+          // This ID is used by action conditions.
+          echo " id='value_id_" . attr($field_id) . "'";
+          echo ">";
+          $cell_count += $datacols;
+        }
+
+        ++$item_count;
+        echo generate_form_field($group_fields, $currvalue);
+      } // End of fields for this group
+
+      disp_end_row();
+      echo "        </table>\n";
+      $first = false;
+
+    } // End this group.
+
+    // Close any groups still open.
+    while (strlen($gs_group_levels) > 0) {
+      // echo "</table>\n";
+      $gs_group_name = $grparr[$gs_group_levels]['grp_title'];
+      if (strlen($gs_group_levels) > 1) {
+        // No div for an empty sub-group name.
+        if (strlen($gs_group_name)) echo "</div>\n";
+      } else {
+        // This is the top group level so ending this tab and will start a new one.
+        echo "</div>\n";
+      }
+      $gs_group_levels = substr($gs_group_levels, 0, -1); // remove last character
+    }
   } // End this layout, there may be more in the case of history.
 }
 

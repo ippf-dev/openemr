@@ -267,9 +267,9 @@ else if ($what == 'lists') {
   }
 }
 else if ($what == 'groups') {
-  $sellist .= "DISTINCT lo.group_id AS code, lp.grp_title AS description";
-  $from = "layout_options AS lo, layout_group_properties AS lp";
-  $where1 = "WHERE lo.form_id LIKE '$layout_id' AND lp.grp_form_id = lo.form_id AND lp.grp_group_id = lo.group_id";
+  $sellist .= "DISTINCT lp.grp_group_id AS code, lp.grp_title AS description";
+  $from = "layout_group_properties AS lp";
+  $where1 = "WHERE lp.grp_form_id LIKE '$layout_id' AND lp.grp_group_id != ''";
   if (isset($_GET['sSearch']) && $_GET['sSearch'] !== "") {
     $sSearch = add_escape_custom($_GET['sSearch']);
     $where2 = "AND lp.grp_title LIKE '%$sSearch%'";

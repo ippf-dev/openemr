@@ -55,6 +55,18 @@ if ( !acl_check('patients','med','',array('write','addonly') ))
  font-size: 10pt;
 }
 
+td, input, select, textarea {
+ font-family: Arial, Helvetica, sans-serif;
+ font-size: 10pt;
+}
+
+div.section {
+ border: solid;
+ border-width: 1px;
+ border-color: #0000ff;
+ margin: 0 0 0 10pt;
+ padding: 5pt;
+}
 </style>
 
 <style type="text/css">@import url(../../../library/dynarch_calendar.css);</style>
