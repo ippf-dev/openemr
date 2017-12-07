@@ -1074,8 +1074,10 @@ function generate_print_field($frow, $currvalue) {
     $empty_title = "Unassigned";   
   }
 
-  // generic single-selection list
-  if (false && ($data_type == 1 || $data_type == 26 || $data_type == 33)) {
+  // Generic single-selection list
+  // We used to show all the list options but this was undone per CV request 2017-12-07
+  // (see alternative code below).
+  if ($data_type == 1 || $data_type == 26 || $data_type == 27 || $data_type == 33) {
     if (empty($fld_length)) {
       if ($list_id == 'titles') {
         $fld_length = 3;
@@ -1086,19 +1088,27 @@ function generate_print_field($frow, $currvalue) {
     $tmp = '';
     if ($currvalue) {
       $lrow = sqlQuery("SELECT title FROM list_options " .
-        "WHERE list_id = ? AND option_id = ? AND activity = 1", array($list_id,$currvalue));
+        "WHERE list_id = ? AND option_id = ? AND activity = 1",
+        array($list_id,$currvalue));
+      // For lists Race and Ethnicity if there is no matching value in the corresponding lists check ethrace list
+      if (empty($lrow) && $data_type == 33) {
+        $lrow = sqlQuery("SELECT title FROM list_options " .
+          "WHERE list_id = ? AND option_id = ? AND activity = 1",
+          array('ethrace', $currvalue));
+      }
       $tmp = xl_list_label($lrow['title']);
       if (empty($tmp)) $tmp = "($currvalue)";
     }
-    /*****************************************************************
-    echo "<input type='text'" .
-      " size='$fld_length'" .
-      " value='$tmp'" .
-      " class='under'" .
-      " />";
-    *****************************************************************/
-    if ($tmp === '') { $tmp = '&nbsp;'; }
-    else { $tmp = htmlspecialchars( $tmp, ENT_QUOTES); }
+    // echo "<input type='text'" .
+    //   " size='$fld_length'" .
+    //   " value='$tmp'" .
+    //   " class='under'" .
+    //   " />";
+    if ($tmp === '') {
+      $tmp = '&nbsp;';
+    } else {
+      $tmp = htmlspecialchars($tmp, ENT_QUOTES);
+    }
     echo $tmp;
   }
 
@@ -1422,6 +1432,7 @@ function generate_print_field($frow, $currvalue) {
     echo "</table>";
   }
 
+  /********************************************************************
   // a set of labeled radio buttons
   else if ($data_type == 27 || $data_type == 1 || $data_type == 26 || $data_type == 33) {
     // In this special case, fld_length is the number of columns generated.
@@ -1451,12 +1462,13 @@ function generate_print_field($frow, $currvalue) {
       echo "</tr>";
       if ($count > $cols) {
         // Add some space after multiple rows of radio buttons.
-	$cols = htmlspecialchars( $cols, ENT_QUOTES);
+        $cols = htmlspecialchars( $cols, ENT_QUOTES);
         echo "<tr><td colspan='$cols' style='height:0.7em'></td></tr>";
       }
     }
     echo "</table>";
   }
+  ********************************************************************/
 
   // special case for history of lifestyle status; 3 radio buttons and a date text field:
   else if ($data_type == 28 || $data_type == 32) {

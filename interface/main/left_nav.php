@@ -1420,7 +1420,7 @@ if ($GLOBALS['athletic_team']) {
       echo "        <li><a class='collapsed_lv3'><span>" . xlt($entry['category']) . "</span></a><ul>\n";
       $reglastcat = $entry['category'];
     }
-    genPopLink(xl_form_title($title), "../forms/LBF/printable.php?formname=" . urlencode($option_id));
+    genPopLink(xl_form_title($title), "../forms/LBF/printable.php?formname=" . urlencode($option_id) . "&isform=1");
   }
   if ($reglastcat) echo "        </ul></li>\n";
 ?>

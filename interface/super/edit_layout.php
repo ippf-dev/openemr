@@ -533,18 +533,15 @@ function writeFieldLine($linedata) {
     echo "  </td>";
 
     echo "  <td align='center' class='optcell' style='width:4%'>";
-    if ($linedata['data_type'] == 2 || $linedata['data_type'] == 3 ||
-      $linedata['data_type'] == 21 || $linedata['data_type'] == 22 ||
-      $linedata['data_type'] == 23 || $linedata['data_type'] == 25 ||
-      $linedata['data_type'] == 27 || $linedata['data_type'] == 28 ||
-      $linedata['data_type'] == 32 || $linedata['data_type'] == 15 ||
-      $linedata['data_type'] == 40
-    ) {
+    if (in_array(
+      $linedata['data_type'],
+      array(1, 2, 3, 15, 21, 22, 23, 25, 26, 27, 28, 32, 33, 40)
+    )) {
       // Show the width field
       echo "<input type='text' name='fld[$fld_line_no][lengthWidth]' value='" .
         htmlspecialchars($linedata['fld_length'], ENT_QUOTES) .
         "' size='2' maxlength='10' class='optin' title='" . xla('Width') . "' />";
-      if ($linedata['data_type'] == 3 || $linedata['data_type'] == 40) {
+      if (in_array($linedata['data_type'],array(3, 40))) {
         // Show the height field
         echo "<input type='text' name='fld[$fld_line_no][lengthHeight]' value='" .
           htmlspecialchars($linedata['fld_rows'], ENT_QUOTES) .
