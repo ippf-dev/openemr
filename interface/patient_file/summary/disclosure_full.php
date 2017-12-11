@@ -105,7 +105,7 @@ $totalRecords=sqlNumRows($r2);
 //display all of the disclosures for the day, as well as others that are active from previous dates, up to a certain number, $N
 $r1 = sqlStatement("select id,event,recipient,description,date from extended_log where patient_id = ? AND " .
   "event in (select option_id from list_options where list_id = 'disclosure_type' AND activity = 1) " .
-  "order by date desc limit $offset, $N", array($pid));
+  "order by date desc limit " . escape_limit($offset) . " , " . escape_limit($N)), array($pid));
 $n=sqlNumRows($r1);
 $noOfRecordsLeft=($totalRecords - $offset);
 if ($n>0){?>
@@ -162,7 +162,7 @@ else
 if ($offset > ($N-1) && $n!=0) {
   echo "   <a class='link' href='disclosure_full.php?active=" . $active .
     "&offset=" . ($offset-$N) . "' onclick='top.restoreSession()'>[" .
-    xl('Previous') . "]</a>\n";
+    xlt('Previous') . "]</a>\n";
 }
 ?>
   
@@ -171,7 +171,7 @@ if ($offset > ($N-1) && $n!=0) {
 if ($n >= $N && $noOfRecordsLeft!=$N) {
   echo "&nbsp;&nbsp;   <a class='link' href='disclosure_full.php?active=" . $active. 
     "&offset=" . ($offset+$N)  ."&leftrecords=".$noOfRecordsLeft."' onclick='top.restoreSession()'>[" .
-    xl('Next') . "]</a>\n";
+    xlt('Next') . "]</a>\n";
 }
 ?>
   </td>
