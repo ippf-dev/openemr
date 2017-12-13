@@ -38,7 +38,7 @@ if ($what == 'codes') {
 else if ($what == 'fields') {
   $source = empty($_GET['source']) ? 'D' : $_GET['source'];
   if ($source == 'D') $layout_id = 'DEM'; else
-  if ($source == 'H') $layout_id = 'HIS'; else
+  if ($source == 'H') $layout_id = 'HIS%'; else
   if ($source == 'E') $layout_id = 'LBF%';
 }
 else if ($what == 'groups') {
