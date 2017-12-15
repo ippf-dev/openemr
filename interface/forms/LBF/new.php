@@ -696,6 +696,10 @@ function warehouse_changed(sel) {
       array($formname, $formid));
     $form_issue_id = empty($firow['issue_id']) ? 0 : intval($firow['issue_id']);
     $form_provider_id = empty($firow['provider_id']) ? 0 : intval($firow['provider_id']);
+    if (!$form_provider_id && $userauthorized) {
+      // Default to the logged-in user if they are a provider.
+      $form_provider_id = $_SESSION['authUserID'];
+    }
 
     // Provider selector.
     // TBD: Refactor this function out of the FeeSheetHTML class as that is not the best place for it.
