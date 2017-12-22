@@ -1076,8 +1076,9 @@ function generate_print_field($frow, $currvalue) {
 
   // Generic single-selection list
   // We used to show all the list options but this was undone per CV request 2017-12-07
+  // Changed 2017-12-15 to show all options only for the radio button type (27, further below).
   // (see alternative code below).
-  if ($data_type == 1 || $data_type == 26 || $data_type == 27 || $data_type == 33) {
+  if ($data_type == 1 || $data_type == 26 || $data_type == 33) { // Removed: || $data_type == 27
     if (empty($fld_length)) {
       if ($list_id == 'titles') {
         $fld_length = 3;
@@ -1432,9 +1433,8 @@ function generate_print_field($frow, $currvalue) {
     echo "</table>";
   }
 
-  /********************************************************************
   // a set of labeled radio buttons
-  else if ($data_type == 27 || $data_type == 1 || $data_type == 26 || $data_type == 33) {
+  else if ($data_type == 27) { // Removed: || $data_type == 1 || $data_type == 26 || $data_type == 33
     // In this special case, fld_length is the number of columns generated.
     $cols = max(1, $frow['fld_length']);
     $lres = sqlStatement("SELECT * FROM list_options " .
@@ -1468,7 +1468,6 @@ function generate_print_field($frow, $currvalue) {
     }
     echo "</table>";
   }
-  ********************************************************************/
 
   // special case for history of lifestyle status; 3 radio buttons and a date text field:
   else if ($data_type == 28 || $data_type == 32) {
@@ -1565,6 +1564,7 @@ function generate_print_field($frow, $currvalue) {
     echo "</a>";
   }
 
+  /********************************************************************
   //facilities drop-down list
   else if ($data_type == 35) {
     // In this special case, fld_length is the number of columns generated.
@@ -1595,6 +1595,14 @@ function generate_print_field($frow, $currvalue) {
       }
     }
     echo "</table>";
+  }
+  ********************************************************************/
+
+  // Facilities. Changed 2017-12-15 to not show the choices.
+  else if ($data_type == 35) {
+    $urow = sqlQuery("SELECT id, name FROM facility WHERE id = ?",
+      array($currvalue));
+    echo empty($urow['id']) ? '&nbsp;' : text($urow['name']);
   }
 
   // Image from canvas drawing
@@ -2642,7 +2650,7 @@ function display_layout_tabs_data($formtype, $result1, $result2='') {
             $subtitle = '';
           }
           if ($prepend_blank_row) {
-            echo "<tr><td class='label' colspan='$CPR'>&nbsp;</td></tr>\n";
+            echo "<tr><td class='label' style='font-size:25%' colspan='$CPR'>&nbsp;</td></tr>\n";
           }
           echo "<tr>";
         }
@@ -2890,7 +2898,7 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
             $subtitle = '';
           }
           if ($prepend_blank_row) {
-            echo "<tr><td class='label' colspan='$CPR'>&nbsp;</td></tr>\n";
+            echo "<tr><td class='label' style='font-size:25%' colspan='$CPR'>&nbsp;</td></tr>\n";
           }
           echo "<tr>";
         }

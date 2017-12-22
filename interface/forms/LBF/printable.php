@@ -238,7 +238,7 @@ else {
 echo genFacilityTitle(xl_form_title($formtitle), -1, $logo);
 ?>
 
-<?php if ($isform) { ?>
+<?php if (false) { // was: ($isform) ?>
 <span class='subhead'>
  <?php echo xlt('Patient') ?>: ________________________________________ &nbsp;
  <?php echo xlt('Clinic') ?>: ____________________ &nbsp;
@@ -380,7 +380,7 @@ while ($frow = sqlFetchArray($fres)) {
   if (($cell_count + $titlecols + $datacols) > $CPR || $cell_count == 0) {
     end_row();
     if ($prepend_blank_row) {
-      echo "  <tr><td class='text' colspan='$CPR'>&nbsp;</td></tr>\n";
+      echo "  <tr><td class='text' style='font-size:25%' colspan='$CPR'>&nbsp;</td></tr>\n";
     }
     echo "  <tr>";
   }
