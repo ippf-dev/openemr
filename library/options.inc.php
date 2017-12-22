@@ -137,7 +137,7 @@ function generate_select_list($tag_name, $list_id, $currvalue='', $title='',
 
 // Parsing for data type 31, static text.
 function parse_static_text($frow) {
-  $tmp = $frow['description'];
+  $tmp = str_replace("\r\n", "\n", $frow['description']);
   // Translate if it does not look like HTML.
   if (substr($tmp, 0, 1) != '<') {
     $tmp = nl2br(xl_layout_label($tmp));

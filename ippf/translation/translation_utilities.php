@@ -169,8 +169,8 @@ function verify_file($filename,$language,$replace=true,$source_name='',$constant
         $num = count($data);
         if($num>=2)
         {
-            $constant=$data[$constant_colummn];
-            $definition=$data[$definition_column];
+            $constant   = str_replace("\r\n", "\n", $data[$constant_colummn]);
+            $definition = str_replace("\r\n", "\n", $data[$definition_column]);
             if(!$first ||$constant!='constant_name')
             {
                 $result=verify_translation($constant,$definition,$language,$replace,$source_name);

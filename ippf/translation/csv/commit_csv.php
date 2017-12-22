@@ -57,7 +57,15 @@ $created=array();
 $updated=array();
 foreach($translations as $translation)
 {
-    $result=verify_translation($translation[0],$translation[1],$lang_id,true,"",false,$preview);
+    $result = verify_translation(
+        str_replace("\r\n", "\n", $translation[0]),
+        str_replace("\r\n", "\n", $translation[1]),
+        $lang_id,
+        true,
+        "",
+        false,
+        $preview
+    );
     if(strstr($result,"Definition Exists:")===false)
     {
         if(strstr($result,"Empty Definition")===false)
