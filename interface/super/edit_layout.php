@@ -342,6 +342,40 @@ else if ($_POST['formaction'] == "movefields" && $layout_id) {
     sqlStatement($sqlstmt);
 }
 
+else if ($_POST['formaction'] == "copytolayout" && $layout_id && $_POST['targetlayout']) {
+    // Copy field(s) to the specified group in another layout.
+    // It's important to skip any duplicate field names.
+    $tlayout = $_POST['targetlayout'];
+    $tgroup  = $_POST['targetgroup'];
+    foreach (explode(" ", $_POST['selectedfields']) as $onefield) {
+        $srow = sqlQuery("SELECT * FROM layout_options WHERE " .
+            "form_id = ? AND field_id = ? LIMIT 1",
+            array($layout_id, $onefield));
+        if (empty($srow)) {
+            die("Internal error: Field '$onefield' not found in layout '$layout_id'.");
+        }
+        $trow = sqlQuery("SELECT * FROM layout_options WHERE " .
+            "form_id = ? AND field_id = ? LIMIT 1",
+            array($tlayout, $onefield));
+        if (!empty($trow)) {
+            echo "<!-- Field '$onefield' already exists in layout '$tlayout'. -->\n";
+            continue;
+        }
+        $qstr = "INSERT INTO layout_options SET `form_id` = ?, `field_id` = ?, `group_id` = ?";
+        $qarr = array($tlayout, $onefield, $tgroup);
+        foreach ($srow as $key => $value) {
+            if ($key == 'form_id' || $key == 'field_id' || $key == 'group_id') {
+                continue;
+            }
+            $qstr .= ", `$key` = ?";
+            $qarr[] = $value;
+        }
+        // echo "<!-- $qstr ("; foreach ($qarr as $tmp) echo "'$tmp',"; echo ") -->\n"; // debugging
+        sqlStatement($qstr, $qarr);
+        addOrDeleteColumn($tlayout, $onefield, true);
+    }
+}
+
 else if ($_POST['formaction'] == "deletefields" && $layout_id) {
     // Delete a field from a specific group
     $sqlstmt = "DELETE FROM layout_options WHERE ".
@@ -769,6 +803,32 @@ function writeFieldLine($linedata) {
       "</table>\n" .
       "</div>\n";
 }
+
+// Generates <optgroup> and <option> tags for all layouts.
+//
+function genLayoutOptions($title = '?', $default = '') {
+    global $layouts;
+    $s = "  <option value=''>" . text($title) . "</option>\n";
+    $lastgroup = '';
+    foreach ($layouts as $key => $value) {
+        if ($value[0] != $lastgroup) {
+            if ($lastgroup) {
+                $s .= " </optgroup>\n";
+            }
+            $s .= " <optgroup label='" . attr($value[0]) . "'>\n";
+            $lastgroup = $value[0];
+        }
+        $s .= "  <option value='" . attr($key) . "'";
+        if ($key == $default) {
+            $s .= " selected";
+        }
+        $s .= ">" . text($value[1]) . "</option>\n";
+    }
+    if ($lastgroup) {
+        $s .= " </optgroup>\n";
+    }
+    return $s;
+}
 ?>
 <html>
 
@@ -1025,32 +1085,20 @@ function myChangeCheck() {
 <!-- elements used to select more than one field -->
 <input type="hidden" name="selectedfields" id="selectedfields" value="">
 <input type="hidden" id="targetgroup" name="targetgroup" value="">
+<input type="hidden" id="targetlayout" name="targetlayout" value="">
 
 <p>
 <b><?php xl('Edit layout','e'); ?>:</b>&nbsp;
 <select name='layout_id' id='layout_id'>
- <option value=''>-- <?php echo xl('Select') ?> --</option>
-<?php
-$lastgroup = '';
-foreach ($layouts as $key => $value) {
-  if ($value[0] != $lastgroup) {
-    if ($lastgroup) echo " </optgroup>\n";
-    echo " <optgroup label='" . attr($value[0]) . "'>\n";
-    $lastgroup = $value[0];
-  }
-  echo "  <option value='" . attr($key) . "'";
-  if ($key == $layout_id) echo " selected";
-  echo ">" . text($value[1]) . "</option>\n";
-}
-if ($lastgroup) echo " </optgroup>\n";
-?>
+<?php echo genLayoutOptions('-- ' . xl('Select') . ' --', $layout_id); ?>
 </select>
 </p>
 
 <?php if ($layout_id) { ?>
 <div style='margin: 0 0 8pt 0;'>
 <input type='button' value='<?php echo xla('Layout Properties'); ?>' onclick='edit_layout_props("")' />&nbsp;
-<input type='button' class='addgroup'  id='addgroup'  value='<?php echo xla('Add Group'); ?>' />
+<input type='button' class='addgroup'  id='addgroup'  value='<?php echo xla('Add Group'); ?>' />&nbsp;
+<input type='button' name='save' id='save' value='<?php echo xla('Save Changes'); ?>' />
 </div>
 <?php } else { ?>
 <input type='button' value='<?php echo xla('New Layout'); ?>' onclick='edit_layout_props("")' />&nbsp;
@@ -1172,10 +1220,10 @@ if ($layout_id) {
 <?php xl('With selected:', 'e');?>
 <input type='button' name='deletefields' id='deletefields' value='<?php xl('Delete','e'); ?>' style="font-size:90%" disabled="disabled" />
 <input type='button' name='movefields' id='movefields' value='<?php xl('Move to...','e'); ?>' style="font-size:90%" disabled="disabled" />
+<select id='copytolayout' style="font-size:90%" disabled="disabled" onchange="CopyToLayout(this)">
+<?php echo genLayoutOptions(xl('Copy to Layout...')); ?>
+</select>
 </span>
-<p>
-<input type='button' name='save' id='save' value='<?php xl('Save Changes','e'); ?>' />
-</p>
 <?php } ?>
 
 </form>
@@ -1404,11 +1452,13 @@ $(document).ready(function(){
         // disable the delete-move buttons
         $("#deletefields").attr("disabled", "disabled");
         $("#movefields").attr("disabled", "disabled");
+        $("#copytolayout").attr("disabled", "disabled");
         $(".selectfield").each(function(i) {
             // if any field is selected, enable the delete-move buttons
             if ($(this).attr("checked") == true) {
                 $("#deletefields").removeAttr("disabled");
                 $("#movefields").removeAttr("disabled");
+                $("#copytolayout").removeAttr("disabled");
             }
         });
     });
@@ -1621,10 +1671,11 @@ $(document).ready(function(){
     // show the popup choice of groups
     var ShowGroups = function(btnObj) {
         if (!myChangeCheck()) return;
+        $("#targetlayout").val("");
         window.open('../patient_file/encounter/find_code_dynamic.php?what=groups&layout_id=<?php echo $layout_id;?>',
           'groups', 'width=600,height=600,scrollbars=yes');
     };
-    
+ 
     // Show context DD for NationNotes
     var ChangeList = function(btnObj){
       if(btnObj==34){
@@ -1659,6 +1710,14 @@ $(document).ready(function(){
   });
 
 });
+
+// show the popup choice of groups
+function CopyToLayout(selObj) {
+    if (!selObj.value || !myChangeCheck()) return;
+    $("#targetlayout").val(selObj.value);
+    window.open('../patient_file/encounter/find_code_dynamic.php?what=groups&layout_id=' + selObj.value,
+      'groups', 'width=600,height=600,scrollbars=yes');
+};
 
 function NationNotesContext(lineitem,val){
   if(val==34){
@@ -1744,7 +1803,12 @@ function MoveFields(targetgroup) {
             delim = " ";
         }
     });
-    $("#formaction").val("movefields");
+    if ($("#targetlayout").val()) {
+        $("#formaction").val("copytolayout");
+    }
+    else {
+        $("#formaction").val("movefields");
+    }
     mySubmit();
 };
 
