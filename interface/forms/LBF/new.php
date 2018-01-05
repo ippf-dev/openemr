@@ -1,6 +1,6 @@
 <?php
 /**
- * Copyright (C) 2009-2017 Rod Roark <rod@sunsetsystems.com>
+ * Copyright (C) 2009-2018 Rod Roark <rod@sunsetsystems.com>
  *
  * LICENSE: This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -111,6 +111,7 @@ if (!empty($lobj['grp_aco_spec'  ])) $LBF_ACO = explode('|', $lobj['grp_aco_spec
 if ($lobj['grp_services']) $LBF_SERVICES_SECTION = $lobj['grp_services'] == '*' ? '' : $lobj['grp_services'];
 if ($lobj['grp_products']) $LBF_PRODUCTS_SECTION = $lobj['grp_products'] == '*' ? '' : $lobj['grp_products'];
 if ($lobj['grp_diags'   ]) $LBF_DIAGS_SECTION    = $lobj['grp_diags'   ] == '*' ? '' : $lobj['grp_diags'   ];
+$LBF_ENABLE_SAVE_CLOSE = !empty($lobj['grp_save_close']);
 
 // Check access control.
 if (!acl_check('admin', 'super') && !empty($LBF_ACO)) {
@@ -133,7 +134,7 @@ if (!$from_trend_form) {
 
 // If Save was clicked, save the info.
 //
-if (!empty($_POST['bn_save']) || !empty($_POST['bn_save_print']) || !empty($_POST['bn_save_continue'])) {
+if (!empty($_POST['bn_save']) || !empty($_POST['bn_save_print']) || !empty($_POST['bn_save_continue']) || !empty($_POST['bn_save_close'])) {
   $newid = 0;
   if (!$formid) {
     // Creating a new form. Get the new form_id by inserting and deleting a dummy row.
@@ -246,6 +247,10 @@ if (!empty($_POST['bn_save']) || !empty($_POST['bn_save_print']) || !empty($_POS
       $fs->save($bill, $prod, NULL, NULL);
       $fs->updatePriceLevel($_POST['form_fs_pricelevel']);
     }
+  }
+
+  if (!$alertmsg && !empty($_POST['bn_save_close'])) {
+    $alertmsg = FeeSheet::closeVisit($pid, $visitid);
   }
 
   if (!$formid) $formid = $newid;
@@ -1090,8 +1095,13 @@ function warehouse_changed(sel) {
       if ($last_category) echo " </optgroup>\n";
       echo "</select>&nbsp;&nbsp;\n";
     }
+    $tmp_provider_id = $fs->provider_id ? $fs->provider_id : 0;
+    if (!$tmp_provider_id && $userauthorized) {
+      // Default to the logged-in user if they are a provider.
+      $tmp_provider_id = $_SESSION['authUserID'];
+    }
     echo xlt('Main Provider') . ": ";
-    echo $fs->genProviderSelect("form_fs_provid", ' ', $fs->provider_id);
+    echo $fs->genProviderSelect("form_fs_provid", ' ', $tmp_provider_id);
     echo "\n";
     echo "</p>\n";
 
@@ -1306,6 +1316,11 @@ function warehouse_changed(sel) {
 
 &nbsp;
 <input type='submit' name='bn_save_continue' value='<?php echo xla('Save and Continue') ?>' />
+
+<?php if ($LBF_ENABLE_SAVE_CLOSE) { ?>
+&nbsp;
+<input type='submit' name='bn_save_close' value='<?php echo xla('Save and Close Visit') ?>' />
+<?php } ?>
 
 <?php if (!$from_issue_form) { ?>
 

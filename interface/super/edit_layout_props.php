@@ -60,6 +60,7 @@ if ($_POST['form_submit'] && !$alertmsg) {
       "grp_size = ?, "       .
       "grp_issue_type = ?, " .
       "grp_aco_spec = ?, "   .
+      "grp_save_close = ?, " .
       "grp_services = ?, "   .
       "grp_products = ?, "   .
       "grp_diags = ?";
@@ -74,6 +75,7 @@ if ($_POST['form_submit'] && !$alertmsg) {
       intval($_POST['form_size']),
       $_POST['form_issue'],
       $_POST['form_aco'],
+      empty($_POST['form_save_close']) ? 0 : 1,
       empty($_POST['form_services']) ? '' : (empty($_POST['form_services_codes']) ? '*' : $_POST['form_services_codes']),
       empty($_POST['form_products']) ? '' : (empty($_POST['form_products_codes']) ? '*' : $_POST['form_products_codes']),
       empty($_POST['form_diags'   ]) ? '' : (empty($_POST['form_diags_codes'   ]) ? '*' : $_POST['form_diags_codes'   ]),
@@ -132,6 +134,7 @@ $row = array(
   'grp_size'       => '9',
   'grp_issue_type' => '',
   'grp_aco_spec'   => '',
+  'grp_save_close' => '0',
   'grp_services'   => '',
   'grp_products'   => '',
   'grp_diags'      => '',
@@ -391,6 +394,15 @@ function get_related() {
   }
 ?>
    </select>
+  </td>
+ </tr>
+
+ <tr>
+  <td valign='top' width='1%' nowrap>
+   <?php echo xls('Enable Save and Close'); ?>
+  </td>
+  <td>
+   <input type='checkbox' name='form_save_close' <?php if ($row['grp_save_close']) echo "checked"; ?> />
   </td>
  </tr>
 

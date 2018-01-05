@@ -750,3 +750,7 @@ DELETE FROM list_options WHERE list_id = 'lists' AND option_id = 'lbfnames';
 DELETE FROM list_options WHERE list_id = 'transactions';
 DELETE FROM list_options WHERE list_id = 'lists' AND option_id = 'transactions';
 #EndIf
+
+#IfMissingColumn layout_group_properties grp_save_close
+ALTER TABLE `layout_group_properties` ADD COLUMN `grp_save_close` tinyint(1) not null default 0;
+#EndIf
