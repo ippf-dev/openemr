@@ -208,8 +208,8 @@ function generate_form_field($frow, $currvalue='') {
   $lbfchange = (
     strpos($frow['form_id'], 'LBF') === 0 ||
     strpos($frow['form_id'], 'LBT') === 0 ||
-    $frow['form_id'] == 'DEM'             ||
-    $frow['form_id'] == 'HIS'
+    strpos($frow['form_id'], 'DEM') === 0 ||
+    strpos($frow['form_id'], 'HIS') === 0
   ) ? "checkSkipConditions();" : "";
   $lbfonchange = $lbfchange ? "onchange='$lbfchange'" : "";
 

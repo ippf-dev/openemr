@@ -3,7 +3,7 @@
 * Administration tool for doing some things with multiple sites.
 * Move this to the parent of the directory holding multiple OpenEMR installations.
 *
-* Copyright (C) 2016-2017 Rod Roark <rod@sunsetsystems.com>
+* Copyright (C) 2016-2018 Rod Roark <rod@sunsetsystems.com>
 *
 * LICENSE: This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public License
@@ -66,7 +66,59 @@ function xl($s) {
   return $s;
 }
 
-// $base_directory = dirname(dirname(dirname(dirname(__FILE__))));
+function get_auth_arr() {
+  global $password_base;
+  $dh = opendir($password_base);
+  if (!$dh) die("Cannot read directory '$password_base'.");
+  $autharr = array();
+  while (false !== ($pfname = readdir($dh))) {
+    if (!preg_match('/^[A-Za-z0-9]+$/', $pfname)) continue;
+    $filepath = $password_base . '/' . $pfname;
+    $autharr[$pfname] = array();
+    $fh = fopen($filepath, 'r');
+    while (false !== ($line = fgets($fh))) {
+      $tmp = explode(':', rtrim($line), 2);
+      $autharr[$pfname][$tmp[0]] = $tmp[1];
+    }
+    fclose($fh);
+    ksort($autharr[$pfname]);
+  }
+  closedir($dh);
+  ksort($autharr);
+  return $autharr;
+}
+
+// From https://www.virendrachandak.com/techtalk/using-php-create-passwords-for-htpasswd-file/
+// APR1-MD5 encryption method (windows compatible)
+function crypt_apr1_md5($plainpasswd) {
+    $salt = substr(str_shuffle("abcdefghijklmnopqrstuvwxyz0123456789"), 0, 8);
+    $len = strlen($plainpasswd);
+    $text = $plainpasswd . '$apr1$' . $salt;
+    $bin = pack("H32", md5($plainpasswd . $salt . $plainpasswd));
+    for($i = $len; $i > 0; $i -= 16) { $text .= substr($bin, 0, min(16, $i)); }
+    for($i = $len; $i > 0; $i >>= 1) { $text .= ($i & 1) ? chr(0) : $plainpasswd{0}; }
+    $bin = pack("H32", md5($text));
+    for($i = 0; $i < 1000; $i++) {
+        $new = ($i & 1) ? $plainpasswd : $bin;
+        if ($i % 3) $new .= $salt;
+        if ($i % 7) $new .= $plainpasswd;
+        $new .= ($i & 1) ? $bin : $plainpasswd;
+        $bin = pack("H32", md5($new));
+    }
+    for ($i = 0; $i < 5; $i++) {
+        $k = $i + 6;
+        $j = $i + 12;
+        if ($j == 16) $j = 5;
+        $tmp = $bin[$i] . $bin[$k] . $bin[$j] . $tmp;
+    }
+    $tmp = chr(0) . chr(0) . $bin[11] . $tmp;
+    $tmp = strtr(strrev(substr(base64_encode($tmp), 2)),
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/",
+        "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+    return "$" . "apr1" . "$" . $salt . "$" . $tmp;
+}
+
+$password_base = "/etc/apache2/passwords";
 
 // Assuming this script is in the parent of the OpenEMR directories.
 $base_directory = dirname(__FILE__);
@@ -74,7 +126,101 @@ if (stripos(PHP_OS,'WIN') === 0) {
   $base_directory = str_replace("\\","/",$base_directory);
 }
 
-if (!empty($_POST['form_submit'])) {
+if (!empty($_POST['form_auth_start'])) {
+?>
+<html>
+ <body>
+  <form method='post' action='multisite_admin.php'>
+  <center>
+  <h2>Apache Authentication Management</h2>
+  <p align='left'>Here you can change existing passwords, add new login names and passwords, and
+  delete existing logins. Existing passwords are stored only as a hash and not shown; leave
+  New Password empty to leave it unchanged. Note these passwords are an additional layer of
+  security and have no relation to OpenEMR passwords.</p>
+  <p align='left' style='color:red'>Currently the web server is configured to protect only the
+  "admin" resource which is this application.</p>
+  <table>
+   <tr>
+    <th align='left'>Resource</th>
+    <th>Login</th>
+    <th>New Password</th>
+    <th align='right'>Delete</th>
+   </tr>
+<?php
+  $autharr = get_auth_arr();
+  foreach ($autharr as $pfname => $pfarr) {
+    // Rows for existing logins
+    foreach ($pfarr as $logname => $loghash) {
+      echo "   <tr>\n";
+      echo "    <td>$pfname</td>\n";
+      echo "    <td>$logname</td>\n";
+      echo "    <td><input type='text'     name='form_pwd[$pfname][$logname]' value=''</td>\n";
+      echo "    <td align='right'><input type='checkbox' name='form_del[$pfname][$logname]' value='1'</td>\n";
+      echo "   </tr>\n";
+    }
+    // Rows for adding logins
+    for ($i = 0; $i < 1; ++$i) {
+      echo "   <tr>\n";
+      echo "    <td>$pfname</td>\n";
+      echo "    <td><input type='text' name='form_new_name[$pfname][$i]' value=''</td>\n";
+      echo "    <td><input type='text' name='form_new_pwd[$pfname][$i]' value=''</td>\n";
+      echo "    <td>&nbsp;</td>\n";
+      echo "   </tr>\n";
+    }
+  }
+?>
+  </table>
+  <p><input type='submit' name='form_auth_submit' value='Update' />
+  &nbsp;<input type='submit' name='form_cancel' value='Cancel' /></p>
+  </center>
+  </form>
+ </body>
+</html>
+<?php
+  exit();
+}
+
+else if (!empty($_POST['form_auth_submit'])) {
+  $autharr = get_auth_arr();
+  // Update existing passwords.
+  foreach ($_POST['form_pwd'] as $pfname => $pfarr) {
+    foreach ($pfarr as $logname => $logpwd) {
+      if (!empty($_POST['form_del'][$pfname][$logname])) {
+        unset($autharr[$pfname][$logname]);
+      }
+      else {
+        $logpwd = trim($logpwd);
+        if ($logpwd !== '') {
+          $autharr[$pfname][$logname] = crypt_apr1_md5($logpwd);
+        }
+      }
+    }
+  }
+  // Add new logins.
+  foreach ($_POST['form_new_name'] as $pfname => $pfarr) {
+    foreach ($pfarr as $i => $logname) {
+      $logpwd = trim($_POST['form_new_pwd'][$pfname][$i]);
+      if ($logpwd !== '') {
+        $autharr[$pfname][$logname] = crypt_apr1_md5($logpwd);
+      }
+    }
+  }
+  // Rewrite all of the password files with the updated data.
+  foreach ($autharr as $pfname => $pfarr) {
+    $filepath = $password_base . '/' . $pfname;
+    $fh = fopen($filepath, 'w');
+    foreach ($pfarr as $logname => $loghash) {
+      fwrite($fh, "$logname:$loghash\n");
+    }
+    fclose($fh);
+  }
+}
+
+else if (!empty($_POST['form_cancel'])) {
+  // Nothing to do.
+}
+
+else if (!empty($_POST['form_submit'])) {
   // Get a connection for each desired site.
   $dh = opendir($base_directory);
   if (!$dh) die("Cannot read directory '$base_directory'.");
@@ -149,7 +295,7 @@ if (!empty($_POST['form_submit'])) {
     }
   } // end form_globals
 
-  if (!empty($_POST['form_history'])) {
+  else if (!empty($_POST['form_history'])) {
     if (!$GSDEBUG) {
       // Write header row.
       echo output_csv('Site', false);
@@ -182,7 +328,7 @@ if (!empty($_POST['form_submit'])) {
     }
   } // end form_history
 
-  if (!empty($_POST['form_forms'])) {
+  else if (!empty($_POST['form_forms'])) {
     if (!$GSDEBUG) {
       // Write header row.
       echo output_csv('Site', false);
@@ -230,7 +376,7 @@ if (!empty($_POST['form_submit'])) {
   } // end form_forms
 
   foreach ($siteslist as $link) mysqli_close($link);
-  exit;
+  exit();
 }
 ?>
 <html>
@@ -238,10 +384,11 @@ if (!empty($_POST['form_submit'])) {
   <form method='post' action='multisite_admin.php'>
    <center>
    <p>Multiple Sites Administration</p>
-   <input type='submit' name='form_globals' value='Download Global Settings' />
-   <input type='submit' name='form_history' value='Download History Usage' />
-   <input type='submit' name='form_forms'   value='Download Form Usage in Past 12 Months' />
-   <input type='hidden' name='form_submit'  value='1' />
+   <input type='submit' name='form_auth_start' value='Manage Apache Authentication' />
+   <input type='submit' name='form_globals'    value='Download Global Settings' />
+   <input type='submit' name='form_history'    value='Download History Usage' />
+   <input type='submit' name='form_forms'      value='Download Form Usage in Past 12 Months' />
+   <input type='hidden' name='form_submit'     value='1' />
    </center>
   </form>
  </body>
