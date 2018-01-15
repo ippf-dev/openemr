@@ -650,7 +650,6 @@ function writeFieldLine($linedata) {
         ", C = " . xla('Capitalize') .
         ", D = " . xla('Dup Check') .
         ", G = " . xla('Graphable') .
-        ", I = " . xla('Initially Open Group') .
         ", K = " . xla('Blank row above') .
         ", L = " . xla('Lab Order') .
         ", N = " . xla('New Patient Form') .

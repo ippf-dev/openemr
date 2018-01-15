@@ -744,19 +744,21 @@ function warehouse_changed(sel) {
 <?php
   $shrow = getHistoryData($pid);
 
+  /********************************************************************
   // Determine if this layout uses edit option "I" anywhere.
   // If not we default to only the first group being initially open.
   $tmprow = sqlQuery("SELECT form_id FROM layout_options " .
     "WHERE form_id = ? AND uor > 0 AND edit_options LIKE '%I%' " .
     "LIMIT 1", array($formname));
   $some_group_is_open = !empty($tmprow['form_id']);
+  ********************************************************************/
 
   $fres = sqlStatement("SELECT * FROM layout_options " .
     "WHERE form_id = ? AND uor > 0 " .
     "ORDER BY group_id, seq", array($formname));
   $cell_count = 0;
   $item_count = 0;
-  $display_style = 'block';
+  // $display_style = 'block';
 
   // This string is the active group levels. Each leading substring represents an instance of nesting.
   $group_levels = '';
@@ -860,16 +862,14 @@ function warehouse_changed(sel) {
         $group_table_active = false;
       }
       $group_levels .= $this_levels[$i++];
-      $gname = $grparr[substr($group_levels, 0, $i)]['grp_title'];
-      $subtitle = xl_layout_label($grparr[substr($group_levels, 0, $i)]['grp_subtitle']);
+      $grouprow = $grparr[substr($group_levels, 0, $i)];
+      $gname = $grouprow['grp_title'];
+      $subtitle = xl_layout_label($grouprow['grp_subtitle']);
       // Compute a short unique identifier for this group.
       $group_seq = 'lbf' . $group_levels;
       $group_name = $gname;
 
-      if ($some_group_is_open) {
-        // Must have edit option "I" in first item for its group to be initially open.
-        $display_style = strpos($edit_options, 'I') === FALSE ? 'none' : 'block';
-      }
+      $display_style = $grouprow['grp_init_open'] ? 'block' : 'none';
 
       // If group name is blank, no checkbox or div.
       if (strlen($gname)) {
@@ -889,7 +889,7 @@ function warehouse_changed(sel) {
         echo "<tr><td class='bold' style='height:4pt' colspan='$CPR'></td></tr>\n";
       }
 
-      $display_style = 'none';
+      // $display_style = 'none';
 
       // Initialize historical data array and write date headers.
       $historical_ids = array();

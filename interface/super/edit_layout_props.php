@@ -42,9 +42,11 @@ if ($_POST['form_submit'] && !$alertmsg) {
   if ($group_id) {
     $sets =
       "grp_subtitle = ?, "   .
+      "grp_init_open = ?, "  .
       "grp_columns = ?";
     $sqlvars = array(
       $_POST['form_subtitle'],
+      empty($_POST['form_init_open' ]) ? 0 : 1,
       intval($_POST['form_columns']),
     );
   }
@@ -135,6 +137,7 @@ $row = array(
   'grp_issue_type' => '',
   'grp_aco_spec'   => '',
   'grp_save_close' => '0',
+  'grp_init_open'  => '0',
   'grp_services'   => '',
   'grp_products'   => '',
   'grp_diags'      => '',
@@ -436,6 +439,17 @@ function get_related() {
   <td>
    <input type='text' size='40' name='form_diags_codes' onclick='sel_related(this, "ICD10")' style='width:100%'
     value='<?php if ($row['grp_diags'] != '*') echo $row['grp_diags']; ?>' />
+  </td>
+ </tr>
+
+<?php } else { // else this is a group ?>
+
+ <tr>
+  <td valign='top' width='1%' nowrap>
+   <?php echo xls('Initially Open Group'); ?>
+  </td>
+  <td>
+   <input type='checkbox' name='form_init_open' <?php if ($row['grp_init_open']) echo "checked"; ?> />
   </td>
  </tr>
 

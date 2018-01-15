@@ -2504,6 +2504,7 @@ CREATE TABLE `layout_group_properties` (
   grp_issue_type  varchar(75)    not null default '',
   grp_aco_spec    varchar(63)    not null default '',
   grp_save_close  tinyint(1)     not null default 0,
+  grp_init_open   tinyint(1)     not null default 0,
   grp_services    varchar(4095)  not null default '',
   grp_products    varchar(4095)  not null default '',
   grp_diags       varchar(4095)  not null default '',

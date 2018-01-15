@@ -754,3 +754,11 @@ DELETE FROM list_options WHERE list_id = 'lists' AND option_id = 'transactions';
 #IfMissingColumn layout_group_properties grp_save_close
 ALTER TABLE `layout_group_properties` ADD COLUMN `grp_save_close` tinyint(1) not null default 0;
 #EndIf
+
+#IfMissingColumn layout_group_properties grp_init_open
+ALTER TABLE `layout_group_properties` ADD COLUMN `grp_init_open` tinyint(1) not null default 0;
+UPDATE layout_group_properties AS p, layout_options AS o SET p.grp_init_open = 1 WHERE
+o.form_id = p.grp_form_id AND o.group_id = p.grp_group_id AND o.uor > 0 AND o.edit_options LIKE '%I%';
+UPDATE layout_group_properties AS p SET p.grp_init_open = 1 WHERE p.grp_group_id = '1' AND
+(SELECT count(*) FROM layout_options AS o WHERE o.form_id = p.grp_form_id AND o.uor > 0 AND o.edit_options LIKE '%I%') = 0;
+#EndIf
