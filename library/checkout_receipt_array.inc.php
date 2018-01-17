@@ -268,7 +268,8 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
     "WHERE " .
     "b.pid = '$patient_id' AND b.encounter = '$encounter' AND " .
-    "b.code_type != 'COPAY' AND b.code_type != 'TAX' AND b.activity = 1 " .
+    "b.code_type != 'COPAY' AND b.code_type != 'TAX' AND b.activity = 1 AND " .
+    "(c.ct_id IS NULL OR c.ct_fee = 1 OR c.ct_diag = 0) " .
     "ORDER BY b.id");
   while ($inrow = sqlFetchArray($inres)) {
     if ($billtime && $inrow['bill_date'] != $billtime) continue;

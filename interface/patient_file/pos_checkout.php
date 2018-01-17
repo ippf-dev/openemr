@@ -354,7 +354,7 @@ function invoiceChecksum($pid, $encounter) {
 //
 function generate_receipt($patient_id, $encounter=0) {
   global $css_header, $details, $rapid_data_entry, $aAdjusts;
-  global $web_root, $webserver_root;
+  global $web_root, $webserver_root, $code_types;
   global $aTaxNames, $aInvTaxes, $checkout_times, $current_checksum;
 
   // Get the most recent invoice data or that for the specified encounter.
@@ -655,9 +655,12 @@ body, td {
     "code_type != 'COPAY' AND code_type != 'TAX' AND activity = 1 " .
     "ORDER BY id");
   while ($inrow = sqlFetchArray($inres)) {
-    $billtime = $inrow['billed'] ? $inrow['bill_date'] : '';
-    receiptDetailLine($inrow['code_type'], $inrow['code'], $inrow['code_text'],
-      $inrow['units'], $inrow['fee'], $aTotals, 'S:' . $inrow['id'], $billtime, $svcdate);
+    // Write the line item if it allows fees or is not a diagnosis.
+    if (!empty($code_types[$inrow['code_type']]['fee']) || empty($code_types[$inrow['code_type']]['diag'])) {
+      $billtime = $inrow['billed'] ? $inrow['bill_date'] : '';
+      receiptDetailLine($inrow['code_type'], $inrow['code'], $inrow['code_text'],
+        $inrow['units'], $inrow['fee'], $aTotals, 'S:' . $inrow['id'], $billtime, $svcdate);
+    }
   }
 
   // Write any adjustments left in the aAdjusts array.
@@ -1937,9 +1940,12 @@ while ($brow = sqlFetchArray($bres)) {
     markTaxes($taxrates);
   }
 
-  write_form_line($code_type, $brow['code'], $brow['id'], $thisdate,
-    ucfirst(strtolower($brow['code_text'])), $brow['fee'], $brow['units'],
-    $taxrates, $billtime);
+  // Write the line item if it allows fees or is not a diagnosis.
+  if (!empty($code_types[$code_type]['fee']) || empty($code_types[$code_type]['diag'])) {
+    write_form_line($code_type, $brow['code'], $brow['id'], $thisdate,
+      ucfirst(strtolower($brow['code_text'])), $brow['fee'], $brow['units'],
+      $taxrates, $billtime);
+  }
 
   // Custom logic for IPPF to determine if a GCAC issue applies.
   if ($GLOBALS['ippf_specific'] && $related_code) {
