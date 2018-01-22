@@ -16,17 +16,19 @@ require_once("$srcdir/checkout_receipt_array.inc.php");
 require_once("../../custom/code_types.inc.php");
 
 // For each sorting option, specify the ORDER BY argument.
+// "invoiceno, pid, encounter, payor" are always together because these are the possible components
+// of the displayed invoice number.
 $ORDERHASH = array(
-  'item'    => 'itemcode, svcdate, invoiceno, pid, encounter',
-  'svcdate' => 'svcdate, invoiceno, itemcode, pid, encounter',
-  'paydate' => 'paydate, svcdate, invoiceno, itemcode, pid, encounter',
-  'invoice' => 'invoiceno, svcdate, itemcode, pid, encounter',
-  'payor'   => 'payor, svcdate, invoiceno, itemcode, pid, encounter',
-  'project' => 'proj_name, svcdate, invoiceno, itemcode, pid, encounter',
-  'sobj'    => 'sobj_name, svcdate, invoiceno, itemcode, pid, encounter',
-  'fund'    => 'fund_name, svcdate, invoiceno, itemcode, pid, encounter',
-  'dept'    => 'dept_name, svcdate, invoiceno, itemcode, pid, encounter',
-  'site'    => 'facility_npi, svcdate, invoiceno, itemcode, pid, encounter',
+  'item'    => 'itemcode, svcdate, invoiceno, pid, encounter, payor',
+  'svcdate' => 'svcdate, invoiceno, pid, encounter, payor, itemcode',
+  'paydate' => 'paydate, svcdate, invoiceno, pid, encounter, payor, itemcode',
+  'invoice' => 'invoiceno, pid, encounter, payor, svcdate, itemcode',
+  'payor'   => 'payor, svcdate, invoiceno, pid, encounter, itemcode',
+  'project' => 'proj_name, svcdate, invoiceno, pid, encounter, payor, itemcode',
+  'sobj'    => 'sobj_name, svcdate, invoiceno, pid, encounter, payor, itemcode',
+  'fund'    => 'fund_name, svcdate, invoiceno, pid, encounter, payor, itemcode',
+  'dept'    => 'dept_name, svcdate, invoiceno, pid, encounter, payor, itemcode',
+  'site'    => 'facility_npi, svcdate, invoiceno, pid, encounter, payor, itemcode',
 );
 
 function bucks($amount) {
@@ -660,6 +662,7 @@ if ($_POST['form_orderby']) {
     "SELECT " .
     "b.pid, b.encounter, b.code_type, b.code AS itemcode, b.code_text AS description, b.units, b.fee, " .
     "b.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
+    // "CONCAT(fe.invoice_refno, '|', LPAD(fe.pid, 11, '0'), LPAD(fe.encounter, 11, '0')) AS invoiceno, " .
     "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, l4.notes AS terms, " .
     // "IF((SELECT a.memo FROM ar_activity AS a " .
     "COALESCE((SELECT a.memo FROM ar_activity AS a " .
@@ -687,6 +690,7 @@ if ($_POST['form_orderby']) {
     "s.pid, s.encounter, 'PROD' AS code_type, s.drug_id AS itemcode, d.name AS description, " .
     "s.quantity AS units, s.fee, " .
     "s.bill_date AS paydate, fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
+    // "CONCAT(fe.invoice_refno, '|', LPAD(fe.pid, 11, '0'), LPAD(fe.encounter, 11, '0')) AS invoiceno, " .
     "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, l4.notes AS terms, " .
     // "IF((SELECT a.memo FROM ar_activity AS a " .
     "COALESCE((SELECT a.memo FROM ar_activity AS a " .
