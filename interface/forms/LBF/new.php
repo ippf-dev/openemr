@@ -554,6 +554,8 @@ function fs_append_diag(code_type, code, desc) {
   "</td>";
 }
 
+/**********************************************************************
+
 // Respond to clicking a checkbox for adding (or removing) a specific service.
 function fs_service_clicked(cb) {
   var f = cb.form;
@@ -630,6 +632,101 @@ function fs_diag_clicked(cb) {
     '&code='       + encodeURIComponent(a[1]) +
     '&pricelevel=' + encodeURIComponent(f.form_fs_pricelevel.value));
 }
+
+**********************************************************************/
+
+// Local function to mark a specified fee sheet line item as deleted.
+function fs_mark_deleted(tableid, arrpfx, codetype, code) {
+  var f = document.forms[0];
+  var telem = document.getElementById(tableid);
+  var lino = telem.rows.length - 2 + 1000;
+  for (; lino >= 0; --lino) {
+    var pfx = arrpfx + "[" + lino + "]";
+    if (f[pfx + "[code_type]"] && f[pfx + "[code_type]"].value == codetype && f[pfx + "[code]"].value == code) {
+      f[pfx + "[del]"].checked = true;
+      break;
+    }
+  }
+  return;
+}
+
+// This is for callback by the find-code popup.
+// Deletes a specified code.
+function del_related(s) {
+  var f = document.forms[0];
+  // This is the case of deleting a code from the Fee Sheet:
+  if (!current_sel_name) {
+    if (s) {
+      var codearr = s.split(':');
+      var codetype = codearr[0];
+      var code     = codearr[1];
+      if (codetype == 'PROD') {
+        fs_mark_deleted('fs_products_table', 'form_fs_prod', codetype, code);
+      }
+      else if (codetype == 'ICD9' || codetype == 'ICD10') {
+        fs_mark_deleted('fs_diags_table', 'form_fs_bill', codetype, code);
+      }
+      else {
+        fs_mark_deleted('fs_services_table', 'form_fs_bill', codetype, code);
+      }
+    }
+    return '';
+  }
+  my_del_related(s, document.forms[0][current_sel_name], false);
+  return '';
+}
+
+// Respond to clicking a checkbox for adding (or removing) a specific service.
+function fs_service_clicked(cb) {
+  var f = cb.form;
+  // The checkbox value is a JSON array containing the service's code type, code, description,
+  // and price for each price level.
+  var a = JSON.parse(cb.value);
+  if (!cb.checked) {
+    // The checkbox was UNchecked.
+    fs_mark_deleted('fs_services_table', 'form_fs_bill', a[0], a[1]);
+    return;
+  }
+  $.getScript('<?php echo $GLOBALS['web_root'] ?>/library/ajax/code_attributes_ajax.php' +
+    '?codetype='   + encodeURIComponent(a[0]) +
+    '&code='       + encodeURIComponent(a[1]) +
+    '&pricelevel=' + encodeURIComponent(f.form_fs_pricelevel.value));
+}
+
+// Respond to clicking a checkbox for adding (or removing) a specific diagnosis.
+function fs_diag_clicked(cb) {
+  var f = cb.form;
+  // The checkbox value is a JSON array containing the diagnosis's code type, code, description.
+  var a = JSON.parse(cb.value);
+  if (!cb.checked) {
+    // The checkbox was UNchecked.
+    fs_mark_deleted('fs_diags_table', 'form_fs_bill', a[0], a[1]);
+    return;
+  }
+  $.getScript('<?php echo $GLOBALS['web_root'] ?>/library/ajax/code_attributes_ajax.php' +
+    '?codetype='   + encodeURIComponent(a[0]) +
+    '&code='       + encodeURIComponent(a[1]) +
+    '&pricelevel=' + encodeURIComponent(f.form_fs_pricelevel.value));
+}
+
+// Respond to clicking a checkbox for adding (or removing) a specific product.
+function fs_product_clicked(cb) {
+  var f = cb.form;
+  // The checkbox value is a JSON array containing the product's code type, code and selector.
+  var a = JSON.parse(cb.value);
+  if (!cb.checked) {
+    // The checkbox was UNchecked.
+    fs_mark_deleted('fs_products_table', 'form_fs_prod', a[0], a[1]);
+    return;
+  }
+  $.getScript('<?php echo $GLOBALS['web_root'] ?>/library/ajax/code_attributes_ajax.php' +
+    '?codetype='   + encodeURIComponent(a[0]) +
+    '&code='       + encodeURIComponent(a[1]) +
+    '&selector='   + encodeURIComponent(a[2]) +
+    '&pricelevel=' + encodeURIComponent(f.form_fs_pricelevel.value));
+}
+
+/*********************************************************************/
 
 // Respond to selecting a package of codes.
 function fs_package_selected(sel) {

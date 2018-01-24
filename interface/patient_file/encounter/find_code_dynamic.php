@@ -110,17 +110,19 @@ $(document).ready(function() {
   var jobj = JSON.parse(this.id.substring(4));
 
   this.style.fontWeight = 'bold';
-  oChosenIDs[this.id] = 1;
 
 <?php if ($what == 'codes') { ?>
   // this.id is of the form "CID|jsonstring".
   var codesel = jobj['code'].split('|');
-  selcode(jobj['codetype'], codesel[0], codesel[1], jobj['description']);
+  selcode(jobj['codetype'], codesel[0], codesel[1], jobj['description'],this);
 <?php } else if ($what == 'fields') { ?>
+  oChosenIDs[this.id] = 1;
   selectField(jobj);
 <?php } else if ($what == 'lists') { ?>
+  oChosenIDs[this.id] = 1;
   SelectList(jobj);
 <?php } else if ($what == 'groups') { ?>
+  oChosenIDs[this.id] = 1;
   SelectItem(jobj);
 <?php } ?>
 
@@ -146,6 +148,7 @@ $(document).ready(function() {
 
 <?php if ($what == 'codes') { ?>
 
+/**********************************************************************
 // Pass info back to the opener and close this window. Specific to billing/product codes.
 function selcode(codetype, code, selector, codedesc) {
  if (opener.closed || ! opener.set_related) {
@@ -158,6 +161,31 @@ function selcode(codetype, code, selector, codedesc) {
   return false;
  }
 }
+**********************************************************************/
+
+function selcode(codetype, code, selector, codedesc, rowelem) {
+ if (opener.closed || ! opener.set_related) {
+  alert('<?php echo xls('The destination form was closed; I cannot act on your selection.'); ?>');
+ }
+ else {
+  // If the item was already selected, remove it.
+  if (opener.del_related && oChosenIDs[rowelem.id]) {
+   // alert('Deleting ' + rowelem.id); // debugging
+   rowelem.style.fontWeight = 'normal';
+   opener.del_related(codetype + ':' + code);
+   delete oChosenIDs[rowelem.id];
+   oTable.fnDraw();
+   return false;
+  }
+  // Otherwise add it.
+  oChosenIDs[rowelem.id] = 1;
+  var msg = opener.set_related(codetype, code, selector, codedesc);
+  if (msg) alert(msg);
+  // window.close();
+  return false;
+ }
+}
+
 // Function to call the opener to delete all or one related code. Specific to billing/product codes.
 function delcode() {
  if (opener.closed || ! opener.del_related) {
