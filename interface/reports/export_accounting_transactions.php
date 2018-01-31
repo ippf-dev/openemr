@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2013, 2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2013-2018 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -65,7 +65,7 @@ function recordNewInvoice($patient_id, $encounter_id, $invoice_refno, $pos, $npi
   return $invno;
 }
 
-function recordNewChargeable($patient_id, $encounter_id, $codekey='', $description='', $glacct='') {
+function recordNewChargeable($patient_id, $encounter_id, $codekey='', $description='', $glacct='', $user='', $ndc_number='') {
   global $aItems;
   $invno = "$patient_id.$encounter_id";
   if (isset($aItems[$invno][$codekey])) return;
@@ -74,6 +74,8 @@ function recordNewChargeable($patient_id, $encounter_id, $codekey='', $descripti
   $aItems[$invno][$codekey]['qty'] = 0;
   $aItems[$invno][$codekey]['dsc'] = $description;
   $aItems[$invno][$codekey]['gla'] = $glacct;
+  $aItems[$invno][$codekey]['usr'] = $user;
+  $aItems[$invno][$codekey]['ndc'] = $ndc_number;
   $aItems[$invno][$codekey]['msg'] = '';
   $aItems[$invno][$codekey]['adj'] = array();
   $aItems[$invno][$codekey]['pay'] = array();
@@ -158,27 +160,31 @@ function getRelatedCode($related_code, $code_type='ACCT') {
      Use global ID from payment method + facility suffix.
   7. Cash Amount             - e.g. 12.00
      Amount paid in cash.
-  8. Number of Distributions - e.g. 2
+  8. Sales Representative ID - e.g. rroark
+     The user ID of the cashier.
+  9. Number of Distributions - e.g. 2
      Number of exported rows for this receipt number.
-  9. Description             - e.g. Consulta Ginecológica
+ 10. Description             - e.g. Consulta Ginecológica
      Service or product description
- 10. Invoice Paid            - always blank
- 11. G/L Account             - e.g. 4121-02
+ 11. Invoice Paid            - always blank
+ 12. Item ID
+     This is the NDC field, for products only.
+ 13. G/L Account             - e.g. 4121-02
      For services: service ACCT code + facility code.
      For products: 4261 if POS=01 else 4262, + facility code.
- 12. Quantity                - e.g. 1
+ 14. Quantity                - e.g. 1
      Quantity if a charge item, else empty.
      Empty for adjustments.
- 13. Unit Price              - e.g. 15
+ 15. Unit Price              - e.g. 15
      Charge (positive) or adjustment (negative) amount.
- 14. Amount                  - e.g. -15
+ 16. Amount                  - e.g. -15
      Negative charge amount or positive adjustment amount.
- 15. Receipt Number          - e.g. 02-443818
+ 17. Receipt Number          - e.g. 02-443818
      Facility code and Invoice reference number as a link.
 ****/
 function thisLineItem($patient_id, $encounter_id, $npi, $paydate, $paymethod,
-  $payaccount, $payamount, $rowcount, $description, $saleaccount, $quantity,
-  $price, $amount, $invoice_refno)
+  $payaccount, $payamount, $rowcount, $description, $saleaccount,
+  $user, $ndc_number, $quantity, $price, $amount, $invoice_refno)
 {
   global $now, $warnings;
   $reference = date("Ymd_h-m_$npi", $now);
@@ -195,9 +201,11 @@ function thisLineItem($patient_id, $encounter_id, $npi, $paydate, $paymethod,
     echo '"' . display_csv($paymethod)            . '",';
     echo '"' . display_csv($payaccount)           . '",';
     echo '"' . bucks($payamount)                  . '",';
+    echo '"' . display_csv($user)                 . '",';
     echo '"' . $rowcount                          . '",';
     echo '"' . display_csv($description)          . '",';
     echo '"' . ''                                 . '",';
+    echo '"' . display_csv($ndc_number)           . '",';
     echo '"' . display_csv($saleaccount)          . '",';
     echo '"' . display_csv($quantity)             . '",';
     echo '"' . bucks($price)                      . '",';
@@ -215,9 +223,11 @@ function thisLineItem($patient_id, $encounter_id, $npi, $paydate, $paymethod,
   <td class='detail'><?php echo display_html($paymethod); ?></td>
   <td class='detail'><?php echo display_html($payaccount); ?></td>
   <td class='detail' align='right'><?php echo bucks($payamount); ?></td>
+  <td class='detail'><?php echo display_html($user); ?></td>
   <td class='detail' align='right'><?php echo display_html($rowcount); ?></td>
   <td class='detail'><?php echo display_html($description); ?></td>
   <td class='detail'><?php echo display_html(''); ?></td>
+  <td class='detail'><?php echo display_html($ndc_number); ?></td>
   <td class='detail'><?php echo display_html($saleaccount); ?></td>
   <td class='detail' align='right'><?php echo display_html($quantity); ?></td>
   <td class='detail' align='right'><?php echo bucks($price); ?></td>
@@ -257,9 +267,11 @@ if ($_POST['form_csvexport']) {
   echo '"' . xl('Payment Method'         ) . '",';
   echo '"' . xl('Cash Account'           ) . '",';
   echo '"' . xl('Cash Amount'            ) . '",';
+  echo '"' . xl('Sales Representative ID') . '",';
   echo '"' . xl('Number of Distributions') . '",';
-  echo '"' . xl('Invoice Paid'           ) . '",';
   echo '"' . xl('Description'            ) . '",';
+  echo '"' . xl('Invoice Paid'           ) . '",';
+  echo '"' . xl('Item ID'                ) . '",';
   echo '"' . xl('G/L Account'            ) . '",';
   echo '"' . xl('Quantity'               ) . '",';
   echo '"' . xl('Unit Price'             ) . '",';
@@ -356,9 +368,11 @@ function doinvopen(ptid,encid) {
   <td class="dehead"><?php echo xl('Payment Method'); ?></td>
   <td class="dehead"><?php echo xl('Cash Account'); ?></td>
   <td class="dehead"><?php echo xl('Cash Amount'); ?></td>
+  <td class="dehead"><?php echo xl('Sales Representative ID'); ?></td>
   <td class="dehead"><?php echo xl('Number of Distributions'); ?></td>
   <td class="dehead"><?php echo xl('Description'); ?></td>
   <td class="dehead"><?php echo xl('Invoice Paid'); ?></td>
+  <td class="dehead"><?php echo xl('Item ID'); ?></td>
   <td class="dehead"><?php echo xl('G/L Account'); ?></td>
   <td class="dehead"><?php echo xl('Quantity'); ?></td>
   <td class="dehead"><?php echo xl('Unit Price'); ?></td>
@@ -392,7 +406,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
 
   // Get billing table items for encounters in the date range.
   $query = "SELECT b.fee, b.pid, b.encounter, b.code_type, b.code, b.units, " .
-    "b.code_text, c.related_code, fe.date, fe.invoice_refno, " .
+    "b.code_text, u.username, c.related_code, fe.date, fe.invoice_refno, " .
     "fas.pos_code, fab.facility_npi " .
     "FROM billing AS b " .
     "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter " .
@@ -400,6 +414,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "LEFT JOIN facility AS fab ON fab.id = fe.billing_facility " .
     "LEFT JOIN code_types AS ct ON ct.ct_key = b.code_type " .
     "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
+    "LEFT JOIN users AS u ON u.id = b.user " .
     "WHERE b.activity = 1 AND b.fee != 0 AND " .
     "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
   // If a facility was specified.
@@ -421,13 +436,15 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     }
     $codekey = $row['code_type'] . ':' . $row['code'];
     $glacct = getRelatedCode($row['related_code'], 'ACCT') . '-' . $row['facility_npi'];
-    recordNewChargeable($row['pid'], $row['encounter'], $codekey, $row['code_text'], $glacct);
+    recordNewChargeable($row['pid'], $row['encounter'], $codekey, $row['code_text'], $glacct, $row['username'], '');
     accumulateChargeable($row['pid'], $row['encounter'], $codekey, $row['fee'], $row['units']);
   }
 
   // Get product sales items for encounters in the date range.
-  $query = "SELECT s.sale_date, s.fee, s.quantity, s.pid, s.encounter, " .
-    "s.drug_id, d.name, fe.date, fe.facility_id, fe.invoice_refno, " .
+  $query = "SELECT " .
+    "s.sale_date, s.fee, s.quantity, s.pid, s.encounter, s.drug_id, s.user, " .
+    "d.name, d.ndc_number, d.related_code, " .
+    "fe.date, fe.facility_id, fe.invoice_refno, " .
     "fas.pos_code, fab.facility_npi " .
     "FROM drug_sales AS s " .
     "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
@@ -451,8 +468,11 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     recordNewInvoice($row['pid'], $row['encounter'], $row['invoice_refno'],
       $row['pos_code'], $row['facility_npi']);
     $codekey = 'PROD:' . $row['drug_id'];
-    $glacct = ($row['pos_code'] == '01' ? '4261' : '4262') . '-' . $row['facility_npi'];
-    recordNewChargeable($row['pid'], $row['encounter'], $codekey, $row['name'], $glacct);
+
+    // $glacct = ($row['pos_code'] == '01' ? '4261' : '4262') . '-' . $row['facility_npi'];
+    $glacct = getRelatedCode($row['related_code'], 'ACCT') . '-' . $row['facility_npi'];
+
+    recordNewChargeable($row['pid'], $row['encounter'], $codekey, $row['name'], $glacct, $row['user'], $row['ndc_number']);
     accumulateChargeable($row['pid'], $row['encounter'], $codekey, $row['fee'], $row['quantity']);
 
     // if ($debugging) {echo "<!-- After product recorded:\n"; print_r($aItems); echo "-->\n";}
@@ -486,7 +506,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
       // We have a visit with payments or adjustments in the reporting date range,
       // but the visit date is not. Need to gather info about its charge items so
       // that any invoice-level adjustments can be allocated among them.
-      // However we will exlude reporting of those charges because they do not apply
+      // However we will exclude reporting of those charges because they do not apply
       // to this date range.
       recordNewInvoice($patient_id, $encounter_id, $row['invoice_refno'],
         $row['pos_code'], $row['facility_npi'], true);
@@ -695,6 +715,8 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
           $cashpaid, $rowcount,
           $aItems[$invno][$codekey]['dsc'],
           $aItems[$invno][$codekey]['gla'],
+          $aItems[$invno][$codekey]['usr'],
+          $aItems[$invno][$codekey]['ndc'],
           $quantity,
           $charge / $quantity,
           0 - $charge,
@@ -710,7 +732,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
           $cashpaid, $rowcount,
           getListTitle('adjreason', $type),
           getListMapping('adjreason', $type) . '-' . $npi,
-          '',
+          '', '', '',
           0 - $adjamount, $adjamount,
           $invoice_refno);
       }
@@ -728,7 +750,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
           $cashpaid, $rowcount,
           getListTitle('paymethod', $method),
           getListMapping('paymethod', $method) . '-' . $npi,
-          '',
+          '', '', '',
           0 - $payamount, $payamount,
           $invoice_refno);
       }
