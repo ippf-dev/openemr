@@ -72,7 +72,7 @@ if ($formname == 'LBFref') {
 // Html2pdf fails to generate checked checkboxes properly, so write plain HTML
 // if we are doing a visit-specific form to be completed.
 $PDF_OUTPUT = ($formid && $isform) ? false : true;
-// $PDF_OUTPUT = false; // debugging
+$PDF_OUTPUT = false; // Disabling PDF output 2018-01-31 because CV does not like tables starting a new page.
 
 if ($PDF_OUTPUT) {
   require_once("$srcdir/html2pdf/vendor/autoload.php");
@@ -152,14 +152,20 @@ div.section {
 div.section table {
  width: 100%;
 }
-div.section td.stuff {
+div.section td.topstuff {
  vertical-align: top;
 <?php if ($isform) { ?>
  height: 16pt;
 <?php } ?>
 }
+div.section td.botstuff {
+ vertical-align: bottom;
+<?php if ($isform) { ?>
+ height: 16pt;
+<?php } ?>
+}
 
-div.section td.stuff img {
+div.section td.topstuff img {
  width: 100%;
 }
 
@@ -387,11 +393,14 @@ while ($frow = sqlFetchArray($fres)) {
 
   if ($item_count == 0 && $titlecols == 0) $titlecols = 1;
 
+  // Determines vertical alignment for both label and data depending on data type.
+  $stuffclass = in_array($data_type, array(21,22,23,24,25,27,28,31,32,40)) ? 'topstuff' : 'botstuff';
+
   // Handle starting of a new label cell.
   if ($titlecols > 0) {
     end_cell();
     echo "<td colspan='$titlecols' ";
-    echo "class='lcols$titlecols stuff " . (($frow['uor'] == 2) ? "required'" : "bold'");
+    echo "class='lcols$titlecols $stuffclass " . (($frow['uor'] == 2) ? "required'" : "bold'");
     if ($cell_count == 2) echo " style='padding-left:10pt'";
     // echo " nowrap>"; // html2pdf misbehaves with this.
     echo ">";
@@ -409,11 +418,11 @@ while ($frow = sqlFetchArray($fres)) {
   // Handle starting of a new data cell.
   if ($datacols > 0) {
     end_cell();
-    echo "<td colspan='$datacols' class='dcols$datacols stuff under' style='";
+    echo "<td colspan='$datacols' class='dcols$datacols $stuffclass under' style='";
 
     if ($cell_count > 0) echo "padding-left:5pt;";
-    if (in_array($data_type, array(21,27,40))) {
-      // Omit underscore for checkboxes, radio buttons and images.
+    if (in_array($data_type, array(21,27,31,40))) {
+      // Omit underscore for checkboxes, radio buttons, static text and images.
       echo "border-width:0 0 0 0;";
     }
     echo "'>";
