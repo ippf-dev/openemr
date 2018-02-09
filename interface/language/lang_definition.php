@@ -38,10 +38,16 @@
           $tempLangID = isset($_POST['language_select']) ? $_POST['language_select'] : $mainLangID;
           while ($row=SqlFetchArray($res)){
 	    if ($tempLangID == $row['lang_id']) {
-	      echo "<option value='" . htmlspecialchars($row['lang_id'],ENT_QUOTES) . "' selected>" . htmlspecialchars($row['lang_description'],ENT_NOQUOTES) . "</option>";
+	      echo "<option value='" . attr($row['lang_id']) . "' selected>" .
+          text($row['lang_description']) . "</option>";
 	    }
 	    else { 
-              echo "<option value='" . htmlspecialchars($row['lang_id'],ENT_QUOTES) . "'>" . htmlspecialchars($row['lang_description'],ENT_NOQUOTES) . "</option>";
+        echo "<option value='" . attr($row['lang_id']) . "'";
+        // Disable all other languages if we are editing one.
+        if (!empty($_POST['edit']) && !empty($_POST['language_select'])) {
+          echo " disabled='disabled'";
+        }
+        echo ">" . text($row['lang_description']) . "</option>";
 	    }
           }
           ?>
