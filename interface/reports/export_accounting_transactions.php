@@ -161,7 +161,8 @@ function getRelatedCode($related_code, $code_type='ACCT') {
   7. Cash Amount             - e.g. 12.00
      Amount paid in cash.
   8. Sales Representative ID - e.g. rroark
-     The user ID of the cashier.
+     This is the full name of the provider of the service, or
+     of the facility in the case of products.
   9. Number of Distributions - e.g. 2
      Number of exported rows for this receipt number.
  10. Description             - e.g. Consulta Ginecológica
@@ -406,7 +407,8 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
 
   // Get billing table items for encounters in the date range.
   $query = "SELECT b.fee, b.pid, b.encounter, b.code_type, b.code, b.units, " .
-    "b.code_text, u.username, c.related_code, fe.date, fe.invoice_refno, " .
+    "b.code_text, c.related_code, fe.date, fe.invoice_refno, " .
+    "CONCAT(u.lname, ', ', u.fname) AS providername, " .
     "fas.pos_code, fab.facility_npi " .
     "FROM billing AS b " .
     "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter " .
@@ -414,7 +416,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "LEFT JOIN facility AS fab ON fab.id = fe.billing_facility " .
     "LEFT JOIN code_types AS ct ON ct.ct_key = b.code_type " .
     "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
-    "LEFT JOIN users AS u ON u.id = b.user " .
+    "LEFT JOIN users AS u ON u.id = IF(b.provider_id, b.provider_id, fe.provider_id) " .
     "WHERE b.activity = 1 AND b.fee != 0 AND " .
     "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
   // If a facility was specified.
@@ -436,16 +438,16 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     }
     $codekey = $row['code_type'] . ':' . $row['code'];
     $glacct = getRelatedCode($row['related_code'], 'ACCT') . '-' . $row['facility_npi'];
-    recordNewChargeable($row['pid'], $row['encounter'], $codekey, $row['code_text'], $glacct, $row['username'], '');
+    recordNewChargeable($row['pid'], $row['encounter'], $codekey, $row['code_text'], $glacct, $row['providername'], '');
     accumulateChargeable($row['pid'], $row['encounter'], $codekey, $row['fee'], $row['units']);
   }
 
   // Get product sales items for encounters in the date range.
   $query = "SELECT " .
-    "s.sale_date, s.fee, s.quantity, s.pid, s.encounter, s.drug_id, s.user, " .
+    "s.sale_date, s.fee, s.quantity, s.pid, s.encounter, s.drug_id, " .
     "d.name, d.ndc_number, d.related_code, " .
     "fe.date, fe.facility_id, fe.invoice_refno, " .
-    "fas.pos_code, fab.facility_npi " .
+    "fas.pos_code, fab.facility_npi, lo.title AS warehousename " .
     "FROM drug_sales AS s " .
     "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
     "JOIN form_encounter AS fe ON " .
@@ -453,6 +455,9 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59' " .
     "LEFT JOIN facility AS fas ON fas.id = fe.facility_id " .
     "LEFT JOIN facility AS fab ON fab.id = fe.billing_facility " .
+    "LEFT JOIN drug_inventory AS di ON di.inventory_id = s.inventory_id " .
+    "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
+    "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "WHERE s.fee != 0";
   // If a facility was specified.
   if ($form_facility) {
@@ -472,7 +477,7 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     // $glacct = ($row['pos_code'] == '01' ? '4261' : '4262') . '-' . $row['facility_npi'];
     $glacct = getRelatedCode($row['related_code'], 'ACCT') . '-' . $row['facility_npi'];
 
-    recordNewChargeable($row['pid'], $row['encounter'], $codekey, $row['name'], $glacct, $row['user'], $row['ndc_number']);
+    recordNewChargeable($row['pid'], $row['encounter'], $codekey, $row['name'], $glacct, $row['warehousename'], $row['ndc_number']);
     accumulateChargeable($row['pid'], $row['encounter'], $codekey, $row['fee'], $row['quantity']);
 
     // if ($debugging) {echo "<!-- After product recorded:\n"; print_r($aItems); echo "-->\n";}
