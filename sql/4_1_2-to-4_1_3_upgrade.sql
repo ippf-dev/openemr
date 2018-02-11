@@ -300,7 +300,10 @@ UPDATE drug_sales AS s, drug_templates AS t, prices AS p
   p.pr_id = s.drug_id AND p.pr_selector = s.selector AND p.pr_price = s.fee;
 #EndIf
 
-#IfNotRow2D list_options list_id transactions option_id LBTptreq
+###IfNotRow2D list_options list_id transactions option_id LBTptreq
+
+#IfNotTable lbt_data
+
 UPDATE list_options SET title = 'Layout-Based Transaction Forms', seq = 9 WHERE list_id = 'lists' AND option_id = 'transactions';
 UPDATE list_options SET option_id = 'LBTref'   WHERE list_id = 'transactions' AND option_id = 'Referral';
 UPDATE list_options SET option_id = 'LBTptreq' WHERE list_id = 'transactions' AND option_id = 'Patient Request';
@@ -329,9 +332,10 @@ INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`d
 INSERT INTO `layout_options` (`form_id`,`field_id`,`group_name`,`title`,`seq`,`data_type`,`uor`,`fld_length`,
   `max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`fld_rows`)
   VALUES ('LBTbill' ,'body','1','Details',10,3,2,30,0,'',1,3,'','','Content',5);
-#EndIf
 
-#IfNotTable lbt_data
+###EndIf
+###IfNotTable lbt_data
+
 CREATE TABLE `lbt_data` (
   `form_id`     bigint(20)   NOT NULL COMMENT 'references transactions.id',
   `field_id`    varchar(31)  NOT NULL COMMENT 'references layout_options.field_id',
@@ -758,7 +762,7 @@ ALTER TABLE `layout_group_properties` ADD COLUMN `grp_save_close` tinyint(1) not
 #IfMissingColumn layout_group_properties grp_init_open
 ALTER TABLE `layout_group_properties` ADD COLUMN `grp_init_open` tinyint(1) not null default 0;
 UPDATE layout_group_properties AS p, layout_options AS o SET p.grp_init_open = 1 WHERE
-o.form_id = p.grp_form_id AND o.group_id = p.grp_group_id AND o.uor > 0 AND o.edit_options LIKE '%I%';
+  o.form_id = p.grp_form_id AND o.group_id = p.grp_group_id AND o.uor > 0 AND o.edit_options LIKE '%I%';
 UPDATE layout_group_properties AS p SET p.grp_init_open = 1 WHERE p.grp_group_id = '1' AND
-(SELECT count(*) FROM layout_options AS o WHERE o.form_id = p.grp_form_id AND o.uor > 0 AND o.edit_options LIKE '%I%') = 0;
+  (SELECT count(*) FROM layout_options AS o WHERE o.form_id = p.grp_form_id AND o.uor > 0 AND o.edit_options LIKE '%I%') = 0;
 #EndIf
