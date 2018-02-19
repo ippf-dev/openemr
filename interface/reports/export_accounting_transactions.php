@@ -408,7 +408,8 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   // Get billing table items for encounters in the date range.
   $query = "SELECT b.fee, b.pid, b.encounter, b.code_type, b.code, b.units, " .
     "b.code_text, c.related_code, fe.date, fe.invoice_refno, " .
-    "CONCAT(u.lname, ', ', u.fname) AS providername, " .
+    // "CONCAT(u.lname, ', ', u.fname) AS providername, " .
+    "u.username AS providername, " .
     "fas.pos_code, fab.facility_npi " .
     "FROM billing AS b " .
     "JOIN form_encounter AS fe ON fe.pid = b.pid AND fe.encounter = b.encounter " .
