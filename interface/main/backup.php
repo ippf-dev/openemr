@@ -1,6 +1,6 @@
 <?php
 /* $Id$ */
-// Copyright (C) 2008-2014, 2016 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2008-2018 Rod Roark <rod@sunsetsystems.com>
 // Adapted for cross-platform operation by Bill Cernansky (www.mi-squared.com)
 //
 // This program is free software; you can redistribute it and/or
@@ -552,9 +552,9 @@ if ($form_step == 102) {
           escapeshellarg($sqlconf["dbase"]) . " layout_options" .
           " >> $EXPORT_FILE;";
 
-        if ($layoutid == 'HIS') {
+        if (substr($layoutid, 0, 3) == 'HIS') {
           $cres = sqlStatement("select field_id from layout_options " .
-            "where form_id = 'HIS' and uor > 0");
+            "where form_id = '$layoutid' and uor > 0");
           while ($crow = sqlFetchArray($cres)) {
             $fldid = $crow['field_id'];
             $cmd .= "echo \"ALTER TABLE history_data ADD \`$fldid\` TEXT NOT NULL;\" >> $EXPORT_FILE;";
