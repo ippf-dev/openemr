@@ -396,6 +396,12 @@ while ($frow = sqlFetchArray($fres)) {
   // Determines vertical alignment for both label and data depending on data type.
   $stuffclass = in_array($data_type, array(21,22,23,24,25,27,28,31,32,40)) ? 'topstuff' : 'botstuff';
 
+  // Detect the special case of a static text field that will generate no visible data.
+  // Treat it as a normal empty text field, with a bottom-aligned label and underlining.
+  $empty_static_text_field = $data_type == 31 && $isform && !$formid && !$visitid &&
+      empty(trim(parse_static_text($frow, false)));
+  if ($empty_static_text_field) $stuffclass = 'botstuff';
+
   // Handle starting of a new label cell.
   if ($titlecols > 0) {
     end_cell();
@@ -421,7 +427,8 @@ while ($frow = sqlFetchArray($fres)) {
     echo "<td colspan='$datacols' class='dcols$datacols $stuffclass under' style='";
 
     if ($cell_count > 0) echo "padding-left:5pt;";
-    if (in_array($data_type, array(21,27,31,40))) {
+
+    if (in_array($data_type, array(21, 27, 31, 40)) && !$empty_static_text_field) {
       // Omit underscore for checkboxes, radio buttons, static text and images.
       echo "border-width:0 0 0 0;";
     }
@@ -432,7 +439,7 @@ while ($frow = sqlFetchArray($fres)) {
   ++$item_count;
 
   if ($isform) {
-    generate_print_field($frow, $currvalue);
+    generate_print_field($frow, $currvalue, $formid || $visitid);
   }
   else {
     $s = generate_display_field($frow, $currvalue);

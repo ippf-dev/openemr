@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2007-2017 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2007-2018 Rod Roark <rod@sunsetsystems.com>
 // Copyright © 2010 by Andrew Moore <amoore@cpan.org>
 // Copyright © 2010 by "Boyd Stephen Smith Jr." <bss@iguanasuicide.net>
 //
@@ -136,20 +136,28 @@ function generate_select_list($tag_name, $list_id, $currvalue='', $title='',
 }
 
 // Parsing for data type 31, static text.
-function parse_static_text($frow) {
+function parse_static_text($frow, $value_allowed=true) {
   $tmp = str_replace("\r\n", "\n", $frow['description']);
   // Translate if it does not look like HTML.
   if (substr($tmp, 0, 1) != '<') {
-    $tmp = nl2br(xl_layout_label($tmp));
+    $tmp2 = $frow['description'];
+    $tmp3 = xl_layout_label($tmp);
+    if ($tmp3 == $tmp && $tmp2 != $tmp) {
+      // No translation, try again without the CRLF substitution.
+      $tmp3 = xl_layout_label($tmp2);
+    }
+    $tmp = nl2br($tmp3);
   }
   $s = '';
   if ($frow['source'] == 'D' || $frow['source'] == 'H') {
     // Source is demographics or history. This case supports value substitution.
     while (preg_match('/^(.*?)\{(\w+)\}(.*)$/', $tmp, $matches)) {
       $s .= $matches[1];
-      $tmprow = $frow;
-      $tmprow['field_id'] = $matches[2];
-      $s .= lbf_current_value($tmprow, 0, 0);
+      if ($value_allowed) {
+        $tmprow = $frow;
+        $tmprow['field_id'] = $matches[2];
+        $s .= lbf_current_value($tmprow, 0, 0);
+      }
       $tmp = $matches[3];
     }
   }
@@ -1044,7 +1052,7 @@ function generate_form_field($frow, $currvalue='') {
 
 }
 
-function generate_print_field($frow, $currvalue) {
+function generate_print_field($frow, $currvalue, $value_allowed=true) {
   global $rootdir, $date_init;
 
   $currescaped = htmlspecialchars($currvalue, ENT_QUOTES);
@@ -1554,7 +1562,7 @@ function generate_print_field($frow, $currvalue) {
   // static text.  read-only, of course.
   else if ($data_type == 31) {
     // echo nl2br($frow['description']);
-    echo parse_static_text($frow);
+    echo parse_static_text($frow, $value_allowed);
   }
   
   else if($data_type == 34){
