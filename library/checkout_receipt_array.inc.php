@@ -269,7 +269,7 @@ function generateReceiptArray($patient_id, $encounter=0, $billtime='') {
     "WHERE " .
     "b.pid = '$patient_id' AND b.encounter = '$encounter' AND " .
     "b.code_type != 'COPAY' AND b.code_type != 'TAX' AND b.activity = 1 AND " .
-    "(c.ct_id IS NULL OR c.ct_fee = 1 OR c.ct_diag = 0) " .
+    "(ct.ct_id IS NULL OR ct.ct_fee = 1 OR ct.ct_diag = 0) " .
     "ORDER BY b.id");
   while ($inrow = sqlFetchArray($inres)) {
     if ($billtime && $inrow['bill_date'] != $billtime) continue;
