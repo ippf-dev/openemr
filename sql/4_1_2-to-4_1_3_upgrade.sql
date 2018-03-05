@@ -766,3 +766,10 @@ UPDATE layout_group_properties AS p, layout_options AS o SET p.grp_init_open = 1
 UPDATE layout_group_properties AS p SET p.grp_init_open = 1 WHERE p.grp_group_id = '1' AND
   (SELECT count(*) FROM layout_options AS o WHERE o.form_id = p.grp_form_id AND o.uor > 0 AND o.edit_options LIKE '%I%') = 0;
 #EndIf
+
+#IfMissingColumn patient_data prefername
+ALTER TABLE `patient_data` ADD COLUMN `prefername` text NOT NULL;
+INSERT INTO `layout_options` (`form_id`,`field_id`,`group_id`,`title`,`seq`,`data_type`,`uor`,`fld_length`,
+  `max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`conditions`)
+  VALUES ('DEM', 'prefername', '1', 'Preferred Name', 6, 2, 0, 15, 50, '', 1, 1, '', '', '', '');
+#EndIf
