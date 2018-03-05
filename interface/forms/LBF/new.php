@@ -111,7 +111,9 @@ if (!empty($lobj['grp_aco_spec'  ])) $LBF_ACO = explode('|', $lobj['grp_aco_spec
 if ($lobj['grp_services']) $LBF_SERVICES_SECTION = $lobj['grp_services'] == '*' ? '' : $lobj['grp_services'];
 if ($lobj['grp_products']) $LBF_PRODUCTS_SECTION = $lobj['grp_products'] == '*' ? '' : $lobj['grp_products'];
 if ($lobj['grp_diags'   ]) $LBF_DIAGS_SECTION    = $lobj['grp_diags'   ] == '*' ? '' : $lobj['grp_diags'   ];
-$LBF_ENABLE_SAVE_CLOSE = !empty($lobj['grp_save_close']);
+
+// $LBF_ENABLE_SAVE_CLOSE = !empty($lobj['grp_save_close']);
+$LBF_ENABLE_SAVE_CLOSE = !empty($GLOBALS['gbl_form_save_close']);
 
 // Check access control.
 if (!acl_check('admin', 'super') && !empty($LBF_ACO)) {

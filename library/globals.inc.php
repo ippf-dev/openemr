@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2018 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -652,6 +652,13 @@ $GLOBALS_METADATA = array(
       'bool',                           // data type
       '0',                              // default = true
       xl('A shift may be specified for each visit.')
+    ),
+
+    'gbl_form_save_close' => array(
+      xl('Display Save and Close Visit button in LBFs'),
+      'bool',                           // data type
+      '0',                              // default = false
+      xl('This is helpful if visits usually do not have charges.')
     ),
 
     'gbl_mask_patient_id' => array(
