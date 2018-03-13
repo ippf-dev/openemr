@@ -79,22 +79,24 @@ function getEndInventory($product_id = 0, $warehouse_id = '~') {
 
   // Get sum of sales/adjustments/consumptions/purchases after the report end date.
   $sarow = sqlQuery("SELECT sum(ds.quantity) AS quantity " .
-    "FROM drug_sales AS ds, drug_inventory AS di " .
+    "FROM drug_sales AS ds " .
+    "JOIN drug_inventory AS di ON di.inventory_id = ds.inventory_id " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+    "LEFT JOIN form_encounter AS fe ON ds.encounter != 0 AND fe.pid = ds.pid AND fe.encounter = ds.encounter " .
     "WHERE " .
-    "ds.sale_date > '$form_to_date' AND " .
-    "di.inventory_id = ds.inventory_id " .
+    "substr(COALESCE(fe.date, ds.sale_date), 1, 10) > '$form_to_date' " .
     "$prodcond $whidcond $faccond");
 
   // Get sum of transfers out after the report end date.
   $xfrow = sqlQuery("SELECT sum(ds.quantity) AS quantity " .
-    "FROM drug_sales AS ds, drug_inventory AS di " .
+    "FROM drug_sales AS ds " .
+    "JOIN drug_inventory AS di ON di.inventory_id = ds.xfer_inventory_id " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
+    "LEFT JOIN form_encounter AS fe ON ds.encounter != 0 AND fe.pid = ds.pid AND fe.encounter = ds.encounter " .
     "WHERE " .
-    "ds.sale_date > '$form_to_date' AND " .
-    "di.inventory_id = ds.xfer_inventory_id " .
+    "substr(COALESCE(fe.date, ds.sale_date), 1, 10) > '$form_to_date' " .
     "$prodcond $whidcond $faccond");
 
   return $eirow['on_hand'] + $sarow['quantity'] - $xfrow['quantity'];
@@ -661,21 +663,23 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "lo.option_id = di.warehouse_id " .
     "WHERE s.sale_date >= '$from_date' AND s.sale_date <= '$to_date'";
   *******************************************************************/
-  $query = "SELECT s.sale_id, s.sale_date, s.quantity, s.fee, s.pid, s.encounter, " .
+  $query = "SELECT s.sale_id, s.quantity, s.fee, s.pid, s.encounter, " .
+    "SUBSTR(COALESCE(fe.date, s.sale_date), 1, 10) AS sale_date, " .
     "s.xfer_inventory_id, s.distributor_id, s.trans_type, d.name, " .
     "lo.title, lo.option_value AS facid, " .
     "di.drug_id, di.warehouse_id, di.inventory_id, di.destroy_date, di.on_hand, " .
     "fe.invoice_refno " .
     "FROM drug_inventory AS di " .
     "JOIN drugs AS d ON d.drug_id = di.drug_id " .
-    "LEFT JOIN drug_sales AS s ON " .
-    "s.sale_date >= '$from_date' AND s.sale_date <= '$to_date' AND " .
-    "s.drug_id = di.drug_id AND " .
+    "LEFT JOIN drug_sales AS s ON s.drug_id = di.drug_id AND " .
     "( s.inventory_id = di.inventory_id OR s.xfer_inventory_id = di.inventory_id ) " .
+    "LEFT JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter " .
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
-    "LEFT JOIN form_encounter AS fe ON fe.pid = s.pid AND fe.encounter = s.encounter " .
-    "WHERE ( di.destroy_date IS NULL OR di.destroy_date >= '$form_from_date' ) AND " .
+    "WHERE " .
+    "SUBSTR(COALESCE(fe.date, s.sale_date), 1, 10) >= '$from_date' AND " .
+    "SUBSTR(COALESCE(fe.date, s.sale_date), 1, 10) <= '$to_date' AND " .
+    "( di.destroy_date IS NULL OR di.destroy_date >= '$form_from_date' ) AND " .
     "( di.on_hand != 0 OR s.sale_id IS NOT NULL )";
 
   // If a product was specified.
@@ -694,10 +698,10 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
 
   if ($product_first) {
     $query .= " ORDER BY d.name, d.drug_id, lo.title, di.warehouse_id, " .
-      "di.inventory_id, s.sale_date, s.sale_id";
+      "di.inventory_id, sale_date, s.sale_id";
   } else {
     $query .= " ORDER BY lo.title, di.warehouse_id, d.name, d.drug_id, " .
-      "di.inventory_id, s.sale_date, s.sale_id";
+      "di.inventory_id, sale_date, s.sale_id";
   }
 
   $res = sqlStatement($query);

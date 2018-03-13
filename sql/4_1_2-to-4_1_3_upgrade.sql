@@ -427,7 +427,7 @@ ALTER TABLE transactions DROP COLUMN                  reply_related_code;
 
 # Conversion of transaction referrals to LBF referrals, 2016-03-11:
 
-#IfNotRow2D list_options list_id lbfnames option_id LBFref
+#IfNotRow layout_options form_id LBFref
 
 INSERT INTO list_options (list_id,option_id,title,seq,option_value) VALUES ('lbfnames','LBFref','Referral',1,0);
 
