@@ -677,8 +677,6 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "WHERE " .
-    "SUBSTR(COALESCE(fe.date, s.sale_date), 1, 10) >= '$from_date' AND " .
-    "SUBSTR(COALESCE(fe.date, s.sale_date), 1, 10) <= '$to_date' AND " .
     "( di.destroy_date IS NULL OR di.destroy_date >= '$form_from_date' ) AND " .
     "( di.on_hand != 0 OR s.sale_id IS NOT NULL )";
 
@@ -696,16 +694,39 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     $query .= " AND di.warehouse_id IS NOT NULL AND di.warehouse_id = '$form_warehouse'";
   }
 
+  // This is so that sales not in the date range are sorted last for each lot.
+  // Keeps us from creating duplicate entries.
+  $diordering = "(s.sale_date IS NULL OR " .
+    "SUBSTR(COALESCE(fe.date, s.sale_date), 1, 10) >= '$from_date' AND " .
+    "SUBSTR(COALESCE(fe.date, s.sale_date), 1, 10) <= '$to_date') DESC";
+
   if ($product_first) {
     $query .= " ORDER BY d.name, d.drug_id, lo.title, di.warehouse_id, " .
-      "di.inventory_id, sale_date, s.sale_id";
+      "di.inventory_id, $diordering, sale_date, s.sale_id";
   } else {
     $query .= " ORDER BY lo.title, di.warehouse_id, d.name, d.drug_id, " .
-      "di.inventory_id, sale_date, s.sale_id";
+      "di.inventory_id, $diordering, sale_date, s.sale_id";
   }
 
   $res = sqlStatement($query);
   while ($row = sqlFetchArray($res)) {
+
+    // Handle drug_sales rows not in the date range. We must have one for each product.
+    if (empty($row['sale_date']) || ($row['sale_date'] < $from_date || $row['sale_date'] > $to_date)) {
+      if ($row['inventory_id'] == $last_inventory_id) {
+        continue;
+      }
+      $row['sale_id'          ] = null;
+      $row['quantity'         ] = null;
+      $row['fee'              ] = null;
+      $row['pid'              ] = null;
+      $row['encounter'        ] = null;
+      $row['sale_date'        ] = null;
+      $row['xfer_inventory_id'] = null;
+      $row['distributor_id'   ] = null;
+      $row['trans_type'       ] = null;
+      $row['invoice_refno'    ] = null;
+    }
 
     // Skip this row if user is disallowed from its warehouse.
     if ($is_user_restricted && !isWarehouseAllowed($row['facid'], $row['warehouse_id'])) {
