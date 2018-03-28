@@ -294,9 +294,9 @@ function jsLineItemValidation(f) {
    }
 ";
     } // end if male patient
-    if ($this->patient_age < 10 || $this->patient_age > 50) {
+    if ($this->patient_age < 10 || $this->patient_age > 65) {
       $s .= "
-   if (!confirm('" . xls('Warning: Contraception for a patient under 10 or over 50.') . "'))
+   if (!confirm('" . xls('Warning: Contraception for a patient under 10 or over 65.') . "'))
     return false;
 ";
     } // end if improper age
