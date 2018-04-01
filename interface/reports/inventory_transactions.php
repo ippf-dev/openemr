@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2017 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2018 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -173,16 +173,16 @@ function thisLineItem($row, $xfer=false) {
 
 // Build a drop-down list of facilities.
 //
-function genFacilitySelector($tagname, $toptext, $default='') {
+function genFacilitySelector($tagname, $default=array()) {
   global $is_user_restricted;
   $fres = sqlStatement("SELECT id, name FROM facility ORDER BY name");
-  $s = "<select name='" . $tagname . "'>";
-  $s .= "<option value=''>" . text($toptext) . "</option>";
+  $s = "<select name='" . $tagname . "[]' multiple='multiple' " .
+    "title='" . xla('Select one or more clinics, or none for all clinics.') . "'>";
   while ($frow = sqlFetchArray($fres)) {
     $facid = $frow['id'];
     if ($is_user_restricted && !isFacilityAllowed($facid)) continue;
     $s .= "<option value='$facid'";
-    if ($facid == $default) $s .= " selected";
+    if (in_array($facid, $default)) $s .= " selected";
     $s .= ">" . text($frow['name']) . "</option>";
   }
   $s .= "</select>";
@@ -264,7 +264,7 @@ $include_sales_info = $form_trans_type == '0' || $form_trans_type == '1';
 $include_amount = $form_trans_type <= '3'; // all, sale, purchase or return
 
 // The selected facility ID, if any.
-$form_facility = 0 + empty($_POST['form_facility']) ? 0 : $_POST['form_facility'];
+$form_facility  = empty($_POST['form_facility']) ? array() : $_POST['form_facility'];
 
 $form_orderby = $ORDERHASH[$_REQUEST['form_orderby']] ? $_REQUEST['form_orderby'] : 'date';
 $orderby = $ORDERHASH[$form_orderby];
@@ -389,8 +389,8 @@ function transTypeChanged() {
    <table class='text'>
 
     <tr>
-     <td nowrap>
-      <?php echo genFacilitySelector('form_facility', '-- ' . xl('All Facilities') . ' --', $form_facility); ?>
+     <td rowspan='3' valign='top' nowrap>
+      <?php echo genFacilitySelector('form_facility', $form_facility); ?>
      </td>
      <td nowrap>
       <?php echo genProductSelector('form_product', '-- ' . xl('All Products') . ' --', $form_product); ?>
@@ -579,8 +579,12 @@ if ($form_action) { // if submit or export
     $query .= "AND s.pid != 0 ";
   }
 
-  if ($form_facility) {
-    $query .= "AND ((lo.option_value IS NOT NULL AND lo.option_value = '$form_facility')) ";
+  if (!empty($form_facility)) {
+    $query .= " AND lo.option_value IS NOT NULL AND (1 = 2";
+    foreach ($form_facility as $fac) {
+      $query .= " OR lo.option_value = '" . add_escape_custom($fac) . "'";
+    }
+    $query .= ")";
   }
 
   if ($form_product) {
