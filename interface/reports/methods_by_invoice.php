@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2012-2017 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2012-2018 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -223,7 +223,7 @@ if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 $form_date_type = empty($_POST['form_date_type']) ? 0 : intval($_POST['form_date_type']);
 $form_from_date = fixDate($_POST['form_from_date'], date('Y-m-d'));
 $form_to_date   = fixDate($_POST['form_to_date']  , date('Y-m-d'));
-$form_facility  = $_POST['form_facility'];
+$form_facility  = empty($_POST['form_facility']) ? array() : $_POST['form_facility'];
 
 $aTaxNames = array();
 
@@ -252,6 +252,11 @@ else {
 <html>
 <head>
 <style>
+
+<!--
+<link href="../../library/select2-4.0.5/dist/css/select2.css" rel="stylesheet" />
+-->
+
 td.dehead { font-size:10pt; text-align:center; }
 td.detail { font-size:10pt; }
 td.delink { color:#0000cc; font-size:10pt; cursor:pointer }
@@ -269,6 +274,10 @@ table.mymaintable td {
 <script type="text/javascript" src="../../library/dialog.js?v=<?php echo $v_js_includes; ?>"></script>
 <script type="text/javascript" src="../../library/js/jquery-1.9.1.min.js"></script>
 <script type="text/javascript" src="../../library/js/report_helper.js?v=<?php echo $v_js_includes; ?>"></script>
+
+<!--
+<script src="../../library/select2-4.0.5/dist/js/select2.full.js?v=<?php echo $v_js_includes; ?>"></script>
+-->
 
 <script language="JavaScript">
 
@@ -288,6 +297,7 @@ function doinvopen(ptid,encid) {
 }
 
 $(document).ready(function() {
+  // $('.js-example-basic-multiple').select2({multiple: true});
   oeFixedHeaderSetup(document.getElementById('mymaintable'));
 });
 
@@ -307,22 +317,24 @@ $(document).ready(function() {
 <table border='0' cellpadding='3'>
 
  <tr>
-  <td align='center'>
+  <td style='text-align: center; vertical-align:top;'>
 <?php
 // Build a drop-down list of facilities.
 //
 $query = "SELECT id, name FROM facility ORDER BY name";
 $fres = sqlStatement($query);
-echo "   <select name='form_facility'>\n";
-echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
+echo "   <select name='form_facility[]' class='js-example-basic-multiple' multiple='multiple' " .
+  "title='" . xla('Select one or more clinics, or none for all clinics.') . "'>\n";
 while ($frow = sqlFetchArray($fres)) {
   $facid = $frow['id'];
   echo "    <option value='$facid'";
-  if ($facid == $form_facility) echo " selected";
-  echo ">" . $frow['name'] . "\n";
+  if (in_array($facid, $form_facility)) echo " selected";
+  echo ">" . $frow['name'] . "</option>\n";
 }
 echo "   </select>\n";
 ?>
+  </td>
+  <td style='text-align: center; vertical-align:top;'>
 <?php
 	// Build a drop-down list of "cashiers".
 	//
@@ -343,7 +355,7 @@ echo "   </select>\n";
  </tr>
 
  <tr>
-  <td align='center'>
+  <td align='center' colspan='2'>
    <select name='form_date_type'>
     <option value='0'<?php if ($form_date_type == 0) echo ' selected' ?>><?php echo xlt('Payment Date'); ?></option>
     <option value='1'<?php if ($form_date_type == 1) echo ' selected' ?>><?php echo xlt('Invoice Date'); ?></option>
@@ -370,7 +382,7 @@ echo "   </select>\n";
  </tr>
 
  <tr>
-  <td height="1">
+  <td height="1" colspan='2'>
   </td>
  </tr>
 <?php
@@ -424,8 +436,14 @@ if (isset($_POST['form_orderby'])) {
     "a.post_time <= '$to_date 23:59:59')) $cashcond";
   }
 
-  // If a facility was specified.
-  if ($form_facility) $query .= " AND fe.facility_id = '$form_facility'";
+  // If facilities are specified.
+  if (!empty($form_facility)) {
+    $query .= " AND (1 = 2";
+    foreach ($form_facility as $fac) {
+      $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
+    }
+    $query .= ")";
+  }
 
   $query .= " ORDER BY fe.date, fe.pid, fe.encounter, fe.id";
   // echo "<!-- $query -->\n"; // debugging
@@ -462,9 +480,15 @@ if (isset($_POST['form_orderby'])) {
     "LEFT JOIN users AS u ON u.id = b.user " .
     "WHERE b.activity = 1 AND b.fee != 0 AND b.code_type = 'COPAY'" .
     " AND fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
-  if ($form_facility) { $query .=
-    " AND fe.facility_id = '$form_facility'";
+
+  if (!empty($form_facility)) {
+    $query .= " AND (1 = 2";
+    foreach ($form_facility as $fac) {
+      $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
+    }
+    $query .= ")";
   }
+
   if ($form_cashier) { $query .=
     " AND b.user = '$form_cashier'";
   }
@@ -491,8 +515,16 @@ if (isset($_POST['form_orderby'])) {
     // The Payment Date option is taken to mean void date for voids.
     $query .= " AND v.date_voided >= '$from_date 00:00:00' AND v.date_voided <= '$to_date 23:59:59'";
   }
-  // If a facility was specified.
-  if ($form_facility) $query .= " AND fe.facility_id = '$form_facility'";
+
+  // If facilities were specified.
+  if (!empty($form_facility)) {
+    $query .= " AND (1 = 2";
+    foreach ($form_facility as $fac) {
+      $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
+    }
+    $query .= ")";
+  }
+
   // If a cashier was specified.
   if ($form_cashier) $query .= " AND v.user_id = '$form_cashier'";
   //

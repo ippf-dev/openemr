@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2010-2017 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2010-2018 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -34,7 +34,8 @@ function display_desc($desc) {
 $product_first = (!empty($_POST['form_by']) && $_POST['form_by'] == 'w') ? 0 : 1;
 
 // The selected facility ID, if any.
-$form_facility = 0 + empty($_REQUEST['form_facility']) ? 0 : $_REQUEST['form_facility'];
+$form_facility  = empty($_REQUEST['form_facility']) ? array() : $_REQUEST['form_facility'];
+if (!is_array($form_facility)) $form_facility = array($form_facility);
 
 // The selected warehouse ID, if any.
 $form_warehouse = empty($_REQUEST['form_warehouse']) ? '' : $_REQUEST['form_warehouse'];
@@ -63,8 +64,13 @@ function getEndInventory($product_id = 0, $warehouse_id = '~') {
   }
 
   $faccond = '';
-  if ($form_facility) {
-    $faccond = "AND lo.option_value IS NOT NULL AND lo.option_value = '$form_facility'";
+  // If facilities are specified.
+  if (!empty($form_facility)) {
+    $faccond .= " AND lo.option_value IS NOT NULL AND (1 = 2";
+    foreach ($form_facility as $fac) {
+      $faccond .= " OR lo.option_value = '" . add_escape_custom($fac) . "'";
+    }
+    $faccond .= ")";
   }
 
   // Get sum of current inventory quantities + destructions done after the
@@ -457,11 +463,20 @@ function doinvopen(ptid,encid) {
 // Enable/disable warehouse options depending on current facility.
 function facchanged() {
  var f = document.forms[0];
- var facid = f.form_facility.value;
+ var facopts = f['form_facility[]'].options;
  var theopts = f.form_warehouse.options;
  for (var i = 1; i < theopts.length; ++i) {
   var tmp = theopts[i].value.split('/');
-  var dis = facid && (tmp.length < 2 || tmp[1] != facid);
+  var dis = 0; // means no facility filtering
+  for (var j = 0; j < facopts.length; ++j) {
+    if (facopts[j].selected) {
+      if (dis == 0) dis = 1;
+      if (tmp.length >= 2 && tmp[1] == facopts[j].value) {
+        dis = 2;
+      }
+    }
+  }
+  dis = dis == 1; // true if there is facility filtering and this warehouse's facility doesn't match
   theopts[i].disabled = dis;
   if (dis) theopts[i].selected = false;
  }
@@ -486,23 +501,27 @@ $(document).ready(function() {
 <table border='0' cellpadding='3'>
 
  <tr>
-  <td>
+  <td rowspan='2'>
 <?php
 // Build a drop-down list of facilities.
 //
 $query = "SELECT id, name FROM facility ORDER BY name";
 $fres = sqlStatement($query);
-echo "   <select name='form_facility' onchange='facchanged()'>\n";
-echo "    <option value=''>" . xl('All Facilities') . "</option>\n";
+echo "   <select name='form_facility[]' multiple='multiple' onchange='facchanged()' " .
+  "title='" . xla('Select one or more clinics, or none for all clinics.') . "'>\n";
 while ($frow = sqlFetchArray($fres)) {
   $facid = $frow['id'];
   if ($is_user_restricted && !isFacilityAllowed($facid)) continue;
   echo "    <option value='$facid'";
-  if ($facid == $form_facility) echo " selected";
-  echo ">" . $frow['name'] . "\n";
+  if (in_array($facid, $form_facility)) echo " selected";
+
+  echo ">" . $frow['name'] . "</option>\n";
 }
 echo "   </select>&nbsp;\n";
 ?>
+
+  </td>
+  <td>
 
    <?php xl('By','e'); ?>:
    <select name='form_by'>
@@ -686,8 +705,12 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
   }
 
   // If a facility was specified.
-  if ($form_facility) {
-    $query .= " AND lo.option_value IS NOT NULL AND lo.option_value = '$form_facility'";
+  if (!empty($form_facility)) {
+    $query .= " AND lo.option_value IS NOT NULL AND (1 = 2";
+    foreach ($form_facility as $fac) {
+      $query .= " OR lo.option_value = '" . add_escape_custom($fac) . "'";
+    }
+    $query .= ")";
   }
 
   if ($form_warehouse) {
