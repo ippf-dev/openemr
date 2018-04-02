@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2017 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2017-2018 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -373,7 +373,10 @@ if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
 $form_from_date = fixDate($_POST['form_from_date'], date('Y-m-01'));
 $form_to_date   = fixDate($_POST['form_to_date']  , date('Y-m-d'));
-$form_facility  = isset($_POST['form_facility']) ? $_POST['form_facility'] : '';
+
+// The selected facility IDs, if any.
+$form_facility  = empty($_POST['form_facility']) ? array() : $_POST['form_facility'];
+
 $form_payor     = isset($_POST['form_payor']) ? $_POST['form_payor'] : '';
 
 $form_orderby = $ORDERHASH[$_REQUEST['form_orderby']] ? $_REQUEST['form_orderby'] : 'svcdate';
@@ -489,32 +492,36 @@ $(document).ready(function() {
 
 <form method='post' action='netsuite_export.php'>
 
+<center>
 <table border='0' cellpadding='3'>
 
  <tr>
-  <td align='center'>
+  <td rowspan='2'>
 <?php
 
+// Build a drop-down list of facilities.
+//
+$query = "SELECT id, name FROM facility ORDER BY name";
+$fres = sqlStatement($query);
+echo "   <select name='form_facility[]' multiple='multiple' " .
+  "title='" . xla('Select one or more clinics, or none for all clinics.') . "'>\n";
+while ($frow = sqlFetchArray($fres)) {
+  $facid = $frow['id'];
+  echo "    <option value='$facid'";
+  if (in_array($facid, $form_facility)) echo " selected";
+  echo ">" . text($frow['name']) . "</option>\n";
+}
+echo "   </select>\n";
+?>
+  </td>
+  <td>
+<?php
 // Build a drop-down for payor type.
 echo "   <select name='form_payor'>\n";
 echo "    <option value=''"  . ($form_payor == ''  ? ' selected' : '') . ">-- " . xl('All Payors') . " --\n";
 echo "    <option value='c'" . ($form_payor == 'c' ? ' selected' : '') . ">"    . xl('Cash'   ) . "\n";
 echo "    <option value='i'" . ($form_payor == 'i' ? ' selected' : '') . ">"    . xl('Insurer') . "\n";
 echo "   </select>&nbsp;\n";
-
-// Build a drop-down list of facilities.
-//
-$query = "SELECT id, name FROM facility ORDER BY name";
-$fres = sqlStatement($query);
-echo "   <select name='form_facility'>\n";
-echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
-while ($frow = sqlFetchArray($fres)) {
-  $facid = $frow['id'];
-  echo "    <option value='$facid'";
-  if ($facid == $form_facility) echo " selected";
-  echo ">" . $frow['name'] . "\n";
-}
-echo "   </select>\n";
 ?>
   &nbsp;
    <?php echo xlt('From'); ?>:
@@ -529,7 +536,10 @@ echo "   </select>\n";
    <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
     id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
     title='<?php echo xlt('Click here to choose a date'); ?>'>
-   &nbsp;
+  </td>
+ </tr>
+ <tr>
+  <td>
    <input type='submit' name='form_refresh' value="<?php echo xlt('Run') ?>">
    &nbsp;
    <input type='submit' name='form_csvexport' value="<?php echo xlt('Export to CSV') ?>">
@@ -544,6 +554,7 @@ echo "   </select>\n";
  </tr>
 
 </table>
+</center>
 
 <table width='98%' id='mymaintable' class='mymaintable'>
  <thead>
@@ -642,8 +653,15 @@ if ($_POST['form_orderby']) {
   $fundcodelen = 3;
   $sobjcodelen = 3;
 
-  // If a facility was specified.
-  $factest = $form_facility ? "AND fe.facility_id = '$form_facility'" : "";
+  // If facilities are specified.
+  $factest = "";
+  if (!empty($form_facility)) {
+    $factest = "AND (1 = 2";
+    foreach ($form_facility as $fac) {
+      $factest .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
+    }
+    $factest .= ")";
+  }
 
   // Joins that work for both services and products.
   $morejoins =
