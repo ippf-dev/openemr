@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2006-2017 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2006-2018 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -439,7 +439,8 @@ function get_adjustment_type($patient_id, $encounter_id, $code_type, $code) {
 
   $form_from_date = fixDate($_POST['form_from_date'], date('Y-m-d'));
   $form_to_date   = fixDate($_POST['form_to_date']  , date('Y-m-d'));
-  $form_facility  = isset($_POST['form_facility']) ? $_POST['form_facility'] : '';
+  // The selected facility IDs, if any.
+  $form_facility  = empty($_POST['form_facility']) ? array() : $_POST['form_facility'];
   $form_adjreason = isset($_POST['form_adjreason']) ? $_POST['form_adjreason'] : '';
 
   // Get the tax types applicable to this report's date range.
@@ -544,35 +545,30 @@ $(document).ready(function() {
 <table border='0' cellpadding='3'>
 
  <tr>
-  <td align='center'>
+  <td rowspan='2'>
 <?php
   // Build a drop-down list of facilities.
   //
   $query = "SELECT id, name FROM facility ORDER BY name";
   $fres = sqlStatement($query);
-  echo "   <select name='form_facility'>\n";
-  echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
+  echo "   <select name='form_facility[]' multiple='multiple' " .
+    "title='" . xla('Select one or more clinics, or none for all clinics.') . "'>\n";
   while ($frow = sqlFetchArray($fres)) {
     $facid = $frow['id'];
     echo "    <option value='$facid'";
-    if ($facid == $form_facility) echo " selected";
-    echo ">" . $frow['name'] . "\n";
+    if (in_array($facid, $form_facility)) echo " selected";
+    echo ">" . $frow['name'] . "</option>\n";
   }
   echo "   </select>\n";
 ?>
-  &nbsp;
+  </td>
+  <td align='right'>
 <?php
   // Build a drop-down list of adjustment types.
   //
   echo generate_select_list('form_adjreason', 'adjreason', $form_adjreason, '',
     '-- ' . xl('No Adjustment Filter') . ' --');
 ?>
-   &nbsp;
-   <input type='checkbox' name='form_details' value='1'<?php if ($_POST['form_details']) echo " checked"; ?>><?php xl('Details','e') ?>
-  </td>
- </tr>
- <tr>
-  <td align='center'>
    &nbsp;<?php xl('From','e'); ?>:
    <input type='text' name='form_from_date' id="form_from_date" size='10' value='<?php echo $form_from_date ?>'
     onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='yyyy-mm-dd'>
@@ -585,6 +581,11 @@ $(document).ready(function() {
    <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
     id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
     title='<?php xl('Click here to choose a date','e'); ?>'>
+  </td>
+ </tr>
+ <tr>
+  <td align='right'>
+   <input type='checkbox' name='form_details' value='1'<?php if ($_POST['form_details']) echo " checked"; ?>><?php xl('Details','e') ?>
    &nbsp;
    <input type='submit' name='form_refresh' value="<?php xl('Refresh','e') ?>">
    &nbsp;
@@ -679,10 +680,16 @@ $(document).ready(function() {
       "WHERE b.code_type != 'COPAY' AND b.activity = 1 AND b.fee != 0 AND " .
       "(b.code_type != 'TAX' OR b.ndc_info = '') AND " .
       "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
-    // If a facility was specified.
-    if ($form_facility) {
-      $query .= " AND fe.facility_id = '$form_facility'";
+
+    // If any facilities were specified.
+    if (!empty($form_facility)) {
+      $query .= "AND (1 = 2";
+      foreach ($form_facility as $fac) {
+        $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
+      }
+      $query .= ")";
     }
+
     $query .= " ORDER BY lo.title, b.code, fe.date, fe.id";
     //
     $res = sqlStatement($query);
@@ -705,10 +712,16 @@ $(document).ready(function() {
       "fe.pid = s.pid AND fe.encounter = s.encounter AND " .
       "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59' " .
       "WHERE s.fee != 0";
-    // If a facility was specified.
-    if ($form_facility) {
-      $query .= " AND fe.facility_id = '$form_facility'";
+
+    // If any facilities were specified.
+    if (!empty($form_facility)) {
+      $query .= "AND (1 = 2";
+      foreach ($form_facility as $fac) {
+        $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
+      }
+      $query .= ")";
     }
+
     $query .= " ORDER BY d.name, fe.date, fe.id";
     //
     $res = sqlStatement($query);
