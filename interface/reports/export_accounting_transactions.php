@@ -246,7 +246,7 @@ if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
 $form_from_date = fixDate($_POST['form_from_date'], date('Y-m-d'));
 $form_to_date   = fixDate($_POST['form_to_date']  , date('Y-m-d'));
-$form_facility  = $_POST['form_facility'];
+$form_facility  = empty($_POST['form_facility']) ? array() : $_POST['form_facility'];
 
 if ($_POST['form_csvexport']) {
   header("Pragma: public");
@@ -316,22 +316,24 @@ function doinvopen(ptid,encid) {
 <table border='0' cellpadding='3'>
 
  <tr>
-  <td>
+  <td rowspan='2' valign='top'>
 <?php
   // Build a drop-down list of facilities.
   //
   $query = "SELECT id, name FROM facility ORDER BY name";
   $fres = sqlStatement($query);
-  echo "   <select name='form_facility'>\n";
-  echo "    <option value=''>-- " . xl('All Facilities') . " --\n";
+  echo "   <select name='form_facility[]' multiple='multiple' " .
+    "title='" . xla('Select one or more clinics, or none for all clinics.') . "'>\n";
   while ($frow = sqlFetchArray($fres)) {
     $facid = $frow['id'];
     echo "    <option value='$facid'";
-    if ($facid == $form_facility) echo " selected";
-    echo ">" . $frow['name'] . "\n";
+    if (in_array($facid, $form_facility)) echo " selected";
+    echo ">" . $frow['name'] . "</option>\n";
   }
   echo "   </select>\n";
 ?>
+  </td>
+  <td>
    &nbsp;<?php xl('From','e'); ?>:
    <input type='text' name='form_from_date' id="form_from_date" size='8' value='<?php echo $form_from_date ?>'
     onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='yyyy-mm-dd'>
@@ -344,6 +346,10 @@ function doinvopen(ptid,encid) {
    <img src='../pic/show_calendar.gif' align='absbottom' width='24' height='22'
     id='img_to_date' border='0' alt='[?]' style='cursor:pointer'
     title='<?php xl('Click here to choose a date','e'); ?>'>
+  </td>
+ </tr>
+ <tr>
+  <td>
    &nbsp;
    <input type='submit' name='form_refresh' value="<?php xl('Refresh','e') ?>">
    &nbsp;
@@ -420,10 +426,16 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "LEFT JOIN users AS u ON u.id = IF(b.provider_id, b.provider_id, fe.provider_id) " .
     "WHERE b.activity = 1 AND b.fee != 0 AND " .
     "fe.date >= '$from_date 00:00:00' AND fe.date <= '$to_date 23:59:59'";
+
   // If a facility was specified.
-  if ($form_facility) {
-    $query .= " AND fe.facility_id = '$form_facility'";
+  if (!empty($form_facility)) {
+    $query .= " AND (1 = 2";
+    foreach ($form_facility as $fac) {
+      $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
+    }
+    $query .= ")";
   }
+
   $query .= " ORDER BY fe.pid, fe.encounter, b.id";
   //
   $res = sqlStatement($query);
@@ -460,10 +472,16 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "LEFT JOIN list_options AS lo ON lo.list_id = 'warehouse' AND " .
     "lo.option_id = di.warehouse_id AND lo.activity = 1 " .
     "WHERE s.fee != 0";
+
   // If a facility was specified.
-  if ($form_facility) {
-    $query .= " AND fe.facility_id = '$form_facility'";
+  if (!empty($form_facility)) {
+    $query .= " AND (1 = 2";
+    foreach ($form_facility as $fac) {
+      $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
+    }
+    $query .= ")";
   }
+
   $query .= " ORDER BY fe.pid, fe.encounter, s.sale_id";
   //
   $res = sqlStatement($query);
@@ -495,8 +513,16 @@ if ($_POST['form_refresh'] || $_POST['form_csvexport']) {
     "WHERE a.deleted IS NULL AND " .
     "((a.post_date IS NOT NULL AND a.post_date >= '$from_date' AND a.post_date <= '$to_date') OR " .
     "(a.post_date IS NULL AND a.post_time >= '$from_date 00:00:00' AND a.post_time <= '$to_date 23:59:59'))";
+
   // If a facility was specified.
-  if ($form_facility) $query .= " AND fe.facility_id = '$form_facility'";
+  if (!empty($form_facility)) {
+    $query .= " AND (1 = 2";
+    foreach ($form_facility as $fac) {
+      $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
+    }
+    $query .= ")";
+  }
+
   $query .= " ORDER BY fe.pid, fe.encounter, a.sequence_no";
   $res = sqlStatement($query);
   while ($row = sqlFetchArray($res)) {
