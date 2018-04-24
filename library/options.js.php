@@ -146,6 +146,7 @@ function checkSkipConditions() {
     //     (!condition && action.substring(0, 5) == 'hsval'))
     if (action.substring(0, 5) == 'value')
     {
+      // alert(target + ' / ' + action); // debugging
       // var trgelem = document.getElementById('form_' + target);
       var trgelem = document.forms[0]['form_' + target];
       if (trgelem == null) {
@@ -159,6 +160,13 @@ function checkSkipConditions() {
       }
       else {
         trgelem.value = action_value;
+        // alert(trgelem.name + ' / ' + action_value); // debugging
+        // Handle billing code descriptions.
+        var valelem = document.forms[0]['form_' + target + '__desc'];
+        if (skipArray[i].valdesc && valelem) {
+          // alert('Setting ' + valelem.name + ' value to: ' + skipArray[i].valdesc); // debugging
+          valelem.value = skipArray[i].valdesc;
+        }
       }
     }
   }

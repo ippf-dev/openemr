@@ -445,7 +445,8 @@ function generate_form_field($frow, $currvalue='') {
     // if max_length is set to zero, then do not set a maxlength
     if ($maxlength) $string_maxlength = "maxlength='".attr($maxlength)."'";
     //
-    if (strpos($frow['edit_options'], '2') !== FALSE && substr($frow['form_id'], 0, 3) == 'LBF') {
+    // if (strpos($frow['edit_options'], '2') !== FALSE && substr($frow['form_id'], 0, 3) == 'LBF') {
+    if (strpos($frow['edit_options'], '2') !== FALSE) {
       // Option "2" generates a hidden input for the codes, and a matching visible field
       // displaying their descriptions. First step is computing the description string.
       $currdescstring = '';
@@ -453,24 +454,8 @@ function generate_form_field($frow, $currvalue='') {
         $relcodes = explode(';', $currvalue);
         foreach ($relcodes as $codestring) {
           if ($codestring === '') continue;
-          list($ctype, $code) = explode(':', $codestring);
-          if (empty($code)) {
-            $code = $ctype;
-            $ctype = $codetype;
-          }
-          $query = "SELECT c.code_text FROM codes AS c, code_types AS ct WHERE " .
-            "ct.ct_key = '$ctype' AND " .
-            "c.code_type = ct.ct_id AND " .
-            "c.code = '$code' AND c.active = 1 " .
-            "ORDER BY c.id LIMIT 1";
-          $nrow = sqlQuery($query);
           if ($currdescstring !== '') $currdescstring .= '; ';
-          if (!empty($nrow['code_text'])) {
-            $currdescstring .= $nrow['code_text'];
-          }
-          else {
-            $currdescstring .= $codestring;
-          }
+          $currdescstring .= getCodeDescription($codestring, $codetype);
         }
       }
       $currdescstring = htmlspecialchars($currdescstring, ENT_QUOTES);
@@ -2242,6 +2227,8 @@ function disp_end_group() {
   }
 }
 
+
+/**********************************************************************
 // Accumulate action conditions into a JSON expression for the browser side.
 function accumActionConditions($field_id, &$condition_str, &$condarr) {
   $conditions = empty($condarr) ? array() : unserialize($condarr);
@@ -2265,6 +2252,64 @@ function accumActionConditions($field_id, &$condition_str, &$condarr) {
       "andor:'"    . addslashes($andor)                 . "'}";
   }
 }
+**********************************************************************/
+
+function getCodeDescription($codestring, $defaulttype='ICD10') {
+  if ($codestring === '') return '';
+  list($ctype, $code) = explode(':', $codestring);
+  if (empty($code)) {
+    $code = $ctype;
+    $ctype = $defaulttype;
+  }
+  $query = "SELECT c.code_text FROM codes AS c, code_types AS ct WHERE " .
+    "ct.ct_key = '$ctype' AND " .
+    "c.code_type = ct.ct_id AND " .
+    "c.code = '$code' AND c.active = 1 " .
+    "ORDER BY c.id LIMIT 1";
+  $nrow = sqlQuery($query);
+  if ($currdescstring !== '') $currdescstring .= '; ';
+  if (!empty($nrow['code_text'])) {
+    return $nrow['code_text'];
+  }
+  else {
+    return $codestring;
+  }
+}
+
+// Accumulate action conditions into a JSON expression for the browser side.
+function accumActionConditions(&$frow, &$condition_str) {
+  $field_id = $frow['field_id'];
+  $conditions = empty($frow['conditions']) ? array() : unserialize($frow['conditions']);
+  $action = 'skip';
+  foreach ($conditions as $key => $condition) {
+    if ($key === 'action') {
+      // If specified this should be the first array item.
+      if ($condition) $action = $condition;
+      continue;
+    }
+    if (empty($condition['id'])) continue;
+    $andor = empty($condition['andor']) ? '' : $condition['andor'];
+    if ($condition_str) $condition_str .= ",\n";
+    $condition_str .= "{" .
+      "target:'"   . addslashes($field_id)              . "', " .
+      "action:'"   . addslashes($action)                . "', " .
+      "id:'"       . addslashes($condition['id'])       . "', " .
+      "itemid:'"   . addslashes($condition['itemid'])   . "', " .
+      "operator:'" . addslashes($condition['operator']) . "', " .
+      "value:'"    . addslashes($condition['value'])    . "', ";
+    if ($frow['data_type'] == 15 && strpos($frow['edit_options'], '2') !== FALSE) {
+      // For billing codes handle requirement to display its description.
+      $tmp = explode('=', $action, 2);
+      if (!empty($tmp[1])) {
+        $condition_str .= "valdesc:'" . addslashes(getCodeDescription($tmp[1])) . "', ";
+      }
+    }
+    $condition_str .=
+      "andor:'"    . addslashes($andor)                 . "'}";
+  }
+}
+
+
 
 // This checks if the given field with the given value should have an action applied.
 // Originally the only action was skip, but now you can also set the field to a
@@ -2865,7 +2910,7 @@ function display_layout_tabs_data_editable($formtype, $result1, $result2='') {
         $prepend_blank_row = strpos($group_fields['edit_options'], 'K') !== FALSE;
 
         // Accumulate action conditions into a JSON expression for the browser side.
-        accumActionConditions($field_id, $condition_str, $group_fields['conditions']);
+        accumActionConditions($group_fields, $condition_str);
 
         if ($formtype == 'DEM') {
           if ($GLOBALS['athletic_team']) {

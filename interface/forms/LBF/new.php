@@ -892,7 +892,7 @@ function warehouse_changed(sel) {
     if ($graphable) $form_is_graphable = true;
 
     // Accumulate action conditions into a JSON expression for the browser side.
-    accumActionConditions($field_id, $condition_str, $frow['conditions']);
+    accumActionConditions($frow, $condition_str);
 
     $currvalue  = '';
 
