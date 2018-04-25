@@ -76,6 +76,8 @@ if ($_POST['formaction'] == 'csvexport') {
   // http://crashcoursing.blogspot.com/2011/05/exporting-csv-with-special-characters.html
   echo "\xEF\xBB\xBF";
 
+  $tmplabel = genValueLabel($list_id);
+
   // CSV headers:
   echo '"' . xl('List'     ) . '",';
   echo '"' . xl('ID'       ) . '",';
@@ -83,6 +85,9 @@ if ($_POST['formaction'] == 'csvexport') {
   echo '"' . xl('Order'    ) . '",';
   echo '"' . xl('Default'  ) . '",';
   echo '"' . xl('Active'   ) . '",';
+  if ($tmplabel !== '') {
+    echo '"' . addslashes($tmplabel) . '",';
+  }
   echo '"' . xl('Global ID') . '",';
   echo '"' . xl('Notes'    ) . '",';
   echo '"' . xl('Codes'    ) . '"';
@@ -98,6 +103,9 @@ if ($_POST['formaction'] == 'csvexport') {
     echo '"' . csvtext($row['seq']) . '",';
     echo '"' . csvtext($row['is_default']) . '",';
     echo '"' . csvtext($row['activity']) . '",';
+    if ($tmplabel !== '') {
+      echo '"' . csvtext($row['option_value']) . '",';
+    }
     echo '"' . csvtext($row['mapping']) . '",';
     echo '"' . csvtext($row['notes']) . '",';
     echo '"' . csvtext($row['codes']) . '"';
@@ -717,6 +725,18 @@ function writeITLine($it_array) {
   echo " </tr>\n";
 }
 
+function genValueLabel($list_id) {
+  $s = '';
+  if      ($list_id == 'taxrate'      ) $s = xl('Rate');
+  else if ($list_id == 'contrameth'   ) $s = xl('Modern');
+  else if ($list_id == 'adjreason'    ) $s = xl('After Taxes');
+  else if ($list_id == 'warehouse'    ) $s = xl('Facility');
+  else if ($list_id == 'lbfnames' || $list_id == 'transactions') $s = xl('Repeats');
+  else if ($list_id == 'abook_type'   ) $s = xl('Type');
+  else if ($list_id == 'immunizations') $s = xl('CVX Code Mapping'); 
+  return $s;
+}
+
 ?>
 <html>
 
@@ -1130,21 +1150,17 @@ while ($row = sqlFetchArray($res)) {
   <td><b><?php xl('Order'  ,'e'); ?></b></td>
   <td><b><?php xl('Default','e'); ?></b></td>
   <td><b><?php echo xlt('Active'); ?></b></td>
-<?php if ($list_id == 'taxrate') { ?>
-  <td><b><?php xl('Rate'   ,'e'); ?></b></td>
-<?php } else if ($list_id == 'contrameth') { ?>
-  <td><b><?php xl('Modern','e'); ?></b></td>
-<?php } else if ($list_id == 'adjreason') { ?>
-  <td><b><?php xl('After Taxes','e'); ?></b></td>
-<?php } else if ($list_id == 'warehouse') { ?>
-  <td><b><?php xl('Facility','e'); ?></b></td>
-<?php } else if ($list_id == 'lbfnames' || $list_id == 'transactions') { ?>
-  <td title='<?php xl('Number of past history columns','e'); ?>'><b><?php xl('Repeats','e'); ?></b></td>
-<?php } else if ($list_id == 'abook_type') { ?>
-  <td><b><?php xl('Type','e'); ?></b></td>
-<?php } else if ($list_id == 'immunizations') { ?>
-  <td><b>&nbsp;&nbsp;&nbsp;&nbsp;<?php xl('CVX Code Mapping','e'); ?></b></td>
-<?php } ?>
+<?php
+// Some lists have another attribute for option_value here.
+$tmplabel = genValueLabel($list_id);
+if ($tmplabel !== '') {
+  echo "  <td";
+  if ($list_id == 'lbfnames' || $list_id == 'transactions') {
+    echo " title='" . xla('Number of past history columns') . "'";
+  }
+  echo "><b>" . text($tmplabel) . "</b></td>\n";
+}
+?>
 <?php if ($list_id == 'lbfnames') { ?>
   <td><b><?php xl('Category','e'); ?></b></td>  
 <?php } else if ($list_id == 'fitness') { ?>
