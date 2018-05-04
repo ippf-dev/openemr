@@ -1336,6 +1336,7 @@ if ($GLOBALS['athletic_team']) {
           <?php genMiscLink('RTop','rep','0',xl('Financial Summary by Service Code'),'reports/svc_code_financial_report.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('Peachtree Export'),'reports/export_accounting_transactions.php'); ?>
           <?php genMiscLink('RTop','rep','0',xl('NetSuite Export'),'reports/netsuite_export.php'); ?>
+          <?php if (!empty($GLOBALS['code_types']['SOBJ'])) genMiscLink('RTop','rep','0',xl('NetSuite Mapping'),'reports/netsuite_mapping.php'); ?>
           <?php if ($GLOBALS['gbl_menu_projects']) {
             genMiscLink('RTop','rep','0',xl('Projects'),'reports/restricted_projects_report.php');
           } ?>
