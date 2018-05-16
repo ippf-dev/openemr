@@ -82,6 +82,7 @@ if ($_POST['formaction'] == 'csvexport') {
   echo '"' . xl('List'     ) . '",';
   echo '"' . xl('ID'       ) . '",';
   echo '"' . xl('Title'    ) . '",';
+  echo '"' . xl('Translated') . '",';
   echo '"' . xl('Order'    ) . '",';
   echo '"' . xl('Default'  ) . '",';
   echo '"' . xl('Active'   ) . '",';
@@ -97,9 +98,12 @@ if ($_POST['formaction'] == 'csvexport') {
     array($list_id));
 
   while ($row = sqlFetchArray($res)) {
+    $xtitle = xl_list_label($row['title']);
+    if ($xtitle === $row['title']) $xtitle = '';
     echo '"' . csvtext($row['list_id']) . '",';
     echo '"' . csvtext($row['option_id']) . '",';
     echo '"' . csvtext($row['title']) . '",';
+    echo '"' . csvtext($xtitle) . '",';
     echo '"' . csvtext($row['seq']) . '",';
     echo '"' . csvtext($row['is_default']) . '",';
     echo '"' . csvtext($row['activity']) . '",';

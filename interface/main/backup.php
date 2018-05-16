@@ -132,6 +132,7 @@ if ($form_step == 102.1) {
     echo '"' . xl('List'     ) . '",';
     echo '"' . xl('ID'       ) . '",';
     echo '"' . xl('Title'    ) . '",';
+    echo '"' . xl('Translated') . '",';
     echo '"' . xl('Order'    ) . '",';
     echo '"' . xl('Default'  ) . '",';
     echo '"' . xl('Active'   ) . '",';
@@ -143,9 +144,12 @@ if ($form_step == 102.1) {
       $res = sqlStatement("SELECT * FROM list_options WHERE list_id = ? ORDER BY seq, title",
         array($listid));
       while ($row = sqlFetchArray($res)) {
+        $xtitle = xl_list_label($row['title']);
+        if ($xtitle === $row['title']) $xtitle = '';
         echo '"' . csvtext($row['list_id']) . '",';
         echo '"' . csvtext($row['option_id']) . '",';
         echo '"' . csvtext($row['title']) . '",';
+        echo '"' . csvtext($xtitle) . '",';
         echo '"' . csvtext($row['seq']) . '",';
         echo '"' . csvtext($row['is_default']) . '",';
         echo '"' . csvtext($row['activity']) . '",';
@@ -180,6 +184,7 @@ if ($form_step == 102.2) {
     echo '"' . xl('Group'      ) . '",';
     echo '"' . xl('ID'         ) . '",';
     echo '"' . xl('Label'      ) . '",';
+    echo '"' . xl('Translated' ) . '",';
     echo '"' . xl('UOR'        ) . '",';
     echo '"' . xl('Type'       ) . '",';
     echo '"' . xl('Width'      ) . '",';
@@ -190,6 +195,7 @@ if ($form_step == 102.2) {
     echo '"' . xl('Data Cols'  ) . '",';
     echo '"' . xl('Options'    ) . '",';
     echo '"' . xl('Description') . '",';
+    echo '"' . xl('Translated' ) . '",';
     echo '"' . xl('Conditions' ) . '"';
     echo "\n";
     foreach ($_POST['form_sel_layouts'] as $layoutid) {
@@ -198,12 +204,20 @@ if ($form_step == 102.2) {
         "WHERE l.form_id = ? ORDER BY l.group_id, l.seq, l.title",
         array($layoutid));
       while ($row = sqlFetchArray($res)) {
+        $xtitle = xl_layout_label($row['title']);
+        if ($xtitle === $row['title']) $xtitle = '';
+        $xdesc = $row['description'];
+        if (substr($xdesc, 0, 1) != '<') {
+          $xdesc = xl_layout_label($xdesc);
+        }
+        if ($xdesc === $row['description']) $xdesc = '';
         echo '"' . csvtext($row['form_id'     ]) . '",';
         echo '"' . csvtext($row['seq'         ]) . '",';
         echo '"' . csvtext($sources[$row['source']]) . '",';
         echo '"' . csvtext($row['grp_title'   ]) . '",';
         echo '"' . csvtext($row['field_id'    ]) . '",';
         echo '"' . csvtext($row['title'       ]) . '",';
+        echo '"' . csvtext($xtitle             ) . '",';
         echo '"' . csvtext($UOR[$row['uor']]   ) . '",';
         echo '"' . csvtext($datatypes[$row['data_type']]) . '",';
         echo '"' . csvtext($row['fld_length'  ]) . '",';
@@ -214,6 +228,7 @@ if ($form_step == 102.2) {
         echo '"' . csvtext($row['datacols'    ]) . '",';
         echo '"' . csvtext($row['edit_options']) . '",';
         echo '"' . csvtext($row['description' ]) . '",';
+        echo '"' . csvtext($xdesc              ) . '",';
         echo '"' . csvtext($row['conditions'  ]) . '"';
         echo "\n";
       }
