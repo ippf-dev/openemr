@@ -57,6 +57,13 @@
       xl('Cervical cancer statistical reports.')
     ),
 
+    'gbl_menu_stats_sinadi' => array(
+      xl('SINADI Report'),
+      'bool',                           // data type
+      '0',                              // default
+      xl('Uruguay SINADI statistical report.')
+    ),
+
     'gbl_menu_acct_trans' => array(
       xl('Accounting Transactions Export'),
       'bool',                           // data type
