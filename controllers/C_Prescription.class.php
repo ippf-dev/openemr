@@ -451,7 +451,16 @@ class C_Prescription extends Controller {
 	        echo ("<tr>\n");
 	        echo ("<td></td>\n");
 	        echo ("<td>\n");
-                echo ("<img WIDTH='68pt' src='./interface/pic/" . $GLOBALS['oer_config']['prescriptions']['logo_pic'] . "' />");
+
+          // echo ("<img height='68pt' src='./interface/pic/" . $GLOBALS['oer_config']['prescriptions']['logo_pic'] . "' />");
+          $ma_logo_path = "sites/" . $_SESSION['site_id'] . "/images/ma_logo.png";
+          if (is_file($GLOBALS['webserver_root'] . "/$ma_logo_path")) {
+            echo "<img height='68pt' src='" . $GLOBALS['web_root'] . "/$ma_logo_path' />";
+          }
+          else {
+            echo "&nbsp;";
+          }
+
                 echo ("</td>\n");
 	        echo ("</tr>\n");
 	        echo ("<tr>\n");
