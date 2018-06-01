@@ -66,6 +66,33 @@ function xl($s) {
   return $s;
 }
 
+function getSites($opening=true) {
+  global $base_directory, $form_sites;
+  // Get a connection for each desired site.
+  $dh = opendir($base_directory);
+  if (!$dh) die("Cannot read directory '$base_directory'.");
+  $siteslist = array();
+  while (false !== ($sfname = readdir($dh))) {
+    if (!preg_match('/^[A-Za-z0-9]+$/', $sfname)) continue;
+    if (preg_match('/test/', $sfname)) continue;
+    if (preg_match('/old/' , $sfname)) continue;
+    if ($form_sites && !in_array($sfname, $form_sites)) continue;
+    $confname = "$base_directory/$sfname/sites/default/sqlconf.php";
+    if (!is_file($confname)) continue;
+    $link = false;
+    if ($opening) {
+      include($confname);
+      $link = mysqli_connect($host, $login, $pass, $dbase, $port);
+      if (empty($link)) continue;
+    }
+    $siteslist[$sfname] = $link;
+  }
+  closedir($dh);
+  // Sort on site directory name.
+  ksort($siteslist);
+  return $siteslist;
+}
+
 function get_auth_arr() {
   global $password_base;
   $dh = opendir($password_base);
@@ -118,6 +145,88 @@ function crypt_apr1_md5($plainpasswd) {
     return "$" . "apr1" . "$" . $salt . "$" . $tmp;
 }
 
+function writeDetail($name, $type1, $code1, $desc1, $type2, $code2, $desc2) {
+  global $form_output, $GSDEBUG;
+  if ($form_output == 'csv') {
+    if (!$GSDEBUG) {
+      echo output_csv($name, false);
+      echo output_csv($type1);
+      echo output_csv($code1);
+      echo output_csv($desc1);
+      echo output_csv($type2);
+      echo output_csv($code2);
+      echo output_csv($desc2);
+      echo "\n";
+    }
+  }
+  else {
+    echo "   <tr>\n";
+    echo "    <td>" . htmlspecialchars($name ) . "</td>\n";
+    echo "    <td>" . htmlspecialchars($type1) . "</td>\n";
+    echo "    <td>" . htmlspecialchars($code1) . "</td>\n";
+    echo "    <td>" . htmlspecialchars($desc1) . "</td>\n";
+    echo "    <td>" . htmlspecialchars($type2) . "</td>\n";
+    echo "    <td>" . htmlspecialchars($code2) . "</td>\n";
+    echo "    <td>" . htmlspecialchars($desc2) . "</td>\n";
+    echo "   </tr>\n";
+  }
+}
+
+function writeMapping($name, $link, $type1txt, $type1num, $type2txt, $type2num) {
+  if ($type1txt == 'PROD') {
+    $res = sqlSelect($link, "SELECT drug_id AS code, name AS code_text, related_code FROM drugs WHERE " .
+      "active = 1 ORDER BY code");
+  }
+  else {
+    $res = sqlSelect($link, "SELECT code, code_text, related_code FROM codes WHERE " .
+      "code_type = $type1num AND active = 1 ORDER BY code");
+  }
+  while ($row = mysqli_fetch_assoc($res)) {
+    $trgcode = '';
+    $trgdesc = '';
+    $relcodes = explode(';', $row['related_code']);
+    foreach ($relcodes as $codestring) {
+      if ($codestring === '') continue;
+      list($codetype, $code) = explode(':', $codestring);
+      if ($codetype !== $type2txt) continue;
+      $trgcode = $code;
+      $res2 = sqlSelect($link, "SELECT code_text FROM codes WHERE " .
+        "code_type = $type2num AND code = '$trgcode' AND active = 1 LIMIT 1");
+      $row2 = mysqli_fetch_assoc($res2);
+      if (isset($row2['code_text'])) {
+        $trgdesc = $row2['code_text'];
+      }
+      mysqli_free_result($res2);
+      break;
+    }
+    writeDetail($name, $type1txt, $row['code'], $row['code_text'], $type2txt, $trgcode, $trgdesc);
+  }
+  mysqli_free_result($res);
+}
+
+function writeRevMapping($name, $link, $type1txt, $type1num, $type2txt, $type2num) {
+  $res = sqlSelect($link, "SELECT code, code_text, related_code FROM codes WHERE " .
+    "code_type = $type1num AND active = 1 ORDER BY code");
+  while ($row = mysqli_fetch_assoc($res)) {
+    $trgcode = $row['code'];
+    $res2 = sqlSelect($link, "SELECT code, code_text FROM codes WHERE " .
+      "code_type = $type2num AND active = 1 AND " .
+      "(related_code LIKE '$type1txt:$trgcode' OR related_code LIKE '$type1txt:$trgcode;%' OR " .
+      "related_code LIKE '%;$type1txt:$trgcode;%' OR related_code LIKE '%;$type1txt:$trgcode') " .
+      "ORDER BY code");
+    $count = 0;
+    while ($row2 = mysqli_fetch_assoc($res2)) {
+      writeDetail($name, $type1txt, $trgcode, $row['code_text'], $type2txt, $row2['code'], $row2['code_text']);
+      ++$count;
+    }
+    if (!$count) {
+      writeDetail($name, $type1txt, $trgcode, $row['code_text'], $type2txt, '', '');
+    }
+    mysqli_free_result($res2);
+  }
+  mysqli_free_result($res);
+}
+
 $password_base = "/etc/apache2/passwords";
 
 // Assuming this script is in the parent of the OpenEMR directories.
@@ -125,6 +234,12 @@ $base_directory = dirname(__FILE__);
 if (stripos(PHP_OS,'WIN') === 0) {
   $base_directory = str_replace("\\","/",$base_directory);
 }
+
+// If specific sites are selected, get them.
+$form_sites  = empty($_POST['form_sites']) ? array() : $_POST['form_sites'];
+
+// Output type selection, csv or html.
+$form_output = empty($_POST['form_output']) ? 'csv' : $_POST['form_output'];
 
 if (!empty($_POST['form_auth_start'])) {
 ?>
@@ -221,39 +336,24 @@ else if (!empty($_POST['form_cancel'])) {
 }
 
 else if (!empty($_POST['form_submit'])) {
-  // Get a connection for each desired site.
-  $dh = opendir($base_directory);
-  if (!$dh) die("Cannot read directory '$base_directory'.");
-  $siteslist = array();
-  while (false !== ($sfname = readdir($dh))) {
-    if (!preg_match('/^[A-Za-z0-9]+$/', $sfname)) continue;
-    if (preg_match('/test/', $sfname)) continue;
-    if (preg_match('/old/' , $sfname)) continue;
-    $confname = "$base_directory/$sfname/sites/default/sqlconf.php";
-    if (!is_file($confname)) continue;
-    include($confname);
-    $link = mysqli_connect($host, $login, $pass, $dbase, $port);
-    if (empty($link)) continue;
-    $siteslist[$sfname] = $link;
-  }
-  closedir($dh);
+  // Get sorted array of sites and open the database for each.
+  $siteslist = getSites();
 
-  // Sort on site directory name.
-  ksort($siteslist);
-
-  if (!$GSDEBUG) {
-    // Initialize CSV output.
-    header("Pragma: public");
-    header("Expires: 0");
-    header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-    header("Content-Type: application/force-download; charset=utf-8");
-    header("Content-Disposition: attachment; filename=multisite_admin.csv");
-    header("Content-Description: File Transfer");
-    // Prepend a BOM (Byte Order Mark) header to mark the data as UTF-8.  This is
-    // said to work for Excel 2007 pl3 and up and perhaps also Excel 2003 pl3.  See:
-    // http://stackoverflow.com/questions/155097/microsoft-excel-mangles-diacritics-in-csv-files
-    // http://crashcoursing.blogspot.com/2011/05/exporting-csv-with-special-characters.html
-    echo "\xEF\xBB\xBF";
+  if ($form_output == 'csv') {
+    if (!$GSDEBUG) {
+      // Initialize CSV output.
+      header("Pragma: public");
+      header("Expires: 0");
+      header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+      header("Content-Type: application/force-download; charset=utf-8");
+      header("Content-Disposition: attachment; filename=multisite_admin.csv");
+      header("Content-Description: File Transfer");
+      // Prepend a BOM (Byte Order Mark) header to mark the data as UTF-8.  This is
+      // said to work for Excel 2007 pl3 and up and perhaps also Excel 2003 pl3.  See:
+      // http://stackoverflow.com/questions/155097/microsoft-excel-mangles-diacritics-in-csv-files
+      // http://crashcoursing.blogspot.com/2011/05/exporting-csv-with-special-characters.html
+      echo "\xEF\xBB\xBF";
+    }
   }
 
   if (!empty($_POST['form_globals'])) {
@@ -261,119 +361,198 @@ else if (!empty($_POST['form_submit'])) {
     $first_site = array_shift(array_keys($siteslist));
     $globals_arr = getGlobalsArray("$base_directory/$first_site/library/globals.inc.php");
 
-    if (!$GSDEBUG) {
-      // Write header row.
-      echo output_csv('Tab', false);
-      echo output_csv('Item');
-      echo output_csv('Default Value/Setting');
-      echo output_csv('Relevant to IPPF/WHR');
-      foreach ($siteslist as $name => $dummy) {
-        echo output_csv($name);
-      }
-      echo "\n";
-    }
-
-    // Write detail rows.
-    foreach ($globals_arr as $group_name => $group_arr) {
-      foreach ($group_arr as $item_key => $item_arr) {
-        echo output_csv($group_name, false);
-        echo output_csv($item_arr[0]);
-        echo output_csv(dispValue($item_arr[2], $item_arr));
-        echo output_csv('');
-        foreach ($siteslist as $name => $link) {
-          $value = '';
-          $res = sqlSelect($link, "SELECT * FROM globals WHERE gl_name = '" . $item_key . "' ORDER BY gl_index");
-          while ($row = mysqli_fetch_assoc($res)) {
-            if ($value) $value .= '; ';
-            $value .= dispValue($row['gl_value'], $item_arr);
-          }
-          mysqli_free_result($res);
-          echo output_csv($value);
+    if ($form_output == 'csv') {
+      if (!$GSDEBUG) {
+        // Write header row.
+        echo output_csv('Tab', false);
+        echo output_csv('Item');
+        echo output_csv('Default Value/Setting');
+        echo output_csv('Relevant to IPPF/WHR');
+        foreach ($siteslist as $name => $dummy) {
+          echo output_csv($name);
         }
         echo "\n";
       }
+      // Write detail rows.
+      foreach ($globals_arr as $group_name => $group_arr) {
+        foreach ($group_arr as $item_key => $item_arr) {
+          echo output_csv($group_name, false);
+          echo output_csv($item_arr[0]);
+          echo output_csv(dispValue($item_arr[2], $item_arr));
+          echo output_csv('');
+          foreach ($siteslist as $name => $link) {
+            $value = '';
+            $res = sqlSelect($link, "SELECT * FROM globals WHERE gl_name = '" . $item_key . "' ORDER BY gl_index");
+            while ($row = mysqli_fetch_assoc($res)) {
+              if ($value) $value .= '; ';
+              $value .= dispValue($row['gl_value'], $item_arr);
+            }
+            mysqli_free_result($res);
+            echo output_csv($value);
+          }
+          echo "\n";
+        }
+      }
+    }
+    else {
+
+      echo "Screen output not yet implemented.";
+      // TBD: html output
+
     }
   } // end form_globals
 
   else if (!empty($_POST['form_history'])) {
-    if (!$GSDEBUG) {
-      // Write header row.
-      echo output_csv('Site', false);
-      echo output_csv('Pid');
-      echo output_csv('ID');
-      echo output_csv('Number of Saves');
-      // echo output_csv('First');
-      echo output_csv('Date of Last');
-      echo "\n";
-    }
-
-    // Write detail rows.
-    foreach ($siteslist as $name => $link) {
-      $res = sqlSelect($link, "SELECT h.pid, p.pubpid, MIN(h.date) AS mindate, MAX(h.date) AS maxdate, " .
-        "COUNT(h.id) AS count " .
-        "FROM history_data AS h " .
-        "JOIN patient_data AS p ON p.pid = h.pid " .
-        "WHERE (SELECT COUNT(z.id) FROM history_data AS z WHERE z.pid = h.pid) > 1 " .
-        "GROUP BY h.pid ORDER BY h.pid");
-      while ($row = mysqli_fetch_assoc($res)) {
-        echo output_csv($name, false);
-        echo output_csv($row['pid']);
-        echo output_csv($row['pubpid']);
-        echo output_csv($row['count'] - 1);
-        // echo output_csv($row['mindate']);
-        echo output_csv($row['maxdate']);
+    if ($form_output == 'csv') {
+      if (!$GSDEBUG) {
+        // Write header row.
+        echo output_csv('Site', false);
+        echo output_csv('Pid');
+        echo output_csv('ID');
+        echo output_csv('Number of Saves');
+        // echo output_csv('First');
+        echo output_csv('Date of Last');
         echo "\n";
       }
-      mysqli_free_result($res);
+
+      // Write detail rows.
+      foreach ($siteslist as $name => $link) {
+        $res = sqlSelect($link, "SELECT h.pid, p.pubpid, MIN(h.date) AS mindate, MAX(h.date) AS maxdate, " .
+          "COUNT(h.id) AS count " .
+          "FROM history_data AS h " .
+          "JOIN patient_data AS p ON p.pid = h.pid " .
+          "WHERE (SELECT COUNT(z.id) FROM history_data AS z WHERE z.pid = h.pid) > 1 " .
+          "GROUP BY h.pid ORDER BY h.pid");
+        while ($row = mysqli_fetch_assoc($res)) {
+          echo output_csv($name, false);
+          echo output_csv($row['pid']);
+          echo output_csv($row['pubpid']);
+          echo output_csv($row['count'] - 1);
+          // echo output_csv($row['mindate']);
+          echo output_csv($row['maxdate']);
+          echo "\n";
+        }
+        mysqli_free_result($res);
+      }
+    }
+    else {
+
+      echo "Screen output not yet implemented.";
+      // TBD: html output
+
     }
   } // end form_history
 
   else if (!empty($_POST['form_forms'])) {
-    if (!$GSDEBUG) {
-      // Write header row.
-      echo output_csv('Site', false);
-      echo output_csv('Form Name');
-      echo output_csv('Form ID');
-      echo output_csv('Count');
-      echo output_csv('Date of Last');
-      echo "\n";
+    if ($form_output == 'csv') {
+      if (!$GSDEBUG) {
+        // Write header row.
+        echo output_csv('Site', false);
+        echo output_csv('Form Name');
+        echo output_csv('Form ID');
+        echo output_csv('Count');
+        echo output_csv('Date of Last');
+        echo "\n";
+      }
+      // Write detail rows.
+      $begdate = date('Y-m-d 00:00:00', time() - 60 * 60 * 24 * 365); // 1 year ago
+      foreach ($siteslist as $name => $link) {
+        /****************************************************************
+        $res = sqlSelect($link, "SELECT p.grp_title, f.formdir, MAX(f.date) AS maxdate, " .
+          "COUNT(f.id) AS count " .
+          "FROM forms AS f " .
+          "LEFT JOIN layout_group_properties AS p ON p.grp_form_id = f.formdir AND p.grp_group_id = '' " .
+          "WHERE f.deleted = 0 AND f.date > '$begdate' " .
+          "GROUP BY p.grp_title, f.formdir ORDER BY p.grp_title, f.formdir");
+        while ($row = mysqli_fetch_assoc($res)) {
+          echo output_csv($name, false);
+          echo output_csv($row['grp_title']);
+          echo output_csv($row['formdir']);
+          echo output_csv($row['count']);
+          echo output_csv($row['maxdate']);
+          echo "\n";
+        }
+        ****************************************************************/
+        $res = sqlSelect($link, "SELECT f.form_name, f.formdir, MAX(f.date) AS maxdate, " .
+          "COUNT(f.id) AS count " .
+          "FROM forms AS f " .
+          "WHERE f.deleted = 0 AND f.date > '$begdate' " .
+          "GROUP BY f.form_name, f.formdir ORDER BY f.form_name, f.formdir");
+        while ($row = mysqli_fetch_assoc($res)) {
+          echo output_csv($name, false);
+          echo output_csv($row['form_name']);
+          echo output_csv($row['formdir']);
+          echo output_csv($row['count']);
+          echo output_csv($row['maxdate']);
+          echo "\n";
+        }
+        mysqli_free_result($res);
+      }
     }
-    // Write detail rows.
-    $begdate = date('Y-m-d 00:00:00', time() - 60 * 60 * 24 * 365); // 1 year ago
-    foreach ($siteslist as $name => $link) {
-      /****************************************************************
-      $res = sqlSelect($link, "SELECT p.grp_title, f.formdir, MAX(f.date) AS maxdate, " .
-        "COUNT(f.id) AS count " .
-        "FROM forms AS f " .
-        "LEFT JOIN layout_group_properties AS p ON p.grp_form_id = f.formdir AND p.grp_group_id = '' " .
-        "WHERE f.deleted = 0 AND f.date > '$begdate' " .
-        "GROUP BY p.grp_title, f.formdir ORDER BY p.grp_title, f.formdir");
-      while ($row = mysqli_fetch_assoc($res)) {
-        echo output_csv($name, false);
-        echo output_csv($row['grp_title']);
-        echo output_csv($row['formdir']);
-        echo output_csv($row['count']);
-        echo output_csv($row['maxdate']);
-        echo "\n";
-      }
-      ****************************************************************/
-      $res = sqlSelect($link, "SELECT f.form_name, f.formdir, MAX(f.date) AS maxdate, " .
-        "COUNT(f.id) AS count " .
-        "FROM forms AS f " .
-        "WHERE f.deleted = 0 AND f.date > '$begdate' " .
-        "GROUP BY f.form_name, f.formdir ORDER BY f.form_name, f.formdir");
-      while ($row = mysqli_fetch_assoc($res)) {
-        echo output_csv($name, false);
-        echo output_csv($row['form_name']);
-        echo output_csv($row['formdir']);
-        echo output_csv($row['count']);
-        echo output_csv($row['maxdate']);
-        echo "\n";
-      }
+    else {
 
-      mysqli_free_result($res);
+      echo "Screen output not yet implemented.";
+      // TBD: html output
+
     }
   } // end form_forms
+
+  if (!empty($_POST['form_mapping'])) {
+    if ($form_output == 'csv') {
+      if (!$GSDEBUG) {
+        // Write header row.
+        echo output_csv('Site ID', false);
+        echo output_csv('Code Type');
+        echo output_csv('Code');
+        echo output_csv('Code Description');
+        echo output_csv('Mapped Code Type');
+        echo output_csv('Mapped Code');
+        echo output_csv('Mapped Code Description');
+        echo "\n";
+      }
+    }
+    else {
+?>
+<html>
+ <body>
+  <form method='post' action='multisite_admin.php'>
+  <center>
+  <h2>Mapping Report</h2>
+  <table>
+   <tr>
+    <th align='left'>Site ID</th>
+    <th align='left'>Code Type</th>
+    <th align='left'>Code</th>
+    <th align='left'>Code Description</th>
+    <th align='left'>Mapped Code Type</th>
+    <th align='left'>Mapped Code</th>
+    <th align='left'>Mapped Code Description</th>
+   </tr>
+<?php
+    }
+    // Write detail rows.
+    foreach ($siteslist as $name => $link) {
+      if ($_POST['form_mapping'] == 'ma-ippf2') {
+        writeMapping($name, $link, 'MA', 12, 'IPPF2', 31);
+      }
+      else if ($_POST['form_mapping'] == 'ippf2-ma') {
+        writeRevMapping($name, $link, 'IPPF2', 31, 'MA', 12);
+      }
+      else if ($_POST['form_mapping'] == 'prod-ippfcm') {
+        writeMapping($name, $link, 'PROD', 0, 'IPPFCM', 32);
+      }
+    } // end this site
+    if ($form_output != 'csv') {
+?>
+  </table>
+  <input type='submit' name='form_cancel' value='Back' /></p>
+  </center>
+  </form>
+ </body>
+</html>
+<?php
+    }
+  } // end form_mapping
 
   foreach ($siteslist as $link) mysqli_close($link);
   exit();
@@ -384,11 +563,46 @@ else if (!empty($_POST['form_submit'])) {
   <form method='post' action='multisite_admin.php'>
    <center>
    <p>Multiple Sites Administration</p>
-   <input type='submit' name='form_auth_start' value='Manage Apache Authentication' />
-   <input type='submit' name='form_globals'    value='Download Global Settings' />
-   <input type='submit' name='form_history'    value='Download History Usage' />
-   <input type='submit' name='form_forms'      value='Download Form Usage in Past 12 Months' />
-   <input type='hidden' name='form_submit'     value='1' />
+   <table cellpadding='8'>
+    <tr>
+     <td valign='top'>&nbsp;</td>
+     <td valign='top'>
+      <input type='submit' name='form_auth_start' value='Manage Apache Authentication' /><br />
+     </td>
+    </tr>
+    <tr>
+     <td valign='top'>
+<?php
+// Build a drop-down list of sites.
+$siteslist = getSites(false);
+echo "   <select name='form_sites[]' size='10' multiple='multiple' " .
+  "title='Select one or more sites, or none for all sites.'>\n";
+foreach ($siteslist as $siteid => $dummy) {
+  echo "       <option value='$siteid'";
+  echo ">$siteid</option>\n";
+}
+echo "      </select>\n";
+?>
+      <br />&nbsp;<br />
+      <select name='form_output'>
+       <option value='csv'>CSV</option>
+       <option value='html'>Screen</option>
+      </select>
+     </td>
+     <td valign='top'>
+      <input type='submit' name='form_globals'    value='Global Settings' /><br />
+      <input type='submit' name='form_history'    value='History Usage' /><br />
+      <input type='submit' name='form_forms'      value='Form Usage in Past 12 Months' /><br />
+      <select name='form_mapping' onchange='form.submit()'>
+       <option value=''>Code Mapping</option>
+       <option value='ma-ippf2'   >MA to IPPF2</option>
+       <option value='ippf2-ma'   >IPPF2 to MA</option>
+       <option value='prod-ippfcm'>Products to IPPFCM</option>
+      </select>
+      <input type='hidden' name='form_submit'     value='1' />
+     </td>
+    </tr>
+   </table>
    </center>
   </form>
  </body>
