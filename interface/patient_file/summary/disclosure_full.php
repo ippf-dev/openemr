@@ -77,6 +77,7 @@ deleteDisclosure($deletelid);
 <div>
 	<span class="title"><?php echo htmlspecialchars(xl('Disclosures'),ENT_NOQUOTES); ?></span>
 </div>
+<div class="disclosure_wrap">
 <div style='float: left; margin-right: 10px'><?php echo htmlspecialchars(xl('for'),ENT_NOQUOTES); ?>&nbsp;
 	<span class="title"><a href="../summary/demographics.php" onclick="top.restoreSession()"><?php echo htmlspecialchars(getPatientName($pid),ENT_NOQUOTES); ?></a></span>
 </div>
@@ -86,6 +87,7 @@ deleteDisclosure($deletelid);
 <div>
 	<a href="demographics.php" <?php if (!$GLOBALS['concurrent_layout']) echo "target='Main'"; ?>
 	class="css_button" onclick="top.restoreSession()"> <span><?php echo htmlspecialchars(xl('View Patient'),ENT_NOQUOTES); ?></span></a>
+</div>
 </div>
 <br>
 <br>
