@@ -236,7 +236,8 @@ $logo = '';
 $ma_logo_path = "sites/" . $_SESSION['site_id'] . "/images/ma_logo.png";
 if (is_file("$webserver_root/$ma_logo_path")) {
   // Would use max-height here but html2pdf does not support it.
-  $logo = "<img src='$web_root/$ma_logo_path' style='height:" . round($FONTSIZE * 5.14) . "pt' />";
+  // $logo = "<img src='$web_root/$ma_logo_path' style='height:" . round($FONTSIZE * 5.14) . "pt' />";
+  $logo = "<img src='$web_root/$ma_logo_path' style='height:" . round($FONTSIZE * 7.00) . "pt' />";
 }
 else {
   $logo = "<!-- '$ma_logo_path' does not exist. -->";

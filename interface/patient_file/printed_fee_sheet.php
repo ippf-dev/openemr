@@ -349,7 +349,8 @@ if (empty($frow)) {
 $logo = '';
 $ma_logo_path = "sites/" . $_SESSION['site_id'] . "/images/ma_logo.png";
 if (is_file("$webserver_root/$ma_logo_path")) {
-  $logo = "<img src='$web_root/$ma_logo_path' style='height:" . round(9 * 5.14) . "pt' />";
+  // $logo = "<img src='$web_root/$ma_logo_path' style='height:" . round(9 * 5.14) . "pt' />";
+  $logo = "<img src='$web_root/$ma_logo_path' style='height:" . round(9 * 7.00) . "pt' />";
 }
 else {
   $logo = "<!-- '$ma_logo_path' does not exist. -->";
