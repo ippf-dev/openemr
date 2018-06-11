@@ -532,15 +532,9 @@ else if (!empty($_POST['form_submit'])) {
     }
     // Write detail rows.
     foreach ($siteslist as $name => $link) {
-      if ($_POST['form_mapping'] == 'ma-ippf2') {
-        writeMapping($name, $link, 'MA', 12, 'IPPF2', 31);
-      }
-      else if ($_POST['form_mapping'] == 'ippf2-ma') {
-        writeRevMapping($name, $link, 'IPPF2', 31, 'MA', 12);
-      }
-      else if ($_POST['form_mapping'] == 'prod-ippfcm') {
-        writeMapping($name, $link, 'PROD', 0, 'IPPFCM', 32);
-      }
+      writeMapping($name, $link, 'MA', 12, 'IPPF2', 31);
+      writeRevMapping($name, $link, 'IPPF2', 31, 'MA', 12);
+      writeMapping($name, $link, 'PROD', 0, 'IPPFCM', 32);
     } // end this site
     if ($form_output != 'csv') {
 ?>
@@ -593,12 +587,7 @@ echo "      </select>\n";
       <input type='submit' name='form_globals'    value='Global Settings' /><br />
       <input type='submit' name='form_history'    value='History Usage' /><br />
       <input type='submit' name='form_forms'      value='Form Usage in Past 12 Months' /><br />
-      <select name='form_mapping' onchange='form.submit()'>
-       <option value=''>Code Mapping</option>
-       <option value='ma-ippf2'   >MA to IPPF2</option>
-       <option value='ippf2-ma'   >IPPF2 to MA</option>
-       <option value='prod-ippfcm'>Products to IPPFCM</option>
-      </select>
+      <input type='submit' name='form_mapping'      value='Consolidated Code Mapping' /><br />
       <input type='hidden' name='form_submit'     value='1' />
      </td>
     </tr>
