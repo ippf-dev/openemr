@@ -374,7 +374,16 @@ class C_Prescription extends Controller {
 	function multiprint_header(& $pdf, $p) {
 		$this->providerid = $p->provider->id;
 		//print header
-		$pdf->ezImage($GLOBALS['oer_config']['prescriptions']['logo'],'','50','','center','');
+
+		// $pdf->ezImage($GLOBALS['oer_config']['prescriptions']['logo'],'','50','','center','');
+    $ma_logo_path = "sites/" . $_SESSION['site_id'] . "/images/ma_logo.png";
+    if (is_file($GLOBALS['webserver_root'] . "/$ma_logo_path")) {
+      $pdf->ezImage($GLOBALS['webserver_root'] . "/$ma_logo_path",'','150','','center','');
+    }
+    else {
+      // Do nothing.
+    }
+
 		$pdf->ezColumnsStart(array('num'=>2, 'gap'=>10));
 		$res = sqlQuery("SELECT concat('<b>',f.name,'</b>\n',f.street,'\n',f.city,', ',f.state,' ',f.postal_code,'\nTel:',f.phone,if(f.fax != '',concat('\nFax: ',f.fax),'')) addr FROM users JOIN facility AS f ON f.name = users.facility where users.id ='" .
 			add_escape_custom($p->provider->id) . "'");
@@ -455,7 +464,7 @@ class C_Prescription extends Controller {
           // echo ("<img height='68pt' src='./interface/pic/" . $GLOBALS['oer_config']['prescriptions']['logo_pic'] . "' />");
           $ma_logo_path = "sites/" . $_SESSION['site_id'] . "/images/ma_logo.png";
           if (is_file($GLOBALS['webserver_root'] . "/$ma_logo_path")) {
-            echo "<img height='68pt' src='" . $GLOBALS['web_root'] . "/$ma_logo_path' />";
+            echo "<img width='150' src='" . $GLOBALS['web_root'] . "/$ma_logo_path' />";
           }
           else {
             echo "&nbsp;";
