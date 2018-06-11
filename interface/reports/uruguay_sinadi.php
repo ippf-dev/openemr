@@ -97,6 +97,7 @@ function write_category_headers($catid, $firsttime=true) {
 }
 
 function write_category_totals($cattotals) {
+  $linetotal = 0;
   if (empty($_POST['form_csvexport'])) {
     echo "  <tr>\n";
     echo "   <td class='detail'>" . xlt('TOTAL') . "</td>\n";
@@ -108,7 +109,7 @@ function write_category_totals($cattotals) {
     echo "  </tr>\n";
   }
   else {
-    echo csvitem($key);
+    echo csvitem(xl('TOTAL'));
     foreach ($cattotals as $total) {
       echo csvitem($total);
       $linetotal += $total;
@@ -170,8 +171,12 @@ foreach ($counters as $key => $dummy) {
   $counters[$key] = array(0, 0, 0, 0, 0);
 }
 
-$from_date = fixDate($_POST['form_from_date'], date('Y-m-01'));
-$to_date   = fixDate($_POST['form_to_date'], date('Y-m-d'));
+$from_date = date('Y-m-01');
+$to_date   = date('Y-m-d');
+if (isset($_POST['form_from_date'])) {
+  $from_date = fixDate($_POST['form_from_date'], $from_date);
+  $to_date   = fixDate($_POST['form_to_date'], $to_date);
+}
 
 // The selected facility IDs, if any.
 $form_facility  = empty($_POST['form_facility']) ? array() : $_POST['form_facility'];
@@ -250,7 +255,7 @@ while ($row = sqlFetchArray($res)) {
     if (!$got_ive[2]) {
       $got_ive[2] = true;
       $last_encdate = $row['encdate'];
-      if ($row['encdate'] >= $form_from_date) {
+      if ($row['encdate'] >= $from_date) {
         increment_counter('ive2', $age);
         // Count reason for abortion.
         // This assumes the IVE2 form is in the same visit with the IVE2-ASR-01 service. True?
@@ -286,7 +291,7 @@ while ($row = sqlFetchArray($res)) {
     if (!$got_ive[3]) {
       $got_ive[3] = true;
       $last_encdate = $row['encdate'];
-      if ($row['encdate'] >= $form_from_date) {
+      if ($row['encdate'] >= $from_date) {
         if (
           !empty($row['IVE_confirmation']) && $row['IVE_confirmation'] == 'YES' &&
           !empty($row['IVE_V2CntrMismoV3']) && $row['IVE_V2CntrMismoV3'] == 'YES' &&
@@ -310,7 +315,7 @@ while ($row = sqlFetchArray($res)) {
     if (!$got_ive[4]) {
       $got_ive[4] = true;
       $last_encdate = $row['encdate'];
-      if ($row['encdate'] >= $form_from_date) {
+      if ($row['encdate'] >= $from_date) {
         increment_counter('ive4', $age);
         if ($row['IVE_contmetcounsel'] != 'Non' && $row['IVE_contmetcounsel'] != 'Nuse') {
           increment_counter('ive4c', $age);
@@ -446,6 +451,7 @@ foreach ($rptlines as $key => $value) {
     for ($i = 0; $i < 5; ++$i) {
       echo "   <td class='detail' align='right'>" . text($counters[$value[1]][$i]) . "</td>\n";
       $linetotal += $counters[$value[1]][$i];
+      $cattotals[$i] += $counters[$value[1]][$i];
     }
     echo "   <td class='detail' align='right'>" . text($linetotal) . "</td>\n";
     echo "  </tr>\n";
@@ -455,6 +461,7 @@ foreach ($rptlines as $key => $value) {
     for ($i = 0; $i < 5; ++$i) {
       echo csvitem($counters[$value[1]][$i]);
       $linetotal += $counters[$value[1]][$i];
+      $cattotals[$i] += $counters[$value[1]][$i];
     }
     echo csvitem($linetotal, true);
   }
