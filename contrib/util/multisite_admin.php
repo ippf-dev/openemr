@@ -49,8 +49,21 @@ function getGlobalsArray($globinc) {
 
 // Write a CSV item with its quotes, with embedded quotes escaped,
 // and optionally preceded by a comma.
-function output_csv($s, $commabefore=true) {
-  return ($commabefore ? ',"' : '"') . str_replace('"', '""', $s) . '"';
+function output_csv($s, $commabefore=true, $forcetext=false) {
+  $out = $commabefore ? ',' : '';
+  if (preg_match('/^[0-9]+$/', $s)) {
+    if ($forcetext) {
+      // Avoids IPPF2 and other long numeric codes showing as floating point.
+      $out .= '="' . $s . '"';
+    }
+    else {
+      $out .= $s;
+    }
+  }
+  else {
+    $out .= '"' . str_replace('"', '""', $s) . '"';
+  }
+  return $out;
 }
 
 // This changes list item IDs to their descriptive values.
@@ -151,10 +164,10 @@ function writeDetail($name, $type1, $code1, $desc1, $type2, $code2, $desc2) {
     if (!$GSDEBUG) {
       echo output_csv($name, false);
       echo output_csv($type1);
-      echo output_csv($code1);
+      echo output_csv($code1, true, true);
       echo output_csv($desc1);
       echo output_csv($type2);
-      echo output_csv($code2);
+      echo output_csv($code2, true, true);
       echo output_csv($desc2);
       echo "\n";
     }
