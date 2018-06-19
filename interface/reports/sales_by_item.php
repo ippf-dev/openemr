@@ -683,7 +683,7 @@ $(document).ready(function() {
 
     // If any facilities were specified.
     if (!empty($form_facility)) {
-      $query .= "AND (1 = 2";
+      $query .= " AND (1 = 2";
       foreach ($form_facility as $fac) {
         $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
       }
@@ -715,7 +715,7 @@ $(document).ready(function() {
 
     // If any facilities were specified.
     if (!empty($form_facility)) {
-      $query .= "AND (1 = 2";
+      $query .= " AND (1 = 2";
       foreach ($form_facility as $fac) {
         $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
       }
