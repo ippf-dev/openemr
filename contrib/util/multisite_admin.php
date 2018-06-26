@@ -79,12 +79,43 @@ function xl($s) {
   return $s;
 }
 
+function getSitesSubdir($subdir='', $opening=true) {
+  global $base_directory, $form_sites;
+  $mysiteslist = array();
+  // Get a connection for each desired site.
+  $this_directory = $base_directory;
+  if ($subdir) $this_directory .= "/$subdir";
+  $dh = opendir($this_directory);
+  if (!$dh) die("Cannot read directory '$this_directory'.");
+  while (false !== ($sfname = readdir($dh))) {
+    if (!preg_match('/^[A-Za-z0-9]+$/', $sfname)) continue;
+    // if (preg_match('/test/', $sfname)) continue;
+    if (preg_match('/old/' , $sfname)) continue;
+    if ($subdir) $sfname = "$subdir/$sfname";
+    if ($form_sites && !in_array($sfname, $form_sites)) continue;
+    $confname = "$base_directory/$sfname/sites/default/sqlconf.php";
+    if (!is_file($confname)) continue;
+    $link = false;
+    if ($opening) {
+      include($confname);
+      $link = mysqli_connect($host, $login, $pass, $dbase, $port);
+      if (empty($link)) continue;
+    }
+    $mysiteslist[$sfname] = $link;
+  }
+  closedir($dh);
+  ksort($mysiteslist);
+  return $mysiteslist;
+}
+
 function getSites($opening=true) {
   global $base_directory, $form_sites;
+
+  /********************************************************************
+  $siteslist = array();
   // Get a connection for each desired site.
   $dh = opendir($base_directory);
   if (!$dh) die("Cannot read directory '$base_directory'.");
-  $siteslist = array();
   while (false !== ($sfname = readdir($dh))) {
     if (!preg_match('/^[A-Za-z0-9]+$/', $sfname)) continue;
     if (preg_match('/test/', $sfname)) continue;
@@ -101,8 +132,11 @@ function getSites($opening=true) {
     $siteslist[$sfname] = $link;
   }
   closedir($dh);
-  // Sort on site directory name.
-  ksort($siteslist);
+  ********************************************************************/
+  $siteslist = getSitesSubdir('', $opening);
+  if (is_dir("$base_directory/test")) {
+    $siteslist = array_merge($siteslist, getSitesSubdir('test', $opening));
+  }
   return $siteslist;
 }
 
@@ -236,6 +270,20 @@ function writeRevMapping($name, $link, $type1txt, $type1num, $type2txt, $type2nu
       writeDetail($name, $type1txt, $trgcode, $row['code_text'], $type2txt, '', '');
     }
     mysqli_free_result($res2);
+  }
+  mysqli_free_result($res);
+}
+
+function writeFacilities($name, $link) {
+  $res = sqlSelect($link,
+    "SELECT f.id, f.name, f.domain_identifier, f.pos_code, l.title " .
+    "FROM facility AS f " .
+    "LEFT JOIN list_options AS l on l.list_id = 'posref' AND l.option_id = f.pos_code " .
+    "ORDER BY f.name, f.id");
+  while ($row = mysqli_fetch_assoc($res)) {
+    writeDetail($name, xl('Facility'), $row['id'], $row['name'], xl('Org Unit'),
+      $row['domain_identifier'],
+      $row['pos_code'] . ': ' . $row['title']);
   }
   mysqli_free_result($res);
 }
@@ -548,6 +596,7 @@ else if (!empty($_POST['form_submit'])) {
       writeMapping($name, $link, 'MA', 12, 'IPPF2', 31);
       writeRevMapping($name, $link, 'IPPF2', 31, 'MA', 12);
       writeMapping($name, $link, 'PROD', 0, 'IPPFCM', 32);
+      writeFacilities($name, $link);
     } // end this site
     if ($form_output != 'csv') {
 ?>
