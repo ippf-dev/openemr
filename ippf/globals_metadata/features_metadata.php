@@ -42,6 +42,7 @@ array(
       '0',                              // default
       xl('Limit service provider selection according to the facility of the logged-in user.')
     ),
+
     'gbl_checkout_line_adjustments' => array(
       xl('Adjustments at Checkout'),
       array(
@@ -52,20 +53,35 @@ array(
       '1',                              // default = line items only
       xl('Discounts at checkout time may be entered per invoice or per line item or both.')
     ),
+
+    'gbl_checkout_charges' => array(
+      xl('Unit Price in Checkout and Receipt'),
+      'bool',                           // data type
+      '0',                              // default = false
+      xl('Include line item unit price amounts in checkout and receipts.')
+    ),
+
+    'gbl_charge_categories' => array(
+      xl('Charge Categories in Checkout and Receipt'),
+      'bool',                           // data type
+      '0',                              // default = false
+      xl('Include charge categories in checkout and receipts. See the Charge Categories list.')
+    ),
+
     'gbl_auto_create_rx' => array(
       xl('Automatically Create Prescriptions'),
       'bool',                           // data type
       '0',                              // default = false
       xl('Prescriptions may be created from the Fee Sheet.')
     ),
-    
+
     'gbl_checkout_receipt_note' => array(
       xl('Checkout Receipt Note'),
       'text',                           // data type
       '',
       xl('This note goes on the bottom of every checkout receipt.')
     ),
-    
+
     'gbl_custom_receipt' => array(
       xl('Custom Checkout Receipt'),
       array(

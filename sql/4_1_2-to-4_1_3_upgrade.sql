@@ -773,3 +773,27 @@ INSERT INTO `layout_options` (`form_id`,`field_id`,`group_id`,`title`,`seq`,`dat
   `max_length`,`list_id`,`titlecols`,`datacols`,`default_value`,`edit_options`,`description`,`conditions`)
   VALUES ('DEM', 'prefername', '1', 'Preferred Name', 6, 2, 0, 15, 50, '', 1, 1, '', '', '', '');
 #EndIf
+
+#IfMissingColumn billing chargecat
+ALTER TABLE `billing` ADD COLUMN `chargecat` varchar(31) default '';
+#EndIf
+
+#IfMissingColumn drug_sales chargecat
+ALTER TABLE `drug_sales` ADD COLUMN `chargecat` varchar(31) default '';
+#EndIf
+
+#IfNotRow2D list_options list_id lists option_id chargecats
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`)
+  VALUES ('lists','chargecats','Charge Categories', 1,0);
+INSERT INTO list_options (`list_id`, `option_id`, `title`, `seq`, `is_default`) 
+  SELECT 'chargecats', option_id, title, seq, is_default FROM list_options WHERE
+  list_id = 'adjreason' AND activity = 1 AND (option_id = 'C00001' OR notes LIKE '%=Ins%');
+DELETE FROM list_options WHERE
+  list_id = 'adjreason' AND activity = 1 AND (option_id = 'C00001' OR notes LIKE '%=Ins%');
+UPDATE billing AS b, ar_activity AS a, list_options AS l
+  SET b.chargecat = a.memo WHERE b.chargecat = '' AND
+  a.pid = b.pid AND a.encounter = b.encounter AND a.deleted IS NULL AND
+  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND
+  ( a.code_type = '' OR ( a.code_type = b.code_type AND a.code = b.code )) AND
+  l.list_id = 'chargecats' AND l.option_id = a.memo and l.activity = 1;
+#EndIf

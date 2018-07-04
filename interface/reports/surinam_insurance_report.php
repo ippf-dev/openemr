@@ -1,5 +1,5 @@
 <?php
-// Copyright (C) 2016-2017 Rod Roark <rod@sunsetsystems.com>
+// Copyright (C) 2016-2018 Rod Roark <rod@sunsetsystems.com>
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -287,7 +287,8 @@ else {
   // For this report the insurers are certain adjustment reasons.
   //
   $ires = sqlStatement("SELECT option_id, title FROM list_options WHERE " .
-  "list_id = 'adjreason' AND activity = 1 AND (notes LIKE '%=Ins%' OR option_id = 'C00001') " .
+  // "list_id = 'adjreason' AND activity = 1 AND (notes LIKE '%=Ins%' OR option_id = 'C00001') " .
+  "list_id = 'chargecats' AND activity = 1 " .
   "ORDER by seq, title");
   echo "   <select name='form_insurer'>\n";
   echo "    <option value=''>-- " . xlt('All Insurers') . " --</option>\n";
@@ -388,7 +389,8 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
 
   // Main loop is on insurer.
   $query = "SELECT option_id AS insid, title AS insname FROM list_options " .
-    "WHERE list_id = 'adjreason' AND activity = 1 AND (notes LIKE '%=Ins%' OR option_id = 'C00001')";
+    // "WHERE list_id = 'adjreason' AND activity = 1 AND (notes LIKE '%=Ins%' OR option_id = 'C00001')";
+    "WHERE list_id = 'chargecats' AND activity = 1 ";
   $qparms = array();
   // If an insurer was specified.
   if ($form_insurer) {
@@ -436,21 +438,27 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       "FROM form_encounter AS fe " .
       "JOIN patient_data AS pd ON pd.pid = fe.pid " .
       "JOIN billing AS b ON b.pid = fe.pid AND b.encounter = fe.encounter AND b.activity = 1 AND b.fee != 0.00 " .
+      /****************************************************************
       "JOIN ar_activity AS a ON a.pid = b.pid AND a.encounter = b.encounter AND a.deleted IS NULL AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = b.code_type AND a.code = b.code ) ) " .
       "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 " .
+      ****************************************************************/
       "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
       "LEFT JOIN code_types AS ct ON ct.ct_key = b.code_type " .
       "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
       "WHERE fe.date >= ? AND fe.date <= ? AND ";
     $qparms = array("$form_from_date 00:00:00", "$form_to_date 23:59:59", $insid);
+
+    /******************************************************************
     if ($insid == 'C00001') {
       $query .= "a.memo = ?";
     }
     else {
       $query .= "lo.option_id = ? AND lo.notes LIKE '%=Ins%'";
     }
+    ******************************************************************/
+    $query .= "b.chargecat = ?";
 
     // If a facility was specified.
     if ($form_facility) {
@@ -537,20 +545,27 @@ if (getPost('form_refresh') || getPost('form_csvexport') || getPost('form_pdf'))
       "FROM form_encounter AS fe " .
       "JOIN patient_data AS pd ON pd.pid = fe.pid " .
       "JOIN drug_sales AS s ON s.pid = fe.pid AND s.encounter = fe.encounter AND s.fee != 0.00 " .
+      /****************************************************************
       "JOIN ar_activity AS a ON a.pid = s.pid AND a.encounter = s.encounter AND a.deleted IS NULL AND " .
       "  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND " .
       "  ( a.code_type = '' OR ( a.code_type = 'PROD' AND a.code = s.drug_id ) ) " .
       "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 " .
+      ****************************************************************/
       "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
       "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
       "WHERE fe.date >= ? AND fe.date <= ? AND ";
     $qparms = array("$form_from_date 00:00:00", "$form_to_date 23:59:59", $insid);
+
+    /******************************************************************
     if ($insid == 'C00001') {
       $query .= "a.memo = ?";
     }
     else {
       $query .= "lo.option_id = ? AND lo.notes LIKE '%=Ins%'";
     }
+    ******************************************************************/
+    $query .= "s.chargecat = ?";
+
     // If a facility was specified.
     if ($form_facility) {
       $query .= " AND fe.facility_id IS NOT NULL AND fe.facility_id = ?";

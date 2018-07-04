@@ -165,6 +165,7 @@ CREATE TABLE `billing` (
   `ndc_info` varchar(255) default NULL,
   `notecodes` varchar(25) NOT NULL default '',
   `pricelevel` varchar(31) default '',
+  `chargecat` varchar(31) default '',
   PRIMARY KEY  (`id`),
   KEY `pid` (`pid`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 ;
@@ -808,6 +809,7 @@ CREATE TABLE `drug_sales` (
   `bill_date` datetime default NULL,
   `pricelevel` varchar(31) default '',
   `selector` varchar(255) default '' comment 'references drug_templates.selector',
+  `chargecat` varchar(31) default '',
   PRIMARY KEY  (`sale_id`),
   KEY `sale_date` (`sale_date`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 ;

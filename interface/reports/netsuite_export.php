@@ -683,6 +683,7 @@ if ($_POST['form_orderby']) {
     // "CONCAT(fe.invoice_refno, '|', LPAD(fe.pid, 11, '0'), LPAD(fe.encounter, 11, '0')) AS invoiceno, " .
     "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, l4.notes AS terms, " .
 
+    /******************************************************************
     "COALESCE((SELECT a.memo FROM ar_activity AS a " .
     "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
     "WHERE " .
@@ -690,6 +691,8 @@ if ($_POST['form_orderby']) {
     "(a.code_type = '' OR (a.code_type = b.code_type AND a.code = b.code)) AND " .
     "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
     "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1), '') AS payor, " .
+    ******************************************************************/
+    "b.chargecat AS payor, " .
 
     "COALESCE((SELECT ap.post_date FROM ar_activity AS ap WHERE " .
     "ap.pid = fe.pid AND ap.encounter = fe.encounter AND ap.deleted IS NULL AND " .
@@ -717,6 +720,7 @@ if ($_POST['form_orderby']) {
     // "CONCAT(fe.invoice_refno, '|', LPAD(fe.pid, 11, '0'), LPAD(fe.encounter, 11, '0')) AS invoiceno, " .
     "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, l4.notes AS terms, " .
 
+    /******************************************************************
     "COALESCE((SELECT a.memo FROM ar_activity AS a " .
     "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
     "WHERE " .
@@ -724,6 +728,8 @@ if ($_POST['form_orderby']) {
     "(a.code_type = '' OR (a.code_type = 'PROD' AND a.code = s.drug_id)) AND " .
     "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
     "ORDER BY a.code DESC, a.adj_amount DESC LIMIT 1), '') AS payor, " .
+    ******************************************************************/
+    "s.chargecat AS payor, " .
 
     "COALESCE((SELECT ap.post_date FROM ar_activity AS ap WHERE " .
     "ap.pid = fe.pid AND ap.encounter = fe.encounter AND ap.deleted IS NULL AND " .
@@ -740,7 +746,8 @@ if ($_POST['form_orderby']) {
     "LEFT JOIN codes AS cp ON cp.code_type = ? AND f.related_code LIKE '%PROJ:%' AND " .
     "cp.code = SUBSTR(f.related_code, LOCATE('PROJ:', f.related_code) + 5, $projcodelen) " .
     $morejoins .
-    "WHERE s.fee != 0 " .
+    // 2018-06-28 CV says include all inventory items, not just those with a fee.
+    // "WHERE s.fee != 0 " .
     ") ORDER BY $orderby";
 
   $dt1 = "$from_date 00:00:00";
