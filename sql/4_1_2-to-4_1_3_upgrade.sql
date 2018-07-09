@@ -812,5 +812,9 @@ ALTER TABLE `facility` ADD COLUMN `related_code_2` VARCHAR(255) NOT NULL default
 
 #IfMissingColumn lang_languages lang_is_rtl
 ALTER TABLE `lang_languages` ADD COLUMN `lang_is_rtl` TINYINT DEFAULT 0;
-UPDATE `lang_languages` SET `lang_is_rtl`=1 WHERE `lang_code` IN ('he','ar') OR `lang_description` IN('Hebrew','Arabic');
+UPDATE `lang_languages` SET `lang_is_rtl` = 1 WHERE `lang_code` IN ('he','ar') OR `lang_description` IN ('Hebrew','Arabic');
+#EndIf
+
+#IfNotRow lang_languages lang_code ar
+INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES (19,'ar','Arabic', 1);
 #EndIf

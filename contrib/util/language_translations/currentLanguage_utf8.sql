@@ -7,14 +7,15 @@ DELETE FROM lang_definitions;
 -- Dumping data for table `lang_languages`
 --
 
-INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`) VALUES (1,'en','English');
-INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`) VALUES (2,'se','Swedish');
-INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`) VALUES (3,'es','Spanish');
-INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`) VALUES (4,'de','German');
-INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`) VALUES (5,'du','Dutch');
-INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`) VALUES (6,'he','Hebrew');
-INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`) VALUES (7,'bi','Bahasa Indonesia');
-INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`) VALUES (8,'fr','French');
+INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES ( 1,'en','English', 0);
+INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES ( 2,'se','Swedish', 0);
+INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES ( 3,'es','Spanish', 0);
+INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES ( 4,'de','German', 0);
+INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES ( 5,'du','Dutch', 0);
+INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES ( 6,'he','Hebrew', 1);
+INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES ( 7,'bi','Bahasa Indonesia', 0);
+INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES ( 8,'fr','French', 0);
+INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES (19,'ar','Arabic', 1);
 
 --
 -- Dumping data for table `lang_constants`
