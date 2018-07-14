@@ -133,8 +133,8 @@ function getEncounterDateByEncounter($encounter)
 
 function getProviderIdOfEncounter($encounter)
 {
-        $sql = "select provider_id from form_encounter where encounter='$encounter' order by date";
-        $res = sqlQuery($sql);
+        $sql = "select provider_id from form_encounter where encounter = ? order by date";
+        $res = sqlQuery($sql, array($encounter));
         return $res['provider_id'];
 }
 

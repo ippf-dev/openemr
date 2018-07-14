@@ -153,11 +153,10 @@ function check_search_str()
   $search_term = $_REQUEST['search_term'];
   {  
     $query = "SELECT count(*) as count FROM drugs " .
-      "WHERE (drug_id LIKE '%$search_term%' OR " .
-      "name LIKE '%$search_term%') ";
-	$res = sqlStatement($query);
-	if ($row = sqlFetchArray($res)) 
-	{
+      "WHERE (drug_id LIKE ? OR " .
+      "name LIKE ?) ";
+    $res = sqlStatement($query, array('%'.$search_term.'%', '%'.$search_term.'%'));
+    if ($row = sqlFetchArray($res)) {
 	 $no_of_items = addslashes($row['count']);
 	 if($no_of_items < 1)
 	 {
@@ -170,10 +169,10 @@ function check_search_str()
 	 <?php
       }     	  
     $query = "SELECT drug_id, name FROM drugs " .
-      "WHERE (drug_id LIKE '%$search_term%' OR " .
-      "name LIKE '%$search_term%') " .
+        "WHERE (drug_id LIKE ? OR " .
+        "name LIKE ?) " .
       "ORDER BY drug_id";
-    $res = sqlStatement($query);
+        $res = sqlStatement($query, array('%'.$search_term.'%', '%'.$search_term.'%'));
 	$row_count = 0;
     while ($row = sqlFetchArray($res)) {
 	  $row_count = $row_count + 1;
