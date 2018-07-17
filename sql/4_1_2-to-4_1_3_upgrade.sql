@@ -802,4 +802,6 @@ UPDATE drug_sales AS s, ar_activity AS a, list_options AS l
   ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND
   ( a.code_type = '' OR ( a.code_type = 'PROD' AND a.code = s.drug_id )) AND
   l.list_id = 'chargecats' AND l.option_id = a.memo and l.activity = 1;
+DELETE FROM ar_activity WHERE pay_amount = 0 AND adj_amount = 0 AND deleted IS NULL AND
+  memo IN (SELECT option_id FROM list_options WHERE list_id = 'chargecats' AND activity = 1);
 #EndIf
