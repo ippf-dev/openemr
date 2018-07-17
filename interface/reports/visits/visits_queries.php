@@ -26,28 +26,32 @@ function create_encounters_temp($startDate,$endDate,$dimensions,$facility_filter
         {
             $insert_columns[]="'' as ".COL_PERIOD;
         }
+        else if ($key == 'facility') {
+            $insert_columns[] = "f.name AS facility";
+        }
         else
         {
-            $insert_columns[]=$key;
+            $insert_columns[] = 'e.' . $key;
         }
     }
     
-    $insert_columns[]=COL_ENCOUNTER ." as ".COL_ENC_ID;
-    $insert_columns[]=COL_DATE ." as ". COL_ENC_DATE;
-    $insert_columns[]=COL_PID;
+    $insert_columns[] = 'e.' . COL_ENCOUNTER . " as " . COL_ENC_ID;
+    $insert_columns[] = 'e.' . COL_DATE . " as " . COL_ENC_DATE;
+    $insert_columns[] = 'e.' . COL_PID;
     
     $select_columns=implode(",",$insert_columns);
     $query_parameters=array($startDate,$endDate);
-    $populate_encounters = "INSERT INTO ".TMP_ENCOUNTERS." SELECT ".$select_columns
-            ." FROM ".TBL_ENCOUNTERS
-            ." WHERE date >=? and date <=?";
+    $populate_encounters = "INSERT INTO " . TMP_ENCOUNTERS . " SELECT " . $select_columns
+            . " FROM " . TBL_ENCOUNTERS . " AS e"
+            . " LEFT JOIN facility AS f ON f.id = e.facility_id"
+            . " WHERE e.date >= ? and e.date <= ?";
     
     // Add facility filters
     if(!is_null($facility_filters))
     {
         if(count($facility_filters)>0)
         {
-            $populate_encounters .= " AND ". COL_FACILITY . " IN " . "(";
+            $populate_encounters .= " AND f.name IN " . "(";
             $first=true;
             foreach($facility_filters as $facility)
             {
@@ -70,7 +74,7 @@ function create_encounters_temp($startDate,$endDate,$dimensions,$facility_filter
     {
         if(count($provider_filters)>0)
         {
-            $populate_encounters .= " AND ". COL_PROVIDER_ID . " IN " . "(";
+            $populate_encounters .= " AND e." . COL_PROVIDER_ID . " IN " . "(";
             $first=true;
             foreach($provider_filters as $provider)
             {
