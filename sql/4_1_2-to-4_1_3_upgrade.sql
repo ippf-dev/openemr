@@ -796,4 +796,10 @@ UPDATE billing AS b, ar_activity AS a, list_options AS l
   ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND
   ( a.code_type = '' OR ( a.code_type = b.code_type AND a.code = b.code )) AND
   l.list_id = 'chargecats' AND l.option_id = a.memo and l.activity = 1;
+UPDATE drug_sales AS s, ar_activity AS a, list_options AS l
+  SET s.chargecat = a.memo WHERE s.chargecat = '' AND
+  a.pid = s.pid AND a.encounter = s.encounter AND a.deleted IS NULL AND
+  ( a.pay_amount = 0 OR a.adj_amount != 0 ) AND
+  ( a.code_type = '' OR ( a.code_type = 'PROD' AND a.code = s.drug_id )) AND
+  l.list_id = 'chargecats' AND l.option_id = a.memo and l.activity = 1;
 #EndIf

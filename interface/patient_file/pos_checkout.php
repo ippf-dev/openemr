@@ -1841,33 +1841,6 @@ $adjustments_indicate_insurance = !empty($tmp['option_id']);
   return false;
  }
 
- // Add a line for entering a payment.
- var paylino = 0;
- function addPayLine() {
-  var table = document.getElementById('paytable');
-  for (var i = 0; i < table.rows.length; ++i) {
-   if (table.rows[i].id == 'totalpay') {
-    var row = table.insertRow(i);
-    var cell;
-<?php
-foreach ($aCellHTML as $ix => $html) {
-  echo "    var html = \"$html\";\n";
-  echo "    cell = row.insertCell(row.cells.length);\n";
-  if ($ix == 0) echo "    cell.colSpan = $form_num_type_columns;\n";
-  if ($ix == 1) echo "    cell.colSpan = $form_num_method_columns;\n";
-  if ($ix == 2) echo "    cell.colSpan = $form_num_ref_columns;\n";
-  if ($ix == 3) echo "    cell.colSpan = $form_num_amount_columns;\n";
-  echo "    cell.innerHTML = html.replace(/%d/, paylino);\n";
-}
-?>
-    cell.align = 'right'; // last cell is right-aligned
-    ++paylino;
-    break;
-   }
-  }
-  return false;
- }
-
  // When the main adjustment reason changes, duplicate it to all per-line reasons.
  function discountTypeChanged() {
   var f = document.forms[0];
@@ -2311,6 +2284,34 @@ if (!$current_irnumber) {
 </form>
 
 <script language='JavaScript'>
+
+ // Add a line for entering a payment.
+ // Declared down here because $form_num_*_columns must be defined.
+ var paylino = 0;
+ function addPayLine() {
+  var table = document.getElementById('paytable');
+  for (var i = 0; i < table.rows.length; ++i) {
+   if (table.rows[i].id == 'totalpay') {
+    var row = table.insertRow(i);
+    var cell;
+<?php
+foreach ($aCellHTML as $ix => $html) {
+  echo "    var html = \"$html\";\n";
+  echo "    cell = row.insertCell(row.cells.length);\n";
+  if ($ix == 0) echo "    cell.colSpan = $form_num_type_columns;\n";
+  if ($ix == 1) echo "    cell.colSpan = $form_num_method_columns;\n";
+  if ($ix == 2) echo "    cell.colSpan = $form_num_ref_columns;\n";
+  if ($ix == 3) echo "    cell.colSpan = $form_num_amount_columns;\n";
+  echo "    cell.innerHTML = html.replace(/%d/, paylino);\n";
+}
+?>
+    cell.align = 'right'; // last cell is right-aligned
+    ++paylino;
+    break;
+   }
+  }
+  return false;
+ }
 
  // Pop up the Payments window and close this one.
  function payprevious() {
