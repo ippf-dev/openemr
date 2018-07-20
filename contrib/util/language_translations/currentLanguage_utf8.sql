@@ -14063,7 +14063,7 @@ INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VA
 INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VALUES (7537,2347,1,'Services');
 INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VALUES (7540,2349,1,'Clear Active Client');
 INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VALUES (7539,2348,1,'Past Visit List');
-INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VALUES (7541,2350,1,'Referrals');
+-- INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VALUES (7541,2350,1,'Referrals');
 INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VALUES (7542,2351,3,'Mensajes');
 INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VALUES (7543,2353,1,'IPPF Process Guides');
 INSERT INTO `lang_definitions` (`def_id`, `cons_id`, `lang_id`, `definition`) VALUES (7544,2354,1,'Clear Active Client');
