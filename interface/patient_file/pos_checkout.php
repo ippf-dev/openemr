@@ -146,12 +146,14 @@ function pull_adjustment($code_type, $code, $billtime, &$memo) {
 // for this invoice.
 //
 function load_taxes($patient_id, $encounter) {
-  global $aTaxNames, $aInvTaxes;
+  global $aTaxNames, $aInvTaxes, $taxes;
   global $num_optional_columns, $rcpt_num_method_columns, $rcpt_num_ref_columns, $rcpt_num_amount_columns;
   global $form_num_type_columns, $form_num_method_columns, $form_num_ref_columns, $form_num_amount_columns;
 
   $aTaxNames = array();
   $aInvTaxes = array();
+
+  /********************************************************************
   $tnres = sqlStatement("SELECT DISTINCT code, code_text " .
     "FROM billing WHERE " .
     "code_type = 'TAX' AND activity = '1' AND " .
@@ -161,6 +163,12 @@ function load_taxes($patient_id, $encounter) {
     $aTaxNames[$tnrow['code']] = $tnrow['code_text'];
     $aInvTaxes[$tnrow['code']] = array();
   }
+  ********************************************************************/
+  foreach ($taxes as $taxid => $taxarr) {
+    $aTaxNames[$taxid] = $taxarr[0];
+    $aInvTaxes[$taxid] = array();
+  }
+
   $taxres = sqlStatement("SELECT code, fee, ndc_info " .
     "FROM billing WHERE " .
     "pid = '$patient_id' AND encounter = '$encounter' AND " .
@@ -390,6 +398,7 @@ function generate_receipt($patient_id, $encounter=0) {
   global $css_header, $details, $rapid_data_entry, $aAdjusts;
   global $web_root, $webserver_root, $code_types;
   global $aTaxNames, $aInvTaxes, $checkout_times, $current_checksum;
+  global $num_optional_columns, $rcpt_num_method_columns, $rcpt_num_ref_columns, $rcpt_num_amount_columns;
 
   // Get the most recent invoice data or that for the specified encounter.
   if ($encounter) {
@@ -643,7 +652,7 @@ body, td {
   <td align='right'><b><?php xl('Type','e'); ?></b></td>
 <?php } ?>
 <?php if (!empty($GLOBALS['gbl_charge_categories'])) { ?>
-  <td align='right'><b><?php echo xlt('Category'); ?></b></td>
+  <td align='right'><b><?php echo xlt('Insurer'); ?></b></td>
 <?php } ?>
   <td align='right'><b><?php xl('Total','e'); ?></b></td>
  </tr>
@@ -844,7 +853,7 @@ body, td {
  </tr>
 
  <tr>
-  <td colspan='<?php echo 6 + $num_optional_columns; ?>'>&nbsp;</td>
+  <td colspan='<?php echo 3 + $num_optional_columns; ?>'>&nbsp;</td>
   <td colspan='2' align='right'><b><?php xl('Total Payments','e'); ?></b></td>
   <td align='right'><?php echo str_replace(' ', '&nbsp;', oeFormatMoney($payments, true)); ?></td>
  </tr>
@@ -982,24 +991,25 @@ function write_form_headers() {
  </tr>
 
  <tr>
-<?php if (empty($GLOBALS['gbl_checkout_line_adjustments'])) { ?>
-  <td colspan='<?php echo 5 + $num_optional_columns; ?>'
+  <td colspan='<?php echo 4 + (empty($GLOBALS['gbl_checkout_charges']) ? 0 : 1) + count($taxes); ?>'
    style='border-top:1px solid black; padding-top:5pt;'>
    <b><?php xl('Current Charges','e'); ?></b>
   </td>
-<?php } else { ?>
-  <td colspan='<?php echo 3 + $num_optional_columns; ?>'
-   style='border-top:1px solid black; padding-top:5pt;'>
-   <b><?php xl('Current Charges','e'); ?></b>
-  </td>
-  <td align='right' style='border-top:1px solid black; padding-top:5pt;'>
+<?php if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) { // adjustmenty reason default ?>
+  <td colspan='2' align='right' style='border-top:1px solid black; padding-top:5pt;'>
    <?php echo generate_select_list('form_discount_type', 'adjreason', '', '',
     ' ', '', 'discountTypeChanged();billingChanged();'); ?>
   </td>
+<?php } ?>
+<?php if (!empty($GLOBALS['gbl_charge_categories'])) { // charge category default ?>
+  <td align='right' style='border-top:1px solid black; padding-top:5pt;'>
+   <?php echo generate_select_list('form_charge_category', 'chargecats', '', '',
+    ' ', '', 'chargeCategoryChanged();'); ?>
+  </td>
+<?php } ?>
   <td style='border-top:1px solid black; padding-top:5pt;'>
    &nbsp;
   </td>
-<?php } ?>
  </tr>
 
  <tr>
@@ -1027,7 +1037,7 @@ function write_form_headers() {
   <td align='right'><b><?php xl('Adj Type','e'); ?></b></td>
 <?php } ?>
 <?php if (!empty($GLOBALS['gbl_charge_categories'])) { // charge category ?>
-  <td align='right'><b><?php echo xlt('Category'); ?></b></td>
+  <td align='right'><b><?php echo xlt('Insurer'); ?></b></td>
 <?php } ?>
   <td align='right'><b><?php xl('Total','e'); ?></b></td>
  </tr>
@@ -1849,6 +1859,18 @@ $adjustments_indicate_insurance = !empty($tmp['option_id']);
     // But do not change adjustment reason for billed items.
     if (f['line[' + lino + '][billtime]'].value) continue;
     f['line[' + lino + '][memo]'].selectedIndex = f.form_discount_type.selectedIndex;
+   }
+  }
+ }
+
+ // When the main charge category changes, duplicate it to all per-line categories.
+ function chargeCategoryChanged() {
+  var f = document.forms[0];
+  if (f.form_charge_category && f.form_charge_category.selectedIndex) {
+   for (lino = 0; f['line[' + lino + '][chargecat]']; ++lino) {
+    // But do not change categories for billed items.
+    if (f['line[' + lino + '][billtime]'].value) continue;
+    f['line[' + lino + '][chargecat]'].selectedIndex = f.form_charge_category.selectedIndex;
    }
   }
  }
