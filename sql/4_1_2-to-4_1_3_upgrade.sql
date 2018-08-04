@@ -818,3 +818,30 @@ UPDATE `lang_languages` SET `lang_is_rtl` = 1 WHERE `lang_code` IN ('he','ar') O
 #IfNotRow lang_languages lang_code ar
 INSERT INTO `lang_languages` (`lang_id`, `lang_code`, `lang_description`, `lang_is_rtl`) VALUES (19,'ar','Arabic', 1);
 #EndIf
+
+#---------- The following for challenge questions at login. ----------#
+
+#IfNotRow2D list_options list_id lists option_id login_security_questions
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('lists','login_security_questions','Login Security Questions', 1);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('login_security_questions','mmname'  ,'What is your mother''s maiden name?' ,10);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('login_security_questions','firstpet','What was the name of your first pet?',20);
+#EndIf
+
+#IfNotTable login_security_answers
+CREATE TABLE `login_security_answers` (
+  `user_id`     bigint(20)     NOT NULL,
+  `seq`         int(11)        NOT NULL,
+  `question_id` varchar(31)    NOT NULL,
+  `answer`      varchar(256)   NOT NULL,
+  `last_asked`  datetime       DEFAULT NULL,
+  PRIMARY KEY (user_id, seq)
+) ENGINE=MyISAM;
+#EndIf
+
+#IfMissingColumn users_secure last_challenge_response
+ALTER TABLE `users_secure` ADD COLUMN `last_challenge_response` datetime DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn users_secure num_failed_logins
+ALTER TABLE `users_secure` ADD COLUMN `num_failed_logins` int(11) NOT NULL DEFAULT 0;
+#EndIf

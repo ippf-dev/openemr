@@ -25,6 +25,121 @@ $sanitize_all_escapes=true;
 require_once('../globals.php');
 require_once("$srcdir/formdata.inc.php");
 
+///////////////////////////////////////////////////////////////////////
+// Begin code to support challenge questions.
+// When challenge questions are required after login, the idea is to
+// build a form that asks the questions and also duplicates the data
+// from the login form and thus causes login to be repeated.
+// This is easier than tracking partial login state in session variables.
+///////////////////////////////////////////////////////////////////////
+
+function posted_to_hidden($name) {
+  if (isset($_POST[$name])) {
+    echo "<input type='hidden' name='" . attr($name) . "' value='" . attr($_POST[$name]) . "' />\n";
+  }
+}
+
+if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
+  $tmprow = sqlQuery("SELECT COUNT(*) AS count FROM login_security_answers " .
+    "WHERE user_id = ?", array($_SESSION['authId']));
+  $num_answers = empty($tmprow['count']) ? 0 : intval($tmprow['count']);
+  if ($num_answers) {
+    $need_challenge = 0;
+    if (is_array($_POST['form_answer'])) {
+      // There are challenge answers, see if they are defined and correct.
+      $tmppat = '/[^A-Za-z0-9]/';
+      $count = 0;
+      foreach ($_POST['form_answer'] as $question_id => $answer) {
+        $arow = sqlQuery("SELECT answer FROM login_security_answers " .
+          "WHERE user_id = ? AND question_id = ?",
+          array($_SESSION['authId'], $question_id));
+        // die("User=" . $_SESSION['authId'] . " QID=$question_id Answer=$answer Stored=" . $arow['answer']); // debugging
+        if (!$arow || strtolower(preg_replace($tmppat, '', $arow['answer'])) != strtolower(preg_replace($tmppat, '', $answer))) {
+          $need_challenge = 2;
+        }
+        ++$count;
+      }
+      if ($count < 1) {
+        $need_challenge = 2;
+      }
+      if (!$need_challenge) {
+        // Keep track of when questions were last answered correctly.
+        sqlStatement("UPDATE users_secure SET last_challenge_response = NOW() WHERE id = ?",
+          array($_SESSION['authId']));
+      }
+    }
+    else {
+      // Check if it's time for challenge questions.
+      if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
+        if ($GLOBALS['gbl_days_between_challenges'] == 0) {
+          $need_challenge = 1;
+        }
+        else {
+          $usrow = sqlQuery("SELECT last_challenge_response, NOW() AS curdate FROM users_secure WHERE id = ?",
+            array($_SESSION['authId']));
+          if (empty($usrow['last_challenge_response']) ||
+            (strtotime($usrow['curdate']) - strtotime($usrow['last_challenge_response'])) >
+            (86400 * $GLOBALS['gbl_days_between_challenges'])
+          ) {
+            $need_challenge = 1;
+          }
+        }
+      }
+    }
+    if ($need_challenge) {
+      // Build HTML here to show the questions and collect the answers.
+      // Include all the posted data from login.php as hidden fields.
+?>
+<html>
+<head>
+<link rel=stylesheet href="<?php echo $css_header;?>" type="text/css">
+<title><?php echo xlt('Login Security'); ?></title>
+</head>
+<body>
+<center>
+<h2><?php echo xlt('Login Security'); ?></h2>
+<form method="post"
+ action="main_screen.php?auth=login&site=<?php echo $_GET['site']; ?>"
+ target="_top" name="challenge_form">
+<?php
+      posted_to_hidden('new_login_session_management');
+      posted_to_hidden('authProvider');
+      posted_to_hidden('languageChoice');
+      posted_to_hidden('authUser');
+      posted_to_hidden('clearPass');
+      echo "<table>\n";
+      $qres = sqlStatement("SELECT a.question_id, l.title FROM login_security_answers AS a " .
+        "LEFT JOIN list_options AS l ON l.list_id = 'login_security_questions' AND " .
+        "l.option_id = a.question_id " .
+        "WHERE a.user_id = ? " .
+        "ORDER BY a.last_asked, a.seq " .
+        "LIMIT " . intval($GLOBALS['gbl_num_challenge_questions_asked']),
+        array($_SESSION['authId']));
+      while ($qrow = sqlFetchArray($qres)) {
+        $title = empty($qrow['title']) ? $qrow['question_id'] : $qrow['title'];
+        echo "<tr><td>" . text($title) . "&nbsp;</td>";
+        echo "<td><input type='text' name='form_answer[" . attr($qrow['question_id']) . "]' " .
+          "value='" . attr($qrow['answer']) . "' /></td></tr>\n";
+        // Update last_asked timestamp.
+        sqlStatement("UPDATE login_security_answers SET last_asked = NOW() WHERE " .
+          "user_id = ? AND question_id = ?",
+          array($_SESSION['authId'], $qrow['question_id']));
+      }
+      echo "</table>\n";
+      echo "<p><input type='submit' value='" . xla('Finish Login') . "' /></p>\n";
+      echo "</form></center></body></html>\n";
+      session_unset();
+      session_destroy();
+      unset($_COOKIE[session_name()]);
+      exit(0);
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////////////////
+// End of challenge questions logic.
+///////////////////////////////////////////////////////////////////////
+
 // Creates a new session id when load this outer frame
 // (allows creations of separate OpenEMR frames to view patients concurrently
 //  on different browser frame/windows)

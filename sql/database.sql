@@ -5455,6 +5455,8 @@ CREATE TABLE `users_secure` (
   `salt_history1` varchar(255),
   `password_history2` varchar(255),
   `salt_history2` varchar(255),
+  `last_challenge_response` datetime DEFAULT NULL,
+  `num_failed_logins` int(11) NOT NULL DEFAULT 0 COMMENT 'Number of consecutive failed login attempts',
   PRIMARY KEY (`id`),
   UNIQUE KEY `USERNAME_ID` (`id`,`username`)
 ) ENGINE=InnoDb;
@@ -6098,3 +6100,16 @@ INSERT INTO list_options ( list_id, option_id, title, seq ) VALUES ('reftype','4
 INSERT INTO list_options ( list_id, option_id, title, seq ) VALUES ('reftype','5' ,'Inbound Internal' ,40);
 
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('lists','chargecats','Charge Categories', 1);
+
+CREATE TABLE `login_security_answers` (
+  `user_id`     bigint(20)     NOT NULL,
+  `seq`         int(11)        NOT NULL,
+  `question_id` varchar(31)    NOT NULL,
+  `answer`      varchar(256)   NOT NULL,
+  `last_asked`  datetime       DEFAULT NULL,
+  PRIMARY KEY (user_id, seq)
+) ENGINE=MyISAM;
+
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('lists','login_security_questions','Login Security Questions', 1);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('login_security_questions','mmname'  ,'What is your mother''s maiden name?' ,10);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('login_security_questions','firstpet','What was the name of your first pet?',20);

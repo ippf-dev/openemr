@@ -1104,6 +1104,36 @@ $GLOBALS_METADATA = array(
       xl('Email address, if any, to receive emergency login user activation messages.')
     ),
 
+    'gbl_num_challenge_questions_stored' => array(
+      xl('Number of challenge questions to store per user'),
+      'num',                            // data type
+      '0',                              // default
+      xl('How many challenge questions per user can we select from. 0 means this feature is disabled.')
+    ),
+
+    'gbl_num_challenge_questions_asked' => array(
+      xl('Number of challenge questions to ask at login'),
+      'num',                            // data type
+      '0',                              // default
+      xl('How many challenge questions must the user answer on login. Must be <= the number stored.')
+    ),
+
+    'gbl_days_between_challenges' => array(
+      xl('How many days before repeating challenge'),
+      'num',                            // data type
+      '1',                              // default
+      xl('How many days is the challenge good for; 0 to ask at every login.')
+    ),
+
+    /***************************** TBD ********************************
+    'gbl_max_failed_logins' => array(
+      xl('How many consecutive failed logins allowed'),
+      'num',                            // data type
+      '1',                              // default
+      xl('Maximum number of consecutive failed logins.')
+    ),
+    ******************************************************************/
+
   ),
 
   // Notifications Tab

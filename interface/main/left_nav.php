@@ -108,6 +108,7 @@ use ESign\Api;
   'app' => array(xl('Portal Activity')  , 0, '../myportal/index.php'),
   'msg' => array(xl('Messages')  , 0, 'main/messages/messages.php?form_active=1'),
   'pwd' => array(xl('Password')  , 0, 'usergroup/user_info.php'),
+  'seq' => array(xl('Security Questions'), 0, 'usergroup/challenge_questions.php'),
   'prf' => array(xl('Preferences')  , 0, 'super/edit_globals.php?mode=user'),
   'adm' => array(xl('Admin')     , 0, 'usergroup/admin_frameset.php'),
   'rep' => array(xl('Reports')   , 0, 'reports/index.php'),
@@ -1453,6 +1454,7 @@ if ($GLOBALS['athletic_team']) {
       <?php genMiscLink('RTop','adm','0',xl('BatchCom'),'batchcom/batchcom.php'); ?>
       <?php genMiscLink('RTop','adm','0',xl('Auto Writeoff'),'billing/auto_writeoff.php'); ?>
       <?php genTreeLink('RTop','pwd',xl('Password')); ?>
+      <?php if ($GLOBALS['gbl_num_challenge_questions_stored']) genTreeLink('RTop','seq',xl('Security Questions')); ?>
       <?php genMiscLink('RTop','prf','0',xl('Preferences'),'super/edit_globals.php?mode=user'); ?>
       <?php if(acl_check('patients','docs')) genMiscLink('RTop','adm','0',xl('New Documents'),'../controller.php?document&list&patient_id=00'); ?>
       <?php if (acl_check('patients','docs')) genMiscLink('RTop','adm','0',xl('Document Templates'),'super/manage_document_templates.php'); ?>
