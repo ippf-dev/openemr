@@ -312,15 +312,15 @@ function receiptDetailLine($code_type, $code, $description, $quantity, $charge, 
     echo "  <td align='right'>" . oeFormatMoney($tax,false,true) . "</td>\n";
   }
 
-  // Adjustment.
-  if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) {
-    echo "  <td align='right'>" . oeFormatMoney($adjust,false,true) . "</td>\n";
-    echo "  <td align='right'>" . text($memo) . "</td>\n";
-  }
-
   // Charge Category
   if (!empty($GLOBALS['gbl_charge_categories'])) {
     echo "  <td align='right'>" . text($chargecat) . "</td>\n";
+  }
+
+  // Adjustment and its description.
+  if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) {
+    echo "  <td align='right'>" . oeFormatMoney($adjust,false,true) . "</td>\n";
+    echo "  <td align='right'>" . text($memo) . "</td>\n";
   }
 
   echo "  <td align='right'>" . oeFormatMoney($total) . "</td>\n";
@@ -647,12 +647,12 @@ body, td {
     echo "  <td align='right'><b>" . text($taxname) . "</b></td>\n";
   }
 ?>
+<?php if (!empty($GLOBALS['gbl_charge_categories'])) { ?>
+  <td align='right'><b><?php echo xlt('Insurer'); ?></b></td>
+<?php } ?>
 <?php if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) { ?>
   <td align='right'><b><?php xl('Adj','e'); ?></b></td>
   <td align='right'><b><?php xl('Type','e'); ?></b></td>
-<?php } ?>
-<?php if (!empty($GLOBALS['gbl_charge_categories'])) { ?>
-  <td align='right'><b><?php echo xlt('Insurer'); ?></b></td>
 <?php } ?>
   <td align='right'><b><?php xl('Total','e'); ?></b></td>
  </tr>
@@ -736,13 +736,13 @@ body, td {
     for ($i = 0; $i < count($aTaxNames); ++$i) {
       echo "  <td align='right'>" . oeFormatMoney($aTotals[5 + $i]) . "</td>\n";
     }
+    // Optional charge category empty column.
+    if (!empty($GLOBALS['gbl_charge_categories'])) {
+      echo "  <td align='right'>&nbsp;</td>\n";
+    }
     // Optional adjustment columns.
     if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) {
       echo "  <td align='right'>" . oeFormatMoney($aTotals[3]) . "</td>\n";
-      echo "  <td align='right'>&nbsp;</td>\n";
-    }
-    // Optional charge category empty column.
-    if (!empty($GLOBALS['gbl_charge_categories'])) {
       echo "  <td align='right'>&nbsp;</td>\n";
     }
     echo "  <td align='right'>" . oeFormatMoney($aTotals[4]) . "</td>\n";
@@ -995,16 +995,16 @@ function write_form_headers() {
    style='border-top:1px solid black; padding-top:5pt;'>
    <b><?php xl('Current Charges','e'); ?></b>
   </td>
-<?php if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) { // adjustmenty reason default ?>
-  <td colspan='2' align='right' style='border-top:1px solid black; padding-top:5pt;'>
-   <?php echo generate_select_list('form_discount_type', 'adjreason', '', '',
-    ' ', '', 'discountTypeChanged();billingChanged();'); ?>
-  </td>
-<?php } ?>
 <?php if (!empty($GLOBALS['gbl_charge_categories'])) { // charge category default ?>
   <td align='right' style='border-top:1px solid black; padding-top:5pt;'>
    <?php echo generate_select_list('form_charge_category', 'chargecats', '', '',
     ' ', '', 'chargeCategoryChanged();'); ?>
+  </td>
+<?php } ?>
+<?php if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) { // adjustmenty reason default ?>
+  <td colspan='2' align='right' style='border-top:1px solid black; padding-top:5pt;'>
+   <?php echo generate_select_list('form_discount_type', 'adjreason', '', '',
+    ' ', '', 'discountTypeChanged();billingChanged();'); ?>
   </td>
 <?php } ?>
   <td style='border-top:1px solid black; padding-top:5pt;'>
@@ -1032,12 +1032,12 @@ function write_form_headers() {
   }
 ?>
 <?php } ?>
+<?php if (!empty($GLOBALS['gbl_charge_categories'])) { // charge category ?>
+  <td align='right'><b><?php echo xlt('Insurer'); ?></b></td>
+<?php } ?>
 <?php if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) { ?>
   <td align='right'><b><?php xl('Adjustment','e'); ?></b></td>
   <td align='right'><b><?php xl('Adj Type','e'); ?></b></td>
-<?php } ?>
-<?php if (!empty($GLOBALS['gbl_charge_categories'])) { // charge category ?>
-  <td align='right'><b><?php echo xlt('Insurer'); ?></b></td>
 <?php } ?>
   <td align='right'><b><?php xl('Total','e'); ?></b></td>
  </tr>
@@ -1133,6 +1133,14 @@ function write_form_line($code_type, $code, $id, $date, $description,
     ++$i;
   }
 
+  // Optional Charge Category.
+  if (!empty($GLOBALS['gbl_charge_categories'])) {
+    echo "  <td align='right'>";
+    echo generate_select_list("line[$lino][chargecat]", 'chargecats', $chargecat, '', ' ', '',
+      '', '', $billtime ? array('disabled' => 'disabled') : null);
+    echo "</td>\n";
+  }
+
   if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) {
     echo "  <td align='right'>";
     echo "<input type='text' name='line[$lino][adjust]' size='6'";
@@ -1148,14 +1156,6 @@ function write_form_line($code_type, $code, $id, $date, $description,
     echo "  <td align='right'>";
     echo generate_select_list("line[$lino][memo]", 'adjreason', $memo, '', ' ', '',
       'billingChanged()', '', $billtime ? array('disabled' => 'disabled') : null);
-    echo "</td>\n";
-  }
-
-  // Optional Charge Category.
-  if (!empty($GLOBALS['gbl_charge_categories'])) {
-    echo "  <td align='right'>";
-    echo generate_select_list("line[$lino][chargecat]", 'chargecats', $chargecat, '', ' ', '',
-      '', '', $billtime ? array('disabled' => 'disabled') : null);
     echo "</td>\n";
   }
 
@@ -2069,14 +2069,14 @@ for ($i = 0; $i < count($taxes); ++$i) {
        "style='text-align:right;background-color:transparent' readonly";
   echo "></td>\n";
 }
+if (!empty($GLOBALS['gbl_charge_categories'])) {
+  echo "  <td align='right'>&nbsp;</td>\n"; // Empty space in charge category column.
+}
 if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) {
   // Note $totalchg is the total of charges before adjustments, and the following
   // field will be recomputed at onload time and as adjustments are entered.
   echo "  <td align='right'>&nbsp;</td>\n"; // TBD: Total adjustments can go here.
   echo "  <td align='right'>&nbsp;</td>\n"; // Empty space in adjustment type column.
-}
-if (!empty($GLOBALS['gbl_charge_categories'])) {
-  echo "  <td align='right'>&nbsp;</td>\n"; // Empty space in charge category column.
 }
 echo "  <td align='right'><input type='text' name='totalchg' " .
      "value='$totalchg' size='6' maxlength='8' " .
