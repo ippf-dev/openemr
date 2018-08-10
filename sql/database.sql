@@ -1057,6 +1057,7 @@ CREATE TABLE `facility` (
   `longitude` varchar(255) NOT NULL DEFAULT '',
   `extra_validation` tinyint(1) NOT NULL DEFAULT '1',
   `related_code` VARCHAR(255) NOT NULL default '',
+  `related_code_2` VARCHAR(255) NOT NULL default '',
   PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=4 ;
 

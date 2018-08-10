@@ -805,3 +805,7 @@ UPDATE drug_sales AS s, ar_activity AS a, list_options AS l
 DELETE FROM ar_activity WHERE pay_amount = 0 AND adj_amount = 0 AND deleted IS NULL AND
   memo IN (SELECT option_id FROM list_options WHERE list_id = 'chargecats' AND activity = 1);
 #EndIf
+
+#IfMissingColumn facility related_code_2
+ALTER TABLE `facility` ADD COLUMN `related_code_2` VARCHAR(255) NOT NULL default '';
+#EndIf

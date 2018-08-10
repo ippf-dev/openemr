@@ -42,6 +42,8 @@ function display_desc($desc) {
   return $desc;
 }
 
+/**********************************************************************
+
 // Initialize the $aItems entry for this line item if it does not yet exist.
 function ensureItems($invno, $codekey) {
   global $aItems, $aTaxNames;
@@ -190,6 +192,8 @@ function ensureLineAmounts($patient_id, $encounter_id) {
   return $invno;
 }
 
+**********************************************************************/
+
 // Compute price per unit preferring number of decimals for the locale, but increasing
 // that up to a reasonable limit when there would otherwise be rounding error.
 //
@@ -210,14 +214,46 @@ function oeFormatMoneySpreadsheet($amount, $blankifzero=false) {
   return sprintf('%01.' . $d . 'f', $amount);
 }
 
+function get_related_code($related_codes, $type) {
+  $ret = '';
+  $relcodes = explode(';', $related_codes);
+  foreach ($relcodes as $codestring) {
+    if ($codestring === '') continue;
+    list($codetype, $code) = explode(':', $codestring);
+    if ($codetype != $type) continue;
+    $ret = $code;
+    break;
+  }
+  return $ret;
+}
+
+function get_related_code_name($related_codes, $type) {
+  global $code_types;
+  $ret = '';
+  $code = get_related_code($related_codes, $type);
+  if ($code) {
+    $typeid = empty($code_types[$type]) ? 0 : $code_types[$type]['id'];
+    $tmprow = sqlQuery("SELECT code_text, related_code FROM codes WHERE " .
+      "code_type = ? AND code = ? AND active = 1",
+      array($typeid, $code));
+    if (!empty($tmprow)) {
+      $ret = $tmprow['code_text'];
+    }
+  }
+  return $ret;
+}
+
 $previous_invno = array();
 $previous_invnumber_display = '';
 
 function thisLineItem($patient_id, $encounter_id, $code_type, $code,
-  $description, $svcdate, $paydate, $qty, $amount, $irnumber='',
+  $description, $svcdate, $paydate, $qty, $amount, $irnumber,
+  /********************************************************************
   $payor, $sitecode, $project, $fund_name, $terms='', $dept_name='', $sobj_name='')
+  ********************************************************************/
+  $payor, $sitecode, $terms, $item_related_project, $fac_related_project, $ndc_number)
 {
-  global $aItems, $aTaxNames, $overpayments, $previous_invno, $previous_invnumber_display;
+  global $aItems, $aTaxNames, $overpayments, $previous_invno, $previous_invnumber_display, $code_types;
 
   // Invoice number will be displayed with a suffix to indicate checkout sequence number.
   // Zero suffix indicates there was no checkout for the line item.
@@ -240,17 +276,25 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
   $rowamount = sprintf('%01.2f', $amount);
   $disp_code = $code;
   if ($code_type == 'PROD') {
+    /******************************************************************
     $disp_code = $description;
     $description = '';
+    ******************************************************************/
+    $disp_code = $ndc_number;
   }
 
+  /********************************************************************
   $tmp = $overpayments;
   $invno = ensureLineAmounts($patient_id, $encounter_id);
   $overpaid = $overpayments == $tmp ? '' : '* ';
+  ********************************************************************/
+  $invno = "$patient_id.$encounter_id";
 
   $codekey = $code_type . ':' . $code;
+  /********************************************************************
   $rowadj = $aItems[$invno][$codekey][1];
   $rowpay = $aItems[$invno][$codekey][2];
+  ********************************************************************/
   $memo = "OpenEMR Inv " . $invnumber_display;
 
   $memo_header = '';
@@ -259,6 +303,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
     $previous_invnumber_display = $invnumber_display;
   }
 
+  /********************************************************************
   // Compute Discount Rate which is the negative sum of adjustments for the invoice.
   // Do this only for the first item of each invoice.
   $discount_rate = 0.00;
@@ -271,6 +316,63 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
     // $memo_header = $memo;
   }
   $discount_item = $discount_rate == 0.00 ? '' : xl('Discount Item');
+  ********************************************************************/
+
+  // Figure out project, fund, dept, sobj names.
+  // If adjustment reason has a project associated, use that project;
+  // Else if Facility has a project mapped to Service or Products, use that Project;
+  // Else if Service or Product has a Project, use that Project.
+  $proj_code = '';
+  $adjrow = sqlQuery("SELECT a.adj_amount, lo.title, lo.notes " .
+    "FROM ar_activity AS a " .
+    "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.activity = 1 " .
+    "WHERE " .
+    "a.pid = ? AND a.encounter = ? AND a.deleted IS NULL AND " .
+    "a.code_type = ? AND a.code = ? AND " .
+    "(a.adj_amount != 0.00 OR a.pay_amount = 0.00) AND a.memo != '' " .
+    "ORDER BY lo.notes DESC, a.adj_amount DESC LIMIT 1",
+    array($patient_id, $encounter_id, $code_type, $code));
+  if (!empty($adjrow['notes'])) {
+    if (preg_match('/PROJ=([0-9A-Za-z]+)/', $adjrow['notes'], $matches)) {
+      $proj_code = $matches[1];
+    }
+  }
+  if ($proj_code === '') {
+    $proj_code = get_related_code($fac_related_project, 'PROJ');
+  }
+  if ($proj_code === '') {
+    $proj_code = get_related_code($item_related_project, 'PROJ');
+  }
+  $project = '';
+  $fund_name = '';
+  $dept_name = '';
+  $sobj_name = '';
+  $projid = empty($code_types['PROJ']) ? 0 : $code_types['PROJ']['id'];
+  if ($proj_code !== '') {
+    $tmprow = sqlQuery("SELECT code_text, related_code FROM codes WHERE " .
+      "code_type = ? AND code = ? AND active = 1",
+      array($projid, $proj_code));
+    if (!empty($tmprow)) {
+      $project = $tmprow['code_text'];
+      $fund_name = get_related_code_name($tmprow['related_code'], 'FUND');
+      $dept_name = get_related_code_name($tmprow['related_code'], 'DEPT');
+      $sobj_name = get_related_code_name($tmprow['related_code'], 'SOBJ');
+    }
+  }
+
+  // Get the gift card ID from the payment reference.
+  $gift_card_id = '';
+  $gift_card_text = xl('Gift Card');
+  $gcrow = sqlQuery("SELECT a.memo " .
+    "FROM ar_activity AS a " .
+    "WHERE " .
+    "a.pid = ? AND a.encounter = ? AND a.deleted IS NULL AND " .
+    "a.pay_amount > 0.00 AND a.memo LIKE ? " .
+    "ORDER BY a.pay_amount DESC LIMIT 1",
+    array($patient_id, $encounter_id, "$gift_card_text %"));
+  if (!empty($gcrow['memo'])) {
+    $gift_card_id = substr($gcrow['memo'], strlen($gift_card_text + 1));
+  }
 
   if ($_POST['form_csvexport']) {
     echo '"' . oeFormatShortDate(display_desc($svcdate)) . '",';
@@ -289,6 +391,7 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
 
     echo '"' . display_desc($memo_header) . '",';
     echo '"' . display_desc($memo) . '",';
+    echo '"' . display_desc($gift_card_id) . '",';
     echo '"' . display_desc($payor == '' ? 'C00001' : $payor) . '",';
     echo '"' . display_desc($payor == '' ? 'Cash' : '') . '",';
     echo '"' . display_desc($terms) . '",';
@@ -324,13 +427,16 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
    <?php echo $qty; ?>
   </td>
   <td class="detail" align="right">
-   <?php echo $overpaid . oeFormatMoneySpreadsheet($amount / $qty, true); ?>
+   <?php echo /* $overpaid . */ oeFormatMoneySpreadsheet($amount / $qty, true); ?>
   </td>
   <td class="detail">
    <?php echo display_desc($memo_header); ?>
   </td>
   <td class="detail">
    <?php echo display_desc($memo); ?>
+  </td>
+  <td class="detail">
+   <?php echo display_desc($gift_card_id); ?>
   </td>
   <td class="detail">
    <?php echo display_desc($payor == '' ? 'C00001' : $payor); ?>
@@ -363,10 +469,102 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
 <?php
   } // End not csv export
 
+  // If there is a discount adjustment write a row for it.
+  if (!empty($adjrow['notes']) && preg_match('/TYPE=DISCOUNT/i', $adjrow['notes'])) {
+    if ($_POST['form_csvexport']) {
+      echo '"' . oeFormatShortDate(display_desc($svcdate)) . '",';
+      echo '"' . oeFormatShortDate(display_desc($paydate)) . '",';
+      echo '"' . display_desc($invnumber_display) . '",';
+      echo '"' . display_desc($adjrow['title']) . '",';
+      echo '"' . display_desc($description) . '",';
+      echo '"' . display_desc($qty      ) . '",';
+      echo '"' . oeFormatMoneySpreadsheet(0 - $adjrow['adj_amount']) . '",';
+      echo '"",';
+      echo '"' . display_desc($memo) . '",';
+      echo '"",';
+      echo '"",';
+      echo '"",';
+      echo '"",';
+      echo '"",';
+      echo '"",';
+      echo '"",';
+      echo '"",';
+      echo '"",';
+      echo '""';
+      echo "\n";
+    }
+    else {
+?>
+ <tr>
+  <td class="detail">
+   <?php echo oeFormatShortDate($svcdate); ?>
+  </td>
+  <td class="detail">
+   <?php echo oeFormatShortDate($paydate); ?>
+  </td>
+  <td class='delink' onclick='doinvopen(<?php echo "$patient_id,$encounter_id"; ?>)'>
+   <?php echo $invnumber_display; ?>
+  </td>
+  <td class="detail">
+   <?php echo display_desc($adjrow['title']); ?>
+  </td>
+  <td class="detail">
+   <?php echo display_desc($description); ?>
+  </td>
+  <td class="detail" align="right">
+   <?php echo $qty; ?>
+  </td>
+  <td class="detail" align="right">
+   <?php echo oeFormatMoneySpreadsheet(0 - $adjrow['adj_amount'], true); ?>
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+  <td class="detail">
+   <?php echo display_desc($memo); ?>
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+  <td class="detail">
+   &nbsp;
+  </td>
+ </tr>
+<?php
+    }
+  }
+
+  /********************************************************************
   // Clear out this line item's numbers in case the same code appears again.
   for ($i = 1; $i < count($aItems[$invno][$codekey]); ++$i) {
     $aItems[$invno][$codekey][$i] = 0;
   }
+  ********************************************************************/
+
 } // end function thisLineItem
 
 if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
@@ -417,6 +615,7 @@ if ($_POST['form_csvexport']) {
   echo '"' . xl('Each'            ) . '",';
   echo '"' . xl('Memo Header'     ) . '",';
   echo '"' . xl('Memo Column'     ) . '",';
+  echo '"' . xl('GiftCard'        ) . '",';
   echo '"' . xl('Customer'        ) . '",';
   echo '"' . xl('Payment Method'  ) . '",';
   echo '"' . xl('Terms'           ) . '",';
@@ -595,6 +794,9 @@ echo "   </select>&nbsp;\n";
    <?php echo xlt('Memo Column'); ?>
   </td>
   <td class="dehead">
+   <?php echo xlt('GiftCard'); ?>
+  </td>
+  <td class="dehead">
    <a href="#" onclick="return dosort('payor')"
    <?php if ($form_orderby == "payor") echo " style=\"color:#00cc00\""; ?>
    ><?php echo xlt('Customer'); ?></a>
@@ -666,6 +868,7 @@ if ($_POST['form_orderby']) {
   // Joins that work for both services and products.
   $morejoins =
     "LEFT JOIN list_options AS l4 ON l4.list_id = 'userlist4' AND l4.option_id = pd.userlist4 AND l4.activity = 1 " .
+    /******************************************************************
     "LEFT JOIN codes AS cf ON cf.code_type = ? AND cp.related_code IS NOT NULL AND " .
     "cp.related_code LIKE '%FUND:%' AND " .
     "cf.code = SUBSTR(cp.related_code, LOCATE('FUND:', cp.related_code) + 5, $fundcodelen) " .
@@ -674,15 +877,21 @@ if ($_POST['form_orderby']) {
     "cd.code = SUBSTR(cp.related_code, LOCATE('DEPT:', cp.related_code) + 5, $deptcodelen) " .
     "LEFT JOIN codes AS cs ON cs.code_type = ? AND cp.related_code IS NOT NULL AND " .
     "cp.related_code LIKE '%SOBJ:%' AND " .
-    "cs.code = SUBSTR(cp.related_code, LOCATE('SOBJ:', cp.related_code) + 5, $sobjcodelen) ";
+    "cs.code = SUBSTR(cp.related_code, LOCATE('SOBJ:', cp.related_code) + 5, $sobjcodelen) " .
+    ******************************************************************/
+    "";
 
   $query = "( " .
     "SELECT " .
-    "b.pid, b.encounter, b.code_type, b.code AS itemcode, b.code_text AS description, b.units, b.fee, " .
+    "b.pid, b.encounter, b.code_type, b.code AS itemcode, b.code_text AS description, " .
+    "'' AS ndc_number, b.units, b.fee, " .
     "fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
+    "f.related_code_2 AS fac_related_project, " .
     // "CONCAT(fe.invoice_refno, '|', LPAD(fe.pid, 11, '0'), LPAD(fe.encounter, 11, '0')) AS invoiceno, " .
-    "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, l4.notes AS terms, " .
-
+    "l4.notes AS terms, c.related_code AS item_related_project, " .
+    /******************************************************************
+    "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, " .
+    ******************************************************************/
     /******************************************************************
     "COALESCE((SELECT a.memo FROM ar_activity AS a " .
     "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
@@ -707,19 +916,24 @@ if ($_POST['form_orderby']) {
     "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "JOIN code_types AS ct ON ct.ct_key = b.code_type " .
     "LEFT JOIN codes AS c ON c.code_type = ct.ct_id AND c.code = b.code AND c.modifier = b.modifier " .
+    /******************************************************************
     "LEFT JOIN codes AS cp ON cp.code_type = ? AND c.related_code LIKE '%PROJ:%' AND " .
     "cp.code = SUBSTR(c.related_code, LOCATE('PROJ:', c.related_code) + 5, $projcodelen) " .
+    ******************************************************************/
     $morejoins .
     "WHERE b.code_type != 'COPAY' AND b.activity = 1 AND b.fee != 0 AND " .
     "(b.code_type != 'TAX' OR b.ndc_info = '') " . // why the ndc_info test?
     ") UNION ALL ( " .
     "SELECT " .
     "s.pid, s.encounter, 'PROD' AS code_type, s.drug_id AS itemcode, d.name AS description, " .
-    "s.quantity AS units, s.fee, " .
+    "d.ndc_number, s.quantity AS units, s.fee, " .
     "fe.date AS svcdate, f.facility_npi, fe.invoice_refno AS invoiceno, " .
+    "f.related_code AS fac_related_project, " .
     // "CONCAT(fe.invoice_refno, '|', LPAD(fe.pid, 11, '0'), LPAD(fe.encounter, 11, '0')) AS invoiceno, " .
-    "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, l4.notes AS terms, " .
-
+    "l4.notes AS terms, d.related_code AS item_related_project, " .
+    /******************************************************************
+    "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name, " .
+    ******************************************************************/
     /******************************************************************
     "COALESCE((SELECT a.memo FROM ar_activity AS a " .
     "JOIN list_options AS lo ON lo.list_id = 'adjreason' AND lo.option_id = a.memo AND lo.notes LIKE '%=Ins%' AND lo.activity = 1 " .
@@ -743,8 +957,10 @@ if ($_POST['form_orderby']) {
     "JOIN patient_data AS pd ON pd.pid = fe.pid " .
     "LEFT JOIN facility AS f ON f.id = fe.facility_id " .
     "LEFT JOIN drugs AS d ON d.drug_id = s.drug_id " .
+    /******************************************************************
     "LEFT JOIN codes AS cp ON cp.code_type = ? AND f.related_code LIKE '%PROJ:%' AND " .
     "cp.code = SUBSTR(f.related_code, LOCATE('PROJ:', f.related_code) + 5, $projcodelen) " .
+    ******************************************************************/
     $morejoins .
     // 2018-06-28 CV says include all inventory items, not just those with a fee.
     // "WHERE s.fee != 0 " .
@@ -752,15 +968,20 @@ if ($_POST['form_orderby']) {
 
   $dt1 = "$from_date 00:00:00";
   $dt2 = "$to_date 23:59:59";
+  /********************************************************************
   $projid = empty($code_types['PROJ']) ? 0 : $code_types['PROJ']['id'];
   $fundid = empty($code_types['FUND']) ? 0 : $code_types['FUND']['id'];
   $deptid = empty($code_types['DEPT']) ? 0 : $code_types['DEPT']['id'];
   $sobjid = empty($code_types['SOBJ']) ? 0 : $code_types['SOBJ']['id'];
+  ********************************************************************/
 
   // if (! $_POST['form_csvexport']) echo "<!-- $query\n '$dt1' '$dt2' '$projid' '$fundid' '$deptid' '$sobjid' -->\n"; // debugging
 
+  /********************************************************************
   $res = sqlStatement($query, array($dt1, $dt2, $projid, $fundid, $deptid, $sobjid,
     $dt1, $dt2, $projid, $fundid, $deptid, $sobjid));
+  ********************************************************************/
+  $res = sqlStatement($query, array($dt1, $dt2, $dt1, $dt2));
 
   while ($row = sqlFetchArray($res)) {
     $payor = $row['payor'];
@@ -769,11 +990,17 @@ if ($_POST['form_orderby']) {
     if ($form_payor == 'c' && $payor != '') continue;
     if ($form_payor == 'i' && $payor == '') continue;
 
+    /******************************************************************
     thisLineItem($row['pid'], $row['encounter'], $row['code_type'], $row['itemcode'],
       $row['description'], substr($row['svcdate'], 0, 10), $row['paydate'],
       $row['units'], $row['fee'], $row['invoiceno'],
       $payor, $row['facility_npi'], $row['proj_name'], $row['fund_name'], $terms,
       $row['dept_name'], $row['sobj_name']);
+    ******************************************************************/
+    thisLineItem($row['pid'], $row['encounter'], $row['code_type'], $row['itemcode'],
+      $row['description'], substr($row['svcdate'], 0, 10), $row['paydate'],
+      $row['units'], $row['fee'], $row['invoiceno'], $payor, $row['facility_npi'],
+      $terms, $row['item_related_project'], $row['fac_related_project'], $row['ndc_number']);
   }
 
 } // end refresh or export
