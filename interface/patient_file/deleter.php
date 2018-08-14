@@ -424,21 +424,21 @@ function popup_close() {
 
 <?php
  if ($patient) {
-  echo xl('patient') . " $patient";
+  echo xl('patient') . " " . text($patient);
  } else if ($encounterid) {
-  echo xl('encounter') . " $encounterid";
+  echo xl('encounter') . " " . text($encounterid);
  } else if ($formid) {
-  echo xl('form') . " $formid";
+  echo xl('form') . " " . text($formid);
  } else if ($issue) {
-  echo xl('issue') . " $issue";
+  echo xl('issue') . " " . text($issue);
  } else if ($document) {
   echo xl('document') . " " . text($document);
  } else if ($payment) {
-  echo xl('payment') . " $payment";
+  echo xl('payment') . " " . text($payment);
  } else if ($billing) {
-  echo xl('invoice') . " $billing";
+  echo xl('invoice') . " " . text($billing);
  } else if ($transaction) {
-  echo xl('transaction') . " $transaction";
+  echo xl('transaction') . " " . text($transaction);
  }
 ?> <?php xl('and all subordinate data? This action will be logged','e'); ?>!</p>
 
