@@ -30,9 +30,9 @@
     $thename = $thevalue ? "Billing" : "";
 
     sqlStatement("UPDATE patient_data SET " .
-      "genericname2 = '$thename', " .
-      "genericval2 = '$thevalue' " .
-      "WHERE pid = '$patient_id'");
+      "genericname2 = ?, " .
+      "genericval2 = ? " .
+      "WHERE pid = ? ", array($thename, $thevalue, $patient_id));
 
     echo "<script language='JavaScript'>\n";
     if ($info_msg) echo " alert('$info_msg');\n";
