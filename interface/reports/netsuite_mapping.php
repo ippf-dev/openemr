@@ -13,37 +13,87 @@ require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/options.inc.php");
 require_once("../../custom/code_types.inc.php");
 
-function thisLineItem($row)
+function get_related_code($related_codes, $type) {
+  $ret = '';
+  $relcodes = explode(';', $related_codes);
+  foreach ($relcodes as $codestring) {
+    if ($codestring === '') continue;
+    list($codetype, $code) = explode(':', $codestring);
+    if ($codetype != $type) continue;
+    $ret = $code;
+    break;
+  }
+  return $ret;
+}
+
+function get_related_code_name($related_codes, $type) {
+  global $code_types;
+  $ret = '';
+  $code = get_related_code($related_codes, $type);
+  if ($code) {
+    $typeid = empty($code_types[$type]) ? 0 : $code_types[$type]['id'];
+    $tmprow = sqlQuery("SELECT code_text, related_code FROM codes WHERE " .
+      "code_type = ? AND code = ? AND active = 1",
+      array($typeid, $code));
+    if (!empty($tmprow)) {
+      $ret = $tmprow['code_text'];
+    }
+  }
+  return $ret;
+}
+
+function thisLineItem($col1, $col2, $related_code)
 {
+  global $code_types;
+
+  // Figure out project, fund, dept, sobj names.
+  $proj_code = get_related_code($related_code, 'PROJ');
+  $proj_name = '';
+  $fund_name = '';
+  $dept_name = '';
+  $sobj_name = '';
+  $projid = empty($code_types['PROJ']) ? 0 : $code_types['PROJ']['id'];
+  if ($proj_code !== '') {
+    $tmprow = sqlQuery("SELECT code_text, related_code FROM codes WHERE " .
+      "code_type = ? AND code = ? AND active = 1",
+      array($projid, $proj_code));
+    if (!empty($tmprow)) {
+      $proj_name = $tmprow['code_text'];
+      $fund_name = get_related_code_name($tmprow['related_code'], 'FUND');
+      $dept_name = get_related_code_name($tmprow['related_code'], 'DEPT');
+      $sobj_name = get_related_code_name($tmprow['related_code'], 'SOBJ');
+    }
+  }
+
   if ($_POST['form_csvexport']) {
-    echo '"' . addslashes($row['col1']) . '",';
-    echo '"' . addslashes($row['col2']) . '",';
-    echo '"' . addslashes($row['proj_name']) . '",';
-    echo '"' . addslashes($row['fund_name']) . '",';
-    echo '"' . addslashes($row['dept_name']) . '",';
-    echo '"' . addslashes($row['sobj_name']) . '"';
+    echo '"' . addslashes($col1) . '",';
+    echo '"' . addslashes($col2) . '",';
+    echo '"' . addslashes($proj_name) . '",';
+    echo '"' . addslashes($fund_name) . '",';
+    echo '"' . addslashes($dept_name) . '",';
+    echo '"' . addslashes($sobj_name) . '"';
     echo "\n";
   }
   else {
 ?>
  <tr>
   <td class='detail'>
-   <?php echo text($row['col1']); ?>
+   <?php echo text($col1); ?>
   </td>
   <td class='detail'>
-   <?php echo text($row['col2']); ?>
+   <?php echo text($col2); ?>
   </td>
   <td class='detail'>
-   <?php echo text($row['proj_name']); ?>
+   <?php echo text($proj_name); ?>
   </td>
   <td class='detail'>
-   <?php echo text($row['fund_name']); ?>
+   <?php echo text($fund_name); ?>
   </td>
   <td class='detail'>
-   <?php echo text($row['dept_name']); ?>
+   <?php echo text($dept_name); ?>
   </td>
   <td class='detail'>
-   <?php echo text($row['sobj_name']); ?>
+   <?php echo text($sobj_name); ?>
   </td>
  </tr>
 <?php
@@ -54,6 +104,8 @@ if (!acl_check('acct', 'rep_a')) die(xl("Unauthorized access."));
 
 // 1 = Services, 2 = Facilities, 3 = Both
 $form_reptype = intval(empty($_REQUEST['form_reptype']) ? '1' : $_REQUEST['form_reptype']);
+
+$form_showall = !empty($_REQUEST['form_showall']);
 
 if ($_POST['form_csvexport']) {
   header("Pragma: public");
@@ -131,6 +183,9 @@ echo "    <option value='2'" . ($form_reptype == 2 ? ' selected' : '') . ">" . x
 echo "    <option value='3'" . ($form_reptype == 3 ? ' selected' : '') . ">" . xl('Both'      ) . "\n";
 echo "   </select>&nbsp;\n";
 ?>
+   <input type='checkbox' name='form_showall' value="1"<?php if ($form_showall) echo ' checked'; ?> />
+   <?php echo xlt('Show All'); ?>
+   &nbsp;
    <input type='submit' name='form_refresh' value="<?php echo xlt('Run') ?>">
    &nbsp;
    <input type='submit' name='form_csvexport' value="<?php echo xlt('Export to CSV') ?>">
@@ -152,6 +207,7 @@ echo "   </select>&nbsp;\n";
 
 if (!empty($_REQUEST['form_reptype'])) { // If generating any reports
 
+  /********************************************************************
   // Lengths of PROJ, DEPT, FUND and SOBJ codes. Yes this is a bit lame.
   $projcodelen = 10;
   $deptcodelen = 3;
@@ -175,6 +231,7 @@ if (!empty($_REQUEST['form_reptype'])) { // If generating any reports
     "LEFT JOIN codes AS cs ON cs.code_type = ? AND cp.related_code IS NOT NULL AND " .
     "cp.related_code LIKE '%SOBJ:%' AND " .
     "cs.code = SUBSTR(cp.related_code, LOCATE('SOBJ:', cp.related_code) + 5, $sobjcodelen) ";
+  ********************************************************************/
 
   if (empty($_POST['form_csvexport'])) { // if HTML
     echo "<table width='98%' id='mymaintable' class='mymaintable'>\n";
@@ -222,6 +279,7 @@ if (!empty($_REQUEST['form_reptype'])) { // If generating any reports
     } // End not export
     // Continuing generation of Services report.
 
+    /******************************************************************
     $query = "SELECT " .
       "c.code AS col1, c.code_text AS col2, " .
       "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name " .
@@ -230,11 +288,20 @@ if (!empty($_REQUEST['form_reptype'])) { // If generating any reports
       "cp.code = SUBSTR(c.related_code, LOCATE('PROJ:', c.related_code) + 5, $projcodelen) " .
       "$morejoins WHERE " .
       "c.code_type = '12' AND c.active = 1 ORDER BY c.code";
-
     $res = sqlStatement($query, array($projid, $fundid, $deptid, $sobjid));
-
     while ($row = sqlFetchArray($res)) {
       thisLineItem($row);
+    }
+    ******************************************************************/
+    $query = "SELECT " .
+      "c.code AS col1, c.code_text AS col2, c.related_code " .
+      "FROM codes AS c WHERE " .
+      "c.code_type = '12' AND c.active = 1 ORDER BY c.code";
+    $res = sqlStatement($query);
+    while ($row = sqlFetchArray($res)) {
+      if ($form_showall || strpos($row['related_code'], 'PROJ:') !== false) {
+        thisLineItem($row['col1'], $row['col2'], $row['related_code']);
+      }
     }
 
     if (empty($_POST['form_csvexport'])) {
@@ -286,6 +353,7 @@ if (!empty($_REQUEST['form_reptype'])) { // If generating any reports
     } // End not export
     // Continuing generation of Facilities report.
 
+    /******************************************************************
     $query = "SELECT " .
       "f.name AS col1, f.facility_npi AS col2, " .
       "cp.code_text AS proj_name, cf.code_text AS fund_name, cd.code_text AS dept_name, cs.code_text AS sobj_name " .
@@ -294,11 +362,28 @@ if (!empty($_REQUEST['form_reptype'])) { // If generating any reports
       "cp.code = SUBSTR(f.related_code, LOCATE('PROJ:', f.related_code) + 5, $projcodelen) " .
       "$morejoins " .
       "ORDER BY f.name";
-
     $res = sqlStatement($query, array($projid, $fundid, $deptid, $sobjid));
-
     while ($row = sqlFetchArray($res)) {
       thisLineItem($row);
+    }
+    ******************************************************************/
+    $query = "SELECT " .
+      "f.name AS col1, f.facility_npi AS col2, f.related_code, f.related_code_2 " .
+      "FROM facility AS f ORDER BY f.name";
+    $res = sqlStatement($query);
+    while ($row = sqlFetchArray($res)) {
+      $appears = false;
+      if (strpos($row['related_code'], 'PROJ:') !== false) {
+        thisLineItem($row['col1'] . ' (' . xl('Products') . ')', $row['col2'], $row['related_code']);
+        $appears = true;
+      }
+      if (strpos($row['related_code_2'], 'PROJ:') !== false) {
+        thisLineItem($row['col1'] . ' (' . xl('Services') . ')', $row['col2'], $row['related_code_2']);
+        $appears = true;
+      }
+      if ($form_showall && !$appears) {
+        thisLineItem($row['col1'], $row['col2'], '');
+      }
     }
 
     if (empty($_POST['form_csvexport'])) {
