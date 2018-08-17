@@ -658,7 +658,7 @@ if (!empty($form_submit)) {
       AddIfPresent('PriceLevel', mappedOption('pricelevel', $row['pricelevel'], ''));
       AddIfPresent('UserList1', mappedOption('userlist1', $row['userlist1'], ''));
       AddIfPresent('UserList3', mappedOption('userlist3', $row['userlist3'], ''));
-      AddIfPresent('UserList4', mappedOption('userlist4', $row['userlist4'], ''));
+      AddIfPresent('UserList4', mappedOption('chargecats', $row['userlist4'], ''));
       AddIfPresent('UserList5', mappedOption('userlist5', $row['userlist5'], ''));
       AddIfPresent('UserText11', $row['usertext11']);
       AddIfPresent('UserText12', $row['usertext12']);

@@ -6095,3 +6095,5 @@ INSERT INTO list_options ( list_id, option_id, title, seq ) VALUES ('reftype','2
 INSERT INTO list_options ( list_id, option_id, title, seq ) VALUES ('reftype','3' ,'Outbound Internal',20);
 INSERT INTO list_options ( list_id, option_id, title, seq ) VALUES ('reftype','4' ,'Inbound External' ,30);
 INSERT INTO list_options ( list_id, option_id, title, seq ) VALUES ('reftype','5' ,'Inbound Internal' ,40);
+
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('lists','chargecats','Charge Categories', 1);

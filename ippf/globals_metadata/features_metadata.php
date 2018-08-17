@@ -62,7 +62,7 @@ array(
     ),
 
     'gbl_charge_categories' => array(
-      xl('Charge Categories in Checkout and Receipt'),
+      xl('Customers in Checkout and Receipt'),
       'bool',                           // data type
       '0',                              // default = false
       xl('Include charge categories in checkout and receipts. See the Charge Categories list.')

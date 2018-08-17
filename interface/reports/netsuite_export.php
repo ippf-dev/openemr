@@ -867,7 +867,7 @@ if ($_POST['form_orderby']) {
 
   // Joins that work for both services and products.
   $morejoins =
-    "LEFT JOIN list_options AS l4 ON l4.list_id = 'userlist4' AND l4.option_id = pd.userlist4 AND l4.activity = 1 " .
+    "LEFT JOIN list_options AS l4 ON l4.list_id = 'chargecats' AND l4.option_id = pd.userlist4 AND l4.activity = 1 " .
     /******************************************************************
     "LEFT JOIN codes AS cf ON cf.code_type = ? AND cp.related_code IS NOT NULL AND " .
     "cp.related_code LIKE '%FUND:%' AND " .

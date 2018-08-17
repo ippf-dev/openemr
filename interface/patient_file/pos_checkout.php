@@ -648,7 +648,7 @@ body, td {
   }
 ?>
 <?php if (!empty($GLOBALS['gbl_charge_categories'])) { ?>
-  <td align='right'><b><?php echo xlt('Vendor'); ?></b></td>
+  <td align='right'><b><?php echo xlt('Customer'); ?></b></td>
 <?php } ?>
 <?php if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) { ?>
   <td align='right'><b><?php xl('Type','e'); ?></b></td>
@@ -996,7 +996,7 @@ function write_form_headers() {
   </td>
 <?php if (!empty($GLOBALS['gbl_charge_categories'])) { ?>
   <td align='right' class='bold' nowrap>
-   <?php echo xlt('Default Vendor'); ?>
+   <?php echo xlt('Default Customer'); ?>
   </td>
 <?php } ?>
 <?php if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) { ?>
@@ -1058,7 +1058,7 @@ function write_form_headers() {
 ?>
 <?php } ?>
 <?php if (!empty($GLOBALS['gbl_charge_categories'])) { // charge category ?>
-  <td align='right' class='bold'><?php echo xlt('Vendor'); ?></td>
+  <td align='right' class='bold'><?php echo xlt('Customer'); ?></td>
 <?php } ?>
 <?php if (!empty($GLOBALS['gbl_checkout_line_adjustments'])) { ?>
   <td align='right' class='bold'><?php echo xlt('Adjust Type'); ?></td>

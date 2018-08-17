@@ -80,6 +80,7 @@ $form_by_arr   = $_POST['form_by'];       // this is an array
 $form_show     = $_POST['form_show'];     // this is an array
 $form_fac_arr  = is_array($_POST['form_facility']) ? $_POST['form_facility'] : array();
 $form_adjreason = isset($_POST['form_adjreason']) ? $_POST['form_adjreason'] : '';
+$form_chargecat = isset($_POST['form_chargecat']) ? $_POST['form_chargecat'] : '';
 $form_svccat   = isset($_POST['form_svccat']) ? $_POST['form_svccat'] : '';
 $form_related_code = isset($_POST['form_related_code']) ? $_POST['form_related_code'] : '';
 $form_sexes    = isset($_POST['form_sexes']) ? $_POST['form_sexes'] : '4';
@@ -1668,6 +1669,19 @@ $(document).ready(function() {
     </tr>
 <?php } ?>
 
+<?php if (!empty($GLOBALS['gbl_charge_categories'])) { ?>
+    <tr>
+     <td valign='top' class='detail' nowrap>
+      <?php echo xlt('Customer'); ?>:
+     </td>
+     <td valign='top' class='detail'>
+<?php
+  echo generate_select_list('form_chargecat', 'chargecats', $form_chargecat);
+?>
+     </td>
+    </tr>
+<?php } ?>
+
 <?php if ($report_type == 'm' || $report_type == 'i') { ?>
     <tr>
      <td valign='top' class='detail' nowrap>
@@ -1964,6 +1978,12 @@ if ($_POST['form_submit']) {
         }
         $query .= " )";
       }
+
+      // If any charge category was specified.
+      if (!empty($form_chargecat)) {
+        $query .= " AND ds.chargecat = '" . add_escape_custom($form_chargecat) . "'";
+      }
+
       $query .= " ORDER BY ds.pid, ds.encounter, ds.drug_id";
       $res = sqlStatement($query);
 
@@ -2267,6 +2287,11 @@ if ($_POST['form_submit']) {
           $query .= " OR fe.facility_id = '$form_facility'";
         }
         $query .= " ) ";
+      }
+
+      // If any charge category was specified.
+      if (!empty($form_chargecat)) {
+        $query .= " AND b.chargecat = '" . add_escape_custom($form_chargecat) . "'";
       }
 
       $query .= "ORDER BY fe.pid, fe.encounter, b.code";

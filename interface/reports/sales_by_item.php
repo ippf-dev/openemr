@@ -442,6 +442,7 @@ function get_adjustment_type($patient_id, $encounter_id, $code_type, $code) {
   // The selected facility IDs, if any.
   $form_facility  = empty($_POST['form_facility']) ? array() : $_POST['form_facility'];
   $form_adjreason = isset($_POST['form_adjreason']) ? $_POST['form_adjreason'] : '';
+  $form_chargecat = isset($_POST['form_chargecat']) ? $_POST['form_chargecat'] : '';
 
   // Get the tax types applicable to this report's date range.
   $aTaxNames = array();
@@ -562,13 +563,15 @@ $(document).ready(function() {
   echo "   </select>\n";
 ?>
   </td>
-  <td align='right'>
+  <td>
 <?php
   // Build a drop-down list of adjustment types.
   //
   echo generate_select_list('form_adjreason', 'adjreason', $form_adjreason, '',
     '-- ' . xl('No Adjustment Filter') . ' --');
 ?>
+  </td>
+  <td align='right'>
    &nbsp;<?php xl('From','e'); ?>:
    <input type='text' name='form_from_date' id="form_from_date" size='10' value='<?php echo $form_from_date ?>'
     onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)' title='yyyy-mm-dd'>
@@ -584,6 +587,16 @@ $(document).ready(function() {
   </td>
  </tr>
  <tr>
+  <td>
+<?php
+  if (!empty($GLOBALS['gbl_charge_categories'])) {
+    // Build a drop-down list of charge categories (customers). For IPPF.
+    //
+    echo generate_select_list('form_chargecat', 'chargecats', $form_chargecat, '',
+      '-- ' . xl('No Customer') . ' --');
+  }
+?>
+  </td>
   <td align='right'>
    <input type='checkbox' name='form_details' value='1'<?php if ($_POST['form_details']) echo " checked"; ?>><?php xl('Details','e') ?>
    &nbsp;
@@ -690,6 +703,11 @@ $(document).ready(function() {
       $query .= ")";
     }
 
+    // If any charge category was specified.
+    if (!empty($form_chargecat)) {
+      $query .= " AND b.chargecat = '" . add_escape_custom($form_chargecat) . "'";
+    }
+
     $query .= " ORDER BY lo.title, b.code, fe.date, fe.id";
     //
     $res = sqlStatement($query);
@@ -720,6 +738,11 @@ $(document).ready(function() {
         $query .= " OR fe.facility_id = '" . add_escape_custom($fac) . "'";
       }
       $query .= ")";
+    }
+
+    // If any charge category was specified.
+    if (!empty($form_chargecat)) {
+      $query .= " AND s.chargecat = '" . add_escape_custom($form_chargecat) . "'";
     }
 
     $query .= " ORDER BY d.name, fe.date, fe.id";
