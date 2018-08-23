@@ -1600,6 +1600,11 @@ function generate_print_field($frow, $currvalue, $value_allowed=true) {
 
   // Image from canvas drawing
   else if ($data_type == 40) {
+    if (empty($currvalue)) {
+      if (preg_match('/\\bimage=([a-zA-Z0-9._-]*)/', $frow['description'], $matches)) {
+        $currvalue = $GLOBALS['web_root'] . '/sites/' . $_SESSION['site_id'] . '/images/' . $matches[1];
+      }
+    }
     if ($currvalue) echo "<img src='" . attr($currvalue) . "'>";
   }
 
@@ -1977,6 +1982,11 @@ function generate_display_field($frow, $currvalue) {
 
   // Image from canvas drawing
   else if ($data_type == 40) {
+    if (empty($currvalue)) {
+      if (preg_match('/\\bimage=([a-zA-Z0-9._-]*)/', $frow['description'], $matches)) {
+        $currvalue = $GLOBALS['web_root'] . '/sites/' . $_SESSION['site_id'] . '/images/' . $matches[1];
+      }
+    }
     if ($currvalue) $s .= "<img src='" . attr($currvalue) . "'>";
   }
 
