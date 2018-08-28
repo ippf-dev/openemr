@@ -20,7 +20,7 @@ require_once(dirname(__FILE__)."/../../myportal/soap_service/portal_connectivity
 if ($_GET['mode'] != "user") {
   // Check authorization.
   $thisauth = acl_check('admin', 'super');
-  if (!$thisauth) die(xl('Not authorized'));
+  if (!$thisauth) die(xlt('Not authorized'));
 }
 
 function checkCreateCDB(){
@@ -137,7 +137,7 @@ if ($_POST['form_save'] && $_GET['mode'] == "user") {
         if (in_array($fldid, $USER_SPECIFIC_GLOBALS)) {
           list($fldname, $fldtype, $flddef, $flddesc) = $fldarr;
           $label = "global:".$fldid;
-          $fldvalue = trim(strip_escape_custom($_POST["form_$i"]));
+          $fldvalue = trim($_POST["form_$i"]);
           setUserSetting($label,$fldvalue,$_SESSION['authId'],FALSE);
           if ( $_POST["toggle_$i"] == "YES" ) {
             removeUserSetting($label);
@@ -194,7 +194,7 @@ if ($_POST['form_download']) {
     ob_end_clean();
     ?>
     <script type="text/javascript">
-      alert('<?php echo xlt('Offsite Portal web Service Failed').":\\n".text($response['value']);?>');
+      alert('<?php echo xls('Offsite Portal web Service Failed').":\\n".text($response['value']);?>');
     </script>
     <?php    
   }
@@ -216,7 +216,7 @@ if ($_POST['form_save'] && $_GET['mode'] != "user") {
       foreach ($grparr as $fldid => $fldarr) {
         list($fldname, $fldtype, $flddef, $flddesc) = $fldarr;
         if($fldtype == 'pwd') {
-          $pass = sqlQuery("SELECT gl_value FROM globals WHERE gl_name = '$fldid'");
+          $pass = sqlQuery("SELECT gl_value FROM globals WHERE gl_name = ?", array($fldid) );
           $fldvalueold = $pass['gl_value'];
         }
         if (!is_array($fldtype) && substr($fldtype, 0, 2) == 'm_') {
@@ -270,9 +270,9 @@ if ($_POST['form_save'] && $_GET['mode'] != "user") {
 
 <link rel="stylesheet" href='<?php  echo $css_header ?>' type='text/css'>
 <?php if ($_GET['mode'] == "user") { ?>
-  <title><?php  xl('User Settings','e'); ?></title>
+  <title><?php echo xlt('User Settings'); ?></title>
 <?php } else { ?>
-  <title><?php  xl('Global Settings','e'); ?></title>
+  <title><?php echo xlt('Global Settings'); ?></title>
 <?php } ?>
 
 <style>
@@ -329,7 +329,7 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
   if ( $_GET['mode'] != "user" || ($_GET['mode'] == "user" && in_array($grpname, $USER_SPECIFIC_TABS)) ) {
     echo " <li" . ($i ? "" : " class='current'") .
       "><a href='/play/javascript-tabbed-navigation/'>" .
-      xl($grpname) . "</a></li>\n";
+      xlt($grpname) . "</a></li>\n";
     ++$i;
   }
 }
@@ -383,7 +383,7 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
       }
     }
 
-    echo " <tr title='$flddesc'><td valign='top'><b>$fldname </b></td><td valign='top'>\n";
+    echo " <tr title='" . attr($flddesc) . "'><td valign='top'><b>" . text($fldname) . " </b></td><td valign='top'>\n";
 
     if (is_array($fldtype)) {
       echo "  <select name='form_$i' id='form_$i'>\n";
@@ -391,10 +391,10 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
         if ($_GET['mode'] == "user") {
           if ($globalValue == $key) $globalTitle = $value;
         }
-        echo "   <option value='$key'";
+        echo "   <option value='" . attr($key) . "'";
         if ($key == $fldvalue) echo " selected";
         echo ">";
-        echo $value;
+        echo text($value);
         echo "</option>\n";
       }
       echo "  </select>\n";
@@ -449,10 +449,10 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
       $res = sqlStatement("SELECT * FROM lang_languages ORDER BY lang_description");
       echo "  <select name='form_$i' id='form_$i'>\n";
       while ($row = sqlFetchArray($res)) {
-        echo "   <option value='" . $row['lang_description'] . "'";
+        echo "   <option value='" . attr($row['lang_description']) . "'";
         if ($row['lang_description'] == $fldvalue) echo " selected";
         echo ">";
-        echo xl($row['lang_description']);
+        echo xlt($row['lang_description']);
         echo "</option>\n";
       }
       echo "  </select>\n";
@@ -522,10 +522,10 @@ foreach ($GLOBALS_METADATA as $grpname => $grparr) {
     }
     if ($_GET['mode'] == "user") {
       echo " </td>\n";
-      echo "<td align='center' style='color:red;'>" . $globalTitle . "</td>\n";
+      echo "<td align='center' style='color:red;'>" . text($globalTitle) . "</td>\n";
       echo "<td>&nbsp</td>";
       echo "<td align='center'><input type='checkbox' value='YES' name='toggle_" . $i . "' id='toggle_" . $i . "' " . $settingDefault . "/></td>\n";
-      echo "<input type='hidden' id='globaldefault_" . $i . "' value='" . $globalValue . "'>\n";
+      echo "<input type='hidden' id='globaldefault_" . $i . "' value='" . attr($globalValue) . "'>\n";
       echo "</tr>\n";
     }
     else {
