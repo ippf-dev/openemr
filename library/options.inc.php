@@ -3245,7 +3245,7 @@ function dropdown_facility($selected = '', $name = 'form_facility', $allow_unspe
   $fres = sqlStatement($query);
 
   $name = htmlspecialchars($name, ENT_QUOTES);
-  echo "   <select name='$name' id='$name'";
+  echo "   <select name='" . attr($name) . "' id='" . attr($name) . "'";
   if ($onchange) echo " onchange='$onchange'";
   echo " $disabled>\n";
 
