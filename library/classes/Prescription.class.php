@@ -622,10 +622,9 @@ class Prescription extends ORDataObject {
         $prescriptions = array();
         require_once (dirname(__FILE__) . "/../translation.inc.php");
         $p = new Prescription();
-        $sql = "SELECT id FROM  " . $p->_table . " WHERE patient_id = " .
-                add_escape_custom($patient_id) .
+        $sql = "SELECT id FROM  " . $p->_table . " WHERE patient_id = ?" .
                 " ORDER BY " . add_escape_custom($order_by);
-        $results = sqlQ($sql);
+        $results = sqlQ($sql, array($patient_id));
         while ($row = sqlFetchArray($results) ) {
             $prescriptions[] = new Prescription($row['id']);
         }

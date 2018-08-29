@@ -19,3 +19,17 @@ function check_file_dir_name($label) {
     die(xlt("ERROR: The following variable contains invalid characters").": ". attr($label));
   }
 }
+
+// Sanitize a value to ensure it is a number.
+function sanitizeNumber($number)
+{
+    $clean_number = $number +0 ;
+
+    if ($clean_number==$number){
+        return $clean_number;
+    }
+    else {
+        error_log('Custom validation error: Parameter contains non-numeric value (A numeric value expected)');
+        return 0;
+    }
+}

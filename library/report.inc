@@ -289,8 +289,8 @@ function printPatientBilling($pid, $with_products=false) {
 
 function getPatientBillingEncounter($pid, $encounter, $with_products=false) {
   $erow = sqlQuery("SELECT provider_id FROM form_encounter WHERE " .
-    "pid = '$pid' AND encounter = '$encounter' " .
-    "ORDER BY id DESC LIMIT 1");
+    "pid = ? AND encounter = ? " .
+    "ORDER BY id DESC LIMIT 1", array($pid, $encounter));
   $inv_provider = $erow['provider_id'] + 0;
 	$sql = "SELECT b.*, u.id, u.fname, u.mname, u.lname, " .
     "CONCAT(u.fname,' ', u.lname) AS provider_name, u.federaltaxid " .
