@@ -1,7 +1,7 @@
 <?php
-include_once("../globals.php");
-include_once("$srcdir/log.inc");
-include_once("$srcdir/formdata.inc.php");
+require_once("../globals.php");
+require_once("$srcdir/log.inc");
+require_once("$srcdir/formdata.inc.php");
 require_once("$srcdir/formatting.inc.php");
 if ($_REQUEST['form_csvexport']) {
   header("Pragma: public");
@@ -87,7 +87,7 @@ function submitList(offset) {
 </script>
 </head>
 <body class="body_top">
-<font class="title"><?php  xl('Logs Viewer','e'); ?></font>
+<font class="title"><?php echo xlt('Logs Viewer'); ?></font>
 <br>
 <?php 
 
@@ -109,7 +109,7 @@ if ($start_date && $end_date)
 {
 	if($start_date > $end_date){
                 if (!$_REQUEST['form_csvexport']) {
-                    echo "<table><tr class='alert'><td colspan=7>"; xl('Start Date should not be greater than End Date',e);
+                    echo "<table><tr class='alert'><td colspan=7>"; echo xlt('Start Date should not be greater than End Date');
                     echo "</td></tr></table>"; 
                 }
 		$err_message=1;	
@@ -149,43 +149,43 @@ if (!$_REQUEST['form_csvexport']) {
   $fend = $fstart + $pagesize;
   if ($fend > $count) $fend = $count;
 ?>
-<input type="hidden" name="sortby" id="sortby" value="<?php echo $sortby; ?>">
-<input type=hidden name=csum value="">
+<input type="hidden" name="sortby" id="sortby" value="<?php echo attr($sortby); ?>">
+<input type='hidden' name='csum' value="">
 <table>
 <tr><td>
-<span class="text"><?php  xl('Start Date','e'); ?>: </span>
+<span class="text"><?php echo xlt('Start Date'); ?>: </span>
 </td><td>
-<input type="text" size="10" name="start_date" id="start_date" value="<?php echo $start_date ? substr($start_date, 0, 10) : date('Y-m-d'); ?>" title="<?php  xl('yyyy-mm-dd Date of service','e'); ?>" onkeyup="datekeyup(this,mypcc)" onblur="dateblur(this,mypcc)" />
-<img src="../pic/show_calendar.gif" align="absbottom" width="24" height="22" id="img_begin_date" border="0" alt="[?]" style="cursor: pointer; cursor: hand" title="<?php  xl('Click here to choose a date','e'); ?>">&nbsp;
+<input type="text" size="10" name="start_date" id="start_date" value="<?php echo attr($start_date ? substr($start_date, 0, 10) : date('Y-m-d')); ?>" title="<?php echo xla('yyyy-mm-dd Date of service'); ?>" onkeyup="datekeyup(this,mypcc)" onblur="dateblur(this,mypcc)" />
+<img src="../pic/show_calendar.gif" align="absbottom" width="24" height="22" id="img_begin_date" border="0" alt="[?]" style="cursor: pointer; cursor: hand" title="<?php echo xla('Click here to choose a date'); ?>">&nbsp;
 </td>
 <td>
-<span class="text"><?php  xl('End Date','e'); ?>: </span>
+<span class="text"><?php echo xlt('End Date'); ?>: </span>
 </td><td>
-<input type="text" size="10" name="end_date" id="end_date" value="<?php echo $end_date ? substr($end_date, 0, 10) : date('Y-m-d'); ?>" title="<?php  xl('yyyy-mm-dd Date of service','e'); ?>" onkeyup="datekeyup(this,mypcc)" onblur="dateblur(this,mypcc)" />
-<img src="../pic/show_calendar.gif" align="absbottom" width="24" height="22" id="img_end_date" border="0" alt="[?]" style="cursor: pointer; cursor: hand" title="<?php  xl('Click here to choose a date','e'); ?>">&nbsp;
+<input type="text" size="10" name="end_date" id="end_date" value="<?php echo attr($end_date ? substr($end_date, 0, 10) : date('Y-m-d')); ?>" title="<?php echo xla('yyyy-mm-dd Date of service'); ?>" onkeyup="datekeyup(this,mypcc)" onblur="dateblur(this,mypcc)" />
+<img src="../pic/show_calendar.gif" align="absbottom" width="24" height="22" id="img_end_date" border="0" alt="[?]" style="cursor: pointer; cursor: hand" title="<?php echo xla('Click here to choose a date'); ?>">&nbsp;
 </td>
 <!--VicarePlus :: Feature For Generating Log For The Selected Patient -->
 <td>
-&nbsp;&nbsp;<span class='text'><?php echo htmlspecialchars(xl('Patient'),ENT_NOQUOTES); ?>: </span>
+&nbsp;&nbsp;<span class='text'><?php echo xlt('Patient'); ?>: </span>
 </td>
 <td>
-<input type='text' size='20' name='form_patient' style='width:100%;cursor:pointer;cursor:hand' value='<?php echo $form_patient ? $form_patient : htmlspecialchars(xl('Click To Select'),ENT_QUOTES); ?>' onclick='sel_patient()' title='<?php echo htmlspecialchars(xl('Click to select patient'),ENT_QUOTES); ?>' />
-<input type='hidden' name='form_pid' value='<?php echo $form_pid; ?>' />
+<input type='text' size='20' name='form_patient' style='width:100%;cursor:pointer;cursor:hand' value='<?php echo attr($form_patient ? $form_patient : xla('Click To Select')); ?>' onclick='sel_patient()' title='<?php echo xla('Click to select patient'); ?>' />
+<input type='hidden' name='form_pid' value='<?php echo attr($form_pid); ?>' />
 </td>
 </tr>
 <tr><td>
-<span class='text'><?php  xl('User','e'); ?>: </span>
+<span class='text'><?php echo xlt('User'); ?>: </span>
 </td>
 <td>
 <?php
 echo "<select name='form_user'>\n";
-echo " <option value=''>" . xl('All') . "</option>\n";
+echo " <option value=''>" . xlt('All') . "</option>\n";
 while ($urow = sqlFetchArray($ures)) {
   if (!trim($urow['username'])) continue;
-  echo " <option value='" . $urow['username'] . "'";
+  echo " <option value='" . attr($urow['username']) . "'";
   if ($urow['username'] == $form_user) echo " selected";
-  echo ">" . $urow['lname'];
-  if ($urow['fname']) echo ", " . $urow['fname'];
+  echo ">" . text($urow['lname']);
+  if ($urow['fname']) echo text(", " . $urow['fname']);
   echo "</option>\n";
 }
 echo "</select>\n";
@@ -193,7 +193,7 @@ echo "</select>\n";
 </td>
 <td>
 <!-- list of events name -->
-<span class='text'><?php  xl('Name of Events','e'); ?>: </span>
+<span class='text'><?php echo xlt('Name of Events'); ?>: </span>
 </td>
 <td>
 <?php 
@@ -230,11 +230,11 @@ $ename_list=array_unique($ename_list);
 $ename_list=array_merge($ename_list);
 $ecount=count($ename_list);
 echo "<select name='eventname' onchange='eventTypeChange(this.options[this.selectedIndex].value);'>\n";
-echo " <option value=''>" . xl('All') . "</option>\n";
+echo " <option value=''>" . xlt('All') . "</option>\n";
 for($k=0;$k<$ecount;$k++) {
-echo " <option value='" .$ename_list[$k]. "'";
+echo " <option value='" . attr($ename_list[$k]) . "'";
   if ($ename_list[$k] == $eventname && $ename_list[$k]!= "") echo " selected";
-  echo ">" . $ename_list[$k];
+  echo ">" . text($ename_list[$k]);
   echo "</option>\n";
 }
 echo "</select>\n"; 
@@ -242,23 +242,23 @@ echo "</select>\n";
 </td>
 <!-- type of events ends  -->
 <td>
-&nbsp;&nbsp;<span class='text'><?php  xl('Type of Events','e'); ?>: </span>
+&nbsp;&nbsp;<span class='text'><?php echo xlt('Type of Events'); ?>: </span>
 </td><td>
 <?php 
 $event_types=array("select", "update", "insert", "delete", "replace");
 $lcount=count($event_types);
 if($eventname=="disclosure"){
  echo "<select name='type_event' disabled='disabled'>\n";
- echo " <option value=''>" . xl('All') . "</option>\n";
+ echo " <option value=''>" . xlt('All') . "</option>\n";
  echo "</option>\n";
 }
 else{
   echo "<select name='type_event'>\n";}
-  echo " <option value=''>" . xl('All') . "</option>\n";
+  echo " <option value=''>" . xlt('All') . "</option>\n";
   for($k=0;$k<$lcount;$k++) {
-  echo " <option value='" .$event_types[$k]. "'";
+  echo " <option value='" . attr($event_types[$k]) . "'";
   if ($event_types[$k] == $type_event && $event_types[$k]!= "") echo " selected";
-  echo ">" . $event_types[$k];
+  echo ">" . text($event_types[$k]);
   echo "</option>\n";
 }
 echo "</select>\n";
@@ -277,16 +277,16 @@ echo "   <select name='form_facility'>\n";
 echo "    <option value=''>-- " . xlt('All Facilities') . " --</option>\n";
 while ($frow = sqlFetchArray($fres)) {
   $facid = $frow['id'];
-  echo "    <option value='$facid'";
+  echo "    <option value='" . attr($facid) . "'";
   if ($facid == $form_facility) echo " selected";
-  echo ">" . $frow['name'] . "</option>\n";
+  echo ">" . text($frow['name']) . "</option>\n";
 }
 echo "   </select>\n";
 ?>
   </td>
 
 <td>
-<span class='text'><?php xl('Include Checksum','e'); ?>: </span>
+<span class='text'><?php echo xlt('Include Checksum'); ?>: </span>
 </td><td>
 <?php
 
@@ -295,11 +295,11 @@ $check_sum = formData('check_sum','G');
 <input type="checkbox" name="check_sum" " <?php if ($check_sum == 'on') echo "checked";  ?>"></input>
 </td>
 <td>
-<input type=hidden name="event" value=<?php echo $event ; ?>>
-<a href="javascript:document.theform.submit();" class='link_submit'>[<?php  xl('Refresh','e'); ?>]</a>
+<input type="hidden" name="event" value="<?php echo attr($event); ?>">
+<a href="javascript:document.theform.submit();" class='link_submit'>[<?php echo xlt('Refresh'); ?>]</a>
 </td>
 <td>
-    <input type='submit' name='form_csvexport' value="<?php xl('Export to CSV','e') ?>" />
+    <input type='submit' name='form_csvexport' value="<?php echo xla('Export to CSV') ?>" />
 </td>
 </tr>
 <tr>
@@ -312,13 +312,13 @@ $check_sum = formData('check_sum','G');
  </a>
  &nbsp;&nbsp;
 <?php } ?>
- <?php echo ($fstart + 1) . " - $fend " . xl('of') . " $count"; ?>
+ <?php echo text(($fstart + 1) . " - $fend " . xl('of') . " $count"); ?>
  &nbsp;&nbsp;
  <a href="javascript:submitList(<?php echo $pagesize; ?>)">
   &gt;&gt;
  </a>
 <?php } ?>
- <input type='hidden' name='fstart' value='<?php echo $fstart ?>'>
+ <input type='hidden' name='fstart' value='<?php echo attr($fstart); ?>'>
 
 </td>
 </tr>
@@ -328,35 +328,35 @@ $check_sum = formData('check_sum','G');
 <?php if ($start_date && $end_date && $err_message!=1) { 
       if ($_REQUEST['form_csvexport']) {
     // CSV headers:
-    echo '"' . xl('Date'    ) . '",';
-    echo '"' . xl('Event'   ) . '",';
-    echo '"' . xl('User'    ) . '",';
-    echo '"' . xl('Facility') . '",';
+    echo '"' . xla('Date'    ) . '",';
+    echo '"' . xla('Event'   ) . '",';
+    echo '"' . xla('User'    ) . '",';
+    echo '"' . xla('Facility') . '",';
     if (empty($GLOBALS['disable_non_default_groups'])) {
-      echo '"' . xl('Group'   ) . '",';
+      echo '"' . xla('Group'   ) . '",';
     }
-    echo '"' . xl('Comments') . '"' . "\n";
+    echo '"' . xla('Comments') . '"' . "\n";
   }
   else { // not export
 ?>
 <div id="logview">
 <table>
  <tr>
-  <!-- <TH><?php  xl('Date', 'e'); ?><TD> -->
-  <th id="sortby_date" class="text" title="<?php xl('Sort by date/time','e'); ?>"><?php xl('Date','e'); ?></th>
-  <th id="sortby_event" class="text" title="<?php xl('Sort by Event','e'); ?>"><?php  xl('Event','e'); ?></th>
-  <th id="sortby_user" class="text" title="<?php xl('Sort by User','e'); ?>"><?php  xl('User','e'); ?></th>
-  <th id="sortby_facility" class="text" title="<?php echo xla('Sort by Facility'); ?>"><?php echo xlt('Facility'); ?></th>
-  <th id="sortby_cuser" class="text" title="<?php xl('Sort by Crt User','e'); ?>"><?php  xl('Certificate User','e'); ?></th>
-  <th id="sortby_group" class="text" title="<?php xl('Sort by Group','e'); ?>"><?php  xl('Group','e'); ?></th>
-  <th id="sortby_pid" class="text" title="<?php xl('Sort by PatientID','e'); ?>"><?php  xl('PatientID','e'); ?></th>
-  <th id="sortby_success" class="text" title="<?php xl('Sort by Success','e'); ?>"><?php  xl('Success','e'); ?></th>
-  <th id="sortby_comments" class="text" title="<?php xl('Sort by Comments','e'); ?>"><?php  xl('Comments','e'); ?></th>
+  <!-- <TH><?php echo xlt('Date'); ?><TD> -->
+  <th id="sortby_date"     class="text" title="<?php echo xla('Sort by date/time'); ?>"><?php echo xlt('Date'            ); ?></th>
+  <th id="sortby_event"    class="text" title="<?php echo xla('Sort by Event'    ); ?>"><?php echo xlt('Event'           ); ?></th>
+  <th id="sortby_user"     class="text" title="<?php echo xla('Sort by User'     ); ?>"><?php echo xlt('User'            ); ?></th>
+  <th id="sortby_facility" class="text" title="<?php echo xla('Sort by Facility' ); ?>"><?php echo xlt('Facility'        ); ?></th>
+  <th id="sortby_cuser"    class="text" title="<?php echo xla('Sort by Crt User' ); ?>"><?php echo xlt('Certificate User'); ?></th>
+  <th id="sortby_group"    class="text" title="<?php echo xla('Sort by Group'    ); ?>"><?php echo xlt('Group'           ); ?></th>
+  <th id="sortby_pid"      class="text" title="<?php echo xla('Sort by PatientID'); ?>"><?php echo xlt('PatientID'       ); ?></th>
+  <th id="sortby_success"  class="text" title="<?php echo xla('Sort by Success'  ); ?>"><?php echo xlt('Success'         ); ?></th>
+  <th id="sortby_comments" class="text" title="<?php echo xla('Sort by Comments' ); ?>"><?php echo xlt('Comments'        ); ?></th>
  <?php  if($check_sum) {?>
-  <th id="sortby_checksum" class="text" title="<?php xl('Sort by Checksum','e'); ?>"><?php  xl('Checksum','e'); ?></th>
+  <th id="sortby_checksum" class="text" title="<?php echo xla('Sort by Checksum' ); ?>"><?php echo xlt('Checksum'        ); ?></th>
   <?php } ?>
  </tr>
-<input type=hidden name=event value=<?php echo $eventname."-".$type_event ?>>
+<input type='hidden' name='event' value=<?php echo attr($eventname . "-" . $type_event); ?>>
 <?php
   } // End NOT CSV Export
 $eventname = formData('eventname','G');
@@ -401,13 +401,13 @@ if ($ret = getEvents(array(
     //
     if ($_REQUEST['form_csvexport']) {
       echo '"' . oeFormatShortDate(substr($iter["date"], 0, 10)) . substr($iter["date"], 10) . '",';
-      echo '"' . xl($iter["event"]    ) . '",';
-      echo '"' . $iter["user"] . '",';
-      echo '"' . $iter["name"] . '",'; // facility name
+      echo '"' . xla($iter["event"]    ) . '",';
+      echo '"' . attr($iter["user"]) . '",';
+      echo '"' . attr($iter["name"]) . '",'; // facility name
       if (empty($GLOBALS['disable_non_default_groups'])) {
-        echo '"' . $iter["groupname"] . '",';
+        echo '"' . attr($iter["groupname"]) . '",';
       }
-      echo '"' . $trans_comments . '"' . "\n";
+      echo '"' . attr($trans_comments) . '"' . "\n";
     }
     else { // not export
 ?>
@@ -456,7 +456,7 @@ if ($eventname == "disclosure" || $gev == "") {
   <TD class="text"><?php echo text($iter["success"]); ?></TD>
   <TD class="text"><?php echo text($comments); ?></TD>
   <?php  if($check_sum) { ?>
-  <TD class="text"><?php echo htmlspecialchars($iter["checksum"],ENT_NOQUOTES);?></TD>
+  <TD class="text"><?php echo text($iter["checksum"],ENT_NOQUOTES);?></TD>
   <?php } ?>
  </TR>
 <?php
