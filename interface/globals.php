@@ -207,7 +207,8 @@ if (!empty($glrow)) {
       $GLOBALS['language_menu_show'][] = $gl_value;
     }
     else if ($gl_name == 'css_header') {
-        $GLOBALS[$gl_name] = $rootdir.'/themes/'. $gl_value;
+      //Escape css file name using 'attr' for security (prevent XSS).
+      $GLOBALS[$gl_name] = $rootdir.'/themes/'.attr($gl_value).'?v='.$v_js_includes;
         $temp_css_theme_name = $gl_value;
     }
     else if ($gl_name == 'specific_application') {
