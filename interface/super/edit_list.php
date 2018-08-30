@@ -342,21 +342,18 @@ else if ($_POST['formaction']=='addlist') {
 
     // add the new list to the list-of-lists
     sqlInsert("INSERT INTO list_options ( " .
-                "list_id, option_id, title, seq, is_default, option_value " .
-                ") VALUES ( " .
-                "'lists',". // the master list-of-lists
-                "'".$newlistID."',".
-                "'".$_POST['newlistname']."', ".
-                "'".($row['maxseq']+1)."',".
-                "'1', '0')"
-                );
+        "list_id, option_id, title, seq, is_default, option_value " .
+        ") VALUES ( 'lists', ?, ?, ?, '1', '0')",
+        array($newlistID, $_POST['newlistname'], ($row['maxseq'] + 1))
+    );
     newEvent("add_list", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "List = $newlistID");    
 }
 else if ($_POST['formaction']=='deletelist') {
     // delete the lists options
     sqlStatement("DELETE FROM list_options WHERE list_id = '".$_POST['list_id']."'");
     // delete the list from the master list-of-lists
-    sqlStatement("DELETE FROM list_options WHERE list_id = 'lists' and option_id='".$_POST['list_id']."'");
+    sqlStatement("DELETE FROM list_options WHERE list_id = 'lists' and option_id = ?",
+      array($_POST['list_id']));
     newEvent("delete_list", $_SESSION['authUser'], $_SESSION['authProvider'], 1, "List = " . $_POST['list_id']);    
 }
 
