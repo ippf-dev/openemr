@@ -1,17 +1,22 @@
 <?php
-// Copyright (C) 2007-2011 Rod Roark <rod@sunsetsystems.com>
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+/**
+ * letter.php
+ *
+ * @package   OpenEMR
+ * @link      http://www.open-emr.org
+ * @author    Rod Roark <rod@sunsetsystems.com>
+ * @author    Brady Miller <brady.g.miller@gmail.com>
+ * @copyright Copyright (c) 2007-2011 Rod Roark <rod@sunsetsystems.com>
+ * @copyright Copyright (c) 2018 Brady Miller <brady.g.miller@gmail.com>
+ * @license   https://github.com/openemr/openemr/blob/master/LICENSE GNU General Public License 3
+ */
+
+require_once("../globals.php");
+require_once($GLOBALS['srcdir'] . "/patient.inc");
 
 // Undo magic quotes and do not allow fake register globals.
 $sanitize_all_escapes  = true;
 $fake_register_globals = false;
-
-include_once("../globals.php");
-include_once($GLOBALS['srcdir'] . "/patient.inc");
 
 $template_dir = $GLOBALS['OE_SITE_DIR'] . "/letter_templates";
 
@@ -190,7 +195,10 @@ if ($_POST['formaction']=="generate") {
 else if (isset($_GET['template']) && $_GET['template'] != "") {
     // utilized to go back to autosaved template
     $bodytext = "";
-    $fh = fopen("$template_dir/".$_GET['template'], 'r');
+    $fh = fopen("$template_dir/" . convert_safe_file_dir_name($_GET['template']), 'r');
+    if (!$fh) {
+        die(xlt("Requested template does not exist"));
+    }
     while (!feof($fh)) $bodytext.= fread($fh, 8192);
     fclose($fh);
     // translate from constant to the definition
@@ -200,7 +208,10 @@ else if (isset($_GET['template']) && $_GET['template'] != "") {
 }
 else if ($_POST['formaction'] == "loadtemplate" && $_POST['form_template'] != "") {
     $bodytext = "";
-    $fh = fopen("$template_dir/".$_POST['form_template'], 'r');
+    $fh = fopen("$template_dir/" . convert_safe_file_dir_name($_POST['form_template']), 'r');
+    if (!$fh) {
+        die(xlt("Requested template does not exist"));
+    }
     while (!feof($fh)) $bodytext.= fread($fh, 8192);
     fclose($fh);
     // translate from constant to the definition
@@ -210,7 +221,10 @@ else if ($_POST['formaction'] == "loadtemplate" && $_POST['form_template'] != ""
 }
 else if ($_POST['formaction'] == "newtemplate" && $_POST['newtemplatename'] != "") {
     // attempt to save the template
-    $fh = fopen("$template_dir/".$_POST['newtemplatename'], 'w');
+    $fh = fopen("$template_dir/" . convert_safe_file_dir_name($_POST['newtemplatename']), 'w');
+    if (!$fh) {
+        die(xlt("Requested template does not exist"));
+    }
     // translate from definition to the constant
     $temp_bodytext = $_POST['form_body'];
     foreach ($FIELD_TAG as $key => $value) {
@@ -224,7 +238,10 @@ else if ($_POST['formaction'] == "newtemplate" && $_POST['newtemplatename'] != "
 
     // read the saved file back
     $_POST['form_template'] = $_POST['newtemplatename'];
-    $fh = fopen("$template_dir/".$_POST['form_template'], 'r');
+    $fh = fopen("$template_dir/" . convert_safe_file_dir_name($_POST['form_template']), 'r');
+    if (!$fh) {
+        die(xlt("Requested template does not exist"));
+    }
     while (!feof($fh)) $bodytext.= fread($fh, 8192);
     fclose($fh);
     // translate from constant to the definition
@@ -234,7 +251,10 @@ else if ($_POST['formaction'] == "newtemplate" && $_POST['newtemplatename'] != "
 }
 else if ($_POST['formaction'] == "savetemplate" && $_POST['form_template'] != "") {
     // attempt to save the template
-    $fh = fopen("$template_dir/".$_POST['form_template'], 'w');
+    $fh = fopen("$template_dir/" . convert_safe_file_dir_name($_POST['form_template']), 'w');
+    if (!$fh) {
+        die(xlt("Requested template does not exist"));
+    }
     // translate from definition to the constant
     $temp_bodytext = $_POST['form_body'];
     foreach ($FIELD_TAG as $key => $value) {
@@ -247,7 +267,10 @@ else if ($_POST['formaction'] == "savetemplate" && $_POST['form_template'] != ""
     fclose($fh);
 
     // read the saved file back
-    $fh = fopen("$template_dir/".$_POST['form_template'], 'r');
+    $fh = fopen("$template_dir/" . convert_safe_file_dir_name($_POST['form_template']), 'r');
+    if (!$fh) {
+        die(xlt("Requested template does not exist"));
+    }
     while (!feof($fh)) $bodytext.= fread($fh, 8192);
     fclose($fh);
     // translate from constant to the definition

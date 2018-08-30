@@ -471,11 +471,11 @@ if ($INTEGRATED_AR) {
   echo "  <td>\n";
   $insurancei = getInsuranceProviders();
   echo "   <select name='form_payer_id'>\n";
-  echo "    <option value='0'>-- " . xl('Patient') . " --</option>\n";
+  echo "    <option value='0'>-- " . xlt('Patient') . " --</option>\n";
   foreach ($insurancei as $iid => $iname) {
-    echo "<option value='$iid'";
+    echo "<option value='" . attr($iid) . "'";
     if ($iid == $_POST['form_payer_id']) echo " selected";
-    echo ">" . $iname . "</option>\n";
+    echo ">" . text($iname) . "</option>\n";
   }
   echo "   </select>\n";
   echo "  </td>\n";
@@ -486,38 +486,38 @@ if ($INTEGRATED_AR) {
    <?php xl('Source:','e'); ?>
   </td>
   <td>
-   <input type='text' name='form_source' size='10' value='<?php echo $_POST['form_source']; ?>'
-    title='<?php xl("A check number or claim number to identify the payment","e"); ?>'>
+   <input type='text' name='form_source' size='10' value='<?php echo attr($_POST['form_source']); ?>'
+    title='<?php echo xla("A check number or claim number to identify the payment"); ?>'>
   </td>
   <td>
    <?php xl('Pay Date:','e'); ?>
   </td>
   <td>
-   <input type='text' name='form_paydate' size='10' value='<?php echo $_POST['form_paydate']; ?>'
+   <input type='text' name='form_paydate' size='10' value='<?php echo attr($_POST['form_paydate']); ?>'
     onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'
-    title='<?php xl("Date of payment yyyy-mm-dd","e"); ?>'>
+    title='<?php echo xla("Date of payment yyyy-mm-dd"); ?>'>
   </td>
 
 <?php if ($INTEGRATED_AR) { // include deposit date ?>
   <td>
-   <?php xl('Deposit Date:','e'); ?>
+   <?php echo xlt('Deposit Date:'); ?>
   </td>
   <td>
-   <input type='text' name='form_deposit_date' size='10' value='<?php echo $_POST['form_deposit_date']; ?>'
+   <input type='text' name='form_deposit_date' size='10' value='<?php echo attr($_POST['form_deposit_date']); ?>'
     onkeyup='datekeyup(this,mypcc)' onblur='dateblur(this,mypcc)'
-    title='<?php xl("Date of bank deposit yyyy-mm-dd","e"); ?>'>
+    title='<?php echo xla("Date of bank deposit yyyy-mm-dd"); ?>'>
   </td>
 <?php } ?>
 
   <td>
-   <?php xl('Amount:','e'); ?>
+   <?php echo xlt('Amount') . ':'; ?>
   </td>
   <td>
-   <input type='text' name='form_amount' size='10' value='<?php echo $_POST['form_amount']; ?>'
-    title='<?php xl("Paid amount that you will allocate","e"); ?>'>
+   <input type='text' name='form_amount' size='10' value='<?php echo attr($_POST['form_amount']); ?>'
+    title='<?php echo xla("Paid amount that you will allocate"); ?>'>
   </td>
   <td align='right'>
-   <a href='sl_eob_help.php' target='_blank'><?php xl('Help','e'); ?></a>
+   <a href='sl_eob_help.php' target='_blank'><?php echo xlt('Help'); ?></a>
   </td>
 
  </tr>
@@ -527,60 +527,60 @@ if ($INTEGRATED_AR) {
 
  <tr bgcolor='#ddddff'>
   <td>
-   <?php xl('Name:','e'); ?>
+   <?php echo xlt('Name') . ':'; ?>
   </td>
   <td>
-   <input type='text' name='form_name' size='10' value='<?php echo $_POST['form_name']; ?>'
-    title='<?php xl("Any part of the patient name, or \"last,first\", or \"X-Y\"","e"); ?>'>
+   <input type='text' name='form_name' size='10' value='<?php echo attr($_POST['form_name']); ?>'
+    title='<?php echo xla("Any part of the patient name, or \"last,first\", or \"X-Y\""); ?>'>
   </td>
   <td>
-   <?php xl('Chart ID:','e'); ?>
+   <?php echo xlt('Chart ID') . ':'; ?>
   </td>
   <td>
-   <input type='text' name='form_pid' size='10' value='<?php echo $_POST['form_pid']; ?>'
-    title='<?php xl("Patient chart ID","e"); ?>'>
+   <input type='text' name='form_pid' size='10' value='<?php echo attr($_POST['form_pid']); ?>'
+    title='<?php echo xla("Patient chart ID"); ?>'>
   </td>
   <td>
-   <?php xl('Encounter:','e'); ?>
+   <?php echo xlt('Encounter'); ?>:
   </td>
   <td>
-   <input type='text' name='form_encounter' size='10' value='<?php echo $_POST['form_encounter']; ?>'
-    title='<?php xl("Encounter number","e"); ?>'>
+   <input type='text' name='form_encounter' size='10' value='<?php echo attr($_POST['form_encounter']); ?>'
+    title='<?php echo xla("Encounter number"); ?>'>
   </td>
   <td>
-   <?php xl('Svc Date:','e'); ?>
+   <?php echo xlt('Svc Date'); ?>:
   </td>
   <td>
-   <input type='text' name='form_date' size='10' value='<?php echo $_POST['form_date']; ?>'
-    title='<?php xl("Date of service mm/dd/yyyy","e"); ?>'>
+   <input type='text' name='form_date' size='10' value='<?php echo attr($_POST['form_date']); ?>'
+    title='<?php echo xla("Date of service mm/dd/yyyy"); ?>'>
   </td>
   <td>
-   <?php xl('To:','e'); ?>
+   <?php echo xlt('To'); ?>:
   </td>
   <td>
-   <input type='text' name='form_to_date' size='10' value='<?php echo $_POST['form_to_date']; ?>'
-    title='<?php xl("Ending DOS mm/dd/yyyy if you wish to enter a range","e"); ?>'>
+   <input type='text' name='form_to_date' size='10' value='<?php echo attr($_POST['form_to_date']); ?>'
+    title='<?php echo xla("Ending DOS mm/dd/yyyy if you wish to enter a range"); ?>'>
   </td>
   <td>
    <select name='form_category'>
 <?php
  foreach (array(xl('Open'), xl('All'), xl('Due Pt'), xl('Due Ins')) as $value) {
-  echo "    <option value='$value'";
+  echo "    <option value='" . attr($value) . "'";
   if ($_POST['form_category'] == $value) echo " selected";
-  echo ">$value</option>\n";
+  echo ">" . text($value) . "</option>\n";
  }
 ?>
    </select>
   </td>
   <td>
-   <input type='submit' name='form_search' value='<?php xl("Search","e"); ?>'>
+   <input type='submit' name='form_search' value='<?php echo xla("Search"); ?>'>
   </td>
  </tr>
 
  <!-- Support for X12 835 upload -->
  <tr bgcolor='#ddddff'>
   <td colspan='12'>
-   <?php xl('Or upload ERA file:','e'); ?>
+   <?php echo xlt('Or upload ERA file'); ?>:
    <input type="hidden" name="MAX_FILE_SIZE" value="5000000" />
    <input name="form_erafile" type="file" />
   </td>
@@ -672,7 +672,7 @@ if ($_POST['form_search'] || $_POST['form_print']) {
       }
       if (! $where) {
         if ($_POST['form_category'] == 'All') {
-          die(xl("At least one search parameter is required if you select All."));
+          die(xlt("At least one search parameter is required if you select All."));
         } else {
           $where = "1 = 1";
         }
@@ -823,35 +823,35 @@ if ($_POST['form_search'] || $_POST['form_print']) {
 
  <tr bgcolor="#dddddd">
   <td class="dehead">
-   &nbsp;<?php xl('Patient','e'); ?>
+   &nbsp;<?php echo xlt('Patient'); ?>
   </td>
   <td class="dehead">
-   &nbsp;<?php xl('Invoice','e'); ?>
+   &nbsp;<?php echo xlt('Invoice'); ?>
   </td>
   <td class="dehead">
-   &nbsp;<?php xl('Svc Date','e'); ?>
+   &nbsp;<?php echo xlt('Svc Date'); ?>
   </td>
   <td class="dehead">
-   &nbsp;<?php xl($INTEGRATED_AR ? 'Last Stmt' : 'Due Date','e'); ?>
+   &nbsp;<?php echo xlt($INTEGRATED_AR ? 'Last Stmt' : 'Due Date'); ?>
   </td>
   <td class="dehead" align="right">
-   <?php xl('Charge','e'); ?>&nbsp;
+   <?php echo xlt('Charge'); ?>&nbsp;
   </td>
   <td class="dehead" align="right">
-   <?php xl('Adjust','e'); ?>&nbsp;
+   <?php echo xlt('Adjust'); ?>&nbsp;
   </td>
   <td class="dehead" align="right">
-   <?php xl('Paid','e'); ?>&nbsp;
+   <?php echo xlt('Paid'); ?>&nbsp;
   </td>
   <td class="dehead" align="right">
-   <?php xl('Balance','e'); ?>&nbsp;
+   <?php echo xlt('Balance'); ?>&nbsp;
   </td>
   <td class="dehead" align="center">
-   <?php xl('Prv','e'); ?>
+   <?php echo xlt('Prv'); ?>
   </td>
 <?php if (!$eracount) { ?>
   <td class="dehead" align="left">
-   <?php xl('Sel','e'); ?>
+   <?php echo xlt('Sel'); ?>
   </td>
 <?php } ?>
  </tr>
@@ -905,10 +905,10 @@ if ($_POST['form_search'] || $_POST['form_print']) {
  <tr bgcolor='<?php echo $bgcolor ?>'>
   <td class="detail">
    &nbsp;<a href="" onclick="return npopup(<?php echo $row['pid'] ?>)"
-   ><?php echo $row['lname'] . ', ' . $row['fname']; ?></a>
+   ><?php echo text($row['lname'] . ', ' . $row['fname']); ?></a>
   </td>
   <td class="detail">
-   &nbsp;<a href="sl_eob_invoice.php?id=<?php echo $row['id'] ?>"
+   &nbsp;<a href="sl_eob_invoice.php?id=<?php echo attr($row['id']); ?>"
     target="_blank"><?php echo $row['pid'] . '.' . $row['encounter']; ?></a>
   </td>
   <td class="detail">
@@ -934,7 +934,7 @@ if ($_POST['form_search'] || $_POST['form_print']) {
   </td>
 <?php if (!$eracount) { ?>
   <td class="detail" align="left">
-   <input type='checkbox' name='form_cb[<?php echo($row['id']) ?>]'<?php echo $isduept ?> />
+   <input type='checkbox' name='form_cb[<?php echo(attr($row['id'])); ?>]'<?php echo $isduept ?> />
    <?php if ($in_collections) echo "<b><font color='red'>IC</font></b>"; ?>
   </td>
 <?php } ?>
@@ -1017,11 +1017,11 @@ if ($_POST['form_search'] || $_POST['form_print']) {
  <tr bgcolor='<?php echo $bgcolor ?>'>
   <td class="detail">
    &nbsp;<a href="" onclick="return npopup(<?php echo $pid ?>)"
-   ><?php echo $row['lname'] . ', ' . $row['fname']; ?></a>
+   ><?php echo text($row['lname'] . ', ' . $row['fname']); ?></a>
   </td>
   <td class="detail">
    &nbsp;<a href="sl_eob_invoice.php?id=<?php echo $row['id'] ?>"
-    target="_blank"><?php echo $row['invnumber'] ?></a>
+    target="_blank"><?php echo text($row['invnumber']); ?></a>
   </td>
   <td class="detail">
    &nbsp;<?php echo oeFormatShortDate($svcdate) ?>
@@ -1064,15 +1064,15 @@ if (!$INTEGRATED_AR) SLClose();
 
 <p>
 <?php if ($eracount) { ?>
-<input type='button' value='<?php xl('Process ERA File','e')?>' onclick='processERA()' /> &nbsp;
+<input type='button' value='<?php echo xla('Process ERA File')?>' onclick='processERA()' /> &nbsp;
 <?php } else { ?>
-<input type='button' value='<?php xl('Select All','e')?>' onclick='checkAll(true)' /> &nbsp;
-<input type='button' value='<?php xl('Clear All','e')?>' onclick='checkAll(false)' /> &nbsp;
-<input type='submit' name='form_print' value='<?php xl('Print Selected Statements','e'); ?>' /> &nbsp;
-<input type='submit' name='form_download' value='<?php xl('Download Selected Statements','e'); ?>' /> &nbsp;
-<input type='submit' name='form_pdf' value='<?php xl('PDF Download Selected Statements','e'); ?>' /> &nbsp;
+<input type='button' value='<?php echo xla('Select All')?>' onclick='checkAll(true)' /> &nbsp;
+<input type='button' value='<?php echo xla('Clear All')?>' onclick='checkAll(false)' /> &nbsp;
+<input type='submit' name='form_print' value='<?php echo xla('Print Selected Statements'); ?>' /> &nbsp;
+<input type='submit' name='form_download' value='<?php echo xla('Download Selected Statements'); ?>' /> &nbsp;
+<input type='submit' name='form_pdf' value='<?php echo xla('PDF Download Selected Statements'); ?>' /> &nbsp;
 <?php } ?>
-<input type='checkbox' name='form_without' value='1' /> <?php xl('Without Update','e'); ?>
+<input type='checkbox' name='form_without' value='1' /> <?php echo xlt('Without Update'); ?>
 </p>
 
 </form>

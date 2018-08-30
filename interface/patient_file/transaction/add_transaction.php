@@ -25,7 +25,7 @@ $title   = empty($_REQUEST['title']) ? 'LBTptreq' : $_REQUEST['title'];
 $form_id = $title;
 
 // Plugin support.
-$fname = $GLOBALS['OE_SITE_DIR'] . "/LBF/$form_id.plugin.php";
+$fname = $GLOBALS['OE_SITE_DIR'] . "/LBF/" . convert_safe_file_dir_name($form_id) . ".plugin.php";
 if (file_exists($fname)) include_once($fname);
 
 $transid = empty($_REQUEST['transid']) ? 0 : $_REQUEST['transid'] + 0;

@@ -125,10 +125,10 @@ function check_search_str()
   <td>
    <b>
  <?php xl('Search for','e'); ?>
-   <input type='text' name='search_term' id='search_term' size='12' value='<?php echo $_REQUEST['search_term']; ?>'
-    title='<?php xl('Any part of the immunization id or immunization name','e'); ?>' />
+   <input type='text' name='search_term' id='search_term' size='12' value='<?php echo attr($_REQUEST['search_term']); ?>'
+    title='<?php echo xla('Any part of the immunization id or immunization name'); ?>' />
    &nbsp;
-   <input type='submit' name='bn_search' value='<?php xl('Search','e'); ?>' />  
+   <input type='submit' name='bn_search' value='<?php echo xla('Search'); ?>' />  
    </b>
   </td>
  </tr>
@@ -148,8 +148,8 @@ function check_search_str()
   $search_term = $_REQUEST['search_term'];
   {
     $query = "SELECT count(*) as count FROM list_options " .
-      "WHERE (list_id = 'immunizations' and title LIKE '%$search_term%' AND activity = 1) " ;
-	$res = sqlStatement($query);
+      "WHERE (list_id = 'immunizations' and title LIKE ? AND activity = 1) " ;
+	$res = sqlStatement($query, array("%$search_term%"));
 	if ($row = sqlFetchArray($res)) 
 	{
 	 $no_of_items = addslashes($row['count']);
@@ -157,16 +157,16 @@ function check_search_str()
 	 {
 	 ?>
 	 <script language='JavaScript'>
-         alert("<?php echo xl('Search string does not match with list in database'); echo '\n'; echo xl('Please enter new search string');?>");
+   alert("<?php echo xls('Search string does not match with list in database'); echo '\n'; echo xls('Please enter new search string');?>");
 	 document.theform.search_term.value=" ";
 	 document.theform.search_term.focus();
      </script>	  
 	 <?php
       }    
     $query = "SELECT option_id,title FROM list_options " .
-      "WHERE (list_id = 'immunizations' and title LIKE '%$search_term%' AND activity = 1) " .
+      "WHERE (list_id = 'immunizations' and title LIKE ? AND activity = 1) " .
       "ORDER BY title";
-   $res = sqlStatement($query);
+   $res = sqlStatement($query, array("%$search_term%"));
 	$row_count = 0;
     while ($row = sqlFetchArray($res)) {
 	  $row_count = $row_count + 1;
@@ -182,14 +182,10 @@ function check_search_str()
 </tr>
  </table>
 <center>
- <input type='button' name='select_all' value='<?php xl('Select All','e'); ?>' onclick="chkbox_select_all(document.select_immunization.chkbox);"/>
- 
- <input type='button' name='select_none' value='<?php xl('Unselect All','e'); ?>' onclick="chkbox_select_none(document.select_immunization.chkbox);"/>
- 
- <input type='button' name='submit' value='<?php xl('Submit','e'); ?>' onclick="window_submit(document.select_immunization.chkbox);"/>
- 
- <input type='button' name='cancel' value='<?php xl('Cancel','e'); ?>' onclick="window_close();"/>
- 
+ <input type='button' name='select_all' value='<?php echo xla('Select All'); ?>' onclick="chkbox_select_all(document.select_immunization.chkbox);"/>
+ <input type='button' name='select_none' value='<?php echo xla('Unselect All'); ?>' onclick="chkbox_select_none(document.select_immunization.chkbox);"/>
+ <input type='button' name='submit' value='<?php echo xla('Submit'); ?>' onclick="window_submit(document.select_immunization.chkbox);"/>
+ <input type='button' name='cancel' value='<?php echo xla('Cancel'); ?>' onclick="window_close();"/>
  </center>
 <?php } ?>
 </form>

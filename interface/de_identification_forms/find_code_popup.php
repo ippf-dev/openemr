@@ -130,7 +130,7 @@ function check_search_str()
    <b>
 <?php
 if ($codetype) {
-  echo "<input type='text' name='form_code_type' value='$codetype' size='5' readonly>\n";
+  echo "<input type='text' name='form_code_type' value='" . attr($codetype) . "' size='5' readonly>\n";
 }
 else {
   echo "   <select name='form_code_type'";
@@ -147,10 +147,10 @@ else {
 }
 ?>
  <?php xl('Search for','e'); ?>
-   <input type='text' name='search_term' id='search_term' size='12' value='<?php echo $_REQUEST['search_term']; ?>'
+   <input type='text' name='search_term' id='search_term' size='12' value='<?php echo attr($_REQUEST['search_term']); ?>'
     title='<?php xl('Any part of the desired code or its description','e'); ?>' />
    &nbsp;  
-   <input type='submit' name='bn_search' id='bn_search' value='<?php xl('Search','e'); ?>' />   
+   <input type='submit' name='bn_search' id='bn_search' value='<?php echo xla('Search'); ?>' />   
    </b>
   </td>
  </tr>
@@ -171,11 +171,11 @@ else {
   if ($form_code_type == 'PROD') {
     $query = "SELECT dt.drug_id, dt.selector, d.name " .
       "FROM drug_templates AS dt, drugs AS d WHERE " .
-      "( d.name LIKE '%$search_term%' OR " .
-      "dt.selector LIKE '%$search_term%' ) " .
+      "( d.name LIKE ? OR " .
+      "dt.selector LIKE ? ) " .
       "AND d.drug_id = dt.drug_id " .
       "ORDER BY d.name, dt.selector, dt.drug_id";
-    $res = sqlStatement($query);
+    $res = sqlStatement($query, array("%$search_term%", "%$search_term%"));
 	$row_count = 0;
     while ($row = sqlFetchArray($res)) {
 	$row_count = $row_count + 1;
@@ -188,9 +188,9 @@ else {
   }
   else {   
    $query = "SELECT count(*) as count FROM codes " .
-      "WHERE (code_text LIKE '%$search_term%' OR " .
-      "code LIKE '%$search_term%') " ;
-	$res = sqlStatement($query);
+      "WHERE (code_text LIKE ? OR " .
+      "code LIKE ?) ";
+	$res = sqlStatement($query, array("%$search_term%", "%$search_term%"));
 	if ($row = sqlFetchArray($res)) 
 	{
 	 $no_of_items = addslashes($row['count']);
@@ -198,18 +198,18 @@ else {
 	 {
 	 ?>
 	 <script language='JavaScript'>
-         alert("<?php echo xl('Search string does not match with list in database'); echo '\n'; echo xl('Please enter new search string');?>");
+         alert("<?php echo xls('Search string does not match with list in database'); echo '\n'; echo xls('Please enter new search string');?>");
     	 document.theform.search_term.value=" ";
 	 document.theform.search_term.focus();
      </script>	  
 	 <?php
       }
     $query = "SELECT code_type, code, modifier, code_text FROM codes " .
-      "WHERE (code_text LIKE '%$search_term%' OR " .
-      "code LIKE '%$search_term%') " .
+      "WHERE (code_text LIKE ? OR " .
+      "code LIKE ?) " .
       "ORDER BY code";
     // echo "\n<!-- $query -->\n"; // debugging
-    $res = sqlStatement($query);
+    $res = sqlStatement($query, array("%$search_term%", "%$search_term%"));
 	$row_count = 0;
     while ($row = sqlFetchArray($res)) {
 	  $row_count = $row_count + 1;
@@ -226,14 +226,11 @@ else {
  </table>
 <center>
 </br>
- <input type='button' id='select_all' value='<?php xl('Select All','e'); ?>' onclick="chkbox_select_all(document.select_diagonsis.chkbox);"/>
- 
- <input type='button' id='unselect_all' value='<?php xl('Unselect All','e'); ?>' onclick="chkbox_select_none(document.select_diagonsis.chkbox);"/>
- 
- <input type='button' id='submit' value='<?php xl('Submit','e'); ?>' onclick="window_submit(document.select_diagonsis.chkbox);"/>
- 
- <input type='button' id='cancel' value='<?php xl('Cancel','e'); ?>' onclick="window_close();"/>
- 
+ <input type='button' id='select_all' value='<?php echo xla('Select All'); ?>' onclick="chkbox_select_all(document.select_diagonsis.chkbox);"/>
+ <input type='button' id='unselect_all' value='<?php echo xla('Unselect All'); ?>' onclick="chkbox_select_none(document.select_diagonsis.chkbox);"/>
+ <input type='button' id='submit' value='<?php echo xla('Submit'); ?>' onclick="window_submit(document.select_diagonsis.chkbox);"/>
+ <input type='button' id='cancel' value='<?php echo xla('Cancel'); ?>' onclick="window_close();"/>
+
 </center> 
 <?php } ?>
 </form>

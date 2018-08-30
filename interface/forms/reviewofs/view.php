@@ -12,10 +12,9 @@ $returnurl = $GLOBALS['concurrent_layout'] ? 'encounter_top.php' : 'patient_enco
 include_once("$srcdir/api.inc");
 $obj = formFetch("form_reviewofs", $_GET["id"]);
 ?>
-<form method=post action="<?php echo $rootdir?>/forms/reviewofs/save.php?mode=update&id=<?php echo $_GET["id"];?>"
+<form method=post action="<?php echo $rootdir?>/forms/reviewofs/save.php?mode=update&id=<?php echo attr($_GET["id"]); ?>"
  name="my_form" onsubmit="return top.restoreSession()">
 <span class="title"><?php xl('Review of Systems Checks','e'); ?></span><Br><br>
-
 <table>
 <tr>
 <td valign=top>

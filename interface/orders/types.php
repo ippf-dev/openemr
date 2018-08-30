@@ -33,8 +33,7 @@ if ($popup && $_POST['form_save']) {
 if (opener.closed || ! opener.set_proc_type) {
  alert('<?php xl('The destination form was closed; I cannot act on your selection.','e'); ?>');
 }
-else {
- opener.set_proc_type(<?php echo "$form_order, '$name'" ?>);
+else { opener.set_proc_type(<?php echo "$form_order, '$name'" ?>);
 <?php
 // This is to generate the "Questions at Order Entry" for the Procedure Order form.
 // GET parms needed for this are: formid, formseq.
@@ -243,8 +242,8 @@ function recolor() {
 
 <form method='post' name='theform' action='types.php?popup=<?php echo $popup ?>&order=<?php
 echo $order;
-if (isset($_GET['formid' ])) echo '&formid='  . $_GET['formid'];
-if (isset($_GET['formseq'])) echo '&formseq=' . $_GET['formseq'];
+if (isset($_GET['formid' ])) echo '&formid='  . intval($_GET['formid']);
+if (isset($_GET['formseq'])) echo '&formseq=' . intval($_GET['formseq']);
 ?>'>
 
 <table width='100%' cellspacing='0' cellpadding='0' border='0'>

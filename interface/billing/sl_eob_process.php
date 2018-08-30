@@ -543,7 +543,7 @@ require_once("$srcdir/billing.inc");
     $info_msg = "";
 
     $eraname = $_GET['eraname'];
-    if (! $eraname) die(xl("You cannot access this page directly."));
+    if (! $eraname) die(xlt("You cannot access this page directly."));
 
     // Open the output file early so that in case it fails, we do not post a
     // bunch of stuff without saving the report.  Also be sure to retain any old
@@ -557,7 +557,7 @@ require_once("$srcdir/billing.inc");
         }
         $fnreport = "$nameprefix$namesuffix.html";
         $fhreport = fopen($fnreport, 'w');
-        if (!$fhreport) die(xl("Cannot create") . " '$fnreport'");
+        if (!$fhreport) die(xlt("Cannot create") . " '" . text($fnreport) . "'");
     }
 
   if (!$INTEGRATED_AR) slInitialize();
@@ -661,9 +661,9 @@ require_once("$srcdir/billing.inc");
 <input type="hidden" name="paydate" value="<?php echo DateToYYYYMMDD($_REQUEST['paydate']);?>" />
 <input type="hidden" name="post_to_date" value="<?php echo DateToYYYYMMDD($_REQUEST['post_to_date']);?>" />
 <input type="hidden" name="deposit_date" value="<?php echo DateToYYYYMMDD($_REQUEST['deposit_date']);?>" />
-<input type="hidden" name="debug" value="<?php echo $_REQUEST['debug'];?>" />
-<input type="hidden" name="InsId" value="<?php echo $_REQUEST['InsId'];?>" />
-<input type="hidden" name="eraname" value="<?php echo $eraname?>" />
+<input type="hidden" name="debug" value="<?php echo attr($_REQUEST['debug']); ?>" />
+<input type="hidden" name="InsId" value="<?php echo attr($_REQUEST['InsId']); ?>" />
+<input type="hidden" name="eraname" value="<?php echo attr($eraname); ?>" />
 </form>
 </body>
 </html>
