@@ -15,6 +15,7 @@
  *
  * @package OpenEMR
  * @author  Brady Miller <brady@sparmy.com>
+ * @author  Rod Roark <rod@sunsetsystems.com>
  * @link    http://www.open-emr.org
  */
 
@@ -40,8 +41,10 @@ function posted_to_hidden($name) {
 }
 
 if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
-  $tmprow = sqlQuery("SELECT COUNT(*) AS count FROM login_security_answers " .
-    "WHERE user_id = ?", array($_SESSION['authId']));
+  $tmprow = sqlQuery("SELECT COUNT(*) AS count FROM login_security_answers AS a " .
+    "JOIN list_options AS l ON l.list_id = 'login_security_questions' AND " .
+    "l.option_id = a.question_id " .
+    "WHERE a.user_id = ?", array($_SESSION['authId']));
   $num_answers = empty($tmprow['count']) ? 0 : intval($tmprow['count']);
   if ($num_answers) {
     $need_challenge = 0;
@@ -50,16 +53,21 @@ if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
       $tmppat = '/[^A-Za-z0-9]/';
       $count = 0;
       foreach ($_POST['form_answer'] as $question_id => $answer) {
-        $arow = sqlQuery("SELECT answer FROM login_security_answers " .
-          "WHERE user_id = ? AND question_id = ?",
+        if (empty($question_id)) continue;
+        $arow = sqlQuery("SELECT answer FROM login_security_answers AS a " .
+          "JOIN list_options AS l ON l.list_id = 'login_security_questions' AND " .
+          "l.option_id = a.question_id " .
+          "WHERE a.user_id = ? AND a.question_id = ?",
           array($_SESSION['authId'], $question_id));
-        // die("User=" . $_SESSION['authId'] . " QID=$question_id Answer=$answer Stored=" . $arow['answer']); // debugging
-        if (!$arow || strtolower(preg_replace($tmppat, '', $arow['answer'])) != strtolower(preg_replace($tmppat, '', $answer))) {
+        // echo ("User=" . $_SESSION['authId'] . " QID=$question_id Answer=$answer Stored=" . $arow['answer'] . "<br>\n"); // debugging
+        if (empty($arow)) continue;
+        if (strtolower(preg_replace($tmppat, '', $arow['answer'])) != strtolower(preg_replace($tmppat, '', $answer))) {
           $need_challenge = 2;
         }
         ++$count;
       }
-      if ($count < 1) {
+      // die("User=" . $_SESSION['authId']); // debugging
+      if ($count < min($GLOBALS['gbl_num_challenge_questions_asked'], $num_answers)) {
         $need_challenge = 2;
       }
       if (!$need_challenge) {
@@ -89,6 +97,7 @@ if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
     if ($need_challenge) {
       // Build HTML here to show the questions and collect the answers.
       // Include all the posted data from login.php as hidden fields.
+      // And finally, destroy the session to invalidate the current login.
 ?>
 <html>
 <head>
