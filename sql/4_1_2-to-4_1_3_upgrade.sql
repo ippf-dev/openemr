@@ -827,14 +827,15 @@ INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('log
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('login_security_questions','firstpet','What was the name of your first pet?',20);
 #EndIf
 
-#IfNotTable login_security_answers
-CREATE TABLE `login_security_answers` (
-  `user_id`     bigint(20)     NOT NULL,
-  `seq`         int(11)        NOT NULL,
-  `question_id` varchar(31)    NOT NULL,
-  `answer`      varchar(256)   NOT NULL,
-  `last_asked`  datetime       DEFAULT NULL,
-  PRIMARY KEY (user_id, seq)
+#IfNotTable login_mfa_registrations
+CREATE TABLE `login_mfa_registrations` (
+  `user_id`         bigint(20)     NOT NULL,
+  `name`            varchar(256)   NOT NULL,
+  `last_challenge`  datetime       DEFAULT NULL,
+  `method`          varchar(31)    NOT NULL COMMENT 'Q&A, U2F, TOTP etc.',
+  `var1`            varchar(4096)  NOT NULL DEFAULT '' COMMENT 'Question, U2F registration etc.',
+  `var2`            varchar(256)   NOT NULL DEFAULT '' COMMENT 'Answer, last U2F count etc.',
+  PRIMARY KEY (`user_id`, `name`)
 ) ENGINE=MyISAM;
 #EndIf
 

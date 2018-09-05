@@ -1,6 +1,6 @@
 <?php
 /**
- * Document Template Management Module.
+ * Login Security Questions Management.
  *
  * Copyright (C) 2018 Rod Roark <rod@sunsetsystems.com>
  *
@@ -38,22 +38,26 @@ if (!empty($_POST['bn_save'])) {
   $i = -1;
   foreach ($_POST['form_question'] as $i => $qid) {
     $ans = $_POST['form_answer'][$i];
-    $row = sqlQuery("SELECT question_id, answer FROM login_security_answers WHERE " .
-      "user_id = ? AND seq = ?", array($userid, $i));
-    if (isset($row['question_id'])) {
-      if ($row['question_id'] !== $qid || $row['answer'] !== $ans) {
-        sqlStatement("UPDATE login_security_answers SET question_id = ?, answer = ? " .
-          "WHERE user_id = ? AND seq = ?", array($qid, $ans, $userid, $i));
+    $row = sqlQuery("SELECT var1, var2 FROM login_mfa_registrations WHERE " .
+      "user_id = ? AND method = 'Q&A' AND name = ?",
+      array($userid, $i));
+    if (isset($row['var1'])) {
+      if ($row['var1'] !== $qid || $row['var2'] !== $ans) {
+        sqlStatement("UPDATE login_mfa_registrations SET `var1` = ?, `var2` = ? " .
+          "WHERE `user_id` = ? AND method = 'Q&A' AND `name` = ?",
+          array($qid, $ans, $userid, $i));
       }
     }
     else {
-      sqlStatement("INSERT INTO login_security_answers " .
-        "(user_id, seq, question_id, answer) VALUES " .
-        "(?, ?, ?, ?)", array($userid, $i, $qid, $ans));
+      sqlStatement("INSERT INTO login_mfa_registrations " .
+        "(`user_id`, `method`, `name`, `var1`, `var2`) VALUES " .
+        "(?, 'Q&A', ?, ?, ?)",
+        array($userid, $i, $qid, $ans));
     }
   }
-  sqlStatement("DELETE FROM login_security_answers WHERE " .
-    "user_id = ? AND seq > ?", array($userid, $i));
+  sqlStatement("DELETE FROM login_mfa_registrations WHERE " .
+    "`user_id` = ? AND method = 'Q&A' AND (`name` + 0) > ?",
+    array($userid, $i));
   $message = xl('Save successful.');
 }
 ?>
@@ -82,10 +86,11 @@ if (!empty($_POST['bn_save'])) {
 
 <?php
 for ($i = 0; $i < $GLOBALS['gbl_num_challenge_questions_stored']; ++$i) {
-  $row = sqlQuery("SELECT question_id, answer FROM login_security_answers WHERE " .
-    "user_id = ? AND seq = ?", array($userid, $i));
-  $currq = isset($row['question_id']) ? $row['question_id'] : '';
-  $curra = isset($row['answer'     ]) ? $row['answer'     ] : '';
+  $row = sqlQuery("SELECT var1, var2 FROM login_mfa_registrations WHERE " .
+    "`user_id` = ? AND method = 'Q&A' AND `name` = ?",
+    array($userid, $i));
+  $currq = isset($row['var1']) ? $row['var1'] : '';
+  $curra = isset($row['var2']) ? $row['var2'] : '';
   echo " <tr><td>";
   echo generate_select_list("form_question[$i]", 'login_security_questions', $currq);
   echo "</td><td>";

@@ -6101,13 +6101,14 @@ INSERT INTO list_options ( list_id, option_id, title, seq ) VALUES ('reftype','5
 
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('lists','chargecats','Charge Categories', 1);
 
-CREATE TABLE `login_security_answers` (
-  `user_id`     bigint(20)     NOT NULL,
-  `seq`         int(11)        NOT NULL,
-  `question_id` varchar(31)    NOT NULL,
-  `answer`      varchar(256)   NOT NULL,
-  `last_asked`  datetime       DEFAULT NULL,
-  PRIMARY KEY (user_id, seq)
+CREATE TABLE `login_mfa_registrations` (
+  `user_id`         bigint(20)     NOT NULL,
+  `name`            varchar(256)   NOT NULL,
+  `last_challenge`  datetime       DEFAULT NULL,
+  `method`          varchar(31)    NOT NULL COMMENT 'Q&A, U2F, TOTP etc.',
+  `var1`            varchar(4096)  NOT NULL DEFAULT '' COMMENT 'Question, key handle and key etc.',
+  `var2`            varchar(256)   NOT NULL DEFAULT '' COMMENT 'Answer, last U2F count etc.',
+  PRIMARY KEY (`user_id`, `name`)
 ) ENGINE=MyISAM;
 
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('lists','login_security_questions','Login Security Questions', 1);

@@ -41,10 +41,10 @@ function posted_to_hidden($name) {
 }
 
 if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
-  $tmprow = sqlQuery("SELECT COUNT(*) AS count FROM login_security_answers AS a " .
+  $tmprow = sqlQuery("SELECT COUNT(*) AS count FROM login_mfa_registrations AS a " .
     "JOIN list_options AS l ON l.list_id = 'login_security_questions' AND " .
-    "l.option_id = a.question_id " .
-    "WHERE a.user_id = ?", array($_SESSION['authId']));
+    "l.option_id = a.var1 " .
+    "WHERE a.user_id = ? AND a.method = 'Q&A'", array($_SESSION['authId']));
   $num_answers = empty($tmprow['count']) ? 0 : intval($tmprow['count']);
   if ($num_answers) {
     $need_challenge = 0;
@@ -54,14 +54,14 @@ if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
       $count = 0;
       foreach ($_POST['form_answer'] as $question_id => $answer) {
         if (empty($question_id)) continue;
-        $arow = sqlQuery("SELECT answer FROM login_security_answers AS a " .
+        $arow = sqlQuery("SELECT a.var2 FROM login_mfa_registrations AS a " .
           "JOIN list_options AS l ON l.list_id = 'login_security_questions' AND " .
-          "l.option_id = a.question_id " .
-          "WHERE a.user_id = ? AND a.question_id = ?",
+          "l.option_id = a.var1 " .
+          "WHERE a.user_id = ? AND a.var1 = ? AND a.method = 'Q&A'",
           array($_SESSION['authId'], $question_id));
         // echo ("User=" . $_SESSION['authId'] . " QID=$question_id Answer=$answer Stored=" . $arow['answer'] . "<br>\n"); // debugging
         if (empty($arow)) continue;
-        if (strtolower(preg_replace($tmppat, '', $arow['answer'])) != strtolower(preg_replace($tmppat, '', $answer))) {
+        if (strtolower(preg_replace($tmppat, '', $arow['var2'])) != strtolower(preg_replace($tmppat, '', $answer))) {
           $need_challenge = 2;
         }
         ++$count;
@@ -117,22 +117,22 @@ if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
       posted_to_hidden('authUser');
       posted_to_hidden('clearPass');
       echo "<table>\n";
-      $qres = sqlStatement("SELECT a.question_id, l.title FROM login_security_answers AS a " .
+      $qres = sqlStatement("SELECT a.var1, l.title FROM login_mfa_registrations AS a " .
         "LEFT JOIN list_options AS l ON l.list_id = 'login_security_questions' AND " .
-        "l.option_id = a.question_id " .
+        "l.option_id = a.var1 " .
         "WHERE a.user_id = ? " .
-        "ORDER BY a.last_asked, a.seq " .
+        "ORDER BY a.last_challenge, (a.name + 0) " .
         "LIMIT " . intval($GLOBALS['gbl_num_challenge_questions_asked']),
         array($_SESSION['authId']));
       while ($qrow = sqlFetchArray($qres)) {
-        $title = empty($qrow['title']) ? $qrow['question_id'] : $qrow['title'];
+        $title = empty($qrow['title']) ? $qrow['var1'] : $qrow['title'];
         echo "<tr><td>" . text($title) . "&nbsp;</td>";
-        echo "<td><input type='text' name='form_answer[" . attr($qrow['question_id']) . "]' " .
-          "value='" . attr($qrow['answer']) . "' /></td></tr>\n";
+        echo "<td><input type='text' name='form_answer[" . attr($qrow['var1']) . "]' " .
+          "value='" . attr($qrow['var2']) . "' /></td></tr>\n";
         // Update last_asked timestamp.
-        sqlStatement("UPDATE login_security_answers SET last_asked = NOW() WHERE " .
-          "user_id = ? AND question_id = ?",
-          array($_SESSION['authId'], $qrow['question_id']));
+        sqlStatement("UPDATE login_mfa_registrations SET last_challenge = NOW() WHERE " .
+          "user_id = ? AND var1 = ?",
+          array($_SESSION['authId'], $qrow['var1']));
       }
       echo "</table>\n";
       echo "<p><input type='submit' value='" . xla('Finish Login') . "' /></p>\n";
