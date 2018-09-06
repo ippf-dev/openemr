@@ -24,14 +24,11 @@ $sanitize_all_escapes=true;
 
 /* Include our required headers */
 require_once('../globals.php');
-require_once("$srcdir/formdata.inc.php");
+require_once($GLOBALS['srcdir'] . '/formdata.inc.php');
+require_once($GLOBALS['srcdir'] . '/U2F.php');
 
 ///////////////////////////////////////////////////////////////////////
-// Begin code to support challenge questions.
-// When challenge questions are required after login, the idea is to
-// build a form that asks the questions and also duplicates the data
-// from the login form and thus causes login to be repeated.
-// This is easier than tracking partial login state in session variables.
+// Shared functions to support MFA.
 ///////////////////////////////////////////////////////////////////////
 
 function posted_to_hidden($name) {
@@ -40,7 +37,178 @@ function posted_to_hidden($name) {
   }
 }
 
-if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
+function generate_html_start($title) {
+  global $appId, $css_header;
+?>
+<html>
+<head>
+<link rel=stylesheet href="<?php echo $css_header; ?>" type="text/css">
+<title><?php echo text($title); ?></title>
+<script src="<?php echo $GLOBALS['webroot'] ?>/library/js/u2f-api.js"></script>
+<script>
+function doAuth() {
+  var f = document.forms[0];
+  var registration = JSON.parse(f.form_registration.value);
+  var request = JSON.parse(f.form_request.value);
+  var challenge = request[0].challenge;
+  var registeredKeys = [{version: request[0].version, keyHandle: request[0].keyHandle}];
+  u2f.sign(
+    '<?php echo addslashes($appId); ?>',
+    challenge,
+    registeredKeys,
+    function(data) {
+      if(data.errorCode && data.errorCode != 0) {
+        alert('<?php echo xla("Key access failed with error"); ?> ' + data.errorCode);
+        return;
+      }
+      f.form_response.value = JSON.stringify(data);
+      f.submit();
+    },
+    60
+  );
+}
+function doOther(sel) {
+  var f = document.forms[0];
+  f.form_key_name.value = sel.value;
+  f.form_response.value = '';
+  f.submit();
+}
+</script>
+</head>
+<body>
+<center>
+<h2><?php echo text($title); ?></h2>
+<form method="post"
+ action="main_screen.php?auth=login&site=<?php echo $_GET['site']; ?>"
+ target="_top" name="challenge_form">
+<?php
+  posted_to_hidden('new_login_session_management');
+  posted_to_hidden('authProvider');
+  posted_to_hidden('languageChoice');
+  posted_to_hidden('authUser');
+  posted_to_hidden('clearPass');
+}
+
+function generate_html_end() {
+  echo "</form></center></body></html>\n";
+  session_unset();
+  session_destroy();
+  unset($_COOKIE[session_name()]);
+  return 0;
+}
+
+function is_time_for_challenge() {
+  if ($GLOBALS['gbl_days_between_challenges'] == 0) {
+    return true;
+  }
+  else {
+    $usrow = sqlQuery("SELECT last_challenge_response, NOW() AS curdate FROM users_secure WHERE id = ?",
+      array($_SESSION['authId']));
+    if (empty($usrow['last_challenge_response']) ||
+      (strtotime($usrow['curdate']) - strtotime($usrow['last_challenge_response'])) >
+      (86400 * $GLOBALS['gbl_days_between_challenges'])
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+$errormsg = '';
+
+///////////////////////////////////////////////////////////////////////
+// Begin code to support U2F.
+///////////////////////////////////////////////////////////////////////
+
+$regs = array();
+$regkey = '';
+$res1 = sqlStatement("SELECT a.name, a.var1 " .
+  "FROM login_mfa_registrations AS a " .
+  "WHERE a.user_id = ? AND a.method = 'U2F' " .
+  "ORDER BY a.name",
+  array($_SESSION['authId']));
+while ($row1 = sqlFetchArray($res1)) {
+  $regs[$row1['name']] = $row1;
+  if ($regkey === '') $regkey = $row1['name'];
+}
+if (!empty($_POST['form_key_name']) && isset($regs[$_POST['form_key_name']])) {
+  // The user chose a specific key name so use that.
+  $regkey = $_POST['form_key_name'];
+}
+if (!empty($regs)) {
+  // There is at least one U2F key registered so we have to request or verify key data.
+  $scheme = isset($_SERVER['HTTPS']) ? "https://" : "http://";
+  $appId = $scheme . $_SERVER['HTTP_HOST'];
+  $u2f = new u2flib_server\U2F($appId);
+  $userid = $_SESSION['authId'];
+  $form_response = empty($_POST['form_response']) ? '' : $_POST['form_response'];
+  if ($form_response) {
+    // We have key data, check if it matches what was registered.
+    try {
+      $registration = $u2f->doAuthenticate(
+        json_decode($_POST['form_request']),
+        array(json_decode($_POST['form_registration'])),
+        json_decode($_POST['form_response'])
+      );
+      // Stored registration data needs to be updated because the usage count has changed.
+      sqlStatement("UPDATE login_mfa_registrations " .
+        "SET var1 = ? WHERE " .
+        "`user_id` = ? AND `method` = 'U2F' AND `name` = ?",
+        array(json_encode($registration), $userid, $regkey));
+        // Keep track of when questions were last answered correctly.
+        sqlStatement("UPDATE users_secure SET last_challenge_response = NOW() WHERE id = ?",
+          array($_SESSION['authId']));
+    } catch(u2flib_server\Error $e) {
+      // Authentication failed so build the U2F form again.
+      $form_response = '';
+      $errormsg = xl('Authentication error for') . " $regkey: " . $e->getMessage();
+    }
+  }
+  if (!$form_response && is_time_for_challenge()) {
+    // There is no key data yet or authentication failed, so we need to solicit it.
+    $registration = $regs[$regkey]['var1'];
+    $request = $u2f->getAuthenticateData(array(json_decode($registration)));
+    generate_html_start(xl('U2F Key Verification for' . " '$regkey'"));
+    echo "<p style='text-align:left'>\n";
+    echo xlt('Insert your key into a USB port and click the Authenticate button below.');
+    echo " " . xlt('Then press the flashing button on your key within 1 minute.') . "</p>\n";
+    echo "</p><p>\n";
+    echo "<input type='button' value='" . xla('Authenticate') . "' onclick='doAuth()' />\n";
+    echo "<input type='hidden' name='form_key_name' value='" . attr($regkey) . "' />\n";
+    echo "<input type='hidden' name='form_registration' value='" . attr($registration) . "' />\n";
+    echo "<input type='hidden' name='form_request' value='" . attr(json_encode($request)) . "' />\n";
+    echo "<input type='hidden' name='form_response' value='' />\n";
+    echo "</p>\n";
+    // Dropdown for other U2F names.
+    if (count($regs) > 1) {
+      echo "<p><select onchange='doOther(this)'>\n";
+      echo "<option value=''>" . xlt('Or choose another key...') . "</option>\n";
+      foreach ($regs as $row) {
+        if ($row['name'] != $regkey) {
+          echo "<option value='" . attr($row['name']) . "'>" . text($row['name']) . "</option>\n";
+        }
+      }
+      echo "</select></p>\n";
+    }
+    if ($errormsg) {
+      echo "<p style='color:red;font-weight:bold'>" . text($errormsg) . "</p>\n";
+    }
+    exit(generate_html_end());
+  }
+}
+
+///////////////////////////////////////////////////////////////////////
+// End of U2F logic.
+///////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////
+// Begin code to support challenge questions.
+// When challenge questions are required after login, the idea is to
+// build a form that asks the questions and also duplicates the data
+// from the login form and thus causes login to be repeated.
+///////////////////////////////////////////////////////////////////////
+
+if (empty($regs) && !empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
   $tmprow = sqlQuery("SELECT COUNT(*) AS count FROM login_mfa_registrations AS a " .
     "JOIN list_options AS l ON l.list_id = 'login_security_questions' AND " .
     "l.option_id = a.var1 " .
@@ -79,43 +247,11 @@ if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
     else {
       // Check if it's time for challenge questions.
       if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
-        if ($GLOBALS['gbl_days_between_challenges'] == 0) {
-          $need_challenge = 1;
-        }
-        else {
-          $usrow = sqlQuery("SELECT last_challenge_response, NOW() AS curdate FROM users_secure WHERE id = ?",
-            array($_SESSION['authId']));
-          if (empty($usrow['last_challenge_response']) ||
-            (strtotime($usrow['curdate']) - strtotime($usrow['last_challenge_response'])) >
-            (86400 * $GLOBALS['gbl_days_between_challenges'])
-          ) {
-            $need_challenge = 1;
-          }
-        }
+        if (is_time_for_challenge()) $need_challenge = 1;
       }
     }
     if ($need_challenge) {
-      // Build HTML here to show the questions and collect the answers.
-      // Include all the posted data from login.php as hidden fields.
-      // And finally, destroy the session to invalidate the current login.
-?>
-<html>
-<head>
-<link rel=stylesheet href="<?php echo $css_header;?>" type="text/css">
-<title><?php echo xlt('Login Security'); ?></title>
-</head>
-<body>
-<center>
-<h2><?php echo xlt('Login Security'); ?></h2>
-<form method="post"
- action="main_screen.php?auth=login&site=<?php echo $_GET['site']; ?>"
- target="_top" name="challenge_form">
-<?php
-      posted_to_hidden('new_login_session_management');
-      posted_to_hidden('authProvider');
-      posted_to_hidden('languageChoice');
-      posted_to_hidden('authUser');
-      posted_to_hidden('clearPass');
+      generate_html_start(xl('Login Security'));
       echo "<table>\n";
       $qres = sqlStatement("SELECT a.var1, l.title FROM login_mfa_registrations AS a " .
         "LEFT JOIN list_options AS l ON l.list_id = 'login_security_questions' AND " .
@@ -136,11 +272,7 @@ if (!empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
       }
       echo "</table>\n";
       echo "<p><input type='submit' value='" . xla('Finish Login') . "' /></p>\n";
-      echo "</form></center></body></html>\n";
-      session_unset();
-      session_destroy();
-      unset($_COOKIE[session_name()]);
-      exit(0);
+      exit(generate_html_end());
     }
   }
 }
