@@ -846,3 +846,7 @@ ALTER TABLE `users_secure` ADD COLUMN `last_challenge_response` datetime DEFAULT
 #IfMissingColumn users_secure num_failed_logins
 ALTER TABLE `users_secure` ADD COLUMN `num_failed_logins` int(11) NOT NULL DEFAULT 0;
 #EndIf
+
+#IfMissingColumn users_secure login_work_area
+ALTER TABLE `users_secure` ADD COLUMN `login_work_area` varchar(32768) NOT NULL DEFAULT '';
+#EndIf

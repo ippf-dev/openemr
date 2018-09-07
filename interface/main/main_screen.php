@@ -48,10 +48,13 @@ function generate_html_start($title) {
 <script>
 function doAuth() {
   var f = document.forms[0];
-  var registration = JSON.parse(f.form_registration.value);
-  var request = JSON.parse(f.form_request.value);
-  var challenge = request[0].challenge;
-  var registeredKeys = [{version: request[0].version, keyHandle: request[0].keyHandle}];
+  var requests = JSON.parse(f.form_requests.value);
+  // The server's getAuthenticateData() repeats the same challenge in all requests.
+  var challenge = requests[0].challenge;
+  var registeredKeys = new Array();
+  for (var i = 0; i < requests.length; ++i) {
+    registeredKeys[i] = {"version": requests[i].version, "keyHandle": requests[i].keyHandle};
+  }
   u2f.sign(
     '<?php echo addslashes($appId); ?>',
     challenge,
@@ -67,15 +70,9 @@ function doAuth() {
     60
   );
 }
-function doOther(sel) {
-  var f = document.forms[0];
-  f.form_key_name.value = sel.value;
-  f.form_response.value = '';
-  f.submit();
-}
 </script>
 </head>
-<body>
+<body class='body_top'>
 <center>
 <h2><?php echo text($title); ?></h2>
 <form method="post"
@@ -120,22 +117,17 @@ $errormsg = '';
 // Begin code to support U2F.
 ///////////////////////////////////////////////////////////////////////
 
-$regs = array();
-$regkey = '';
-$res1 = sqlStatement("SELECT a.name, a.var1 " .
-  "FROM login_mfa_registrations AS a " .
-  "WHERE a.user_id = ? AND a.method = 'U2F' " .
-  "ORDER BY a.name",
+$regs = array();          // for mapping device handles to their names
+$registrations = array(); // the array of stored registration objects
+$res1 = sqlStatement("SELECT a.name, a.var1 FROM login_mfa_registrations AS a " .
+  "WHERE a.user_id = ? AND a.method = 'U2F' ORDER BY a.name",
   array($_SESSION['authId']));
 while ($row1 = sqlFetchArray($res1)) {
-  $regs[$row1['name']] = $row1;
-  if ($regkey === '') $regkey = $row1['name'];
+  $regobj = json_decode($row1['var1']);
+  $regs[json_encode($regobj->keyHandle)] = $row1['name'];
+  $registrations[] = $regobj;
 }
-if (!empty($_POST['form_key_name']) && isset($regs[$_POST['form_key_name']])) {
-  // The user chose a specific key name so use that.
-  $regkey = $_POST['form_key_name'];
-}
-if (!empty($regs)) {
+if (!empty($registrations)) {
   // There is at least one U2F key registered so we have to request or verify key data.
   $scheme = isset($_SERVER['HTTPS']) ? "https://" : "http://";
   $appId = $scheme . $_SERVER['HTTP_HOST'];
@@ -144,52 +136,48 @@ if (!empty($regs)) {
   $form_response = empty($_POST['form_response']) ? '' : $_POST['form_response'];
   if ($form_response) {
     // We have key data, check if it matches what was registered.
+    $tmprow = sqlQuery("SELECT login_work_area FROM users_secure WHERE id = ?", array($userid));
     try {
       $registration = $u2f->doAuthenticate(
-        json_decode($_POST['form_request']),
-        array(json_decode($_POST['form_registration'])),
+        json_decode($tmprow['login_work_area']), // these are the original challenge requests
+        $registrations,
         json_decode($_POST['form_response'])
       );
+      // error_log('u2f->doAuthenticate() returns ' . json_encode($registration)); // debugging
       // Stored registration data needs to be updated because the usage count has changed.
-      sqlStatement("UPDATE login_mfa_registrations " .
-        "SET var1 = ? WHERE " .
-        "`user_id` = ? AND `method` = 'U2F' AND `name` = ?",
-        array(json_encode($registration), $userid, $regkey));
-        // Keep track of when questions were last answered correctly.
-        sqlStatement("UPDATE users_secure SET last_challenge_response = NOW() WHERE id = ?",
-          array($_SESSION['authId']));
+      // We have to use the matching registered key.
+      $strhandle = json_encode($registration->keyHandle);
+      if (isset($regs[$strhandle])) {
+        sqlStatement("UPDATE login_mfa_registrations SET `var1` = ? WHERE " .
+          "`user_id` = ? AND `method` = 'U2F' AND `name` = ?",
+          array(json_encode($registration), $userid, $regs[$strhandle]));
+      }
+      else {
+        error_log("Unexpected keyHandle returned from doAuthenticate(): '$strhandle'");
+      }
+      // Keep track of when questions were last answered correctly.
+      sqlStatement("UPDATE users_secure SET last_challenge_response = NOW() WHERE id = ?",
+        array($_SESSION['authId']));
     } catch(u2flib_server\Error $e) {
       // Authentication failed so build the U2F form again.
       $form_response = '';
-      $errormsg = xl('Authentication error for') . " $regkey: " . $e->getMessage();
+      $errormsg = xl('Authentication error') . ": " . $e->getMessage();
     }
   }
   if (!$form_response && is_time_for_challenge()) {
     // There is no key data yet or authentication failed, so we need to solicit it.
-    $registration = $regs[$regkey]['var1'];
-    $request = $u2f->getAuthenticateData(array(json_decode($registration)));
-    generate_html_start(xl('U2F Key Verification for' . " '$regkey'"));
-    echo "<p style='text-align:left'>\n";
+    $requests = json_encode($u2f->getAuthenticateData($registrations));
+    // Persist the challenge also in the database because the browser is untrusted.
+    sqlStatement("UPDATE users_secure SET login_work_area = ? WHERE id = ?", array($requests, $userid));
+    generate_html_start(xl('U2F Key Verification'));
+    echo "<p>\n";
     echo xlt('Insert your key into a USB port and click the Authenticate button below.');
     echo " " . xlt('Then press the flashing button on your key within 1 minute.') . "</p>\n";
     echo "</p><p>\n";
     echo "<input type='button' value='" . xla('Authenticate') . "' onclick='doAuth()' />\n";
-    echo "<input type='hidden' name='form_key_name' value='" . attr($regkey) . "' />\n";
-    echo "<input type='hidden' name='form_registration' value='" . attr($registration) . "' />\n";
-    echo "<input type='hidden' name='form_request' value='" . attr(json_encode($request)) . "' />\n";
+    echo "<input type='hidden' name='form_requests' value='" . attr($requests) . "' />\n";
     echo "<input type='hidden' name='form_response' value='' />\n";
     echo "</p>\n";
-    // Dropdown for other U2F names.
-    if (count($regs) > 1) {
-      echo "<p><select onchange='doOther(this)'>\n";
-      echo "<option value=''>" . xlt('Or choose another key...') . "</option>\n";
-      foreach ($regs as $row) {
-        if ($row['name'] != $regkey) {
-          echo "<option value='" . attr($row['name']) . "'>" . text($row['name']) . "</option>\n";
-        }
-      }
-      echo "</select></p>\n";
-    }
     if ($errormsg) {
       echo "<p style='color:red;font-weight:bold'>" . text($errormsg) . "</p>\n";
     }
@@ -208,7 +196,7 @@ if (!empty($regs)) {
 // from the login form and thus causes login to be repeated.
 ///////////////////////////////////////////////////////////////////////
 
-if (empty($regs) && !empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
+if (empty($registrations) && !empty($GLOBALS['gbl_num_challenge_questions_stored'])) {
   $tmprow = sqlQuery("SELECT COUNT(*) AS count FROM login_mfa_registrations AS a " .
     "JOIN list_options AS l ON l.list_id = 'login_security_questions' AND " .
     "l.option_id = a.var1 " .

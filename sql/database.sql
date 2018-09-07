@@ -5457,6 +5457,7 @@ CREATE TABLE `users_secure` (
   `salt_history2` varchar(255),
   `last_challenge_response` datetime DEFAULT NULL,
   `num_failed_logins` int(11) NOT NULL DEFAULT 0 COMMENT 'Number of consecutive failed login attempts',
+  `login_work_area` varchar(32768) NOT NULL DEFAULT '',
   PRIMARY KEY (`id`),
   UNIQUE KEY `USERNAME_ID` (`id`,`username`)
 ) ENGINE=InnoDb;
