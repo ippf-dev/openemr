@@ -164,7 +164,7 @@ if (!empty($registrations)) {
       $errormsg = xl('Authentication error') . ": " . $e->getMessage();
     }
   }
-  if (!$form_response && is_time_for_challenge()) {
+  if (!$form_response) {
     // There is no key data yet or authentication failed, so we need to solicit it.
     $requests = json_encode($u2f->getAuthenticateData($registrations));
     // Persist the challenge also in the database because the browser is untrusted.

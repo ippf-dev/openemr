@@ -320,8 +320,9 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
 
   // Figure out project, fund, dept, sobj names.
   // If adjustment reason has a project associated, use that project;
-  // Else if Facility has a project mapped to Service or Products, use that Project;
-  // Else if Service or Product has a Project, use that Project.
+  // Else if Service or Product has a Project, use that Project;
+  // Else if Facility has a project mapped to Service or Products, use that Project.
+  // These last 2 tests were swapped per CV email 2018-09-08.
   $proj_code = '';
   $adjrow = sqlQuery("SELECT a.adj_amount, lo.title, lo.notes " .
     "FROM ar_activity AS a " .
@@ -338,10 +339,10 @@ function thisLineItem($patient_id, $encounter_id, $code_type, $code,
     }
   }
   if ($proj_code === '') {
-    $proj_code = get_related_code($fac_related_project, 'PROJ');
+    $proj_code = get_related_code($item_related_project, 'PROJ');
   }
   if ($proj_code === '') {
-    $proj_code = get_related_code($item_related_project, 'PROJ');
+    $proj_code = get_related_code($fac_related_project, 'PROJ');
   }
   $project = '';
   $fund_name = '';
