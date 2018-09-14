@@ -65,7 +65,7 @@ array(
       xl('Customers in Checkout and Receipt'),
       'bool',                           // data type
       '0',                              // default = false
-      xl('Include charge categories in checkout and receipts. See the Charge Categories list.')
+      xl('Include Customers in checkout and receipts. See the Customers list.')
     ),
 
     'gbl_auto_create_rx' => array(

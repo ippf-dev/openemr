@@ -6100,7 +6100,7 @@ INSERT INTO list_options ( list_id, option_id, title, seq ) VALUES ('reftype','3
 INSERT INTO list_options ( list_id, option_id, title, seq ) VALUES ('reftype','4' ,'Inbound External' ,30);
 INSERT INTO list_options ( list_id, option_id, title, seq ) VALUES ('reftype','5' ,'Inbound Internal' ,40);
 
-INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('lists','chargecats','Charge Categories', 1);
+INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`) VALUES ('lists','chargecats','Customers', 1);
 
 CREATE TABLE `login_mfa_registrations` (
   `user_id`         bigint(20)     NOT NULL,

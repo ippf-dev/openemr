@@ -278,8 +278,14 @@ if ($user_id) {
   </td>
  </TR>
 
-<?php if (!$user_id && !$GLOBALS['disable_non_default_groups']) { ?>
  <tr>
+  <td class='text'>
+    <?php echo xlt('Clear 2FA'); ?>:
+  </td>
+  <td title='<?php echo xla('Select to erase multi-factor authentications'); ?>'>
+   <input type="checkbox" name="clear_2fa" value='1' />
+  </td>
+<?php if (!$user_id && !$GLOBALS['disable_non_default_groups']) { ?>
   <td>
    <span class="text">
     <?php echo xlt('Groupname'); ?>:
@@ -298,14 +304,10 @@ if ($user_id) {
 ?>
    </select>
   </td>
-  <td>
-   &nbsp;
-  </td>
-  <td>
-   &nbsp;
-  </td>
- </tr>
+<?php } else { ?>
+  <td class='text'>&nbsp;</td><td class='text'>&nbsp;</td>
 <?php } ?>
+ </tr>
 
  <!-- first name, middle name -->
  <TR>

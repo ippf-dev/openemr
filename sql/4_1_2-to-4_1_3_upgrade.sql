@@ -784,7 +784,7 @@ ALTER TABLE `drug_sales` ADD COLUMN `chargecat` varchar(31) default '';
 
 #IfNotRow2D list_options list_id lists option_id chargecats
 INSERT INTO `list_options` (`list_id`, `option_id`, `title`, `seq`, `is_default`)
-  VALUES ('lists','chargecats','Charge Categories', 1,0);
+  VALUES ('lists','chargecats','Customers', 1,0);
 INSERT INTO list_options (`list_id`, `option_id`, `title`, `seq`, `is_default`) 
   SELECT 'chargecats', option_id, title, seq, is_default FROM list_options WHERE
   list_id = 'adjreason' AND activity = 1 AND (option_id = 'C00001' OR notes LIKE '%=Ins%');
